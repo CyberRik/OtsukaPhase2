@@ -203,6 +203,16 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# ---------------------------------------------------------------------------
+# Demo: secrets and runtime artifacts (never commit these)
+# ---------------------------------------------------------------------------
+# Google OAuth client secret and the live token (refresh/access). Use the
+# committed demo/credentials.json.example as a template instead.
+demo/credentials.json
+demo/token.json
+# Files written at runtime by the create_file tool.
+demo/output/
+
 # Ruff stuff:
 .ruff_cache/
 

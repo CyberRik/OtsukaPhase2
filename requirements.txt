@@ -1,0 +1,17 @@
+# Dependencies for the demo UI (demo/app.py, demo/tools.py, demo/gcal.py).
+# Install into this project's venv:  .venv/bin/pip install -r requirements.txt
+#
+# Note: vLLM is NOT listed here. The model is *served* by a separate venv
+# (see demo/serve_demo.sh, which activates the ToolCallLM_finetune venv that
+# already has vllm + CUDA set up). This file only covers the client-side UI app.
+
+# Gradio chat UI (demo/app.py)
+gradio==6.17.3
+
+# OpenAI-compatible client pointed at the local vLLM server (demo/app.py)
+openai==2.37.0
+
+# Real Google Calendar booking for schedule_meeting (demo/gcal.py)
+google-api-python-client==2.197.0
+google-auth==2.53.0
+google-auth-oauthlib==1.4.0
