@@ -1,0 +1,26 @@
+[
+  {
+    "source_id": "I01",
+    "kind": "interview",
+    "participant_role": "senior",
+    "date": "2026-06",
+    "uri": "transcripts/respondent_A.md",
+    "notes": "回答者A。7つの二者択一シナリオに対しA/B選択と理由を回答(アンケート形式・チャット共有)。一次情報として扱う。"
+  },
+  {
+    "source_id": "I02",
+    "kind": "interview",
+    "participant_role": "senior",
+    "date": "2026-06",
+    "uri": "transcripts/respondent_B.md",
+    "notes": "回答者B。同一7シナリオに回答。理由づけが詳細で、状況依存の判断(関係性・予算・ステークホルダー)を明示。"
+  },
+  {
+    "source_id": "Q01",
+    "kind": "instrument",
+    "participant_role": "n/a",
+    "date": "2026-06",
+    "uri": "surveys/questionnaire.md",
+    "notes": "共通の質問票。開放型10問(問題発見用)+ 二者択一7シナリオ(判断抽出用)。理由欄が原則抽出の源泉。"
+  }
+]

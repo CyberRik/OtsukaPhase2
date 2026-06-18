@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 
 from senpai import config
+from senpai.coach.review import format_review, review_note
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
@@ -156,6 +157,20 @@ def draft_daily_report(activity: str = "", deal_id: str = "") -> str:
             f"案件: {deal_id or '-'} / 段階: {stage}\n"
             f"活動内容: {activity}\n"
             f"次アクション: {next_action}")
+
+
+def review_sales_note(note: str = "", deal_id: str = "") -> str:
+    """Coach a junior on a raw meeting note / daily report. Returns a senior's
+    reasoning scaffold (notices / missing info / risks / questions / possible
+    next moves / decision factors) — never a single 'correct answer'. If a
+    deal_id is given, the deterministic deal signals reinforce the text reading."""
+    if not (note or "").strip():
+        return "レビューするメモ・日報の本文を入力してください。"
+    deal = store.get_deal(deal_id) if deal_id else None
+    notes = store.notes_for_deal(deal_id) if deal else None
+    report = store.report_for_deal(deal_id) if deal else None
+    review = review_note(note, deal=deal, notes=notes, report=report)
+    return format_review(review)
 
 
 def route_to_expert(question: str = "", tags=None) -> str:
@@ -346,6 +361,7 @@ _DISPATCH = {
     "lookup_customer_environment": lookup_customer_environment,
     "get_product_info": get_product_info,
     "score_deal_health": score_deal_health,
+    "review_sales_note": review_sales_note,
     "draft_daily_report": draft_daily_report,
     "route_to_expert": route_to_expert,
     "summarize_reports": summarize_reports,
@@ -391,6 +407,7 @@ if __name__ == "__main__":
         ("lookup_customer_environment", {"customer": "C01"}),
         ("get_product_info", {"product": "MFP30"}),
         ("score_deal_health", {"deal_id": "D001"}),
+        ("review_sales_note", {"note": "お客様は社内で検討してから連絡するとのこと。"}),
         ("draft_daily_report", {"activity": "アクメ商事を訪問しデモを実施", "deal_id": "D001"}),
         ("route_to_expert", {"question": "ネットワーク更改の構成相談", "tags": ["ネットワーク"]}),
         ("summarize_reports", {"rep_id": "R05"}),

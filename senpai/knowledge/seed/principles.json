@@ -1,0 +1,138 @@
+[
+  {
+    "principle_id": "P001",
+    "statement": "新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。",
+    "support": [
+      {"source_id": "I01", "quote": "別の情報提供を始めるのであれば、今の案件を白黒つけてからやるべきだと考えているから", "location": "Q1"},
+      {"source_id": "I02", "quote": "決定時期、案件確度を正確に把握したいため、状況確認のため電話で確認する。", "location": "Q1"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["クロージング", "案件管理", "決定先延ばし"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P002",
+    "statement": "値引きの提示は最終手段。安易に価格を下げるカードを切らない。",
+    "support": [
+      {"source_id": "I01", "quote": "値段を下げるプランを提示するのは最終手段だと考えているから", "location": "Q2"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["価格", "交渉"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P003",
+    "statement": "担当者の「〜になるかもしれない」という曖昧な情報だけで方針を決めず、キーマン(意思決定者)に会って状況を確認してから動く。",
+    "support": [
+      {"source_id": "I02", "quote": "担当者が「～になるかもしれない」と言っているので、情報が定かではないため出方を決めきれません。キーマンと商談をし、状況確認してからAまたはBまたは異なる選択をすると思います。", "location": "Q2"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["決裁者未特定", "情報確認", "決定先延ばし"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P004",
+    "statement": "最初から妥協策を出さず、まず本命の手(A)を試し、通らなければ次善策(B)に切り替える段階的アプローチをとる。",
+    "support": [
+      {"source_id": "I01", "quote": "まずはAを試みて、だめならBに切り替えると思います。", "location": "Q3"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["交渉", "クロージング"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P005",
+    "statement": "予算の確保が案件進行の前提。お客様側で資金の目処が立っていなければ早期クロージングを押さず、まず予算化を支援する。",
+    "support": [
+      {"source_id": "I02", "quote": "早期決着を図りたいが、予算が下りない可能性を加味するとAはリスク。お客様と合意がとれていればAだが、基本的にはお客様側でお金が用意できていないと案件が進まないのでB。", "location": "Q3"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["予算", "クロージング"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P006",
+    "statement": "決裁者(部長)は社内のIT担当者が納得しないと契約に踏み切らない。現場の技術担当の納得を取り付けることが決裁の前提条件。",
+    "support": [
+      {"source_id": "I01", "quote": "部長の性格にもよるが、IT担当者に納得していただけないと部長は気持ちよく契約に踏み切ってもらえないと考えているから", "location": "Q4"},
+      {"source_id": "I02", "quote": "IT部門の方の意見を無視して商談を進めることになり今後の取引に支障が出るリスクがあるため。", "location": "Q4"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["決裁者未特定", "ステークホルダー", "提案"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P007",
+    "statement": "専門的なミーティングを設定する前段階で、移行作業の負荷を下げる提案を決裁者に行い、技術部門の負担懸念を先回りで解消する。",
+    "support": [
+      {"source_id": "I02", "quote": "専門的なミーティングをセッティングするよりも前段階で、移行作業の負荷を下げるための提案を提案決裁者へすると思います。", "location": "Q4"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["ステークホルダー", "移行", "提案"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P008",
+    "statement": "初回訪問は情報収集より関係構築を優先する。いきなり環境やスペックを聞いても引き出せないため、業務内容・関心事のヒアリングから入る。",
+    "support": [
+      {"source_id": "I01", "quote": "初回訪問のお客様にただ環境を聞くだけでは教えてもらえない可能性が高いと考えているから", "location": "Q5"},
+      {"source_id": "I02", "quote": "初回訪問では、お客様との関係構築が最重要と考えており、資料ベースではなく、お客様の業務内容や興味・関心事項をヒアリングしたいため。", "location": "Q5"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["初回訪問", "ヒアリング", "関係構築"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P009",
+    "statement": "競合を貶めない。他社を下げる発言は逆効果になるため、自社の価値で勝負する。",
+    "support": [
+      {"source_id": "I01", "quote": "他社を下げる発言は、逆効果につながると思っているから", "location": "Q6"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["競合", "差別化"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P010",
+    "statement": "最終的に契約先を決めるのはお客様。お客様の選定基準を先に確認し、その基準に合ったアプローチで自社の価値を示す。",
+    "support": [
+      {"source_id": "I02", "quote": "最終的に決めるのはお客様のため、お客様が契約先を選ぶ判断基準を確認してから、そのお客様にあった適切なアプローチをすると思うから。", "location": "Q6"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["差別化", "ヒアリング", "競合"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  },
+  {
+    "principle_id": "P011",
+    "statement": "決裁者同席の依頼はタイミングと関係性で判断する。信頼が築けていない段階で急に依頼すると相手が「蔑ろにされた」と感じ逆効果。関係が良ければ工数削減のため早めに、そうでなければ段階を踏んで慎重に。",
+    "support": [
+      {"source_id": "I01", "quote": "今まで商談をしていた相手に、いきなり次回は決裁者の同席を依頼すると、気分を害される可能性があると考えるから", "location": "Q7"},
+      {"source_id": "I02", "quote": "商談相手との関係性によると思います。仲が良く、お願いできる関係性であればAを選択。理由は案件決定にかかる工数をできるだけ少なくしたいためです。もしもそうでない場合には、商談相手が「自分を蔑ろにされた」とならないように、Bの選択をして慎重に進めるべきだと思います。", "location": "Q7"}
+    ],
+    "corroborating_surveys": [],
+    "tags": ["決裁者同席", "クロージング", "関係構築"],
+    "status": "candidate",
+    "added_by": "extraction",
+    "added_at": "2026-06-18T00:00:00Z"
+  }
+]

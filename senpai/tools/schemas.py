@@ -104,6 +104,25 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "review_sales_note",
+            "description": "Coach a junior on a raw meeting note or daily report. Returns what an "
+                           "experienced rep would notice, missing info, risk signals, questions to ask "
+                           "next, several possible next moves, and decision factors — it teaches "
+                           "reasoning and never gives a single 'correct answer'. Pass the note text; "
+                           "add deal_id to fold in that deal's structured signals.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "note": {"type": "string", "description": "The meeting note / daily report text to review"},
+                    "deal_id": {"type": "string", "description": "Optional related deal ID, e.g. 'D012'"},
+                },
+                "required": ["note"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "draft_daily_report",
             "description": "Draft an SPR-ready daily sales report (日報) in Japanese from a short "
                            "activity description and optional deal ID.",
@@ -266,7 +285,8 @@ def _pick(*names: str) -> list[dict]:
 JUNIOR_TOOLS = _pick(
     "query_spr", "find_similar_deals", "retrieve_playbook",
     "lookup_customer_environment", "get_product_info", "score_deal_health",
-    "draft_daily_report", "route_to_expert", "get_seasonal_context", "web_search",
+    "review_sales_note", "draft_daily_report", "route_to_expert",
+    "get_seasonal_context", "web_search",
 )
 
 # Manager: team analytics + drill-down + drafting + web_search.

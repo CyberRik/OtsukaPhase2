@@ -63,6 +63,10 @@ DECISION_MAKER_STAGES = {"proposal", "negotiation", "closing"}
 # Japanese stall lexicon — phrases that, in the latest note, signal a stalling deal.
 STALL_LEXICON = ["検討します", "予算が", "時期を見て", "上と相談", "持ち帰り", "また連絡"]
 
+# Words that, when present in a note, mean a competitor is in play (a *factor* the
+# rep should reason about, not a gap). Used by the Sales Review Coach.
+COMPETITION_LEXICON = ["競合", "他社", "相見積", "コンペ", "比較中", "比較検討"]
+
 # Risk-score band thresholds (score is 0–100, higher = worse).
 RED_THRESHOLD = 55      # score >= 55  → red
 YELLOW_THRESHOLD = 25   # 25 <= score < 55 → yellow ; < 25 → green
