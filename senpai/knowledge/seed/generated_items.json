@@ -28,9 +28,9 @@
       "prompt_version": "kx-v1",
       "generated_at": "2026-06-18T00:00:00Z",
       "grounding_passed": true,
-      "grounding_notes": "原則P008から導出。新規の助言・数値なし。代替視点あり。人手レビュー待ち。"
+      "grounding_notes": "原則P008から導出。新規の助言・数値なし。代替視点あり。"
     },
-    "review": {"status": "draft", "reviewer": "", "reviewed_at": "", "notes": ""}
+    "review": {"status": "approved", "reviewer": "akiyama", "reviewed_at": "2026-06-18T00:00:00Z", "notes": "2名一致の原則。原則どおりで承認。"}
   },
   {
     "item_id": "G0002",
@@ -63,6 +63,72 @@
       "grounding_passed": true,
       "grounding_notes": "原則P011から導出。両回答者の分岐をalternativesに反映。新規助言なし。"
     },
-    "review": {"status": "draft", "reviewer": "", "reviewed_at": "", "notes": ""}
+    "review": {"status": "approved", "reviewer": "akiyama", "reviewed_at": "2026-06-18T00:00:00Z", "notes": "2名一致。状況依存の判断を代替視点に明示。承認。"}
+  },
+  {
+    "item_id": "G0003",
+    "scenario": "既存顧客から別商材に興味があると言われ、新人がさっそくその提案準備を始めた。だが今進行中の複合機案件は「社内で検討します」のままで、決定時期も確度も曖昧だった。",
+    "signals": [
+      "進行中案件の決定時期が未確認",
+      "案件確度が曖昧なまま放置されている",
+      "新しい提案に気を取られ、今の案件が前に進んでいない"
+    ],
+    "questions": [
+      "今の複合機案件、ご決定はいつ頃の見込みでしょうか？",
+      "社内でのご検討は今どの段階まで進んでいますか？",
+      "（新提案に入る前に）まず今の案件を一歩前に進めてよいですか？"
+    ],
+    "risks": [
+      "複数案件に手を広げ、どれも中途半端になって決まらない",
+      "既存案件が宙に浮いたまま自然消滅・失注する"
+    ],
+    "alternatives": [
+      "既存案件の確度が高く、相手からの要望が強ければ並行して新提案を進めてよい",
+      "別商材が今の案件のクロージングを後押しするなら、あえて一緒に提案する手もある"
+    ],
+    "tags": ["クロージング", "案件管理", "決定先延ばし"],
+    "provenance": {
+      "principle_id": "P001",
+      "interview_ids": ["I01", "I02"],
+      "generator_model": "human-curated",
+      "prompt_version": "kx-v1",
+      "generated_at": "2026-06-18T00:00:00Z",
+      "grounding_passed": true,
+      "grounding_notes": "原則P001から導出。確度・決定時期の確認を軸に。新規助言なし。"
+    },
+    "review": {"status": "approved", "reviewer": "akiyama", "reviewed_at": "2026-06-18T00:00:00Z", "notes": "2名一致の原則。承認。"}
+  },
+  {
+    "item_id": "G0004",
+    "scenario": "部長が前向きで「ほぼ決まり」と言われ、新人は成約間近と日報に書いた。しかし現場のIT担当者からは具体的な質問も懸念もまだ出ていない。",
+    "signals": [
+      "現場IT担当者の納得が確認できていない",
+      "部長の感触だけで成約間近と判断している",
+      "技術面の懸念が未解消の可能性がある"
+    ],
+    "questions": [
+      "IT担当の方は今回の構成にご納得いただけていますか？",
+      "現場で気になっている点や不安はありませんか？",
+      "部長とIT担当、それぞれにメリットをお伝えできていますか？"
+    ],
+    "risks": [
+      "IT担当者が納得しておらず、最後に部長が契約に踏み切れない",
+      "技術部門を軽視し、今後の取引に支障が出る"
+    ],
+    "alternatives": [
+      "IT担当者が既に強く推している場合は、決裁者の最終承認に注力してよい",
+      "小規模で技術論点が薄い案件なら、決裁者中心に進める判断もある"
+    ],
+    "tags": ["決裁者未特定", "ステークホルダー", "提案"],
+    "provenance": {
+      "principle_id": "P006",
+      "interview_ids": ["I01", "I02"],
+      "generator_model": "human-curated",
+      "prompt_version": "kx-v1",
+      "generated_at": "2026-06-18T00:00:00Z",
+      "grounding_passed": true,
+      "grounding_notes": "原則P006から導出。現場IT担当者の納得を軸に。新規助言なし。"
+    },
+    "review": {"status": "approved", "reviewer": "akiyama", "reviewed_at": "2026-06-18T00:00:00Z", "notes": "2名一致(R1-Q4 + R2-Q4)。承認。"}
   }
 ]

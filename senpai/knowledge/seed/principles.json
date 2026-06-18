@@ -8,7 +8,7 @@
     ],
     "corroborating_surveys": [],
     "tags": ["クロージング", "案件管理", "決定先延ばし"],
-    "status": "candidate",
+    "status": "approved",
     "added_by": "extraction",
     "added_at": "2026-06-18T00:00:00Z"
   },
@@ -69,7 +69,7 @@
     ],
     "corroborating_surveys": [],
     "tags": ["決裁者未特定", "ステークホルダー", "提案"],
-    "status": "candidate",
+    "status": "approved",
     "added_by": "extraction",
     "added_at": "2026-06-18T00:00:00Z"
   },
@@ -94,7 +94,7 @@
     ],
     "corroborating_surveys": [],
     "tags": ["初回訪問", "ヒアリング", "関係構築"],
-    "status": "candidate",
+    "status": "approved",
     "added_by": "extraction",
     "added_at": "2026-06-18T00:00:00Z"
   },
@@ -131,7 +131,7 @@
     ],
     "corroborating_surveys": [],
     "tags": ["決裁者同席", "クロージング", "関係構築"],
-    "status": "candidate",
+    "status": "approved",
     "added_by": "extraction",
     "added_at": "2026-06-18T00:00:00Z"
   }
