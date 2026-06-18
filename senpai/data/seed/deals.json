@@ -1,1901 +1,2222 @@
 [
   {
-    "deal_id": "D001",
     "customer_id": "C33",
-    "rep_id": "R02",
-    "products": [
-      "NSW24",
-      "MFP15"
-    ],
-    "amount": 450000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-02-01"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-02-11"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-02-21"
-      }
-    ],
-    "expected_close_date": "2026-05-27",
-    "close_date_history": [
-      "2026-04-27",
-      "2026-05-12",
-      "2026-05-27"
-    ],
-    "last_contact_date": "2026-04-10",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "deal_id": "D001",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "有限会社村田印刷 ラックサーバー案件",
+    "expected_order_date": "2026-05-14",
+    "days_until_order": -33,
+    "registered_at": "2026-04-09",
+    "product_category": "サーバー",
+    "hw_order_revenue": 2080000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 520000,
+    "hw_order_gross_profit": 457600,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 182000,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 2600000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 639600,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 8,
+    "rank_first_registered_at": "2026-04-14",
+    "rank_updated_at": "2026-04-19",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
   },
   {
+    "customer_id": "C20",
     "deal_id": "D002",
-    "customer_id": "C22",
-    "rep_id": "R06",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 41400,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-02-07"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-02-17"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-02-27"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-03-09"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-03-19"
-      }
-    ],
-    "expected_close_date": "2026-05-17",
-    "close_date_history": [
-      "2026-04-17",
-      "2026-05-02",
-      "2026-05-17"
-    ],
-    "last_contact_date": "2026-04-11",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "山田電機 複合機案件",
+    "expected_order_date": "2026-05-13",
+    "days_until_order": -34,
+    "registered_at": "2026-03-13",
+    "product_category": "OA機器",
+    "hw_order_revenue": 384000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 84480,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 384000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 84480,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 3,
+    "rank_first_registered_at": "2026-03-18",
+    "rank_updated_at": "2026-04-13",
+    "order_rank": "3_A",
+    "initial_order_rank": "3_A",
+    "days_back_from_confirmed": null
   },
   {
+    "customer_id": "C28",
     "deal_id": "D003",
-    "customer_id": "C12",
-    "rep_id": "R05",
-    "products": [
-      "NSW24",
-      "MFP30"
-    ],
-    "amount": 882000,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-02-23"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-03-05"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-03-15"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-03-25"
-      }
-    ],
-    "expected_close_date": "2026-05-17",
-    "close_date_history": [
-      "2026-04-17",
-      "2026-05-02",
-      "2026-05-17"
-    ],
-    "last_contact_date": "2026-04-10",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "有限会社松田サービス 複合機案件",
+    "expected_order_date": "2026-05-20",
+    "days_until_order": -27,
+    "registered_at": "2026-04-13",
+    "product_category": "OA機器",
+    "hw_order_revenue": 576000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 126720,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 576000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 126720,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-04-18",
+    "rank_updated_at": "2026-04-26",
+    "order_rank": "3_A",
+    "initial_order_rank": "3_A",
+    "days_back_from_confirmed": null
   },
   {
-    "deal_id": "D004",
-    "customer_id": "C06",
-    "rep_id": "R05",
-    "products": [
-      "MFP30",
-      "MFP15"
-    ],
-    "amount": 1008000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-03-06"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-03-16"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-03-26"
-      }
-    ],
-    "expected_close_date": "2026-05-27",
-    "close_date_history": [
-      "2026-04-27",
-      "2026-05-12",
-      "2026-05-27"
-    ],
-    "last_contact_date": "2026-04-28",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D005",
-    "customer_id": "C30",
-    "rep_id": "R07",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 55200,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-20"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-30"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-10"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-20"
-      }
-    ],
-    "expected_close_date": "2026-06-30",
-    "close_date_history": [
-      "2026-06-30"
-    ],
-    "last_contact_date": "2026-06-09",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "won"
-  },
-  {
-    "deal_id": "D006",
-    "customer_id": "C04",
-    "rep_id": "R04",
-    "products": [
-      "SRV20"
-    ],
-    "amount": 1040000,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-12"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-22"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-02"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-12"
-      }
-    ],
-    "expected_close_date": "2026-07-29",
-    "close_date_history": [
-      "2026-07-29"
-    ],
-    "last_contact_date": "2026-05-30",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D007",
-    "customer_id": "C16",
-    "rep_id": "R05",
-    "products": [
-      "MFP30",
-      "OFFICE"
-    ],
-    "amount": 761400,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-18"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-28"
-      }
-    ],
-    "expected_close_date": "2026-07-11",
-    "close_date_history": [
-      "2026-07-11"
-    ],
-    "last_contact_date": "2026-06-06",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D008",
-    "customer_id": "C25",
-    "rep_id": "R01",
-    "products": [
-      "SRV20",
-      "MFP30"
-    ],
-    "amount": 2280000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-01"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-11"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-21"
-      }
-    ],
-    "expected_close_date": "2026-07-25",
-    "close_date_history": [
-      "2026-07-25"
-    ],
-    "last_contact_date": "2026-06-03",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D009",
-    "customer_id": "C35",
-    "rep_id": "R01",
-    "products": [
-      "NSW24",
-      "AV365"
-    ],
-    "amount": 60800,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-18"
-      }
-    ],
-    "expected_close_date": "2026-08-15",
-    "close_date_history": [
-      "2026-08-15"
-    ],
-    "last_contact_date": "2026-06-12",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D010",
-    "customer_id": "C31",
-    "rep_id": "R01",
-    "products": [
-      "LP14"
-    ],
-    "amount": 336000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-06-12"
-      }
-    ],
-    "expected_close_date": "2026-06-22",
-    "close_date_history": [
-      "2026-06-22"
-    ],
-    "last_contact_date": "2026-05-23",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D011",
-    "customer_id": "C30",
-    "rep_id": "R05",
-    "products": [
-      "MFP15",
-      "NSW24"
-    ],
-    "amount": 150000,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-16"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-26"
-      }
-    ],
-    "expected_close_date": "2026-07-28",
-    "close_date_history": [
-      "2026-08-17",
-      "2026-07-28"
-    ],
-    "last_contact_date": "2026-06-13",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D012",
-    "customer_id": "C24",
-    "rep_id": "R02",
-    "products": [
-      "MFP30",
-      "SRV20"
-    ],
-    "amount": 3040000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-18"
-      }
-    ],
-    "expected_close_date": "2026-07-31",
-    "close_date_history": [
-      "2026-07-31"
-    ],
-    "last_contact_date": "2026-06-05",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D013",
-    "customer_id": "C18",
-    "rep_id": "R08",
-    "products": [
-      "AV365"
-    ],
-    "amount": 27200,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-11"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-21"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-01"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-11"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-05-21"
-      }
-    ],
-    "expected_close_date": "2026-06-22",
-    "close_date_history": [
-      "2026-06-22"
-    ],
-    "last_contact_date": "2026-06-06",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D014",
-    "customer_id": "C16",
-    "rep_id": "R07",
-    "products": [
-      "NSW24",
-      "MFP15"
-    ],
-    "amount": 600000,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-17"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-27"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-07"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-17"
-      }
-    ],
-    "expected_close_date": "2026-06-22",
-    "close_date_history": [
-      "2026-07-12",
-      "2026-06-22"
-    ],
-    "last_contact_date": "2026-05-22",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D015",
-    "customer_id": "C13",
-    "rep_id": "R06",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 27600,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-22"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-06-01"
-      }
-    ],
-    "expected_close_date": "2026-07-21",
-    "close_date_history": [
-      "2026-08-10",
-      "2026-07-21"
-    ],
-    "last_contact_date": "2026-05-24",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "lost"
-  },
-  {
-    "deal_id": "D016",
-    "customer_id": "C20",
-    "rep_id": "R01",
-    "products": [
-      "LP14"
-    ],
-    "amount": 168000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-10"
-      }
-    ],
-    "expected_close_date": "2026-08-04",
-    "close_date_history": [
-      "2026-08-04"
-    ],
-    "last_contact_date": "2026-06-07",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D017",
-    "customer_id": "C17",
-    "rep_id": "R08",
-    "products": [
-      "AV365"
-    ],
-    "amount": 6800,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-14"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-24"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-04"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-14"
-      }
-    ],
-    "expected_close_date": "2026-07-27",
-    "close_date_history": [
-      "2026-07-27"
-    ],
-    "last_contact_date": "2026-06-14",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "won"
-  },
-  {
-    "deal_id": "D018",
-    "customer_id": "C15",
-    "rep_id": "R07",
-    "products": [
-      "SRV20",
-      "LP14"
-    ],
-    "amount": 2752000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-19"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-29"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-09"
-      }
-    ],
-    "expected_close_date": "2026-06-24",
-    "close_date_history": [
-      "2026-06-24"
-    ],
-    "last_contact_date": "2026-05-28",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D019",
-    "customer_id": "C19",
-    "rep_id": "R01",
-    "products": [
-      "LP14"
-    ],
-    "amount": 504000,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-11"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-21"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-31"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-06-10"
-      }
-    ],
-    "expected_close_date": "2026-07-05",
-    "close_date_history": [
-      "2026-07-05"
-    ],
-    "last_contact_date": "2026-05-26",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D020",
-    "customer_id": "C29",
-    "rep_id": "R02",
-    "products": [
-      "OFFICE",
-      "LP14"
-    ],
-    "amount": 727200,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-23"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-03"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-13"
-      }
-    ],
-    "expected_close_date": "2026-07-22",
-    "close_date_history": [
-      "2026-07-22"
-    ],
-    "last_contact_date": "2026-05-30",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "won"
-  },
-  {
-    "deal_id": "D021",
-    "customer_id": "C03",
-    "rep_id": "R03",
-    "products": [
-      "NSW24",
-      "OFFICE"
-    ],
-    "amount": 271200,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-14"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-24"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-06-03"
-      }
-    ],
-    "expected_close_date": "2026-07-18",
-    "close_date_history": [
-      "2026-07-18"
-    ],
-    "last_contact_date": "2026-05-29",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D022",
-    "customer_id": "C30",
-    "rep_id": "R02",
-    "products": [
-      "LP14",
-      "AV365"
-    ],
-    "amount": 174800,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-13"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-23"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-03"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-13"
-      }
-    ],
-    "expected_close_date": "2026-08-02",
-    "close_date_history": [
-      "2026-08-02"
-    ],
-    "last_contact_date": "2026-06-16",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D023",
-    "customer_id": "C29",
-    "rep_id": "R08",
-    "products": [
-      "MFP30"
-    ],
-    "amount": 480000,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-16"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-26"
-      }
-    ],
-    "expected_close_date": "2026-06-21",
-    "close_date_history": [
-      "2026-06-21"
-    ],
-    "last_contact_date": "2026-05-30",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D024",
-    "customer_id": "C19",
-    "rep_id": "R05",
-    "products": [
-      "AV365",
-      "SRV20"
-    ],
-    "amount": 2107200,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-06"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-16"
-      }
-    ],
-    "expected_close_date": "2026-06-30",
-    "close_date_history": [
-      "2026-06-30"
-    ],
-    "last_contact_date": "2026-05-30",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "lost"
-  },
-  {
-    "deal_id": "D025",
-    "customer_id": "C01",
-    "rep_id": "R05",
-    "products": [
-      "AV365",
-      "NSW24"
-    ],
-    "amount": 243200,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-07"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-17"
-      }
-    ],
-    "expected_close_date": "2026-07-21",
-    "close_date_history": [
-      "2026-07-21"
-    ],
-    "last_contact_date": "2026-05-30",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D026",
-    "customer_id": "C25",
-    "rep_id": "R03",
-    "products": [
-      "MFP30",
-      "MFP15"
-    ],
-    "amount": 1008000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-17"
-      }
-    ],
-    "expected_close_date": "2026-07-24",
-    "close_date_history": [
-      "2026-07-24"
-    ],
-    "last_contact_date": "2026-06-13",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D027",
-    "customer_id": "C21",
-    "rep_id": "R08",
-    "products": [
-      "NSW24"
-    ],
-    "amount": 54000,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-17"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-27"
-      }
-    ],
-    "expected_close_date": "2026-08-07",
-    "close_date_history": [
-      "2026-08-27",
-      "2026-08-07"
-    ],
-    "last_contact_date": "2026-06-09",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D028",
-    "customer_id": "C11",
-    "rep_id": "R03",
-    "products": [
-      "NSW24"
-    ],
-    "amount": 216000,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-20"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-30"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-10"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-20"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-05-30"
-      }
-    ],
-    "expected_close_date": "2026-07-28",
-    "close_date_history": [
-      "2026-08-17",
-      "2026-07-28"
-    ],
-    "last_contact_date": "2026-06-01",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D029",
-    "customer_id": "C30",
-    "rep_id": "R05",
-    "products": [
-      "SRV20"
-    ],
-    "amount": 2080000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-30"
-      }
-    ],
-    "expected_close_date": "2026-07-27",
-    "close_date_history": [
-      "2026-07-27"
-    ],
-    "last_contact_date": "2026-06-04",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D030",
-    "customer_id": "C13",
-    "rep_id": "R05",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 13800,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-26"
-      }
-    ],
-    "expected_close_date": "2026-07-19",
-    "close_date_history": [
-      "2026-08-08",
-      "2026-07-19"
-    ],
-    "last_contact_date": "2026-05-22",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D031",
-    "customer_id": "C17",
-    "rep_id": "R08",
-    "products": [
-      "OFFICE",
-      "LP14"
-    ],
-    "amount": 181800,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-11"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-21"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-31"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-06-10"
-      }
-    ],
-    "expected_close_date": "2026-08-08",
-    "close_date_history": [
-      "2026-08-08"
-    ],
-    "last_contact_date": "2026-06-12",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "lost"
-  },
-  {
-    "deal_id": "D032",
-    "customer_id": "C25",
-    "rep_id": "R06",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 27600,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-14"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-24"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-06-03"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-06-13"
-      }
-    ],
-    "expected_close_date": "2026-07-26",
-    "close_date_history": [
-      "2026-07-26"
-    ],
-    "last_contact_date": "2026-05-28",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D033",
-    "customer_id": "C20",
-    "rep_id": "R08",
-    "products": [
-      "MFP30"
-    ],
-    "amount": 480000,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-27"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-07"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-17"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-27"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-06-06"
-      }
-    ],
-    "expected_close_date": "2026-07-20",
-    "close_date_history": [
-      "2026-07-20"
-    ],
-    "last_contact_date": "2026-06-04",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D034",
-    "customer_id": "C29",
-    "rep_id": "R04",
-    "products": [
-      "MFP30",
-      "OFFICE"
-    ],
-    "amount": 761400,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-13"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-23"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-03"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-13"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-05-23"
-      }
-    ],
-    "expected_close_date": "2026-07-16",
-    "close_date_history": [
-      "2026-08-05",
-      "2026-07-16"
-    ],
-    "last_contact_date": "2026-06-15",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D035",
-    "customer_id": "C09",
-    "rep_id": "R04",
-    "products": [
-      "AV365"
-    ],
-    "amount": 13600,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-22"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-02"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-12"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-22"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-06-01"
-      }
-    ],
-    "expected_close_date": "2026-07-12",
-    "close_date_history": [
-      "2026-07-12"
-    ],
-    "last_contact_date": "2026-06-09",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D036",
-    "customer_id": "C09",
-    "rep_id": "R01",
-    "products": [
-      "AV365",
-      "MFP15"
-    ],
-    "amount": 308400,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-06-03"
-      }
-    ],
-    "expected_close_date": "2026-06-24",
-    "close_date_history": [
-      "2026-07-14",
-      "2026-06-24"
-    ],
-    "last_contact_date": "2026-06-08",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "won"
-  },
-  {
-    "deal_id": "D037",
-    "customer_id": "C15",
-    "rep_id": "R01",
-    "products": [
-      "SRV20",
-      "OFFICE"
-    ],
-    "amount": 533800,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-15"
-      }
-    ],
-    "expected_close_date": "2026-07-18",
-    "close_date_history": [
-      "2026-07-18"
-    ],
-    "last_contact_date": "2026-06-04",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D038",
-    "customer_id": "C25",
-    "rep_id": "R05",
-    "products": [
-      "NSW24",
-      "AV365"
-    ],
-    "amount": 243200,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-06-07"
-      }
-    ],
-    "expected_close_date": "2026-08-01",
-    "close_date_history": [
-      "2026-08-01"
-    ],
-    "last_contact_date": "2026-05-27",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D039",
-    "customer_id": "C28",
-    "rep_id": "R06",
-    "products": [
-      "LP14",
-      "MFP15"
-    ],
-    "amount": 1056000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-06-09"
-      }
-    ],
-    "expected_close_date": "2026-06-26",
-    "close_date_history": [
-      "2026-06-26"
-    ],
-    "last_contact_date": "2026-06-14",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "won"
-  },
-  {
-    "deal_id": "D040",
-    "customer_id": "C04",
-    "rep_id": "R05",
-    "products": [
-      "LP14",
-      "MFP30"
-    ],
-    "amount": 816000,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-05"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-15"
-      }
-    ],
-    "expected_close_date": "2026-08-14",
-    "close_date_history": [
-      "2026-09-03",
-      "2026-08-14"
-    ],
-    "last_contact_date": "2026-06-09",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D041",
-    "customer_id": "C18",
-    "rep_id": "R01",
-    "products": [
-      "LP14"
-    ],
-    "amount": 504000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-03"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-13"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-23"
-      }
-    ],
-    "expected_close_date": "2026-07-02",
-    "close_date_history": [
-      "2026-07-02"
-    ],
-    "last_contact_date": "2026-06-16",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D042",
-    "customer_id": "C04",
-    "rep_id": "R03",
-    "products": [
-      "AV365"
-    ],
-    "amount": 6800,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-28"
-      }
-    ],
-    "expected_close_date": "2026-08-02",
-    "close_date_history": [
-      "2026-08-02"
-    ],
-    "last_contact_date": "2026-06-02",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D043",
-    "customer_id": "C01",
-    "rep_id": "R04",
-    "products": [
-      "MFP15",
-      "AV365"
-    ],
-    "amount": 308400,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-05"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-15"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-25"
-      }
-    ],
-    "expected_close_date": "2026-06-21",
-    "close_date_history": [
-      "2026-06-21"
-    ],
-    "last_contact_date": "2026-06-13",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D044",
-    "customer_id": "C28",
-    "rep_id": "R07",
-    "products": [
-      "LP14",
-      "MFP30"
-    ],
-    "amount": 1632000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-25"
-      }
-    ],
-    "expected_close_date": "2026-08-11",
-    "close_date_history": [
-      "2026-08-11"
-    ],
-    "last_contact_date": "2026-06-11",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D045",
-    "customer_id": "C22",
-    "rep_id": "R04",
-    "products": [
-      "AV365",
-      "MFP15"
-    ],
-    "amount": 102800,
-    "stage": "closing",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-28"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-08"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-18"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-28"
-      },
-      {
-        "stage": "closing",
-        "entered_date": "2026-06-07"
-      }
-    ],
-    "expected_close_date": "2026-07-23",
-    "close_date_history": [
-      "2026-08-12",
-      "2026-07-23"
-    ],
-    "last_contact_date": "2026-05-31",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "won"
-  },
-  {
-    "deal_id": "D046",
     "customer_id": "C32",
-    "rep_id": "R08",
-    "products": [
-      "OFFICE",
-      "NSW24"
-    ],
-    "amount": 203400,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-16"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-26"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-06-05"
-      }
-    ],
-    "expected_close_date": "2026-06-25",
-    "close_date_history": [
-      "2026-06-25"
-    ],
-    "last_contact_date": "2026-06-02",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "open"
+    "deal_id": "D004",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "石川産業 モバイル端末案件",
+    "expected_order_date": "2026-05-20",
+    "days_until_order": -27,
+    "registered_at": "2026-03-18",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 672000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 147840,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 672000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 147840,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 5,
+    "rank_first_registered_at": "2026-03-23",
+    "rank_updated_at": "2026-04-05",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
   },
   {
-    "deal_id": "D047",
-    "customer_id": "C05",
-    "rep_id": "R02",
-    "products": [
-      "SRV20",
-      "NSW24"
-    ],
-    "amount": 574000,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-09"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-19"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-04-29"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-05-09"
-      }
-    ],
-    "expected_close_date": "2026-07-03",
-    "close_date_history": [
-      "2026-07-03"
-    ],
-    "last_contact_date": "2026-05-27",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "lost"
+    "customer_id": "C31",
+    "deal_id": "D005",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "有限会社富士産業 モバイル端末案件",
+    "expected_order_date": "2026-07-19",
+    "days_until_order": 33,
+    "registered_at": "2026-04-24",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 504000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 110880,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 504000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 110880,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 504000,
+    "total_revenue": 504000,
+    "total_order_gross_profit": 110880,
+    "total_revenue_gross_profit": 110880,
+    "order_flag": true,
+    "comment_count": 0,
+    "rank_first_registered_at": "2026-04-29",
+    "rank_updated_at": "2026-05-19",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 33
   },
   {
-    "deal_id": "D048",
-    "customer_id": "C16",
-    "rep_id": "R08",
-    "products": [
-      "NSW24",
-      "AV365"
-    ],
-    "amount": 121600,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-02"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-12"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-22"
-      }
-    ],
-    "expected_close_date": "2026-07-15",
-    "close_date_history": [
-      "2026-07-15"
-    ],
-    "last_contact_date": "2026-06-07",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "low",
-    "status": "won"
+    "customer_id": "C14",
+    "deal_id": "D006",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "石川物産 モバイル端末案件",
+    "expected_order_date": "2026-08-13",
+    "days_until_order": 58,
+    "registered_at": "2026-05-11",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 504000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 110880,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 504000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 110880,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 504000,
+    "total_revenue": 504000,
+    "total_order_gross_profit": 110880,
+    "total_revenue_gross_profit": 110880,
+    "order_flag": true,
+    "comment_count": 11,
+    "rank_first_registered_at": "2026-05-16",
+    "rank_updated_at": "2026-05-21",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 58
   },
   {
-    "deal_id": "D049",
+    "customer_id": "C02",
+    "deal_id": "D007",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "石川製作所 スイッチ案件",
+    "expected_order_date": "2026-07-16",
+    "days_until_order": 30,
+    "registered_at": "2026-04-21",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 259200,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 64800,
+    "hw_order_gross_profit": 57024,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 22680,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 324000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 79704,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 3,
+    "rank_first_registered_at": "2026-04-26",
+    "rank_updated_at": "2026-05-21",
+    "order_rank": "7_Lost",
+    "initial_order_rank": "7_Lost",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C01",
+    "deal_id": "D008",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "大和商事 セキュリティ案件",
+    "expected_order_date": "2026-07-10",
+    "days_until_order": 24,
+    "registered_at": "2026-04-16",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 27200,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 16320,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 27200,
+    "total_revenue": 0,
+    "total_order_gross_profit": 16320,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 4,
+    "rank_first_registered_at": "2026-04-21",
+    "rank_updated_at": "2026-05-16",
+    "order_rank": "3_A",
+    "initial_order_rank": "3_A",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C01",
+    "deal_id": "D009",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "大和商事 複合機案件",
+    "expected_order_date": "2026-07-21",
+    "days_until_order": 35,
+    "registered_at": "2026-04-19",
+    "product_category": "OA機器",
+    "hw_order_revenue": 480000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 105600,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 480000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 105600,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 480000,
+    "total_revenue": 480000,
+    "total_order_gross_profit": 105600,
+    "total_revenue_gross_profit": 105600,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-04-24",
+    "rank_updated_at": "2026-05-14",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 35
+  },
+  {
+    "customer_id": "C23",
+    "deal_id": "D010",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "あおぞらサービス モバイル端末案件",
+    "expected_order_date": "2026-07-14",
+    "days_until_order": 28,
+    "registered_at": "2026-05-07",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 504000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 110880,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 504000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 110880,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 11,
+    "rank_first_registered_at": "2026-05-12",
+    "rank_updated_at": "2026-05-25",
+    "order_rank": "4_B",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
     "customer_id": "C22",
-    "rep_id": "R02",
-    "products": [
-      "LP14"
-    ],
-    "amount": 504000,
-    "stage": "negotiation",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-07"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-17"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-27"
-      },
-      {
-        "stage": "negotiation",
-        "entered_date": "2026-06-06"
-      }
-    ],
-    "expected_close_date": "2026-08-05",
-    "close_date_history": [
-      "2026-08-05"
-    ],
-    "last_contact_date": "2026-05-28",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "deal_id": "D011",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R03"
+    },
+    "deal_name": "宝工業 複合機案件",
+    "expected_order_date": "2026-06-29",
+    "days_until_order": 13,
+    "registered_at": "2026-04-15",
+    "product_category": "OA機器",
+    "hw_order_revenue": 720000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 158400,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 720000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 158400,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 10,
+    "rank_first_registered_at": "2026-04-20",
+    "rank_updated_at": "2026-05-15",
+    "order_rank": "7_Lost",
+    "initial_order_rank": "7_Lost",
+    "days_back_from_confirmed": null
   },
   {
-    "deal_id": "D050",
-    "customer_id": "C12",
-    "rep_id": "R04",
-    "products": [
-      "AV365",
-      "SRV20"
-    ],
-    "amount": 1053600,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-27"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-06-06"
-      }
-    ],
-    "expected_close_date": "2026-06-25",
-    "close_date_history": [
-      "2026-07-15",
-      "2026-06-25"
-    ],
-    "last_contact_date": "2026-06-12",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "low",
-    "status": "open"
-  },
-  {
-    "deal_id": "D051",
-    "customer_id": "C19",
-    "rep_id": "R08",
-    "products": [
-      "NSW24"
-    ],
-    "amount": 108000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-25"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-05"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-15"
-      }
-    ],
-    "expected_close_date": "2026-07-14",
-    "close_date_history": [
-      "2026-07-14"
-    ],
-    "last_contact_date": "2026-06-10",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
-  },
-  {
-    "deal_id": "D052",
-    "customer_id": "C09",
-    "rep_id": "R05",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 55200,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-20"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-04-30"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-10"
-      }
-    ],
-    "expected_close_date": "2026-08-05",
-    "close_date_history": [
-      "2026-08-05"
-    ],
-    "last_contact_date": "2026-06-13",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D053",
-    "customer_id": "C06",
-    "rep_id": "R04",
-    "products": [
-      "LP14",
-      "MFP30"
-    ],
-    "amount": 1632000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-20"
-      }
-    ],
-    "expected_close_date": "2026-07-14",
-    "close_date_history": [
-      "2026-08-03",
-      "2026-07-14"
-    ],
-    "last_contact_date": "2026-05-31",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "med",
-    "status": "open"
-  },
-  {
-    "deal_id": "D054",
     "customer_id": "C29",
-    "rep_id": "R01",
-    "products": [
-      "MFP30"
-    ],
-    "amount": 720000,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-26"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-06-05"
-      }
-    ],
-    "expected_close_date": "2026-08-06",
-    "close_date_history": [
-      "2026-08-06"
-    ],
-    "last_contact_date": "2026-05-30",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
+    "deal_id": "D012",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "有限会社光印刷 モバイル端末案件",
+    "expected_order_date": "2026-06-28",
+    "days_until_order": 12,
+    "registered_at": "2026-04-22",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 840000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 184800,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 840000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 184800,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 3,
+    "rank_first_registered_at": "2026-04-27",
+    "rank_updated_at": "2026-05-26",
+    "order_rank": "7_Lost",
+    "initial_order_rank": "7_Lost",
+    "days_back_from_confirmed": null
   },
   {
-    "deal_id": "D055",
-    "customer_id": "C08",
-    "rep_id": "R08",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 27600,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-17"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-27"
-      }
-    ],
-    "expected_close_date": "2026-06-21",
-    "close_date_history": [
-      "2026-06-21"
-    ],
-    "last_contact_date": "2026-06-03",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "customer_id": "C28",
+    "deal_id": "D013",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "有限会社松田サービス スイッチ案件",
+    "expected_order_date": "2026-06-28",
+    "days_until_order": 12,
+    "registered_at": "2026-05-03",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 86400,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 21600,
+    "hw_order_gross_profit": 19008,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 7559,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 108000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 26567,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 9,
+    "rank_first_registered_at": "2026-05-08",
+    "rank_updated_at": "2026-06-05",
+    "order_rank": "6_P",
+    "initial_order_rank": "6_P",
+    "days_back_from_confirmed": null
   },
   {
-    "deal_id": "D056",
+    "customer_id": "C15",
+    "deal_id": "D014",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "株式会社みどり運輸 セキュリティ案件",
+    "expected_order_date": "2026-07-13",
+    "days_until_order": 27,
+    "registered_at": "2026-04-21",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 40800,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 24480,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 40800,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 24480,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 40800,
+    "total_revenue": 40800,
+    "total_order_gross_profit": 24480,
+    "total_revenue_gross_profit": 24480,
+    "order_flag": true,
+    "comment_count": 2,
+    "rank_first_registered_at": "2026-04-26",
+    "rank_updated_at": "2026-05-09",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 27
+  },
+  {
+    "customer_id": "C04",
+    "deal_id": "D015",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "有限会社ひかり物産 スイッチ案件",
+    "expected_order_date": "2026-06-27",
+    "days_until_order": 11,
+    "registered_at": "2026-04-28",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 129600,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 32400,
+    "hw_order_gross_profit": 28512,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 11340,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 162000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 39852,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-05-03",
+    "rank_updated_at": "2026-05-17",
+    "order_rank": "6_P",
+    "initial_order_rank": "6_P",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C31",
+    "deal_id": "D016",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "有限会社富士産業 複合機案件",
+    "expected_order_date": "2026-07-08",
+    "days_until_order": 22,
+    "registered_at": "2026-04-02",
+    "product_category": "OA機器",
+    "hw_order_revenue": 384000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 84480,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 384000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 84480,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-04-07",
+    "rank_updated_at": "2026-05-07",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
     "customer_id": "C25",
-    "rep_id": "R06",
-    "products": [
-      "OFFICE",
-      "MFP30"
-    ],
-    "amount": 761400,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-23"
-      }
-    ],
-    "expected_close_date": "2026-08-06",
-    "close_date_history": [
-      "2026-08-06"
-    ],
-    "last_contact_date": "2026-06-09",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
+    "deal_id": "D017",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "有限会社山田電機 セキュリティ案件",
+    "expected_order_date": "2026-07-10",
+    "days_until_order": 24,
+    "registered_at": "2026-04-25",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 27200,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 16320,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 27200,
+    "total_revenue": 0,
+    "total_order_gross_profit": 16320,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 9,
+    "rank_first_registered_at": "2026-04-30",
+    "rank_updated_at": "2026-05-21",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
   },
   {
-    "deal_id": "D057",
-    "customer_id": "C30",
-    "rep_id": "R01",
-    "products": [
-      "MFP15",
-      "MFP30"
-    ],
-    "amount": 672000,
-    "stage": "lead",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-25"
-      }
-    ],
-    "expected_close_date": "2026-07-23",
-    "close_date_history": [
-      "2026-07-23"
-    ],
-    "last_contact_date": "2026-06-07",
-    "decision_maker_identified": false,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "customer_id": "C25",
+    "deal_id": "D018",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "有限会社山田電機 業務ソフト案件",
+    "expected_order_date": "2026-06-25",
+    "days_until_order": 9,
+    "registered_at": "2026-04-13",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 82800,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 49680,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 82800,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 49680,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 82800,
+    "total_revenue": 82800,
+    "total_order_gross_profit": 49680,
+    "total_revenue_gross_profit": 49680,
+    "order_flag": true,
+    "comment_count": 4,
+    "rank_first_registered_at": "2026-04-18",
+    "rank_updated_at": "2026-05-14",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 9
   },
   {
-    "deal_id": "D058",
+    "customer_id": "C28",
+    "deal_id": "D019",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R03"
+    },
+    "deal_name": "有限会社松田サービス 複合機案件",
+    "expected_order_date": "2026-07-13",
+    "days_until_order": 27,
+    "registered_at": "2026-05-05",
+    "product_category": "OA機器",
+    "hw_order_revenue": 480000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 105600,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 480000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 105600,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 10,
+    "rank_first_registered_at": "2026-05-10",
+    "rank_updated_at": "2026-06-03",
+    "order_rank": "4_B",
+    "initial_order_rank": "4_B",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C23",
+    "deal_id": "D020",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "あおぞらサービス 業務ソフト案件",
+    "expected_order_date": "2026-07-16",
+    "days_until_order": 30,
+    "registered_at": "2026-05-03",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 55200,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 33120,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 55200,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 33120,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 55200,
+    "total_revenue": 55200,
+    "total_order_gross_profit": 33120,
+    "total_revenue_gross_profit": 33120,
+    "order_flag": true,
+    "comment_count": 3,
+    "rank_first_registered_at": "2026-05-08",
+    "rank_updated_at": "2026-05-16",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 30
+  },
+  {
+    "customer_id": "C20",
+    "deal_id": "D021",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "山田電機 複合機案件",
+    "expected_order_date": "2026-08-13",
+    "days_until_order": 58,
+    "registered_at": "2026-04-28",
+    "product_category": "OA機器",
+    "hw_order_revenue": 1200000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 264000,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1200000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 264000,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 5,
+    "rank_first_registered_at": "2026-05-03",
+    "rank_updated_at": "2026-05-25",
+    "order_rank": "4_B",
+    "initial_order_rank": "3_A",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C24",
+    "deal_id": "D022",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "中央印刷 業務ソフト案件",
+    "expected_order_date": "2026-07-19",
+    "days_until_order": 33,
+    "registered_at": "2026-04-16",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 27600,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 16560,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 27600,
+    "total_revenue": 0,
+    "total_order_gross_profit": 16560,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 11,
+    "rank_first_registered_at": "2026-04-21",
+    "rank_updated_at": "2026-05-10",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C32",
+    "deal_id": "D023",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "石川産業 モバイル端末案件",
+    "expected_order_date": "2026-08-16",
+    "days_until_order": 61,
+    "registered_at": "2026-05-19",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 168000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 36960,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 168000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 36960,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 168000,
+    "total_revenue": 168000,
+    "total_order_gross_profit": 36960,
+    "total_revenue_gross_profit": 36960,
+    "order_flag": true,
+    "comment_count": 10,
+    "rank_first_registered_at": "2026-05-24",
+    "rank_updated_at": "2026-06-01",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 61
+  },
+  {
+    "customer_id": "C14",
+    "deal_id": "D024",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "石川物産 モバイル端末案件",
+    "expected_order_date": "2026-07-26",
+    "days_until_order": 40,
+    "registered_at": "2026-04-23",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 336000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 73920,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 336000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 73920,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 336000,
+    "total_revenue": 336000,
+    "total_order_gross_profit": 73920,
+    "total_revenue_gross_profit": 73920,
+    "order_flag": true,
+    "comment_count": 8,
+    "rank_first_registered_at": "2026-04-28",
+    "rank_updated_at": "2026-05-07",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 40
+  },
+  {
     "customer_id": "C29",
-    "rep_id": "R07",
-    "products": [
-      "MFP15",
-      "SRV20"
-    ],
-    "amount": 2464000,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-22"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-02"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-12"
-      }
-    ],
-    "expected_close_date": "2026-08-11",
-    "close_date_history": [
-      "2026-08-31",
-      "2026-08-11"
-    ],
-    "last_contact_date": "2026-06-08",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "deal_id": "D025",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "有限会社光印刷 スイッチ案件",
+    "expected_order_date": "2026-08-18",
+    "days_until_order": 63,
+    "registered_at": "2026-04-17",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 43200,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 10800,
+    "hw_order_gross_profit": 9504,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 3779,
+    "hw_actual_revenue": 43200,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 10800,
+    "hw_actual_gross_profit": 9504,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 3779,
+    "total_order_amount": 54000,
+    "total_revenue": 54000,
+    "total_order_gross_profit": 13283,
+    "total_revenue_gross_profit": 13283,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-04-22",
+    "rank_updated_at": "2026-05-12",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 63
   },
   {
-    "deal_id": "D059",
+    "customer_id": "C28",
+    "deal_id": "D026",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "有限会社松田サービス 複合機案件",
+    "expected_order_date": "2026-07-03",
+    "days_until_order": 17,
+    "registered_at": "2026-05-01",
+    "product_category": "OA機器",
+    "hw_order_revenue": 384000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 84480,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 384000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 84480,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 5,
+    "rank_first_registered_at": "2026-05-06",
+    "rank_updated_at": "2026-05-19",
+    "order_rank": "4_B",
+    "initial_order_rank": "4_B",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C23",
+    "deal_id": "D027",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "あおぞらサービス セキュリティ案件",
+    "expected_order_date": "2026-07-04",
+    "days_until_order": 18,
+    "registered_at": "2026-04-25",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 40800,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 24480,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 40800,
+    "total_revenue": 0,
+    "total_order_gross_profit": 24480,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-04-30",
+    "rank_updated_at": "2026-05-26",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C02",
+    "deal_id": "D028",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R03"
+    },
+    "deal_name": "石川製作所 モバイル端末案件",
+    "expected_order_date": "2026-06-21",
+    "days_until_order": 5,
+    "registered_at": "2026-04-23",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 1008000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 221760,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 1008000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 221760,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1008000,
+    "total_revenue": 1008000,
+    "total_order_gross_profit": 221760,
+    "total_revenue_gross_profit": 221760,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-04-28",
+    "rank_updated_at": "2026-05-24",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 5
+  },
+  {
+    "customer_id": "C06",
+    "deal_id": "D029",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "有限会社あおぞら物産 複合機案件",
+    "expected_order_date": "2026-07-01",
+    "days_until_order": 15,
+    "registered_at": "2026-05-17",
+    "product_category": "OA機器",
+    "hw_order_revenue": 192000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 42240,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 192000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 42240,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 192000,
+    "total_revenue": 192000,
+    "total_order_gross_profit": 42240,
+    "total_revenue_gross_profit": 42240,
+    "order_flag": true,
+    "comment_count": 9,
+    "rank_first_registered_at": "2026-05-22",
+    "rank_updated_at": "2026-06-11",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 15
+  },
+  {
+    "customer_id": "C17",
+    "deal_id": "D030",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "有限会社石川産業 モバイル端末案件",
+    "expected_order_date": "2026-08-08",
+    "days_until_order": 53,
+    "registered_at": "2026-05-07",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 168000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 36960,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 168000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 36960,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 10,
+    "rank_first_registered_at": "2026-05-12",
+    "rank_updated_at": "2026-06-03",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C28",
+    "deal_id": "D031",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "有限会社松田サービス 複合機案件",
+    "expected_order_date": "2026-08-03",
+    "days_until_order": 48,
+    "registered_at": "2026-05-08",
+    "product_category": "OA機器",
+    "hw_order_revenue": 384000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 84480,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 384000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 84480,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 8,
+    "rank_first_registered_at": "2026-05-13",
+    "rank_updated_at": "2026-05-20",
+    "order_rank": "6_P",
+    "initial_order_rank": "6_P",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C21",
+    "deal_id": "D032",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R03"
+    },
+    "deal_name": "株式会社あけぼのシステム ラックサーバー案件",
+    "expected_order_date": "2026-06-28",
+    "days_until_order": 12,
+    "registered_at": "2026-05-04",
+    "product_category": "サーバー",
+    "hw_order_revenue": 416000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 104000,
+    "hw_order_gross_profit": 91520,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 36400,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 520000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 127920,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-05-09",
+    "rank_updated_at": "2026-05-28",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C13",
+    "deal_id": "D033",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "村田サービス スイッチ案件",
+    "expected_order_date": "2026-08-03",
+    "days_until_order": 48,
+    "registered_at": "2026-04-17",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 172800,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 43200,
+    "hw_order_gross_profit": 38016,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 15119,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 216000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 53135,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 2,
+    "rank_first_registered_at": "2026-04-22",
+    "rank_updated_at": "2026-05-17",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C22",
+    "deal_id": "D034",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "宝工業 モバイル端末案件",
+    "expected_order_date": "2026-07-10",
+    "days_until_order": 24,
+    "registered_at": "2026-05-15",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 168000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 36960,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 168000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 36960,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 5,
+    "rank_first_registered_at": "2026-05-20",
+    "rank_updated_at": "2026-05-29",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C14",
+    "deal_id": "D035",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "石川物産 セキュリティ案件",
+    "expected_order_date": "2026-07-28",
+    "days_until_order": 42,
+    "registered_at": "2026-05-02",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 27200,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 16320,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 27200,
+    "total_revenue": 0,
+    "total_order_gross_profit": 16320,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 8,
+    "rank_first_registered_at": "2026-05-07",
+    "rank_updated_at": "2026-06-05",
+    "order_rank": "3_A",
+    "initial_order_rank": "3_A",
+    "days_back_from_confirmed": null
+  },
+  {
     "customer_id": "C29",
-    "rep_id": "R07",
-    "products": [
-      "OFFICE"
-    ],
-    "amount": 55200,
-    "stage": "proposal",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-04-27"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-07"
-      },
-      {
-        "stage": "proposal",
-        "entered_date": "2026-05-17"
-      }
-    ],
-    "expected_close_date": "2026-08-06",
-    "close_date_history": [
-      "2026-08-06"
-    ],
-    "last_contact_date": "2026-06-15",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "high",
-    "status": "open"
+    "deal_id": "D036",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "有限会社光印刷 セキュリティ案件",
+    "expected_order_date": "2026-08-13",
+    "days_until_order": 58,
+    "registered_at": "2026-04-08",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 20400,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 12240,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 20400,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 12240,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 20400,
+    "total_revenue": 20400,
+    "total_order_gross_profit": 12240,
+    "total_revenue_gross_profit": 12240,
+    "order_flag": true,
+    "comment_count": 9,
+    "rank_first_registered_at": "2026-04-13",
+    "rank_updated_at": "2026-05-13",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 58
   },
   {
-    "deal_id": "D060",
     "customer_id": "C10",
-    "rep_id": "R08",
-    "products": [
-      "MFP15"
-    ],
-    "amount": 96000,
-    "stage": "qualified",
-    "stage_history": [
-      {
-        "stage": "lead",
-        "entered_date": "2026-05-12"
-      },
-      {
-        "stage": "qualified",
-        "entered_date": "2026-05-22"
-      }
-    ],
-    "expected_close_date": "2026-07-15",
-    "close_date_history": [
-      "2026-07-15"
-    ],
-    "last_contact_date": "2026-06-05",
-    "decision_maker_identified": true,
-    "rep_close_likelihood": "med",
-    "status": "open"
+    "deal_id": "D037",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "有限会社誠和クリニック 複合機案件",
+    "expected_order_date": "2026-08-13",
+    "days_until_order": 58,
+    "registered_at": "2026-05-06",
+    "product_category": "OA機器",
+    "hw_order_revenue": 480000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 105600,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 480000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 105600,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 480000,
+    "total_revenue": 480000,
+    "total_order_gross_profit": 105600,
+    "total_revenue_gross_profit": 105600,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-05-11",
+    "rank_updated_at": "2026-05-23",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 58
+  },
+  {
+    "customer_id": "C01",
+    "deal_id": "D038",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "大和商事 複合機案件",
+    "expected_order_date": "2026-07-27",
+    "days_until_order": 41,
+    "registered_at": "2026-05-21",
+    "product_category": "OA機器",
+    "hw_order_revenue": 720000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 158400,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 720000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 158400,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-05-26",
+    "rank_updated_at": "2026-06-07",
+    "order_rank": "3_A",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C03",
+    "deal_id": "D039",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "株式会社小林電機 モバイル端末案件",
+    "expected_order_date": "2026-06-29",
+    "days_until_order": 13,
+    "registered_at": "2026-04-23",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 504000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 110880,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 504000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 110880,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 504000,
+    "total_revenue": 504000,
+    "total_order_gross_profit": 110880,
+    "total_revenue_gross_profit": 110880,
+    "order_flag": true,
+    "comment_count": 1,
+    "rank_first_registered_at": "2026-04-28",
+    "rank_updated_at": "2026-05-23",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 13
+  },
+  {
+    "customer_id": "C03",
+    "deal_id": "D040",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "株式会社小林電機 モバイル端末案件",
+    "expected_order_date": "2026-08-02",
+    "days_until_order": 47,
+    "registered_at": "2026-05-19",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 504000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 110880,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 504000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 110880,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 504000,
+    "total_revenue": 504000,
+    "total_order_gross_profit": 110880,
+    "total_revenue_gross_profit": 110880,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-05-24",
+    "rank_updated_at": "2026-06-11",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 47
+  },
+  {
+    "customer_id": "C29",
+    "deal_id": "D041",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "有限会社光印刷 業務ソフト案件",
+    "expected_order_date": "2026-08-11",
+    "days_until_order": 56,
+    "registered_at": "2026-05-11",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 41400,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 24840,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 41400,
+    "total_revenue": 0,
+    "total_order_gross_profit": 24840,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 2,
+    "rank_first_registered_at": "2026-05-16",
+    "rank_updated_at": "2026-06-11",
+    "order_rank": "6_P",
+    "initial_order_rank": "6_P",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C10",
+    "deal_id": "D042",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "有限会社誠和クリニック モバイル端末案件",
+    "expected_order_date": "2026-08-10",
+    "days_until_order": 55,
+    "registered_at": "2026-04-29",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 504000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 110880,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 504000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 110880,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 0,
+    "rank_first_registered_at": "2026-05-04",
+    "rank_updated_at": "2026-05-12",
+    "order_rank": "5_C",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C12",
+    "deal_id": "D043",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "株式会社松田建設 スイッチ案件",
+    "expected_order_date": "2026-08-23",
+    "days_until_order": 68,
+    "registered_at": "2026-05-09",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 86400,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 21600,
+    "hw_order_gross_profit": 19008,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 7559,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 108000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 26567,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-05-14",
+    "rank_updated_at": "2026-05-30",
+    "order_rank": "3_A",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C10",
+    "deal_id": "D044",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "有限会社誠和クリニック 複合機案件",
+    "expected_order_date": "2026-07-27",
+    "days_until_order": 41,
+    "registered_at": "2026-04-23",
+    "product_category": "OA機器",
+    "hw_order_revenue": 192000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 42240,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 192000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 42240,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 8,
+    "rank_first_registered_at": "2026-04-28",
+    "rank_updated_at": "2026-05-23",
+    "order_rank": "4_B",
+    "initial_order_rank": "4_B",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C27",
+    "deal_id": "D045",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "富士物産 ラックサーバー案件",
+    "expected_order_date": "2026-07-22",
+    "days_until_order": 36,
+    "registered_at": "2026-05-07",
+    "product_category": "サーバー",
+    "hw_order_revenue": 2496000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 624000,
+    "hw_order_gross_profit": 549120,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 218400,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 3120000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 767520,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-05-12",
+    "rank_updated_at": "2026-05-26",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C24",
+    "deal_id": "D046",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "中央印刷 モバイル端末案件",
+    "expected_order_date": "2026-06-27",
+    "days_until_order": 11,
+    "registered_at": "2026-05-07",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 336000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 73920,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 336000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 73920,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-05-12",
+    "rank_updated_at": "2026-06-05",
+    "order_rank": "5_C",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C06",
+    "deal_id": "D047",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "有限会社あおぞら物産 スイッチ案件",
+    "expected_order_date": "2026-08-05",
+    "days_until_order": 50,
+    "registered_at": "2026-05-03",
+    "product_category": "ネットワーク機器",
+    "hw_order_revenue": 172800,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 43200,
+    "hw_order_gross_profit": 38016,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 15119,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 216000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 53135,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 10,
+    "rank_first_registered_at": "2026-05-08",
+    "rank_updated_at": "2026-06-01",
+    "order_rank": "7_Lost",
+    "initial_order_rank": "7_Lost",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C09",
+    "deal_id": "D048",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R02"
+    },
+    "deal_name": "有限会社新栄クリニック ラックサーバー案件",
+    "expected_order_date": "2026-08-06",
+    "days_until_order": 51,
+    "registered_at": "2026-04-28",
+    "product_category": "サーバー",
+    "hw_order_revenue": 1248000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 312000,
+    "hw_order_gross_profit": 274560,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 109200,
+    "hw_actual_revenue": 1248000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 312000,
+    "hw_actual_gross_profit": 274560,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 109200,
+    "total_order_amount": 1560000,
+    "total_revenue": 1560000,
+    "total_order_gross_profit": 383760,
+    "total_revenue_gross_profit": 383760,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-05-03",
+    "rank_updated_at": "2026-05-24",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 51
+  },
+  {
+    "customer_id": "C27",
+    "deal_id": "D049",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "富士物産 セキュリティ案件",
+    "expected_order_date": "2026-08-20",
+    "days_until_order": 65,
+    "registered_at": "2026-05-10",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 40800,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 24480,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 40800,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 24480,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 40800,
+    "total_revenue": 40800,
+    "total_order_gross_profit": 24480,
+    "total_revenue_gross_profit": 24480,
+    "order_flag": true,
+    "comment_count": 9,
+    "rank_first_registered_at": "2026-05-15",
+    "rank_updated_at": "2026-06-13",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 65
+  },
+  {
+    "customer_id": "C14",
+    "deal_id": "D050",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "石川物産 業務ソフト案件",
+    "expected_order_date": "2026-08-03",
+    "days_until_order": 48,
+    "registered_at": "2026-05-01",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 55200,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 33120,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 55200,
+    "total_revenue": 0,
+    "total_order_gross_profit": 33120,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 10,
+    "rank_first_registered_at": "2026-05-06",
+    "rank_updated_at": "2026-06-03",
+    "order_rank": "5_C",
+    "initial_order_rank": "5_C",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C19",
+    "deal_id": "D051",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "株式会社小林製作所 モバイル端末案件",
+    "expected_order_date": "2026-08-21",
+    "days_until_order": 66,
+    "registered_at": "2026-05-11",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 1008000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 221760,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1008000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 221760,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 8,
+    "rank_first_registered_at": "2026-05-16",
+    "rank_updated_at": "2026-05-29",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C19",
+    "deal_id": "D052",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "株式会社小林製作所 モバイル端末案件",
+    "expected_order_date": "2026-06-25",
+    "days_until_order": 9,
+    "registered_at": "2026-04-24",
+    "product_category": "PC周辺機器",
+    "hw_order_revenue": 1008000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 221760,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1008000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 221760,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 0,
+    "rank_first_registered_at": "2026-04-29",
+    "rank_updated_at": "2026-05-09",
+    "order_rank": "2_A+",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C12",
+    "deal_id": "D053",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "株式会社松田建設 業務ソフト案件",
+    "expected_order_date": "2026-07-15",
+    "days_until_order": 29,
+    "registered_at": "2026-04-17",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 41400,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 24840,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 41400,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 24840,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 41400,
+    "total_revenue": 41400,
+    "total_order_gross_profit": 24840,
+    "total_revenue_gross_profit": 24840,
+    "order_flag": true,
+    "comment_count": 6,
+    "rank_first_registered_at": "2026-04-22",
+    "rank_updated_at": "2026-05-09",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 29
+  },
+  {
+    "customer_id": "C26",
+    "deal_id": "D054",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R05"
+    },
+    "deal_name": "三幸商事 業務ソフト案件",
+    "expected_order_date": "2026-07-19",
+    "days_until_order": 33,
+    "registered_at": "2026-05-08",
+    "product_category": "ソフトウェア",
+    "hw_order_revenue": 0,
+    "sw_order_revenue": 13800,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 0,
+    "sw_order_gross_profit": 8280,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 13800,
+    "total_revenue": 0,
+    "total_order_gross_profit": 8280,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-05-13",
+    "rank_updated_at": "2026-05-22",
+    "order_rank": "6_P",
+    "initial_order_rank": "6_P",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C14",
+    "deal_id": "D055",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R08"
+    },
+    "deal_name": "石川物産 複合機案件",
+    "expected_order_date": "2026-08-18",
+    "days_until_order": 63,
+    "registered_at": "2026-04-12",
+    "product_category": "OA機器",
+    "hw_order_revenue": 1200000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 264000,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1200000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 264000,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 12,
+    "rank_first_registered_at": "2026-04-17",
+    "rank_updated_at": "2026-05-13",
+    "order_rank": "5_C",
+    "initial_order_rank": "2_A+",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C27",
+    "deal_id": "D056",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R06"
+    },
+    "deal_name": "富士物産 ラックサーバー案件",
+    "expected_order_date": "2026-07-01",
+    "days_until_order": 15,
+    "registered_at": "2026-04-24",
+    "product_category": "サーバー",
+    "hw_order_revenue": 1664000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 416000,
+    "hw_order_gross_profit": 366080,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 145600,
+    "hw_actual_revenue": 1664000,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 416000,
+    "hw_actual_gross_profit": 366080,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 145600,
+    "total_order_amount": 2080000,
+    "total_revenue": 2080000,
+    "total_order_gross_profit": 511680,
+    "total_revenue_gross_profit": 511680,
+    "order_flag": true,
+    "comment_count": 2,
+    "rank_first_registered_at": "2026-04-29",
+    "rank_updated_at": "2026-05-21",
+    "order_rank": "1_Confirmed",
+    "initial_order_rank": "1_Confirmed",
+    "days_back_from_confirmed": 15
+  },
+  {
+    "customer_id": "C07",
+    "deal_id": "D057",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R01"
+    },
+    "deal_name": "サンライズ産業 ラックサーバー案件",
+    "expected_order_date": "2026-06-26",
+    "days_until_order": 10,
+    "registered_at": "2026-05-14",
+    "product_category": "サーバー",
+    "hw_order_revenue": 2080000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 520000,
+    "hw_order_gross_profit": 457600,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 182000,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 2600000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 639600,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 12,
+    "rank_first_registered_at": "2026-05-19",
+    "rank_updated_at": "2026-05-30",
+    "order_rank": "6_P",
+    "initial_order_rank": "6_P",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C34",
+    "deal_id": "D058",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R04"
+    },
+    "deal_name": "株式会社北斗物産 ラックサーバー案件",
+    "expected_order_date": "2026-07-13",
+    "days_until_order": 27,
+    "registered_at": "2026-04-13",
+    "product_category": "サーバー",
+    "hw_order_revenue": 1248000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 312000,
+    "hw_order_gross_profit": 274560,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 109200,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1560000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 383760,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 0,
+    "rank_first_registered_at": "2026-04-18",
+    "rank_updated_at": "2026-05-08",
+    "order_rank": "4_B",
+    "initial_order_rank": "4_B",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C27",
+    "deal_id": "D059",
+    "sales_info": {
+      "department": "第二営業部",
+      "division": "法人1課",
+      "employee_id": "R03"
+    },
+    "deal_name": "富士物産 ラックサーバー案件",
+    "expected_order_date": "2026-08-07",
+    "days_until_order": 52,
+    "registered_at": "2026-05-24",
+    "product_category": "サーバー",
+    "hw_order_revenue": 832000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 208000,
+    "hw_order_gross_profit": 183040,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 72800,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 1040000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 255840,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 0,
+    "rank_first_registered_at": "2026-05-29",
+    "rank_updated_at": "2026-06-09",
+    "order_rank": "4_B",
+    "initial_order_rank": "4_B",
+    "days_back_from_confirmed": null
+  },
+  {
+    "customer_id": "C14",
+    "deal_id": "D060",
+    "sales_info": {
+      "department": "第一営業部",
+      "division": "法人2課",
+      "employee_id": "R07"
+    },
+    "deal_name": "石川物産 複合機案件",
+    "expected_order_date": "2026-08-05",
+    "days_until_order": 50,
+    "registered_at": "2026-04-16",
+    "product_category": "OA機器",
+    "hw_order_revenue": 480000,
+    "sw_order_revenue": 0,
+    "paid_order_revenue": 0,
+    "hw_order_gross_profit": 105600,
+    "sw_order_gross_profit": 0,
+    "paid_order_gross_profit": 0,
+    "hw_actual_revenue": 0,
+    "sw_actual_revenue": 0,
+    "paid_actual_revenue": 0,
+    "hw_actual_gross_profit": 0,
+    "sw_actual_gross_profit": 0,
+    "paid_actual_gross_profit": 0,
+    "total_order_amount": 480000,
+    "total_revenue": 0,
+    "total_order_gross_profit": 105600,
+    "total_revenue_gross_profit": 0,
+    "order_flag": true,
+    "comment_count": 7,
+    "rank_first_registered_at": "2026-04-21",
+    "rank_updated_at": "2026-05-11",
+    "order_rank": "4_B",
+    "initial_order_rank": "3_A",
+    "days_back_from_confirmed": null
   }
 ]

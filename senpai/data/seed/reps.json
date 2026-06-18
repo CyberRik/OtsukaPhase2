@@ -1,8 +1,10 @@
 [
   {
-    "rep_id": "R01",
+    "employee_id": "R01",
     "name": "田中健太",
     "role": "senior",
+    "department": "第一営業部",
+    "division": "法人2課",
     "specialty_tags": [
       "複合機",
       "提案",
@@ -11,9 +13,11 @@
     "is_top_performer": true
   },
   {
-    "rep_id": "R02",
+    "employee_id": "R02",
     "name": "佐藤美咲",
     "role": "expert",
+    "department": "第一営業部",
+    "division": "法人2課",
     "specialty_tags": [
       "ネットワーク",
       "セキュリティ"
@@ -21,9 +25,11 @@
     "is_top_performer": true
   },
   {
-    "rep_id": "R03",
+    "employee_id": "R03",
     "name": "鈴木大輔",
     "role": "expert",
+    "department": "第二営業部",
+    "division": "法人1課",
     "specialty_tags": [
       "サーバー",
       "クラウド"
@@ -31,9 +37,11 @@
     "is_top_performer": false
   },
   {
-    "rep_id": "R04",
+    "employee_id": "R04",
     "name": "高橋由美",
     "role": "senior",
+    "department": "第二営業部",
+    "division": "法人1課",
     "specialty_tags": [
       "ソフトウェア",
       "保守"
@@ -41,36 +49,44 @@
     "is_top_performer": true
   },
   {
-    "rep_id": "R05",
+    "employee_id": "R05",
     "name": "伊藤翔",
     "role": "junior",
+    "department": "第一営業部",
+    "division": "法人2課",
     "specialty_tags": [
       "複合機"
     ],
     "is_top_performer": false
   },
   {
-    "rep_id": "R06",
+    "employee_id": "R06",
     "name": "渡辺さくら",
     "role": "junior",
+    "department": "第二営業部",
+    "division": "法人1課",
     "specialty_tags": [
       "ソフトウェア"
     ],
     "is_top_performer": false
   },
   {
-    "rep_id": "R07",
+    "employee_id": "R07",
     "name": "山本健一",
     "role": "junior",
+    "department": "第一営業部",
+    "division": "法人2課",
     "specialty_tags": [
       "ネットワーク"
     ],
     "is_top_performer": false
   },
   {
-    "rep_id": "R08",
+    "employee_id": "R08",
     "name": "中村優子",
     "role": "senior",
+    "department": "第二営業部",
+    "division": "法人1課",
     "specialty_tags": [
       "クラウド",
       "提案"

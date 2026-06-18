@@ -6,8 +6,8 @@
       "クロージング"
     ],
     "text": "先延ばしには『次の一歩』を具体化する。次回訪問日とその場で決める事項を明確に提案する。",
-    "source_deal_id": "D002",
-    "author_rep_id": "R01"
+    "source_deal_id": "D038",
+    "author_rep_id": "R08"
   },
   {
     "entry_id": "PB02",
@@ -16,8 +16,8 @@
       "価格"
     ],
     "text": "予算が理由の停滞は、年度末(3月)の予算消化タイミングを狙って再提案するのが有効。",
-    "source_deal_id": "D032",
-    "author_rep_id": "R02"
+    "source_deal_id": "D019",
+    "author_rep_id": "R04"
   },
   {
     "entry_id": "PB03",
@@ -26,8 +26,8 @@
       "提案"
     ],
     "text": "決裁者が見えない案件は、現場担当に『最終決定はどなたと進めますか』と早めに確認する。",
-    "source_deal_id": "D025",
-    "author_rep_id": "R08"
+    "source_deal_id": "D013",
+    "author_rep_id": "R02"
   },
   {
     "entry_id": "PB04",
@@ -36,8 +36,8 @@
       "差別化"
     ],
     "text": "競合比較では保守体制と導入後のサポートを前面に。価格だけの勝負を避ける。",
-    "source_deal_id": "D008",
-    "author_rep_id": "R08"
+    "source_deal_id": "D015",
+    "author_rep_id": "R03"
   },
   {
     "entry_id": "PB05",
@@ -46,8 +46,8 @@
       "提案"
     ],
     "text": "複合機はランニングコスト(トナー・保守)込みの総額で比較表を作ると刺さる。",
-    "source_deal_id": "D050",
-    "author_rep_id": "R03"
+    "source_deal_id": "D037",
+    "author_rep_id": "R04"
   },
   {
     "entry_id": "PB06",
@@ -56,8 +56,8 @@
       "導入"
     ],
     "text": "ネットワーク更改は現地調査を先に。既存配線とVLAN要件を押さえてから提案する。",
-    "source_deal_id": "D046",
-    "author_rep_id": "R03"
+    "source_deal_id": "D032",
+    "author_rep_id": "R02"
   },
   {
     "entry_id": "PB07",
@@ -66,8 +66,8 @@
       "提案"
     ],
     "text": "セキュリティは『万一の事故コスト』を数字で示すと決裁が通りやすい。",
-    "source_deal_id": "D014",
-    "author_rep_id": "R04"
+    "source_deal_id": "D042",
+    "author_rep_id": "R08"
   },
   {
     "entry_id": "PB08",
@@ -76,8 +76,8 @@
       "導入"
     ],
     "text": "サーバー導入は設置環境(ラック・空調・電源)の確認を提案前に済ませる。",
-    "source_deal_id": "D019",
-    "author_rep_id": "R08"
+    "source_deal_id": "D017",
+    "author_rep_id": "R03"
   },
   {
     "entry_id": "PB09",
@@ -86,7 +86,7 @@
       "移行"
     ],
     "text": "クラウド移行は段階移行案を用意し、初期の不安を下げる。",
-    "source_deal_id": "D013",
+    "source_deal_id": "D047",
     "author_rep_id": "R04"
   },
   {
@@ -96,8 +96,8 @@
       "アプローチ"
     ],
     "text": "Web情報の乏しいSMBは、近隣の同業導入事例を切り口にすると話が早い。",
-    "source_deal_id": "D009",
-    "author_rep_id": "R01"
+    "source_deal_id": "D030",
+    "author_rep_id": "R04"
   },
   {
     "entry_id": "PB11",
@@ -106,8 +106,8 @@
       "更新"
     ],
     "text": "保守更新は満了3ヶ月前に接触。切替の手間より継続の安心を訴求。",
-    "source_deal_id": "D029",
-    "author_rep_id": "R01"
+    "source_deal_id": "D047",
+    "author_rep_id": "R02"
   },
   {
     "entry_id": "PB12",
@@ -116,8 +116,8 @@
       "交渉"
     ],
     "text": "値引き要求には台数増やオプション追加とセットで条件を返す。",
-    "source_deal_id": "D058",
-    "author_rep_id": "R02"
+    "source_deal_id": "D011",
+    "author_rep_id": "R03"
   },
   {
     "entry_id": "PB13",
@@ -126,8 +126,8 @@
       "フォロー"
     ],
     "text": "納品後2週間以内にフォロー訪問を入れると追加案件につながりやすい。",
-    "source_deal_id": "D006",
-    "author_rep_id": "R04"
+    "source_deal_id": "D047",
+    "author_rep_id": "R02"
   },
   {
     "entry_id": "PB14",
@@ -136,8 +136,8 @@
       "稟議"
     ],
     "text": "稟議が止まる時は、決裁者向けの1枚要約(費用対効果)を担当者に渡す。",
-    "source_deal_id": "D043",
-    "author_rep_id": "R03"
+    "source_deal_id": "D032",
+    "author_rep_id": "R08"
   },
   {
     "entry_id": "PB15",
@@ -146,8 +146,8 @@
       "提案"
     ],
     "text": "飲食業はピーク時間を避けて訪問。短時間で要点を伝える資料を用意。",
-    "source_deal_id": "D046",
-    "author_rep_id": "R03"
+    "source_deal_id": "D059",
+    "author_rep_id": "R02"
   },
   {
     "entry_id": "PB16",
@@ -156,8 +156,8 @@
       "提案"
     ],
     "text": "医療機関は個人情報保護の観点を最優先に説明すると信頼を得やすい。",
-    "source_deal_id": "D036",
-    "author_rep_id": "R01"
+    "source_deal_id": "D042",
+    "author_rep_id": "R08"
   },
   {
     "entry_id": "PB17",
@@ -166,8 +166,8 @@
       "提案"
     ],
     "text": "建設業は現場とのネットワーク・モバイル環境の課題から入ると刺さる。",
-    "source_deal_id": "D019",
-    "author_rep_id": "R08"
+    "source_deal_id": "D034",
+    "author_rep_id": "R01"
   },
   {
     "entry_id": "PB18",
@@ -176,8 +176,8 @@
       "提案"
     ],
     "text": "小売はPOS連携と複数店舗の一括管理を切り口にする。",
-    "source_deal_id": "D055",
-    "author_rep_id": "R03"
+    "source_deal_id": "D054",
+    "author_rep_id": "R01"
   },
   {
     "entry_id": "PB19",
@@ -186,8 +186,8 @@
       "拡大"
     ],
     "text": "満足度の高い顧客には同業他社の紹介を依頼。紹介は決裁が早い。",
-    "source_deal_id": "D046",
-    "author_rep_id": "R02"
+    "source_deal_id": "D053",
+    "author_rep_id": "R01"
   },
   {
     "entry_id": "PB20",
@@ -196,8 +196,8 @@
       "再アプローチ"
     ],
     "text": "失注案件も半年後に状況が変わることが多い。定期的に軽く接触を続ける。",
-    "source_deal_id": "D051",
-    "author_rep_id": "R02"
+    "source_deal_id": "D049",
+    "author_rep_id": "R01"
   },
   {
     "entry_id": "PB21",
@@ -206,8 +206,8 @@
       "準備"
     ],
     "text": "初回は売り込まない。課題ヒアリングに徹し、次回の宿題をもらう。",
-    "source_deal_id": "D033",
-    "author_rep_id": "R03"
+    "source_deal_id": "D027",
+    "author_rep_id": "R01"
   },
   {
     "entry_id": "PB22",
@@ -216,7 +216,7 @@
       "クロージング"
     ],
     "text": "最終局面は上長同席を打診し、その場で意思決定を促す。",
-    "source_deal_id": "D008",
+    "source_deal_id": "D054",
     "author_rep_id": "R02"
   },
   {
@@ -226,7 +226,7 @@
       "提案"
     ],
     "text": "更新案件は現行機の不満点を起点に、改善を具体的に見せる。",
-    "source_deal_id": "D051",
+    "source_deal_id": "D005",
     "author_rep_id": "R02"
   },
   {
@@ -236,7 +236,7 @@
       "提案"
     ],
     "text": "コスト削減提案は年間総額の比較表を1枚にまとめる。",
-    "source_deal_id": "D016",
+    "source_deal_id": "D001",
     "author_rep_id": "R02"
   },
   {
@@ -246,7 +246,7 @@
       "対応"
     ],
     "text": "SMBは即レス・即対応そのものが差別化になる。",
-    "source_deal_id": "D002",
-    "author_rep_id": "R04"
+    "source_deal_id": "D033",
+    "author_rep_id": "R02"
   }
 ]

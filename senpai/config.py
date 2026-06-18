@@ -46,21 +46,51 @@ def today() -> date:
     return date.today()
 
 
+# --- Order-rank model (mirrors the production `deals.order_rank` values) -----
+# The real SPR schema ranks every deal on this 8-point scale. We treat ranks 2–6
+# as the live pipeline, 1 as won, and 7–8 as dead. Lower prefix number = stronger
+# (closer to a confirmed order).
+ORDER_RANKS = ["1_Confirmed", "2_A+", "3_A", "4_B", "5_C", "6_P", "7_Lost", "8_Cancelled"]
+OPEN_RANKS = {"2_A+", "3_A", "4_B", "5_C", "6_P"}   # live pipeline
+WON_RANKS = {"1_Confirmed"}
+DEAD_RANKS = {"7_Lost", "8_Cancelled"}
+
+
+def rank_num(order_rank: str | None) -> int:
+    """Numeric prefix of an order_rank ('3_A' → 3); unknown/NULL → 99."""
+    try:
+        return int(str(order_rank).split("_", 1)[0])
+    except (ValueError, AttributeError):
+        return 99
+
+
+def is_open_rank(order_rank: str | None) -> bool:
+    return order_rank in OPEN_RANKS
+
+
 # --- Deal-health scoring parameters (all tunable) ---------------------------
-# Per-stage health benchmarks: (max healthy days-in-stage, expected contact
-# cadence in days). Stages beyond these start accruing risk points.
-STAGE_BENCHMARKS: dict[str, tuple[int, int]] = {
-    "lead": (14, 7),
-    "qualified": (21, 10),
-    "proposal": (30, 14),
-    "negotiation": (30, 10),
-    "closing": (21, 7),
+# Per-rank health benchmarks: (max healthy days at this rank, expected contact
+# cadence in days). A deal sitting longer than the benchmark accrues risk points.
+RANK_BENCHMARKS: dict[str, tuple[int, int]] = {
+    "2_A+": (21, 7),
+    "3_A":  (30, 10),
+    "4_B":  (45, 14),
+    "5_C":  (60, 21),
+    "6_P":  (60, 21),
 }
 
-# Stages at which a decision-maker really should be identified.
-DECISION_MAKER_STAGES = {"proposal", "negotiation", "closing"}
+# Ranks strong enough that a decision-maker really should be identified by now.
+DECISION_MAKER_RANKS = {"2_A+", "3_A", "4_B"}
 
-# Japanese stall lexicon — phrases that, in the latest note, signal a stalling deal.
+# Titles in sales_activities.business_card_info that count as a decision-maker contact.
+DECISION_MAKER_TITLES = ["社長", "代表", "取締役", "役員", "本部長", "部長", "課長",
+                         "責任者", "マネージャー", "CIO", "情シス長"]
+
+# Ranks the rep is signalling as likely to close — used for the optimism-mismatch
+# reliability flag (strong rank but red health = report doesn't match reality).
+OPTIMISTIC_RANKS = {"2_A+", "3_A"}
+
+# Japanese stall lexicon — phrases that, in the latest daily_report, signal a stall.
 STALL_LEXICON = ["検討します", "予算が", "時期を見て", "上と相談", "持ち帰り", "また連絡"]
 
 # Risk-score band thresholds (score is 0–100, higher = worse).

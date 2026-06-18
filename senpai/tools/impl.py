@@ -22,15 +22,14 @@ def _score_open_deals(rep_id: str = ""):
     """Score every open deal once (optionally limited to one rep). Returns a list
     of (deal, HealthResult, flags) — the shared backbone for the manager
     analytics tools and summarize_reports, so the scoring loop lives in one place."""
-    deals = store.deals_for_rep(rep_id) if rep_id else store.all_deals()
+    deals = store.deals_for_rep(rep_id) if rep_id else store.open_deals()
     out = []
     for d in deals:
-        if d.get("status") != "open":
+        if not config.is_open_rank(d.get("order_rank")):
             continue
-        notes = store.notes_for_deal(d["deal_id"])
-        res = score_deal(d, notes)
-        report = store.report_for_deal(d["deal_id"])
-        flags = deal_flags(d, notes, report, res.band)
+        acts = store.activities_for_deal(d["deal_id"])
+        res = score_deal(d, acts)
+        flags = deal_flags(d, acts, res.band)
         out.append((d, res, flags))
     return out
 
@@ -43,9 +42,9 @@ def _resolve_customer(customer: str) -> dict | None:
 
 def _deal_line(d: dict) -> str:
     cust = store.customer_name(d["customer_id"])
-    return (f"{d['deal_id']} {cust} / 担当{store.rep_name(d['rep_id'])} / "
-            f"{d['stage']} / ¥{d['amount']:,} / 状態{d['status']} / "
-            f"完了予定{d['expected_close_date']}")
+    return (f"{d['deal_id']} {cust} / 担当{store.rep_name(store.deal_rep_id(d))} / "
+            f"{d['order_rank']} / ¥{d['total_order_amount']:,} / "
+            f"完了予定{d['expected_order_date']}")
 
 
 # ---------------------------------------------------------------------------
@@ -56,10 +55,11 @@ def query_spr(customer: str = "", rep_id: str = "", deal_id: str = "") -> str:
         d = store.get_deal(deal_id)
         if not d:
             return f"案件 {deal_id} は見つかりません。"
-        notes = store.notes_for_deal(deal_id)
+        acts = store.activities_for_deal(deal_id)
         head = _deal_line(d)
-        note_lines = [f"  ・{n['date']} [{n['channel']}] {n['text']}" for n in notes[:3]]
-        return head + ("\n直近メモ:\n" + "\n".join(note_lines) if note_lines else "")
+        act_lines = [f"  ・{a['activity_date']} [{a['activity_type']}] {a['daily_report']}"
+                     for a in acts[:3]]
+        return head + ("\n直近の活動:\n" + "\n".join(act_lines) if act_lines else "")
 
     if customer:
         c = _resolve_customer(customer)
@@ -122,11 +122,13 @@ def get_product_info(product: str = "") -> str:
     p = store.get_product(product.upper()) if product else None
     if not p:
         p = next((x for x in store.all_products()
-                  if product and (product in x["name"] or product in x["name_ja"])), None)
+                  if product and product in x["product_name"]), None)
     if not p:
-        names = ", ".join(x["name_ja"] for x in store.all_products())
+        names = ", ".join(x["product_name"] for x in store.all_products())
         return f"製品「{product}」は見つかりません。取扱: {names}"
-    return (f"{p['name_ja']} ({p['sku']}) — ¥{p['price']:,}\n"
+    return (f"{p['product_name']} ({p['product_code']} / {p['manufacturer_model_number']}) "
+            f"— ¥{p['standard_unit_price']:,}\n"
+            f"分類: {p['major']} > {p['mid']} > {p['minor']}\n"
             f"仕様: {p['specs']}\nマニュアル抜粋: {p['manual_ja']}")
 
 
@@ -134,8 +136,8 @@ def score_deal_health(deal_id: str = "") -> str:
     d = store.get_deal(deal_id)
     if not d:
         return f"案件 {deal_id} は見つかりません。"
-    notes = store.notes_for_deal(deal_id)
-    res = score_deal(d, notes)
+    acts = store.activities_for_deal(deal_id)
+    res = score_deal(d, acts)
     emoji = {"red": "🔴", "yellow": "🟡", "green": "🟢"}[res.band]
     reasons = res.top_reasons(3)
     body = "／".join(reasons) if reasons else "目立ったリスク信号なし"
@@ -145,15 +147,15 @@ def score_deal_health(deal_id: str = "") -> str:
 def draft_daily_report(activity: str = "", deal_id: str = "") -> str:
     deal = store.get_deal(deal_id) if deal_id else None
     cust = store.customer_name(deal["customer_id"]) if deal else "(顧客未指定)"
-    stage = deal["stage"] if deal else "-"
+    rank = deal["order_rank"] if deal else "-"
     next_action = "次回アクションを記入してください"
     if deal:
-        res = score_deal(deal, store.notes_for_deal(deal_id))
+        res = score_deal(deal, store.activities_for_deal(deal_id))
         if res.band == "red":
             next_action = "健全度が赤。上長同席での再提案を打診"
     return ("【日報ドラフト】\n"
             f"顧客: {cust}\n"
-            f"案件: {deal_id or '-'} / 段階: {stage}\n"
+            f"案件: {deal_id or '-'} / 受注ランク: {rank}\n"
             f"活動内容: {activity}\n"
             f"次アクション: {next_action}")
 
@@ -180,7 +182,7 @@ def route_to_expert(question: str = "", tags=None) -> str:
 
 
 def summarize_reports(rep_id: str = "") -> str:
-    if not store.reports_for_rep(rep_id):
+    if not store.daily_reports_for_rep(rep_id):
         return f"担当 {rep_id} のレポートはありません。"
     scored = _score_open_deals(rep_id)
     lines = [f"{store.rep_name(rep_id)} のオープン案件 {len(scored)}件の要約:"]
@@ -222,7 +224,7 @@ def list_at_risk_deals(rep_id: str = "", band: str = "", limit: int = 10) -> str
     for d, res, _flags in rows[:limit]:
         reason = (res.top_reasons(1) or ["—"])[0]
         lines.append(f"{_BAND_EMOJI[res.band]} {d['deal_id']} "
-                     f"{store.customer_name(d['customer_id'])} / 担当{store.rep_name(d['rep_id'])} / "
+                     f"{store.customer_name(d['customer_id'])} / 担当{store.rep_name(store.deal_rep_id(d))} / "
                      f"リスク{res.score} / {reason}")
     head = f"要注意案件 {len(rows)}件中 上位{min(limit, len(rows))}件:"
     return head + "\n- " + "\n- ".join(lines)
@@ -234,21 +236,21 @@ def team_pipeline_overview(rep_id: str = "") -> str:
     if not scored:
         return "オープン案件がありません。"
     total = len(scored)
-    pipeline = sum(d.get("amount", 0) for d, _, _ in scored)
+    pipeline = sum(d.get("total_order_amount", 0) for d, _, _ in scored)
     by_band = {"red": 0, "yellow": 0, "green": 0}
-    by_stage: dict[str, int] = {}
+    by_rank: dict[str, int] = {}
     flagged = 0
     for d, res, flags in scored:
         by_band[res.band] += 1
-        by_stage[d["stage"]] = by_stage.get(d["stage"], 0) + 1
+        by_rank[d["order_rank"]] = by_rank.get(d["order_rank"], 0) + 1
         if flags:
             flagged += 1
-    stage_str = "、".join(f"{s}:{n}" for s, n in by_stage.items())
+    rank_str = "、".join(f"{r}:{n}" for r, n in sorted(by_rank.items()))
     scope = f"{store.rep_name(rep_id)} の" if rep_id else "チーム全体の"
     return (f"{scope}パイプライン概況:\n"
             f"- オープン案件: {total}件 / 想定金額: ¥{pipeline:,}\n"
             f"- 健全度: 🔴{by_band['red']} / 🟡{by_band['yellow']} / 🟢{by_band['green']}\n"
-            f"- 段階別: {stage_str}\n"
+            f"- ランク別: {rank_str}\n"
             f"- 信頼性フラグの立った案件: {flagged}件")
 
 
@@ -259,7 +261,7 @@ def team_report_digest() -> str:
     by_rep: dict[str, list] = {}
     for d, res, flags in scored:
         if flags:
-            by_rep.setdefault(d["rep_id"], []).append((d, res, flags))
+            by_rep.setdefault(store.deal_rep_id(d), []).append((d, res, flags))
     if not by_rep:
         return "信頼性フラグの立った案件はありません。チーム全体が健全です。"
     order = sorted(by_rep.items(), key=lambda kv: len(kv[1]), reverse=True)
@@ -277,7 +279,7 @@ def rep_coaching_focus() -> str:
     scored = _score_open_deals()
     agg: dict[str, dict] = {}
     for d, res, flags in scored:
-        a = agg.setdefault(d["rep_id"], {"deals": 0, "risk": 0, "red": 0, "flagged": 0})
+        a = agg.setdefault(store.deal_rep_id(d), {"deals": 0, "risk": 0, "red": 0, "flagged": 0})
         a["deals"] += 1
         a["risk"] += res.score
         if res.band == "red":
@@ -303,8 +305,8 @@ def draft_message(to: str = "", about: str = "", deal_id: str = "",
     if deal_id:
         d = store.get_deal(deal_id)
         if d:
-            res = score_deal(d, store.notes_for_deal(deal_id))
-            ctx = (f"（{deal_id} {store.customer_name(d['customer_id'])} / {d['stage']} / "
+            res = score_deal(d, store.activities_for_deal(deal_id))
+            ctx = (f"（{deal_id} {store.customer_name(d['customer_id'])} / {d['order_rank']} / "
                    f"健全度{_BAND_EMOJI[res.band]}{res.band}）")
     topic = about or purpose or "案件の状況確認"
     recipient = to or "担当者"

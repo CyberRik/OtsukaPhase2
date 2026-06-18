@@ -16,11 +16,13 @@ from senpai.tools import impl
 
 
 def test_list_at_risk_defaults_to_red_and_sorted():
+    import re
     out = impl.list_at_risk_deals(limit=10)
-    assert "D001" in out                 # the seeded dead deal
-    assert "🟢" not in out                # default band is red only
-    # D001 (risk 100) must appear before D053 (risk 63) — sorted worst-first.
-    assert out.index("D001") < out.index("D053")
+    assert "D001" in out                 # a seeded dead deal
+    assert "🟢" not in out and "🟡" not in out   # default band is red only
+    # risk scores must be non-increasing down the list (worst-first).
+    scores = [int(x) for x in re.findall(r"リスク(\d+)", out)]
+    assert scores == sorted(scores, reverse=True)
 
 
 def test_list_at_risk_band_yellow_widens():

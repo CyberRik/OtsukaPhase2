@@ -27,37 +27,43 @@ from senpai.health.scoring import score_deal
 _CHIP = {"red": "🔴", "yellow": "🟡", "green": "🟢"}
 
 
+def _last_activity_date(acts):
+    dates = [a.get("activity_date") for a in acts if a.get("activity_date")]
+    return max(dates) if dates else None
+
+
 @st.cache_data
 def _scored_rows():
     """Score every open deal once. Returns (rows, flagged_reports)."""
     rows, flagged = [], []
     today = config.today()
     for d in store.open_deals():
-        notes = store.notes_for_deal(d["deal_id"])
-        res = score_deal(d, notes, today=today)
-        report = store.report_for_deal(d["deal_id"])
-        flags = deal_flags(d, notes, report, res.band, today=today)
-        last = d.get("last_contact_date")
+        acts = store.activities_for_deal(d["deal_id"])
+        res = score_deal(d, acts, today=today)
+        flags = deal_flags(d, acts, res.band, today=today)
+        rep = store.rep_name(store.deal_rep_id(d))
+        last = _last_activity_date(acts)
         stale_days = (today - pd.to_datetime(last).date()).days if last else None
+        regressed = config.rank_num(d["order_rank"]) > config.rank_num(d.get("initial_order_rank"))
         rows.append({
             "deal_id": d["deal_id"],
             "customer": store.customer_name(d["customer_id"]),
-            "rep": store.rep_name(d["rep_id"]),
-            "stage": d["stage"],
-            "amount": d["amount"],
+            "rep": rep,
+            "rank": d["order_rank"],
+            "amount": d["total_order_amount"],
             "health": _CHIP[res.band],
             "band": res.band,
             "score": res.score,
             "days_stale": stale_days,
-            "close_date": d["expected_close_date"],
-            "slips": max(0, len(d.get("close_date_history", [])) - 1),
+            "order_date": d["expected_order_date"],
+            "regressed": "↓" if regressed else "",
             "n_flags": len(flags),
         })
         for f in flags:
             flagged.append({
                 "deal_id": d["deal_id"],
                 "customer": store.customer_name(d["customer_id"]),
-                "rep": store.rep_name(d["rep_id"]),
+                "rep": rep,
                 "severity": f.severity,
                 "flag": f.name,
                 "message": f.message,
@@ -89,8 +95,8 @@ def main():
     c4.metric("Pipeline ¥", f"¥{int(df['amount'].sum()):,}")
 
     st.subheader("Team pipeline")
-    view = df[["deal_id", "customer", "rep", "stage", "amount", "health",
-               "score", "days_stale", "close_date", "slips", "n_flags"]]
+    view = df[["deal_id", "customer", "rep", "rank", "amount", "health",
+               "score", "days_stale", "order_date", "regressed", "n_flags"]]
     st.dataframe(view, use_container_width=True, hide_index=True)
 
     # --- drill-down ---
@@ -111,16 +117,16 @@ def main():
 
 def _render_deal(deal_id: str):
     d = store.get_deal(deal_id)
-    notes = store.notes_for_deal(deal_id)
-    res = score_deal(d, notes)
-    report = store.report_for_deal(deal_id)
-    flags = deal_flags(d, notes, report, res.band)
+    acts = store.activities_for_deal(deal_id)
+    res = score_deal(d, acts)
+    flags = deal_flags(d, acts, res.band)
 
     left, right = st.columns([2, 3])
     with left:
         st.markdown(f"**{store.customer_name(d['customer_id'])}** — "
-                    f"{store.rep_name(d['rep_id'])}")
-        st.markdown(f"{_CHIP[res.band]} **{res.band.upper()}** · risk {res.score}/100")
+                    f"{store.rep_name(store.deal_rep_id(d))}")
+        st.markdown(f"{_CHIP[res.band]} **{res.band.upper()}** · risk {res.score}/100 · "
+                    f"rank {d['order_rank']} (initial {d.get('initial_order_rank')})")
         st.markdown("**Signal breakdown**")
         for s in sorted(res.signals, key=lambda x: x.points, reverse=True):
             st.markdown(f"- `+{s.points}` {s.reason}")
@@ -134,9 +140,9 @@ def _render_deal(deal_id: str):
         from senpai.llm.narrate import narrate_deal
         st.markdown("**Manager flag & suggested action**")
         st.info(narrate_deal(d, res, flags, use_llm=use_llm))
-        st.markdown("**Recent notes**")
-        for n in notes[:3]:
-            st.markdown(f"- {n['date']} [{n['channel']}] {n['text']}")
+        st.markdown("**Recent activities**")
+        for a in acts[:3]:
+            st.markdown(f"- {a['activity_date']} [{a['activity_type']}] {a['daily_report']}")
 
 
 main()
