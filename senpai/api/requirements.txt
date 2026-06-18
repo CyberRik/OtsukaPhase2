@@ -1,0 +1,10 @@
+# Dependencies for the Next.js frontend's HTTP bridge (senpai/api/server.py).
+# Kept separate from the repo-root requirements.txt because gradio 6.17 pulls
+# starlette>=1.0, which conflicts with fastapi's starlette cap — install this in
+# its own environment (or simply alongside, when gradio isn't being installed).
+#
+#   pip install -r senpai/api/requirements.txt
+#   uvicorn senpai.api.server:app --port 8000
+
+fastapi==0.115.14
+uvicorn==0.34.0

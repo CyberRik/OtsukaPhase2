@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Senpai design language — "knowledge dossier", not chatbot.
+  Warm paper, sumi ink, a single indigo accent, a vermilion seal.
+  Traffic-light colour is *reserved* for deal health; confidence has its own
+  restrained scale. Generous whitespace, hairline rules, editorial type.
+*/
+@layer base {
+  :root {
+    --paper: 40 33% 98%;
+    --background: 40 33% 98%;
+    --foreground: 60 6% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 60 6% 11%;
+
+    --muted: 40 16% 95%;
+    --muted-foreground: 45 5% 42%;
+
+    --primary: 224 32% 27%;          /* ai-indigo */
+    --primary-foreground: 40 33% 97%;
+
+    --secondary: 40 20% 94%;
+    --secondary-foreground: 60 6% 14%;
+
+    --accent: 36 38% 91%;            /* warm sand */
+    --accent-foreground: 60 8% 16%;
+
+    --border: 38 20% 88%;
+    --input: 38 20% 86%;
+    --ring: 224 32% 42%;
+
+    --vermilion: 9 62% 47%;          /* the seal / senpai mark */
+
+    --band-red: 8 56% 48%;
+    --band-yellow: 36 74% 44%;
+    --band-green: 150 26% 36%;
+
+    --conf-high: 168 42% 31%;
+    --conf-medium: 35 68% 43%;
+    --conf-low: 220 10% 46%;
+    --conf-unverified: 8 24% 52%;
+
+    --radius: 0.625rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv01", "palt";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.16);
+  }
+
+  /* quiet, narrow scrollbars to keep the editorial calm */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+    border: 3px solid hsl(var(--background));
+  }
+}
+
+@layer components {
+  /* tiny uppercase section label — the spine of the dossier look */
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-eyebrow text-muted-foreground;
+  }
+
+  /* verbatim interview quote — Japanese, set in serif, with a ruled margin */
+  .quote-jp {
+    @apply font-jp text-[15px] leading-relaxed text-foreground/90 border-l-2 border-vermilion/60 pl-4;
+  }
+
+  .hairline {
+    @apply border-t border-border;
+  }
+
+  /* faint engineering-paper grid for hero / empty states */
+  .texture-grid {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 28px 28px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
+  }
+
+  .card-surface {
+    @apply rounded-lg border border-border bg-card shadow-card;
+  }
+}

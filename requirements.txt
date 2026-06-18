@@ -23,3 +23,8 @@ pandas==2.2.3
 
 # Unit tests for the deal-health engine (senpai/tests/).
 pytest==8.3.4
+
+# NOTE: the Next.js frontend's HTTP bridge (fastapi/uvicorn) is intentionally NOT
+# pinned here — gradio 6.17 requires starlette>=1.0, which conflicts with
+# fastapi's starlette cap, so the two can't co-resolve in one pass. Install the
+# bridge separately:  pip install -r senpai/api/requirements.txt
