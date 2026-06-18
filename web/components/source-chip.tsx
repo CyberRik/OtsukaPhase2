@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
-// A citation chip — the interview a piece of knowledge traces back to.
-// Interviews (I…) get the vermilion seal; the instrument (Q…) is neutral.
+// A citation chip — the source a piece of knowledge traces back to. Subtle and
+// modern: interviews (I…) get a quiet indigo accent; the instrument (Q…) neutral.
 export function SourceChip({ id, className }: { id: string; className?: string }) {
   const isInterview = id.startsWith("I");
   return (
@@ -9,12 +9,12 @@ export function SourceChip({ id, className }: { id: string; className?: string }
       className={cn(
         "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-tight",
         isInterview
-          ? "border-vermilion/30 bg-vermilion/5 text-vermilion"
+          ? "border-primary/25 bg-primary/[0.06] text-primary"
           : "border-border bg-muted text-muted-foreground",
         className,
       )}
     >
-      {isInterview && <span className="h-1 w-1 rounded-full bg-vermilion" />}
+      {isInterview && <span className="h-1 w-1 rounded-full bg-primary" />}
       {id}
     </span>
   );

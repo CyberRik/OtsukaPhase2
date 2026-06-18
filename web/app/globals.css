@@ -3,46 +3,47 @@
 @tailwind utilities;
 
 /*
-  Senpai design language — "knowledge dossier", not chatbot.
-  Warm paper, sumi ink, a single indigo accent, a vermilion seal.
-  Traffic-light colour is *reserved* for deal health; confidence has its own
-  restrained scale. Generous whitespace, hairline rules, editorial type.
+  Senpai design language — enterprise SaaS (Linear / Notion / Stripe / Vercel).
+  White surfaces, light-gray canvas, deep-navy ink, indigo accent.
+  Traffic-light colour is RESERVED for deal health. Provenance & confidence are
+  kept first-class but rendered subtly (neutral chips, a quiet indigo accent).
+  Clean sans throughout (Inter + Noto Sans JP) — no serif, no "dossier" texture.
 */
 @layer base {
   :root {
-    --paper: 40 33% 98%;
-    --background: 40 33% 98%;
-    --foreground: 60 6% 11%;
+    --background: 220 24% 98%;       /* light-gray canvas */
+    --foreground: 222 47% 11%;       /* deep navy ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 60 6% 11%;
+    --card-foreground: 222 47% 11%;
 
-    --muted: 40 16% 95%;
-    --muted-foreground: 45 5% 42%;
+    --muted: 220 16% 95%;
+    --muted-foreground: 220 9% 46%;
 
-    --primary: 224 32% 27%;          /* ai-indigo */
-    --primary-foreground: 40 33% 97%;
+    --navy: 222 47% 16%;             /* brand / solid dark surfaces */
+    --navy-foreground: 210 40% 98%;
 
-    --secondary: 40 20% 94%;
-    --secondary-foreground: 60 6% 14%;
+    --primary: 235 84% 60%;          /* indigo accent / CTA */
+    --primary-foreground: 0 0% 100%;
 
-    --accent: 36 38% 91%;            /* warm sand */
-    --accent-foreground: 60 8% 16%;
+    --secondary: 220 16% 96%;
+    --secondary-foreground: 222 40% 18%;
 
-    --border: 38 20% 88%;
-    --input: 38 20% 86%;
-    --ring: 224 32% 42%;
+    --accent: 235 84% 96%;           /* indigo tint */
+    --accent-foreground: 235 60% 40%;
 
-    --vermilion: 9 62% 47%;          /* the seal / senpai mark */
+    --border: 220 16% 90%;
+    --input: 220 16% 87%;
+    --ring: 235 84% 62%;
 
-    --band-red: 8 56% 48%;
-    --band-yellow: 36 74% 44%;
-    --band-green: 150 26% 36%;
+    --band-red: 0 72% 51%;
+    --band-yellow: 35 92% 48%;
+    --band-green: 152 56% 39%;
 
-    --conf-high: 168 42% 31%;
-    --conf-medium: 35 68% 43%;
-    --conf-low: 220 10% 46%;
-    --conf-unverified: 8 24% 52%;
+    --conf-high: 152 52% 38%;
+    --conf-medium: 35 82% 44%;
+    --conf-low: 220 12% 48%;
+    --conf-unverified: 220 9% 60%;
 
     --radius: 0.625rem;
   }
@@ -53,7 +54,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv01", "palt";
+    font-feature-settings: "cv02", "cv03", "cv04", "palt";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -62,7 +63,6 @@
     background: hsl(var(--primary) / 0.16);
   }
 
-  /* quiet, narrow scrollbars to keep the editorial calm */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -75,31 +75,24 @@
 }
 
 @layer components {
-  /* tiny uppercase section label — the spine of the dossier look */
+  /* small uppercase label */
   .eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-eyebrow text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
   }
 
-  /* verbatim interview quote — Japanese, set in serif, with a ruled margin */
+  /* verbatim quote — subtle neutral rule, not a loud accent */
   .quote-jp {
-    @apply font-jp text-[15px] leading-relaxed text-foreground/90 border-l-2 border-vermilion/60 pl-4;
-  }
-
-  .hairline {
-    @apply border-t border-border;
-  }
-
-  /* faint engineering-paper grid for hero / empty states */
-  .texture-grid {
-    background-image:
-      linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
-    background-size: 28px 28px;
-    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 75%);
+    @apply font-jp text-[14px] leading-relaxed text-foreground/85 border-l-2 border-primary/40 pl-3.5;
   }
 
   .card-surface {
-    @apply rounded-lg border border-border bg-card shadow-card;
+    @apply rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04)];
+  }
+
+  /* soft radial wash for hero/landing — enterprise, not engineering-paper */
+  .hero-wash {
+    background:
+      radial-gradient(60% 50% at 50% 0%, hsl(var(--primary) / 0.07), transparent 70%),
+      radial-gradient(40% 40% at 85% 10%, hsl(var(--primary) / 0.05), transparent 70%);
   }
 }

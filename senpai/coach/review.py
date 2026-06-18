@@ -177,7 +177,7 @@ def review_note(note: str, deal: dict | None = None,
         for reason in res.top_reasons(3):
             r.observations.append(f"案件データ上のサイン: {reason}")
             r.risks.append(reason)
-        for fl in deal_flags(deal, notes or [], report, res.band, today=today):
+        for fl in deal_flags(deal, notes or [], res.band, today=today):
             r.missing_info.append(fl.message)
         r.decision_factors.append(f"現在の段階: {deal.get('stage', '-')}(健全度 {res.band})")
 
