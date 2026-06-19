@@ -732,23 +732,70 @@ const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIcon }> =
   web_search: { ja: "Web検索", en: "Web search", icon: Globe },
 };
 
-// --- Customer Research card (tool-calling assistant, single-turn) ------------
+type ResearchSourceStatus = "pending" | "found" | "not_found" | "ambiguous" | "skipped" | "error";
+type ResearchSourceState = {
+  key: string;
+  label: string;
+  status: ResearchSourceStatus;
+  count?: number;
+  detail?: string;
+};
+
+const RESEARCH_SOURCES: ResearchSourceState[] = [
+  { key: "internal_records", label: "Internal Records", status: "pending" },
+  { key: "deals", label: "Deals", status: "pending" },
+  { key: "activities", label: "Activities", status: "pending" },
+  { key: "environment", label: "Environment", status: "pending" },
+  { key: "web_search", label: "Web Search", status: "pending" },
+];
+
+function sourceStatusLabel(status: ResearchSourceStatus) {
+  switch (status) {
+    case "found": return "Found";
+    case "not_found": return "Not Found";
+    case "ambiguous": return "Ambiguous";
+    case "error": return "Error";
+    case "skipped": return "Skipped";
+    default: return "Checking";
+  }
+}
+
+function sourceStatusClass(status: ResearchSourceStatus) {
+  switch (status) {
+    case "found": return "bg-conf-high/10 text-conf-high";
+    case "ambiguous": return "bg-band-yellow/10 text-band-yellow";
+    case "error": return "bg-band-red/10 text-band-red";
+    case "not_found":
+    case "skipped":
+      return "bg-muted text-muted-foreground";
+    default:
+      return "bg-navy/10 text-navy";
+  }
+}
+
+// --- Customer Research card (deterministic orchestration, single-turn) -------
 // Streams /api/chat with role="research": the model resolves the customer
 // (alias-aware), checks internal records FIRST, then web-searches only to fill
 // gaps. We surface the tools it consulted and any web sources, so the answer is
 // auditable — a grounded research read, not a free chatbot reply.
 function ResearchCard({ note }: { note: string }) {
   const { t, lang } = useT();
-  const [tools, setTools] = useState<{ name: string; args: string; result: string }[]>([]);
+  const [sources, setSources] = useState<ResearchSourceState[]>(RESEARCH_SOURCES);
+  const [web, setWeb] = useState<{ results?: { title?: string; url?: string; content?: string }[] } | null>(null);
   const [answer, setAnswer] = useState("");
   const [model, setModel] = useState<string | null>(null);
   const [status, setStatus] = useState<"running" | "done" | "error">("running");
+  const [unavailable, setUnavailable] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
     const ctrl = new AbortController();
-    const collected: { name: string; args: string; result: string }[] = [];
     let acc = "";
+    setSources(RESEARCH_SOURCES);
+    setWeb(null);
+    setAnswer("");
+    setUnavailable(null);
+    setStatus("running");
     chatStream(
       note,
       [],            // single-turn: each research question stands alone (not a chat)
@@ -759,13 +806,24 @@ function ResearchCard({ note }: { note: string }) {
           case "start":
             setModel(e.model ?? null);
             break;
-          case "tool":
-            collected.push({ name: e.name, args: e.args, result: e.result });
-            setTools([...collected]);
+          case "source":
+            setSources((prev) =>
+              prev.map((src) =>
+                src.key === e.key
+                  ? { ...src, label: e.label || src.label, status: e.status, count: e.count, detail: e.detail }
+                  : src,
+              ),
+            );
+            break;
+          case "web":
+            setWeb(e);
             break;
           case "answer":
             acc = e.text;
             setAnswer(acc);
+            break;
+          case "unavailable":
+            setUnavailable(e.reason ?? "unavailable");
             break;
           case "done":
             setModel(e.model ?? model);
@@ -782,6 +840,13 @@ function ResearchCard({ note }: { note: string }) {
     return () => { alive = false; ctrl.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note]);
+
+  const webSourceUrls = (web?.results ?? [])
+    .map((r) => r.url)
+    .filter((u): u is string => Boolean(u));
+  const tools = webSourceUrls.length
+    ? [{ name: "web_search", args: "", result: webSourceUrls.join(" ") }]
+    : [];
 
   // Surface web sources (URLs) pulled by web_search, for citation.
   const webUrls = Array.from(
@@ -808,8 +873,32 @@ function ResearchCard({ note }: { note: string }) {
       </div>
       <p className="text-[11.5px] leading-snug text-muted-foreground">{t("chat.researchHint")}</p>
 
+      <div className="rounded-lg border border-border bg-card p-3">
+        <div className="eyebrow mb-1.5 flex items-center gap-1.5"><Database className="h-3 w-3" /> {t("chat.researchSources")}</div>
+        <ul className="space-y-1">
+          {sources.map((src) => {
+            const Icon =
+              src.key === "deals" ? AlertTriangle :
+              src.key === "activities" ? History :
+              src.key === "environment" ? Building2 :
+              src.key === "web_search" ? Globe :
+              Database;
+            return (
+              <li key={src.key} className="flex flex-wrap items-center gap-2 text-[12px] text-foreground/80">
+                <Icon className="h-3.5 w-3.5 shrink-0 text-navy/70" />
+                <span className="font-medium">{src.label}</span>
+                <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold", sourceStatusClass(src.status))}>
+                  {sourceStatusLabel(src.status)}
+                </span>
+                {typeof src.count === "number" && <span className="font-mono text-[10.5px] text-muted-foreground">{src.count}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
       {/* sources consulted — the tools the model actually called, in order */}
-      {tools.length > 0 && (
+      {false && tools.length > 0 && (
         <div className="rounded-lg border border-border bg-card p-3">
           <div className="eyebrow mb-1.5 flex items-center gap-1.5"><Database className="h-3 w-3" /> {t("chat.researchSources")}</div>
           <ul className="space-y-1">
@@ -832,6 +921,8 @@ function ResearchCard({ note }: { note: string }) {
       {/* the grounded answer */}
       {answer ? (
         <NarrationMd text={answer} />
+      ) : unavailable ? (
+        <p className="text-[13px] text-muted-foreground">{t("chat.researchUnavailable")} ({unavailable})</p>
       ) : status === "running" ? (
         <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <span className="flex gap-1">

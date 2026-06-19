@@ -142,8 +142,12 @@ export type ChatRole = "junior" | "manager" | "research";
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "tool"; name: string; args: string; result: string }
+  | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: unknown[] }
+  | { type: "source"; key: string; label: string; status: "found" | "not_found" | "ambiguous" | "skipped" | "error"; count?: number; detail?: string }
+  | { type: "web"; status: "found" | "not_found" | "error"; query: string; answer?: string; results?: { title?: string; url?: string; content?: string }[]; live?: boolean; reason?: string }
   | { type: "answer"; text: string }
   | { type: "done"; model?: string }
+  | { type: "unavailable"; reason?: string }
   | { type: "error"; reason?: string };
 
 export interface ChatTurn {

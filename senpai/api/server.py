@@ -23,8 +23,10 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict
+import re
+from dataclasses import asdict, dataclass, field
 from datetime import date
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -50,6 +52,8 @@ from senpai.health.scoring import score_deal
 from senpai.knowledge import generate as kgen
 from senpai.knowledge import review as kreview
 from senpai.knowledge import store as kstore
+from senpai.retrieval.playbook import find_similar_deals
+from senpai.tools.web import web_search_typed
 
 app = FastAPI(title="Senpai API", version="1.0", docs_url="/api/docs")
 
@@ -484,6 +488,225 @@ _CHAT_ROLES = {
 }
 
 
+@dataclass
+class ResearchBundle:
+    query: str
+    target: str
+    resolution: dict
+    customer: dict | None = None
+    deals: list[dict] = field(default_factory=list)
+    activities: list[dict] = field(default_factory=list)
+    environment: dict | None = None
+    products: list[dict] = field(default_factory=list)
+    similar_deals: list[dict] = field(default_factory=list)
+    web: dict | None = None
+    provenance: list[dict] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+_RESEARCH_PREFIXES = [
+    r"^\s*tell\s+me\s+about\s+",
+    r"^\s*research\s+",
+    r"^\s*background\s+on\s+",
+    r"^\s*find\s+out\s+about\s+",
+    r"^\s*what\s+should\s+i\s+know\s+about\s+",
+    r"^\s*use\s+web_search\s+and\s+tell\s+me\s+about\s+",
+]
+
+
+def _research_target(message: str) -> str:
+    target = (message or "").strip()
+    for pat in _RESEARCH_PREFIXES:
+        target = re.sub(pat, "", target, flags=re.IGNORECASE)
+    return target.strip(" \t\r\n?？。.")
+
+
+def _public_customer(c: dict | None) -> dict | None:
+    if not c:
+        return None
+    return {"customer_id": c.get("customer_id"), "name": c.get("name"),
+            "industry": c.get("industry"), "size": c.get("size"),
+            "profile_tags": c.get("profile_tags", [])}
+
+
+def _deal_summary(d: dict) -> dict:
+    acts = store.activities_for_deal(d["deal_id"])
+    res = score_deal(d, acts, today=_today())
+    return {
+        "deal_id": d["deal_id"],
+        "customer": store.customer_name(d["customer_id"]),
+        "rep": store.rep_name(store.deal_rep_id(d)),
+        "stage": d.get("order_rank"),
+        "amount": d.get("total_order_amount"),
+        "expected_close_date": d.get("expected_order_date"),
+        "product_category": d.get("product_category"),
+        "health": {
+            "band": res.band,
+            "score": res.score,
+            "reasons": res.top_reasons(3),
+        },
+    }
+
+
+def _activity_summary(a: dict) -> dict:
+    return {
+        "deal_id": a.get("deal_id"),
+        "date": a.get("activity_date"),
+        "type": a.get("activity_type"),
+        "contact": a.get("business_card_info"),
+        "text": a.get("daily_report"),
+    }
+
+
+def _products_for_deals(deals: list[dict]) -> list[dict]:
+    categories = {d.get("product_category") for d in deals if d.get("product_category")}
+    products = []
+    seen = set()
+    for p in store.all_products():
+        hay = " ".join(str(p.get(k, "")) for k in ("product_name", "major", "mid", "minor", "product_code"))
+        if any(cat and (cat in hay or hay in cat) for cat in categories):
+            if p["product_code"] not in seen:
+                seen.add(p["product_code"])
+                products.append(p)
+    return products
+
+
+def _source_event(key: str, label: str, status: str, count: int | None = None,
+                  detail: str = "") -> str:
+    obj = {"type": "source", "key": key, "label": label, "status": status}
+    if count is not None:
+        obj["count"] = count
+    if detail:
+        obj["detail"] = detail
+    return _sse(obj)
+
+
+def _build_research_bundle(message: str, target: str, resolution) -> ResearchBundle:
+    bundle = ResearchBundle(
+        query=message,
+        target=target,
+        resolution=resolution.to_dict(),
+        customer=_public_customer(resolution.customer),
+    )
+    if resolution.status != "resolved" or not resolution.customer:
+        return bundle
+
+    cid = resolution.customer["customer_id"]
+    raw_deals = store.deals_for_customer(cid)
+    raw_activities = store.activities_for_customer(cid)
+    bundle.deals = [_deal_summary(d) for d in raw_deals]
+    bundle.activities = [_activity_summary(a) for a in raw_activities[:20]]
+    bundle.environment = store.get_environment(cid)
+    bundle.products = _products_for_deals(raw_deals)
+    bundle.similar_deals = [_deal_summary(d) for d in find_similar_deals(
+        customer_id=cid, industry=resolution.customer.get("industry", ""))[:3]]
+    bundle.provenance.extend([
+        {"source": "internal_records", "priority": 1, "status": "found"},
+        {"source": "deals", "priority": 2, "count": len(bundle.deals)},
+        {"source": "activities", "priority": 3, "count": len(bundle.activities),
+         "truncated": len(raw_activities) > len(bundle.activities)},
+        {"source": "environment", "priority": 4,
+         "status": "found" if bundle.environment else "not_found"},
+    ])
+    return bundle
+
+
+def _research_summary_prompt(bundle: ResearchBundle) -> str:
+    return (
+        "You are Senpai's customer research summarizer for Otsuka salespeople.\n"
+        "Use ONLY the JSON evidence bundle below. Do not add facts from memory.\n"
+        "Internal records have higher priority than web results. If web results are present, "
+        "label them as external. If internal records are missing, say that clearly.\n"
+        "Answer in concise Japanese with sections useful before a sales conversation.\n\n"
+        f"Evidence bundle:\n{json.dumps(bundle.to_dict(), ensure_ascii=False, indent=2)}"
+    )
+
+
+def _ambiguity_answer(candidates: list[dict]) -> str:
+    lines = ["該当する可能性のある顧客が複数あります。誤った顧客情報を使わないため、候補を選んでください。"]
+    for c in candidates:
+        aliases = "、".join(c.get("matched_aliases") or [])
+        suffix = f"（一致: {aliases}）" if aliases else ""
+        lines.append(f"- {c.get('customer_id')}: {c.get('name')}{suffix}")
+    return "\n".join(lines)
+
+
+def research_stream(req: ChatRequest):
+    target = _research_target(req.message)
+    yield _sse({"type": "start", "model": config.MODEL,
+                "endpoint": config.BASE_URL, "role": "research"})
+
+    resolution = store.resolve_customer_detailed(target)
+    res_obj = resolution.to_dict()
+    yield _sse({"type": "resolve", **res_obj})
+
+    if resolution.status == "ambiguous":
+        yield _source_event("internal_records", "Internal Records", "ambiguous",
+                            count=len(res_obj["candidates"]))
+        yield _source_event("deals", "Deals", "skipped")
+        yield _source_event("activities", "Activities", "skipped")
+        yield _source_event("environment", "Environment", "skipped")
+        yield _source_event("web_search", "Web Search", "skipped",
+                            detail="ambiguous_customer")
+        yield _sse({"type": "answer", "text": _ambiguity_answer(res_obj["candidates"])})
+        yield _sse({"type": "done", "model": config.MODEL})
+        return
+
+    bundle = _build_research_bundle(req.message, target, resolution)
+
+    if resolution.status == "resolved":
+        yield _source_event("internal_records", "Internal Records", "found", count=1)
+        yield _source_event("deals", "Deals",
+                            "found" if bundle.deals else "not_found",
+                            count=len(bundle.deals))
+        yield _source_event("activities", "Activities",
+                            "found" if bundle.activities else "not_found",
+                            count=len(bundle.activities))
+        yield _source_event("environment", "Environment",
+                            "found" if bundle.environment else "not_found")
+        yield _source_event("web_search", "Web Search", "skipped",
+                            detail="internal_record_found")
+    else:
+        yield _source_event("internal_records", "Internal Records", "not_found")
+        yield _source_event("deals", "Deals", "skipped")
+        yield _source_event("activities", "Activities", "skipped")
+        yield _source_event("environment", "Environment", "skipped")
+        web = web_search_typed(f"{target} company overview latest news")
+        bundle.web = web
+        bundle.provenance.append({"source": "web_search", "priority": 2,
+                                  "status": web.get("status"), "query": web.get("query")})
+        yield _sse({"type": "web", **web})
+        yield _source_event("web_search", "Web Search",
+                            "found" if web.get("status") == "found" else "error",
+                            count=len(web.get("results") or []),
+                            detail=web.get("reason", ""))
+        if web.get("status") != "found":
+            yield _sse({"type": "unavailable",
+                        "reason": "no_internal_record_and_web_unavailable"})
+            yield _sse({"type": "done", "model": config.MODEL})
+            return
+
+    try:
+        from senpai.llm.client import stream_complete
+        text = ""
+        for piece in stream_complete(
+            [{"role": "user", "content": _research_summary_prompt(bundle)}],
+            temperature=0.2,
+            max_tokens=config.LLM_MAX_TOKENS,
+            no_think=True,
+            allow_fallback=False,
+        ):
+            text += piece
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+        yield _sse({"type": "answer", "text": text or "リサーチ結果を生成できませんでした。"})
+        yield _sse({"type": "done", "model": config.MODEL})
+    except Exception:  # noqa: BLE001 - research must not silently use fallback
+        yield _sse({"type": "unavailable", "reason": "llm_unreachable"})
+        yield _sse({"type": "done", "model": config.MODEL})
+
+
 class ChatMessage(BaseModel):
     role: str       # "user" | "assistant"
     content: str
@@ -505,6 +728,13 @@ def chat(req: ChatRequest):
       start | tool | answer | done | error
     On any model/transport failure the tool loop returns an error string, which
     we emit as a single `answer` (never a crash)."""
+    if req.role == "research":
+        return StreamingResponse(
+            research_stream(req),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     tools, system_fn = _CHAT_ROLES.get(req.role, _CHAT_ROLES["junior"])
 
     convo: list[dict] = [{"role": "system", "content": system_fn()}]

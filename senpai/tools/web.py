@@ -60,6 +60,42 @@ _SEARCH_CANNED = {
 }
 
 
+def web_search_typed(query: str, max_results: int = 4) -> dict:
+    """Structured web search for deterministic research orchestration.
+
+    Unlike the legacy chat tool below, this does not use canned fallback text:
+    research needs explicit provenance or an explicit unavailable state.
+    """
+    if not TAVILY_API_KEY:
+        return {"status": "error", "query": query, "answer": "", "results": [],
+                "live": False, "reason": "missing_api_key"}
+    data = _post_json(
+        "https://api.tavily.com/search",
+        {"api_key": TAVILY_API_KEY, "query": query,
+         "max_results": max_results, "search_depth": "basic", "include_answer": True},
+        timeout=12,
+    )
+    if data is None:
+        return {"status": "error", "query": query, "answer": "", "results": [],
+                "live": False, "reason": "request_failed"}
+    results = []
+    for r in (data.get("results") or [])[:max_results]:
+        results.append({
+            "title": (r.get("title") or "").strip(),
+            "url": r.get("url", ""),
+            "content": (r.get("content") or "").strip().replace("\n", " "),
+            "score": r.get("score"),
+        })
+    return {
+        "status": "found" if results else "not_found",
+        "query": query,
+        "answer": (data.get("answer") or "").strip(),
+        "results": results,
+        "live": True,
+        "reason": "" if results else "no_results",
+    }
+
+
 def web_search(query: str) -> str:
     """Search the web for a query. Uses Tavily when configured; falls back to
     canned results on missing key / network failure so the demo never breaks."""

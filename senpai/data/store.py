@@ -10,7 +10,9 @@ here, so the data model lives in exactly one place.
 from __future__ import annotations
 
 import json
+from dataclasses import asdict, dataclass, field
 from functools import lru_cache
+from typing import Literal
 
 from senpai import config
 
@@ -123,6 +125,13 @@ def deals_for_customer(customer_id: str) -> list[dict]:
 def activities_for_deal(deal_id: str) -> list[dict]:
     """All sales activities for a deal, newest first (the deal's interaction log)."""
     rows = [a for a in all_activities() if a.get("deal_id") == deal_id]
+    return sorted(rows, key=lambda a: a.get("activity_date", ""), reverse=True)
+
+
+def activities_for_customer(customer_id: str) -> list[dict]:
+    """All activities across a customer's deals, newest first."""
+    deal_ids = {d["deal_id"] for d in deals_for_customer(customer_id)}
+    rows = [a for a in all_activities() if a.get("deal_id") in deal_ids]
     return sorted(rows, key=lambda a: a.get("activity_date", ""), reverse=True)
 
 
@@ -242,22 +251,77 @@ def _alias_index() -> dict[str, set[str]]:
     return idx
 
 
+@dataclass
+class CustomerCandidate:
+    customer_id: str
+    name: str
+    matched_aliases: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CustomerResolution:
+    status: Literal["resolved", "ambiguous", "not_found"]
+    query: str
+    customer: dict | None = None
+    candidates: list[CustomerCandidate] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "status": self.status,
+            "query": self.query,
+            "customer": self.customer,
+            "candidates": [asdict(c) for c in self.candidates],
+        }
+
+
+def _candidate(customer_id: str, match_key: str = "") -> CustomerCandidate:
+    c = get_customer(customer_id) or {"customer_id": customer_id, "name": customer_id}
+    aliases = []
+    for form in name_forms(c.get("name", "")) + customer_aliases().get(customer_id, []):
+        if not match_key or _norm(form) == match_key:
+            aliases.append(form)
+    return CustomerCandidate(
+        customer_id=customer_id,
+        name=c.get("name", customer_id),
+        matched_aliases=sorted(set(aliases)),
+    )
+
+
+def resolve_customer_detailed(query: str) -> CustomerResolution:
+    """Resolve one customer, preserving ambiguity as a first-class state."""
+    q = (query or "").strip()
+    if not q:
+        return CustomerResolution(status="not_found", query=query or "")
+
+    by_id = get_customer(q)
+    if by_id:
+        return CustomerResolution(status="resolved", query=q, customer=by_id)
+
+    key = _norm(q)
+    ids = _alias_index().get(key)
+    if ids:
+        if len(ids) == 1:
+            return CustomerResolution(
+                status="resolved", query=q, customer=get_customer(next(iter(ids))))
+        return CustomerResolution(
+            status="ambiguous",
+            query=q,
+            candidates=[_candidate(cid, key) for cid in sorted(ids)],
+        )
+
+    loose = find_customer_by_name(q)
+    if loose:
+        return CustomerResolution(status="resolved", query=q, customer=loose)
+
+    return CustomerResolution(status="not_found", query=q)
+
+
 def resolve_customer(query: str) -> dict | None:
     """Resolve a customer from an id, JA name, English/romaji name or known alias.
     Returns None when the query is empty, unknown, or ambiguous (maps to >1
     customer) — never a guess. This is the single entry point tools and the coach
     use before retrieval."""
-    if not query:
-        return None
-    q = query.strip()
-    by_id = get_customer(q)
-    if by_id:
-        return by_id
-    ids = _alias_index().get(_norm(q))
-    if ids:
-        return get_customer(next(iter(ids))) if len(ids) == 1 else None
-    # Fall back to loose JA substring match (legacy behaviour) for partial JA names.
-    return find_customer_by_name(q)
+    return resolve_customer_detailed(query).customer
 
 
 def match_customer_in_text(text: str) -> dict | None:
