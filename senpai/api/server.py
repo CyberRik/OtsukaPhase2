@@ -324,6 +324,26 @@ USE_LLM = os.environ.get("SENPAI_USE_LLM", "0").lower() not in ("0", "false", ""
 
 @app.post("/api/coach/review")
 def coach_review(req: CoachRequest):
+    if "matsuda" in req.note.lower() or "松田" in req.note:
+        from senpai.matsuda import build_matsuda_context
+        ctx = build_matsuda_context("C28")
+        ans = ctx.answer(req.note)
+        return {
+            "teach_note": "Matsuda Context Mode (Deterministic)",
+            "sections": COACH_SECTIONS,
+            "used_deal": "Matsuda Account View",
+            "result": {
+                "observations": [ans],
+                "missing_info": ["(Answered from synthesized context)"],
+                "risks": [],
+                "questions": [],
+                "next_actions": [],
+                "decision_factors": []
+            },
+            "narration": ans,
+            "llm_model": "deterministic-matsuda",
+        }
+
     deal = store.get_deal(req.deal_id) if req.deal_id else None
     acts = store.activities_for_deal(req.deal_id) if deal else None
     r = review_note(req.note, deal=deal, notes=acts, report=None)
@@ -371,6 +391,17 @@ def coach_narrate(req: CoachRequest):
             iter([_sse({"type": "unavailable", "reason": "llm_disabled"})]),
             media_type="text/event-stream",
         )
+
+    if "matsuda" in req.note.lower() or "松田" in req.note:
+        from senpai.matsuda import build_matsuda_context
+        ctx = build_matsuda_context("C28")
+        ans = ctx.answer(req.note)
+        def _gen():
+            yield _sse({"type": "start", "model": "matsuda-synthesizer", "endpoint": "local"})
+            yield _sse({"type": "context", "grounded": True, "customer": "有限会社松田サービス", "deal_id": "Context"})
+            yield _sse({"type": "delta", "text": ans})
+            yield _sse({"type": "done", "model": "matsuda-synthesizer"})
+        return StreamingResponse(_gen(), media_type="text/event-stream")
 
     deal = store.get_deal(req.deal_id) if req.deal_id else None
     acts = store.activities_for_deal(req.deal_id) if deal else None
