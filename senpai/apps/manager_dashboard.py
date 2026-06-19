@@ -40,7 +40,7 @@ def _scored_rows():
     for d in store.open_deals():
         acts = store.activities_for_deal(d["deal_id"])
         res = score_deal(d, acts, today=today)
-        flags = deal_flags(d, acts, res.band, today=today)
+        flags = deal_flags(d, acts, health_band=res.band, today=today)
         rep = store.rep_name(store.deal_rep_id(d))
         last = _last_activity_date(acts)
         stale_days = (today - pd.to_datetime(last).date()).days if last else None
@@ -119,7 +119,7 @@ def _render_deal(deal_id: str):
     d = store.get_deal(deal_id)
     acts = store.activities_for_deal(deal_id)
     res = score_deal(d, acts)
-    flags = deal_flags(d, acts, res.band)
+    flags = deal_flags(d, acts, health_band=res.band)
 
     left, right = st.columns([2, 3])
     with left:

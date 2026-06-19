@@ -34,7 +34,27 @@
     "rank_updated_at": "2026-04-19",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "closing",
+    "amount": 2600000,
+    "status": "open",
+    "expected_close_date": "2026-05-14",
+    "close_date_history": [
+      "2026-05-14"
+    ],
+    "last_contact_date": "2026-05-01",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-04-19"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C20",
@@ -71,7 +91,27 @@
     "rank_updated_at": "2026-04-13",
     "order_rank": "3_A",
     "initial_order_rank": "3_A",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R05",
+    "stage": "negotiation",
+    "amount": 384000,
+    "status": "open",
+    "expected_close_date": "2026-05-13",
+    "close_date_history": [
+      "2026-05-13"
+    ],
+    "last_contact_date": "2026-04-18",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "negotiation",
+        "entered_date": "2026-04-13"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C28",
@@ -108,7 +148,27 @@
     "rank_updated_at": "2026-04-26",
     "order_rank": "3_A",
     "initial_order_rank": "3_A",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R04",
+    "stage": "negotiation",
+    "amount": 576000,
+    "status": "open",
+    "expected_close_date": "2026-05-20",
+    "close_date_history": [
+      "2026-05-20"
+    ],
+    "last_contact_date": "2026-04-15",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "negotiation",
+        "entered_date": "2026-04-26"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C32",
@@ -145,7 +205,27 @@
     "rank_updated_at": "2026-04-05",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R04",
+    "stage": "closing",
+    "amount": 672000,
+    "status": "open",
+    "expected_close_date": "2026-05-20",
+    "close_date_history": [
+      "2026-05-20"
+    ],
+    "last_contact_date": "2026-04-23",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-04-05"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C31",
@@ -182,7 +262,27 @@
     "rank_updated_at": "2026-05-19",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 33
+    "days_back_from_confirmed": 33,
+    "rep_id": "R01",
+    "stage": "closing",
+    "amount": 504000,
+    "status": "won",
+    "expected_close_date": "2026-07-19",
+    "close_date_history": [
+      "2026-07-19"
+    ],
+    "last_contact_date": "2026-05-30",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-19"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C14",
@@ -219,7 +319,27 @@
     "rank_updated_at": "2026-05-21",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 58
+    "days_back_from_confirmed": 58,
+    "rep_id": "R08",
+    "stage": "closing",
+    "amount": 504000,
+    "status": "won",
+    "expected_close_date": "2026-08-13",
+    "close_date_history": [
+      "2026-08-13"
+    ],
+    "last_contact_date": "2026-06-08",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-21"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C02",
@@ -256,7 +376,27 @@
     "rank_updated_at": "2026-05-21",
     "order_rank": "7_Lost",
     "initial_order_rank": "7_Lost",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R05",
+    "stage": "lost",
+    "amount": 324000,
+    "status": "lost",
+    "expected_close_date": "2026-07-16",
+    "close_date_history": [
+      "2026-07-16"
+    ],
+    "last_contact_date": "2026-06-04",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lost",
+        "entered_date": "2026-05-21"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C01",
@@ -293,7 +433,27 @@
     "rank_updated_at": "2026-05-16",
     "order_rank": "3_A",
     "initial_order_rank": "3_A",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R07",
+    "stage": "negotiation",
+    "amount": 27200,
+    "status": "open",
+    "expected_close_date": "2026-07-10",
+    "close_date_history": [
+      "2026-07-10"
+    ],
+    "last_contact_date": "2026-05-25",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "negotiation",
+        "entered_date": "2026-05-16"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C01",
@@ -330,7 +490,27 @@
     "rank_updated_at": "2026-05-14",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 35
+    "days_back_from_confirmed": 35,
+    "rep_id": "R04",
+    "stage": "closing",
+    "amount": 480000,
+    "status": "won",
+    "expected_close_date": "2026-07-21",
+    "close_date_history": [
+      "2026-07-21"
+    ],
+    "last_contact_date": "2026-05-30",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-14"
+      }
+    ],
+    "products": [
+      "MFP30"
+    ]
   },
   {
     "customer_id": "C23",
@@ -367,7 +547,27 @@
     "rank_updated_at": "2026-05-25",
     "order_rank": "4_B",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "proposal",
+    "amount": 504000,
+    "status": "open",
+    "expected_close_date": "2026-07-14",
+    "close_date_history": [
+      "2026-07-14"
+    ],
+    "last_contact_date": "2026-06-13",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-05-25"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C22",
@@ -404,7 +604,27 @@
     "rank_updated_at": "2026-05-15",
     "order_rank": "7_Lost",
     "initial_order_rank": "7_Lost",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R03",
+    "stage": "lost",
+    "amount": 720000,
+    "status": "lost",
+    "expected_close_date": "2026-06-29",
+    "close_date_history": [
+      "2026-06-29"
+    ],
+    "last_contact_date": "2026-06-13",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lost",
+        "entered_date": "2026-05-15"
+      }
+    ],
+    "products": [
+      "MFP30"
+    ]
   },
   {
     "customer_id": "C29",
@@ -441,7 +661,27 @@
     "rank_updated_at": "2026-05-26",
     "order_rank": "7_Lost",
     "initial_order_rank": "7_Lost",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "lost",
+    "amount": 840000,
+    "status": "lost",
+    "expected_close_date": "2026-06-28",
+    "close_date_history": [
+      "2026-06-28"
+    ],
+    "last_contact_date": "2026-05-29",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lost",
+        "entered_date": "2026-05-26"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C28",
@@ -478,7 +718,27 @@
     "rank_updated_at": "2026-06-05",
     "order_rank": "6_P",
     "initial_order_rank": "6_P",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "lead",
+    "amount": 108000,
+    "status": "open",
+    "expected_close_date": "2026-06-28",
+    "close_date_history": [
+      "2026-06-28"
+    ],
+    "last_contact_date": "2026-06-14",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lead",
+        "entered_date": "2026-06-05"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C15",
@@ -515,7 +775,27 @@
     "rank_updated_at": "2026-05-09",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 27
+    "days_back_from_confirmed": 27,
+    "rep_id": "R01",
+    "stage": "closing",
+    "amount": 40800,
+    "status": "won",
+    "expected_close_date": "2026-07-13",
+    "close_date_history": [
+      "2026-07-13"
+    ],
+    "last_contact_date": "2026-06-15",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-09"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C04",
@@ -552,7 +832,27 @@
     "rank_updated_at": "2026-05-17",
     "order_rank": "6_P",
     "initial_order_rank": "6_P",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R04",
+    "stage": "lead",
+    "amount": 162000,
+    "status": "open",
+    "expected_close_date": "2026-06-27",
+    "close_date_history": [
+      "2026-06-27"
+    ],
+    "last_contact_date": "2026-05-23",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lead",
+        "entered_date": "2026-05-17"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C31",
@@ -589,7 +889,27 @@
     "rank_updated_at": "2026-05-07",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "qualified",
+    "amount": 384000,
+    "status": "open",
+    "expected_close_date": "2026-07-08",
+    "close_date_history": [
+      "2026-07-08"
+    ],
+    "last_contact_date": "2026-05-31",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-07"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C25",
@@ -626,7 +946,27 @@
     "rank_updated_at": "2026-05-21",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R04",
+    "stage": "closing",
+    "amount": 27200,
+    "status": "open",
+    "expected_close_date": "2026-07-10",
+    "close_date_history": [
+      "2026-07-10"
+    ],
+    "last_contact_date": "2026-06-04",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-21"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C25",
@@ -663,7 +1003,27 @@
     "rank_updated_at": "2026-05-14",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 9
+    "days_back_from_confirmed": 9,
+    "rep_id": "R06",
+    "stage": "closing",
+    "amount": 82800,
+    "status": "won",
+    "expected_close_date": "2026-06-25",
+    "close_date_history": [
+      "2026-06-25"
+    ],
+    "last_contact_date": "2026-05-30",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-14"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C28",
@@ -700,7 +1060,27 @@
     "rank_updated_at": "2026-06-03",
     "order_rank": "4_B",
     "initial_order_rank": "4_B",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R03",
+    "stage": "proposal",
+    "amount": 480000,
+    "status": "open",
+    "expected_close_date": "2026-07-13",
+    "close_date_history": [
+      "2026-07-13"
+    ],
+    "last_contact_date": "2026-06-11",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-06-03"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C23",
@@ -737,7 +1117,27 @@
     "rank_updated_at": "2026-05-16",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 30
+    "days_back_from_confirmed": 30,
+    "rep_id": "R05",
+    "stage": "closing",
+    "amount": 55200,
+    "status": "won",
+    "expected_close_date": "2026-07-16",
+    "close_date_history": [
+      "2026-07-16"
+    ],
+    "last_contact_date": "2026-06-07",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-16"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C20",
@@ -774,7 +1174,27 @@
     "rank_updated_at": "2026-05-25",
     "order_rank": "4_B",
     "initial_order_rank": "3_A",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "proposal",
+    "amount": 1200000,
+    "status": "open",
+    "expected_close_date": "2026-08-13",
+    "close_date_history": [
+      "2026-08-13"
+    ],
+    "last_contact_date": "2026-05-24",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-05-25"
+      }
+    ],
+    "products": [
+      "MFP30"
+    ]
   },
   {
     "customer_id": "C24",
@@ -811,7 +1231,27 @@
     "rank_updated_at": "2026-05-10",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "qualified",
+    "amount": 27600,
+    "status": "open",
+    "expected_close_date": "2026-07-19",
+    "close_date_history": [
+      "2026-07-19"
+    ],
+    "last_contact_date": "2026-06-06",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-10"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C32",
@@ -848,7 +1288,27 @@
     "rank_updated_at": "2026-06-01",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 61
+    "days_back_from_confirmed": 61,
+    "rep_id": "R07",
+    "stage": "closing",
+    "amount": 168000,
+    "status": "won",
+    "expected_close_date": "2026-08-16",
+    "close_date_history": [
+      "2026-08-16"
+    ],
+    "last_contact_date": "2026-06-02",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-06-01"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C14",
@@ -885,7 +1345,27 @@
     "rank_updated_at": "2026-05-07",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 40
+    "days_back_from_confirmed": 40,
+    "rep_id": "R04",
+    "stage": "closing",
+    "amount": 336000,
+    "status": "won",
+    "expected_close_date": "2026-07-26",
+    "close_date_history": [
+      "2026-07-26"
+    ],
+    "last_contact_date": "2026-06-16",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-07"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C29",
@@ -922,7 +1402,27 @@
     "rank_updated_at": "2026-05-12",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 63
+    "days_back_from_confirmed": 63,
+    "rep_id": "R04",
+    "stage": "closing",
+    "amount": 54000,
+    "status": "won",
+    "expected_close_date": "2026-08-18",
+    "close_date_history": [
+      "2026-08-18"
+    ],
+    "last_contact_date": "2026-06-07",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-12"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C28",
@@ -959,7 +1459,27 @@
     "rank_updated_at": "2026-05-19",
     "order_rank": "4_B",
     "initial_order_rank": "4_B",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "proposal",
+    "amount": 384000,
+    "status": "open",
+    "expected_close_date": "2026-07-03",
+    "close_date_history": [
+      "2026-07-03"
+    ],
+    "last_contact_date": "2026-05-24",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-05-19"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C23",
@@ -996,7 +1516,27 @@
     "rank_updated_at": "2026-05-26",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R07",
+    "stage": "closing",
+    "amount": 40800,
+    "status": "open",
+    "expected_close_date": "2026-07-04",
+    "close_date_history": [
+      "2026-07-04"
+    ],
+    "last_contact_date": "2026-06-05",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-26"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C02",
@@ -1033,7 +1573,27 @@
     "rank_updated_at": "2026-05-24",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 5
+    "days_back_from_confirmed": 5,
+    "rep_id": "R03",
+    "stage": "closing",
+    "amount": 1008000,
+    "status": "won",
+    "expected_close_date": "2026-06-21",
+    "close_date_history": [
+      "2026-06-21"
+    ],
+    "last_contact_date": "2026-06-05",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-24"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C06",
@@ -1070,7 +1630,27 @@
     "rank_updated_at": "2026-06-11",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 15
+    "days_back_from_confirmed": 15,
+    "rep_id": "R01",
+    "stage": "closing",
+    "amount": 192000,
+    "status": "won",
+    "expected_close_date": "2026-07-01",
+    "close_date_history": [
+      "2026-07-01"
+    ],
+    "last_contact_date": "2026-05-26",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-06-11"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C17",
@@ -1107,7 +1687,27 @@
     "rank_updated_at": "2026-06-03",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R05",
+    "stage": "closing",
+    "amount": 168000,
+    "status": "open",
+    "expected_close_date": "2026-08-08",
+    "close_date_history": [
+      "2026-08-08"
+    ],
+    "last_contact_date": "2026-06-12",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-06-03"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C28",
@@ -1144,7 +1744,27 @@
     "rank_updated_at": "2026-05-20",
     "order_rank": "6_P",
     "initial_order_rank": "6_P",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "lead",
+    "amount": 384000,
+    "status": "open",
+    "expected_close_date": "2026-08-03",
+    "close_date_history": [
+      "2026-08-03"
+    ],
+    "last_contact_date": "2026-06-07",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lead",
+        "entered_date": "2026-05-20"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C21",
@@ -1181,7 +1801,27 @@
     "rank_updated_at": "2026-05-28",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R03",
+    "stage": "qualified",
+    "amount": 520000,
+    "status": "open",
+    "expected_close_date": "2026-06-28",
+    "close_date_history": [
+      "2026-06-28"
+    ],
+    "last_contact_date": "2026-05-29",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-28"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C13",
@@ -1218,7 +1858,27 @@
     "rank_updated_at": "2026-05-17",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R06",
+    "stage": "qualified",
+    "amount": 216000,
+    "status": "open",
+    "expected_close_date": "2026-08-03",
+    "close_date_history": [
+      "2026-08-03"
+    ],
+    "last_contact_date": "2026-06-13",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-17"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C22",
@@ -1255,7 +1915,27 @@
     "rank_updated_at": "2026-05-29",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "qualified",
+    "amount": 168000,
+    "status": "open",
+    "expected_close_date": "2026-07-10",
+    "close_date_history": [
+      "2026-07-10"
+    ],
+    "last_contact_date": "2026-05-24",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-29"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C14",
@@ -1292,7 +1972,27 @@
     "rank_updated_at": "2026-06-05",
     "order_rank": "3_A",
     "initial_order_rank": "3_A",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R06",
+    "stage": "negotiation",
+    "amount": 27200,
+    "status": "open",
+    "expected_close_date": "2026-07-28",
+    "close_date_history": [
+      "2026-07-28"
+    ],
+    "last_contact_date": "2026-06-14",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "negotiation",
+        "entered_date": "2026-06-05"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C29",
@@ -1329,7 +2029,27 @@
     "rank_updated_at": "2026-05-13",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 58
+    "days_back_from_confirmed": 58,
+    "rep_id": "R08",
+    "stage": "closing",
+    "amount": 20400,
+    "status": "won",
+    "expected_close_date": "2026-08-13",
+    "close_date_history": [
+      "2026-08-13"
+    ],
+    "last_contact_date": "2026-05-31",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-13"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C10",
@@ -1366,7 +2086,27 @@
     "rank_updated_at": "2026-05-23",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 58
+    "days_back_from_confirmed": 58,
+    "rep_id": "R07",
+    "stage": "closing",
+    "amount": 480000,
+    "status": "won",
+    "expected_close_date": "2026-08-13",
+    "close_date_history": [
+      "2026-08-13"
+    ],
+    "last_contact_date": "2026-06-16",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-23"
+      }
+    ],
+    "products": [
+      "MFP30"
+    ]
   },
   {
     "customer_id": "C01",
@@ -1403,7 +2143,27 @@
     "rank_updated_at": "2026-06-07",
     "order_rank": "3_A",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "negotiation",
+    "amount": 720000,
+    "status": "open",
+    "expected_close_date": "2026-07-27",
+    "close_date_history": [
+      "2026-07-27"
+    ],
+    "last_contact_date": "2026-05-23",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "negotiation",
+        "entered_date": "2026-06-07"
+      }
+    ],
+    "products": [
+      "MFP30"
+    ]
   },
   {
     "customer_id": "C03",
@@ -1440,7 +2200,27 @@
     "rank_updated_at": "2026-05-23",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 13
+    "days_back_from_confirmed": 13,
+    "rep_id": "R07",
+    "stage": "closing",
+    "amount": 504000,
+    "status": "won",
+    "expected_close_date": "2026-06-29",
+    "close_date_history": [
+      "2026-06-29"
+    ],
+    "last_contact_date": "2026-05-22",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-23"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C03",
@@ -1477,7 +2257,27 @@
     "rank_updated_at": "2026-06-11",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 47
+    "days_back_from_confirmed": 47,
+    "rep_id": "R04",
+    "stage": "closing",
+    "amount": 504000,
+    "status": "won",
+    "expected_close_date": "2026-08-02",
+    "close_date_history": [
+      "2026-08-02"
+    ],
+    "last_contact_date": "2026-05-27",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-06-11"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C29",
@@ -1514,7 +2314,27 @@
     "rank_updated_at": "2026-06-11",
     "order_rank": "6_P",
     "initial_order_rank": "6_P",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R01",
+    "stage": "lead",
+    "amount": 41400,
+    "status": "open",
+    "expected_close_date": "2026-08-11",
+    "close_date_history": [
+      "2026-08-11"
+    ],
+    "last_contact_date": "2026-06-14",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lead",
+        "entered_date": "2026-06-11"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C10",
@@ -1551,7 +2371,27 @@
     "rank_updated_at": "2026-05-12",
     "order_rank": "5_C",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "qualified",
+    "amount": 504000,
+    "status": "open",
+    "expected_close_date": "2026-08-10",
+    "close_date_history": [
+      "2026-08-10"
+    ],
+    "last_contact_date": "2026-06-05",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-12"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C12",
@@ -1588,7 +2428,27 @@
     "rank_updated_at": "2026-05-30",
     "order_rank": "3_A",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R06",
+    "stage": "negotiation",
+    "amount": 108000,
+    "status": "open",
+    "expected_close_date": "2026-08-23",
+    "close_date_history": [
+      "2026-08-23"
+    ],
+    "last_contact_date": "2026-05-22",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "negotiation",
+        "entered_date": "2026-05-30"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C10",
@@ -1625,7 +2485,27 @@
     "rank_updated_at": "2026-05-23",
     "order_rank": "4_B",
     "initial_order_rank": "4_B",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R05",
+    "stage": "proposal",
+    "amount": 192000,
+    "status": "open",
+    "expected_close_date": "2026-07-27",
+    "close_date_history": [
+      "2026-07-27"
+    ],
+    "last_contact_date": "2026-05-31",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-05-23"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   },
   {
     "customer_id": "C27",
@@ -1662,7 +2542,27 @@
     "rank_updated_at": "2026-05-26",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R01",
+    "stage": "qualified",
+    "amount": 3120000,
+    "status": "open",
+    "expected_close_date": "2026-07-22",
+    "close_date_history": [
+      "2026-07-22"
+    ],
+    "last_contact_date": "2026-06-01",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-26"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C24",
@@ -1699,7 +2599,27 @@
     "rank_updated_at": "2026-06-05",
     "order_rank": "5_C",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R02",
+    "stage": "qualified",
+    "amount": 336000,
+    "status": "open",
+    "expected_close_date": "2026-06-27",
+    "close_date_history": [
+      "2026-06-27"
+    ],
+    "last_contact_date": "2026-06-13",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-06-05"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C06",
@@ -1736,7 +2656,27 @@
     "rank_updated_at": "2026-06-01",
     "order_rank": "7_Lost",
     "initial_order_rank": "7_Lost",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R07",
+    "stage": "lost",
+    "amount": 216000,
+    "status": "lost",
+    "expected_close_date": "2026-08-05",
+    "close_date_history": [
+      "2026-08-05"
+    ],
+    "last_contact_date": "2026-05-29",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lost",
+        "entered_date": "2026-06-01"
+      }
+    ],
+    "products": [
+      "NSW24"
+    ]
   },
   {
     "customer_id": "C09",
@@ -1773,7 +2713,27 @@
     "rank_updated_at": "2026-05-24",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 51
+    "days_back_from_confirmed": 51,
+    "rep_id": "R02",
+    "stage": "closing",
+    "amount": 1560000,
+    "status": "won",
+    "expected_close_date": "2026-08-06",
+    "close_date_history": [
+      "2026-08-06"
+    ],
+    "last_contact_date": "2026-05-30",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-24"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C27",
@@ -1810,7 +2770,27 @@
     "rank_updated_at": "2026-06-13",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 65
+    "days_back_from_confirmed": 65,
+    "rep_id": "R05",
+    "stage": "closing",
+    "amount": 40800,
+    "status": "won",
+    "expected_close_date": "2026-08-20",
+    "close_date_history": [
+      "2026-08-20"
+    ],
+    "last_contact_date": "2026-05-28",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-06-13"
+      }
+    ],
+    "products": [
+      "AV365"
+    ]
   },
   {
     "customer_id": "C14",
@@ -1847,7 +2827,27 @@
     "rank_updated_at": "2026-06-03",
     "order_rank": "5_C",
     "initial_order_rank": "5_C",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R06",
+    "stage": "qualified",
+    "amount": 55200,
+    "status": "open",
+    "expected_close_date": "2026-08-03",
+    "close_date_history": [
+      "2026-08-03"
+    ],
+    "last_contact_date": "2026-06-02",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-06-03"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C19",
@@ -1884,7 +2884,27 @@
     "rank_updated_at": "2026-05-29",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R01",
+    "stage": "closing",
+    "amount": 1008000,
+    "status": "open",
+    "expected_close_date": "2026-08-21",
+    "close_date_history": [
+      "2026-08-21"
+    ],
+    "last_contact_date": "2026-05-24",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-29"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C19",
@@ -1921,7 +2941,27 @@
     "rank_updated_at": "2026-05-09",
     "order_rank": "2_A+",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R06",
+    "stage": "closing",
+    "amount": 1008000,
+    "status": "open",
+    "expected_close_date": "2026-06-25",
+    "close_date_history": [
+      "2026-06-25"
+    ],
+    "last_contact_date": "2026-06-09",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-09"
+      }
+    ],
+    "products": [
+      "LP14"
+    ]
   },
   {
     "customer_id": "C12",
@@ -1958,7 +2998,27 @@
     "rank_updated_at": "2026-05-09",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 29
+    "days_back_from_confirmed": 29,
+    "rep_id": "R01",
+    "stage": "closing",
+    "amount": 41400,
+    "status": "won",
+    "expected_close_date": "2026-07-15",
+    "close_date_history": [
+      "2026-07-15"
+    ],
+    "last_contact_date": "2026-05-26",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-09"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C26",
@@ -1995,7 +3055,27 @@
     "rank_updated_at": "2026-05-22",
     "order_rank": "6_P",
     "initial_order_rank": "6_P",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R05",
+    "stage": "lead",
+    "amount": 13800,
+    "status": "open",
+    "expected_close_date": "2026-07-19",
+    "close_date_history": [
+      "2026-07-19"
+    ],
+    "last_contact_date": "2026-05-28",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lead",
+        "entered_date": "2026-05-22"
+      }
+    ],
+    "products": [
+      "OFFICE"
+    ]
   },
   {
     "customer_id": "C14",
@@ -2032,7 +3112,27 @@
     "rank_updated_at": "2026-05-13",
     "order_rank": "5_C",
     "initial_order_rank": "2_A+",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R08",
+    "stage": "qualified",
+    "amount": 1200000,
+    "status": "open",
+    "expected_close_date": "2026-08-18",
+    "close_date_history": [
+      "2026-08-18"
+    ],
+    "last_contact_date": "2026-06-03",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "qualified",
+        "entered_date": "2026-05-13"
+      }
+    ],
+    "products": [
+      "MFP30"
+    ]
   },
   {
     "customer_id": "C27",
@@ -2069,7 +3169,27 @@
     "rank_updated_at": "2026-05-21",
     "order_rank": "1_Confirmed",
     "initial_order_rank": "1_Confirmed",
-    "days_back_from_confirmed": 15
+    "days_back_from_confirmed": 15,
+    "rep_id": "R06",
+    "stage": "closing",
+    "amount": 2080000,
+    "status": "won",
+    "expected_close_date": "2026-07-01",
+    "close_date_history": [
+      "2026-07-01"
+    ],
+    "last_contact_date": "2026-06-04",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "high",
+    "stage_history": [
+      {
+        "stage": "closing",
+        "entered_date": "2026-05-21"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C07",
@@ -2106,7 +3226,27 @@
     "rank_updated_at": "2026-05-30",
     "order_rank": "6_P",
     "initial_order_rank": "6_P",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R01",
+    "stage": "lead",
+    "amount": 2600000,
+    "status": "open",
+    "expected_close_date": "2026-06-26",
+    "close_date_history": [
+      "2026-06-26"
+    ],
+    "last_contact_date": "2026-05-24",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "low",
+    "stage_history": [
+      {
+        "stage": "lead",
+        "entered_date": "2026-05-30"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C34",
@@ -2143,7 +3283,27 @@
     "rank_updated_at": "2026-05-08",
     "order_rank": "4_B",
     "initial_order_rank": "4_B",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R04",
+    "stage": "proposal",
+    "amount": 1560000,
+    "status": "open",
+    "expected_close_date": "2026-07-13",
+    "close_date_history": [
+      "2026-07-13"
+    ],
+    "last_contact_date": "2026-05-24",
+    "decision_maker_identified": false,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-05-08"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C27",
@@ -2180,7 +3340,27 @@
     "rank_updated_at": "2026-06-09",
     "order_rank": "4_B",
     "initial_order_rank": "4_B",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R03",
+    "stage": "proposal",
+    "amount": 1040000,
+    "status": "open",
+    "expected_close_date": "2026-08-07",
+    "close_date_history": [
+      "2026-08-07"
+    ],
+    "last_contact_date": "2026-06-02",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-06-09"
+      }
+    ],
+    "products": [
+      "SRV20"
+    ]
   },
   {
     "customer_id": "C14",
@@ -2217,6 +3397,26 @@
     "rank_updated_at": "2026-05-11",
     "order_rank": "4_B",
     "initial_order_rank": "3_A",
-    "days_back_from_confirmed": null
+    "days_back_from_confirmed": null,
+    "rep_id": "R07",
+    "stage": "proposal",
+    "amount": 480000,
+    "status": "open",
+    "expected_close_date": "2026-08-05",
+    "close_date_history": [
+      "2026-08-05"
+    ],
+    "last_contact_date": "2026-05-27",
+    "decision_maker_identified": true,
+    "rep_close_likelihood": "med",
+    "stage_history": [
+      {
+        "stage": "proposal",
+        "entered_date": "2026-05-11"
+      }
+    ],
+    "products": [
+      "MFP15"
+    ]
   }
 ]

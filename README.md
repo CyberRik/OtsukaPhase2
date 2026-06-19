@@ -1,88 +1,79 @@
-# OtsukaPhase2
+# Senpai — Sales Knowledge & Onboarding Copilot (Otsuka, Phase 2)
 
-Live demo of the **ToolCallLM (exp3)** model: a small Gradio chatbot that answers
-in natural language while calling real tools (product catalog, quoting, weather,
-currency, web search, file writing, and Google Calendar booking) behind the scenes.
+Senpai makes the knowledge that lives in Otsuka's best salespeople available to every rep —
+on demand and in context — while giving managers one place to read deal health and catch
+dying deals early. It is a **fine-tuned, tool-calling assistant (exp3)** anchored to Otsuka's
+real SPR data, not a generic sales chatbot.
 
-It runs as **two processes**: a vLLM server that hosts the model, and a Gradio UI
-that talks to it over an OpenAI-compatible API.
+The pitch in one line: **onboarding is the relatable face; pipeline reliability — "nobody
+knows if a deal is real" — is the engine underneath.** The same deterministic deal-health
+read that briefs a junior before a call also flags a manager's dying deal.
 
-```
-demo/app.py    ──HTTP /v1──▶  vLLM server (serve_demo.sh)  ──▶  merged exp3 model
-   │  Gradio UI on :7860          on :8765                       (16 GB weights)
-   └─ demo/tools.py  (tool implementations)
-   └─ demo/gcal.py   (real Google Calendar booking)
-```
+---
 
-## Prerequisites
+## Repository map
 
-- A free GPU (the model is ~16 GB).
-- **The model weights and the vLLM serving environment live outside this repo**, in
-  the original `ToolCallLM_finetune` project:
-  - venv (has vLLM + CUDA): `/home/team-a/Desktop/ToolCallLM_finetune/.venv`
-  - model: `…/ToolCallLM/outputs/merged_toolmind_exp3_final`
+| Path | What it is | Owner |
+|---|---|---|
+| **`senpai/`** | **Our pipeline** — the deterministic deal-health engine on Otsuka's real SPR schema, plus the junior chat, manager chat, and manager dashboard. **Start here.** | this team |
+| `Schema.md` | The real Otsuka SPR schema (4 tables) + how our pipeline maps to it | this team |
+| `senpai/api/`, `web/`, `senpai/coach/`, `senpai/knowledge/` | A separate, in-progress **web-app experiment** (FastAPI + Next.js frontend, Sales Review Coach, Knowledge Explorer) | another team member |
+| `demo/` | Phase-1 tool-calling demo (the exp3 Gradio showcase that proved the model) | this team |
 
-  `demo/serve_demo.sh` points at both by absolute path and fails with a clear
-  message if either is missing. Override with `MODEL=` / `VENV=` if they move.
+> Our pipeline does **not** import or depend on the web-app experiment; the two are
+> decoupled and can run independently. See `senpai/README.md` → *Isolation* for details.
 
-## Setup
+---
+
+## Quickstart (our pipeline)
 
 ```bash
-# 1. UI dependencies — into this project's venv
+# install client-side deps into the project venv
 .venv/bin/pip install -r requirements.txt
+export SENPAI_TODAY=2026-06-16        # pin scoring's "today" to the seed anchor
+
+# Manager dashboard — no GPU, no model server needed
+.venv/bin/streamlit run senpai/apps/manager_dashboard.py     # http://localhost:8501
+
+# Chats — need the exp3 model served (GPU)
+./scripts/serve_model.sh                                     # exp3 on :8765
+.venv/bin/python senpai/apps/junior_chat.py                  # junior  → http://localhost:7860
+.venv/bin/python senpai/apps/manager_chat.py                 # manager → http://localhost:7861
 ```
 
-The serving side (vLLM) uses the external venv above; nothing to install there.
+The deal-health engine, dashboard, and unit tests are **pure Python (no GPU)**; only the two
+chats need the model server. The model itself is served by the external vLLM venv (see
+`scripts/serve_model.sh`), the same one the Phase-1 demo uses.
 
-### Optional real-tool keys
+**→ Full engineering reference, tool list, env vars, and verify steps:
+[`senpai/README.md`](senpai/README.md).**
+**→ The data shape we build against: [`Schema.md`](Schema.md).**
 
-- **Web search (Tavily):** put `TAVILY_API_KEY=...` in a repo-root `.env`
-  (loaded automatically by `demo/tools.py`). Without it, `web_search` falls back
-  to canned results.
-- **Google Calendar:** `schedule_meeting` books a real event.
-  1. Google Cloud Console → enable the **Google Calendar API**.
-  2. Create an **OAuth client ID → Desktop app**, download the JSON, and save it as
-     `demo/credentials.json` (use `demo/credentials.json.example` as a template).
-  3. Add your Google account as a **test user** on the consent screen.
-  4. The first booking opens a browser consent once and writes `demo/token.json`.
+---
 
-  Without these, `schedule_meeting` degrades to a `(simulated)` confirmation, so the
-  demo never breaks.
+## What's inside the pipeline (at a glance)
 
-## Run
+- **Real SPR schema.** `senpai/data/gen_seed.py` generates byte-stable synthetic data in
+  Otsuka's production shape (`deals`, `orders`, `quotes`, `sales_activities`), so the real
+  data is a drop-in when we get access. `order_rank` (`1_Confirmed … 8_Cancelled`) is the spine.
+- **Deterministic deal-health engine.** Seven rank-aware signals (staleness, rank stagnation,
+  order-date passed, rank regression, missing decision-maker, stall language, low activity) →
+  a 🔴🟡🟢 score with a Japanese reason for every signal. No number is ever invented by a model.
+- **Report-reliability flags.** Surfaces deals whose recorded rank contradicts their activity
+  signals (`optimism_mismatch`, `stale_active`, `close_date_passed`, …).
+- **Two chats + a dashboard.** Junior assistant (briefs, playbook, report drafting, expert
+  routing), manager assistant (at-risk deals, report digests, coaching focus, drafting), and a
+  Streamlit dashboard — all over one shared engine, with a `web_search` tool on both chats.
+
+## Verify (no GPU)
 
 ```bash
-# Terminal A — serve the model (waits for the GPU)
-./demo/serve_demo.sh                 # exp3 on http://127.0.0.1:8765
-
-# Terminal B — launch the UI
-.venv/bin/python demo/app.py         # open http://localhost:7860
+export SENPAI_TODAY=2026-06-16
+.venv/bin/pytest tests/test_scoring.py tests/test_flags.py tests/test_manager_tools.py
+.venv/bin/python -m senpai.tools.impl        # one canned call per tool
 ```
 
-Sanity check the server before recording:
+## Phase-1 demo
 
-```bash
-curl -s localhost:8765/v1/models | python3 -m json.tool   # should list "exp3"
-```
-
-See [`demo/demo_script.md`](demo/demo_script.md) for the full run sheet, example
-prompts, and talking points.
-
-## Environment variables
-
-| Var | Default | Used by | Meaning |
-|-----|---------|---------|---------|
-| `MODEL` | external model path | `serve_demo.sh` | Model dir to serve |
-| `VENV` | external venv path | `serve_demo.sh` | venv with vLLM |
-| `PORT` | `8765` | `serve_demo.sh` | vLLM server port |
-| `BASE_URL` | `http://127.0.0.1:8765/v1` | `app.py` | Where the UI sends requests |
-| `MODEL` | `exp3` | `app.py` | Served-model name (must match `--served-model-name`) |
-| `UI_HOST` | `127.0.0.1` | `app.py` | Bind address (use `0.0.0.0` to expose) |
-| `UI_PORT` | `7860` | `app.py` | UI port |
-| `TAVILY_API_KEY` | — | `tools.py` | Enables real web search |
-
-## Security
-
-`demo/credentials.json` and `demo/token.json` hold OAuth secrets and are
-git-ignored — never commit them. If they were ever committed, rotate the OAuth
-client secret and revoke the token.
+The original tool-calling showcase (exp3 answering in natural language while calling real
+tools) lives in [`demo/`](demo/) with its own run sheet at `demo/demo_script.md`.
