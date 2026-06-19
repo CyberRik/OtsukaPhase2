@@ -372,7 +372,7 @@ def coach_narrate(req: CoachRequest):
     acts = store.activities_for_deal(req.deal_id) if deal else None
     r = review_note(req.note, deal=deal, notes=acts, report=None)
     context_text, ctx_meta = build_commentary_context(
-        req.note, deal_id=req.deal_id, today=_today())
+        req.note, deal_id=req.deal_id, today=_today(), lang=req.lang)
     prompt = commentary_prompt(req.note, r, context_text,
                                ctx_meta["has_customer_context"], lang=req.lang)
 
@@ -411,6 +411,124 @@ def coach_narrate(req: CoachRequest):
                 yield _sse({"type": "unavailable", "reason": "empty"})
         except Exception:  # noqa: BLE001 — primary endpoint down/timeout (no fallback)
             yield _sse({"type": "unavailable", "reason": "unreachable"})
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# chat — the tool-calling assistant (junior / manager), streamed over SSE
+# ---------------------------------------------------------------------------
+# This exposes the SAME tool loop the Streamlit/Gradio chats use (stream_turn +
+# the role-scoped tool schemas) to the web product. The model autonomously calls
+# the deterministic sales tools — and web_search — grounding every answer in
+# store data. Tools are imported here; the openai-backed client is imported
+# lazily inside the generator so this module stays importable without a server.
+from senpai.tools.schemas import JUNIOR_TOOLS, MANAGER_TOOLS, RESEARCH_TOOLS
+
+
+# Concise system prompts (mirror senpai/apps/*_chat.py; inlined so we don't import
+# gradio). today() is read per-request so a pinned SENPAI_TODAY is respected.
+def _junior_system() -> str:
+    return (
+        "あなたは大塚商会の新人営業を支える『先輩(senpai)』アシスタントです。"
+        "回答は必ず社内データ(SPR・プレイブック・顧客環境・案件健全度)に基づき、"
+        "ツールを使って事実を確認してから答えてください。プレイブックを引用する際は"
+        "提供者名を添えること。自信が持てない時は route_to_expert で適切な先輩に橋渡し"
+        "してください。外部情報が必要な時は web_search を使ってください。"
+        "日本語で、簡潔かつ実務的に答えます。"
+        f"本日は {_today().isoformat()} です。"
+    )
+
+
+def _manager_system() -> str:
+    return (
+        "あなたは大塚商会の営業マネージャーを支えるアシスタントです。"
+        "チーム全体の案件健全度・日報・パイプラインを把握し、リスクの高い案件や"
+        "コーチングが必要な担当を、必ずツールで取得した社内データに基づいて示します。"
+        "数字は与えられたものだけを使い、創作しないこと。外部情報が必要な時は "
+        "web_search を使ってください。日本語で簡潔に答えます。"
+        f"本日は {_today().isoformat()} です。"
+    )
+
+
+def _research_system() -> str:
+    # The research assistant answers "tell me about / research this customer"
+    # questions. Strict source priority — internal first, web only to fill gaps —
+    # so it stays a grounded research tool, NOT a generic chatbot.
+    return (
+        "あなたは大塚商会の営業担当が顧客訪問前に使う『顧客リサーチ』アシスタントです。"
+        "顧客について調べる質問に、必ずツールを使って答えます。\n"
+        "厳守する調査手順（この順序を逆にしないこと）:\n"
+        "1. まず query_spr で社内の顧客・案件情報を確認する（英語/ローマ字の社名でも"
+        "そのまま渡せば内部で名寄せされる。例: 'Aozora Services'）。\n"
+        "2. 案件があれば score_deal_health で健全度、find_similar_deals で類似案件、"
+        "lookup_customer_environment でIT環境、get_product_info で製品情報を補う。\n"
+        "3. 社内情報で答えられない外部情報（事業内容・業界動向・競合・最新ニュース）が"
+        "必要なときに限り web_search を使う。\n"
+        "回答ルール: 社内データを最優先で示し、その後に外部情報を添える。"
+        "社内に記録がない場合はその旨を明記し、事実を創作しない。"
+        "web_search の結果は出典（URL）を添えて引用する。"
+        "日本語で、要点を構造化して簡潔に答えます。"
+        f"本日は {_today().isoformat()} です。"
+    )
+
+
+_CHAT_ROLES = {
+    "junior": (JUNIOR_TOOLS, _junior_system),
+    "manager": (MANAGER_TOOLS, _manager_system),
+    "research": (RESEARCH_TOOLS, _research_system),
+}
+
+
+class ChatMessage(BaseModel):
+    role: str       # "user" | "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[ChatMessage] = []          # prior user/assistant turns (no system)
+    role: str = "junior"                     # "junior" | "manager"
+
+
+@app.post("/api/chat")
+def chat(req: ChatRequest):
+    """Stream one assistant turn through the tool loop (SSE).
+
+    The model decides which tools to call; each executed tool is surfaced to the
+    UI (name, args, result) before the final answer is sent. Grounded entirely in
+    the deterministic store/scoring engine plus web_search. Event types:
+      start | tool | answer | done | error
+    On any model/transport failure the tool loop returns an error string, which
+    we emit as a single `answer` (never a crash)."""
+    tools, system_fn = _CHAT_ROLES.get(req.role, _CHAT_ROLES["junior"])
+
+    convo: list[dict] = [{"role": "system", "content": system_fn()}]
+    for m in req.history:
+        if m.role in ("user", "assistant") and m.content:
+            convo.append({"role": m.role, "content": m.content})
+    convo.append({"role": "user", "content": req.message})
+
+    def gen():
+        from senpai.llm.client import stream_turn   # lazy: keep module import light
+        yield _sse({"type": "start", "model": config.MODEL,
+                    "endpoint": config.BASE_URL, "role": req.role})
+        emitted = 0           # tool_log entries already streamed to the client
+        answer = None
+        try:
+            for tool_log, answer in stream_turn(convo, tools=tools):
+                for name, args, result in tool_log[emitted:]:
+                    yield _sse({"type": "tool", "name": name,
+                                "args": args, "result": result})
+                emitted = len(tool_log)
+            yield _sse({"type": "answer", "text": answer or ""})
+            yield _sse({"type": "done", "model": config.MODEL})
+        except Exception as e:  # noqa: BLE001 — never crash the stream
+            yield _sse({"type": "error", "reason": str(e)})
 
     return StreamingResponse(
         gen(),

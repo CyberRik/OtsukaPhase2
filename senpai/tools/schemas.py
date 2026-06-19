@@ -297,3 +297,13 @@ MANAGER_TOOLS = _pick(
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
     "draft_message", "web_search",
 )
+
+# Research assistant ("tell me about this customer"): read-only lookups, internal
+# first, with web_search to fill external gaps. No drafting/coaching tools — this
+# is a grounded research surface, not a generic chat. Order mirrors the intended
+# source priority (internal records → deal signals → web).
+RESEARCH_TOOLS = _pick(
+    "query_spr", "find_similar_deals", "score_deal_health",
+    "lookup_customer_environment", "get_product_info",
+    "get_seasonal_context", "web_search",
+)

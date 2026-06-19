@@ -90,8 +90,9 @@ export const api = {
 
 // --- Streaming senior commentary (SSE from the vLLM-backed bridge) ----------
 export type NarrateEvent =
-  | { type: "start"; model?: string }
+  | { type: "start"; model?: string; endpoint?: string }
   | { type: "thinking"; chars: number }
+  | { type: "context"; grounded: boolean; customer?: string | null; deal_id?: string | null }
   | { type: "delta"; text: string }
   | { type: "done"; model?: string }
   | { type: "fallback" }
@@ -127,7 +128,71 @@ export async function narrateStream(
     return;
   }
 
-  const reader = res.body.getReader();
+  await readSSE(res, (obj) => onEvent(obj as NarrateEvent), () =>
+    onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+// --- Tool-calling chat assistant (junior / manager) -------------------------
+// Streams one assistant turn from /api/chat. The model autonomously calls the
+// deterministic sales tools (and web_search); each executed tool arrives as a
+// `tool` event before the final `answer`.
+export type ChatRole = "junior" | "manager" | "research";
+
+export type ChatEvent =
+  | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
+  | { type: "tool"; name: string; args: string; result: string }
+  | { type: "answer"; text: string }
+  | { type: "done"; model?: string }
+  | { type: "error"; reason?: string };
+
+export interface ChatTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/**
+ * Stream one assistant turn through the tool loop. Resolves when the stream
+ * ends. Any transport failure surfaces as an `error` event (never throws).
+ */
+export async function chatStream(
+  message: string,
+  history: ChatTurn[],
+  role: ChatRole,
+  onEvent: (e: ChatEvent) => void,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history, role }),
+      cache: "no-store",
+      signal: opts?.signal,
+    });
+  } catch {
+    onEvent({ type: "error", reason: "network" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    onEvent({ type: "error", reason: `http_${res.status}` });
+    return;
+  }
+  await readSSE(res, (obj) => onEvent(obj as ChatEvent), () =>
+    onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+// --- shared SSE frame reader ------------------------------------------------
+// Parses `data: {...}\n\n` frames from a streaming Response, invoking `onObj`
+// per JSON frame. Used by both narrateStream and chatStream.
+async function readSSE(
+  res: Response,
+  onObj: (obj: unknown) => void,
+  onFail: () => void,
+): Promise<void> {
+  const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buf = "";
   try {
@@ -141,13 +206,13 @@ export async function narrateStream(
         const line = frame.split("\n").find((l) => l.startsWith("data:"));
         if (!line) continue;
         try {
-          onEvent(JSON.parse(line.slice(5).trim()) as NarrateEvent);
+          onObj(JSON.parse(line.slice(5).trim()));
         } catch {
           /* ignore malformed frame */
         }
       }
     }
   } catch {
-    onEvent({ type: "error", reason: "stream" });
+    onFail();
   }
 }

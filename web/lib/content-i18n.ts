@@ -450,6 +450,15 @@ export const COACH_LINE_EN: Record<string, string> = {
     "Avoid competing on price; differentiate on maintenance and post-rollout support.",
   "現状で大きな抜けは見当たらない。次の一歩を予定どおり進める":
     "No major gaps stand out for now; proceed with the next step as planned.",
+  // --- fused deal-data signals (scoring.py / flags.py), static ones ---
+  "決裁者が未特定": "The decision-maker hasn't been identified.",
+  "直近30日の活動が0件": "No activity logged in the last 30 days.",
+};
+
+// Field names inside the "missing required fields" flag.
+const FIELD_EN: Record<string, string> = {
+  "決裁者": "decision-maker", "金額": "amount",
+  "完了予定日": "expected order date", "日報": "daily report",
 };
 
 // Templated coach lines: a fixed frame with a variable slice (a phrase the
@@ -459,6 +468,19 @@ const COACH_LINE_TEMPLATES: { re: RegExp; en: (m: RegExpMatchArray) => string }[
   { re: /^停滞を示す言葉「(.+?)」が出ている$/, en: (m) => `A stalling phrase (“${m[1]}”) appears in the customer's words.` },
   { re: /^競合の存在を示す言葉「(.+?)」がある$/, en: (m) => `A phrase signaling a competitor (“${m[1]}”) is present.` },
   { re: /^現在の段階: (.+?)\(健全度 (.+?)\)$/, en: (m) => `Current stage: ${m[1]} (health: ${m[2]}).` },
+  // --- fused deal-data signals (scoring.py reasons) ---
+  { re: /^(\d+)日間接触なし\(目安(\d+)日の2倍超\)$/, en: (m) => `${m[1]} days without contact (over 2× the ${m[2]}-day benchmark).` },
+  { re: /^(\d+)日間接触なし\(目安(\d+)日超\)$/, en: (m) => `${m[1]} days without contact (over the ${m[2]}-day benchmark).` },
+  { re: /^(.+?)に(\d+)日滞留\(目安(\d+)日\)$/, en: (m) => `Stuck at ${m[1]} for ${m[2]} days (benchmark ${m[3]} days).` },
+  { re: /^完了予定日\((.+?)\)を過ぎても未受注$/, en: (m) => `Past the expected order date (${m[1]}) with no order yet.` },
+  { re: /^ランクが (.+?) → (.+?) に低下$/, en: (m) => `Rank dropped from ${m[1]} → ${m[2]}.` },
+  { re: /^直近の日報に停滞サイン「(.+?)」$/, en: (m) => `A stall signal (“${m[1]}”) appears in the latest daily report.` },
+  // --- reliability flags (flags.py messages) ---
+  { re: /^完了予定日\((.+?)\)を過ぎても案件がオープン$/, en: (m) => `Past the expected order date (${m[1]}); the deal is still open.` },
+  { re: /^(\d+)日活動がないままアクティブ扱い$/, en: (m) => `Marked active despite ${m[1]} days with no activity.` },
+  { re: /^必須項目が未入力: (.+)$/, en: (m) => `Missing required fields: ${m[1].split("・").map((f) => FIELD_EN[f] ?? f).join(", ")}.` },
+  { re: /^ランクは『(.+?)』だが健全度は赤$/, en: (m) => `Rank is “${m[1]}” but health is red.` },
+  { re: /^(.+?)への更新を裏づける日報がない$/, en: (m) => `No daily report supports the update to ${m[1]}.` },
 ];
 
 /**
@@ -466,8 +488,16 @@ const COACH_LINE_TEMPLATES: { re: RegExp; en: (m: RegExpMatchArray) => string }[
  * unchanged; EN mode returns the exact/templated translation, or the JA
  * original with `fallback: true` (the caller shows a "JP Original" badge).
  */
+const SIGNAL_PREFIX = "案件データ上のサイン: ";
+
 export function coachLineText(lang: Lang, ja: string): Localized {
   if (lang !== "en") return { text: ja, fallback: false };
+  // "Deal-data signal: <reason>" — translate the inner reason recursively so the
+  // fused scoring signal reads fully in English.
+  if (ja.startsWith(SIGNAL_PREFIX)) {
+    const inner = coachLineText(lang, ja.slice(SIGNAL_PREFIX.length));
+    return { text: `Deal-data signal: ${inner.text}`, fallback: inner.fallback };
+  }
   const exact = COACH_LINE_EN[ja];
   if (exact) return { text: exact, fallback: false };
   for (const tpl of COACH_LINE_TEMPLATES) {

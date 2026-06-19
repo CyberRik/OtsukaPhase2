@@ -35,9 +35,11 @@ def _score_open_deals(rep_id: str = ""):
 
 
 def _resolve_customer(customer: str) -> dict | None:
+    """Alias-aware: resolves JA / English / romaji / known-alias forms (e.g.
+    'Aozora Services' -> あおぞらサービス) before any retrieval."""
     if not customer:
         return None
-    return store.get_customer(customer) or store.find_customer_by_name(customer)
+    return store.resolve_customer(customer)
 
 
 def _deal_line(d: dict) -> str:

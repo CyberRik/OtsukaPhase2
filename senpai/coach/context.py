@@ -14,6 +14,7 @@ fabricate customer facts.
 """
 from __future__ import annotations
 
+import re
 from datetime import date
 
 from senpai import config
@@ -21,9 +22,48 @@ from senpai.coach.cases import find_similar_cases
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
+from senpai.knowledge import store as kstore
 
-# Corporate tokens stripped when trying to spot a customer name inside free text.
-_CORP_TOKENS = ["株式会社", "有限会社", "合同会社", "(株)", "（株）", "(有)", "（有）"]
+# Deterministic signal/flag reasons are authored in Japanese (the engine stays
+# unchanged). For English commentary we render them in English IN THE CONTEXT so
+# the model has no Japanese to paste. Mirrors the frontend's coach-line templates.
+_FIELD_EN = {"決裁者": "decision-maker", "金額": "amount",
+             "完了予定日": "expected order date", "日報": "daily report"}
+_SIGNAL_EN: list[tuple[re.Pattern, object]] = [
+    (re.compile(r"^(\d+)日間接触なし\(目安(\d+)日の2倍超\)$"),
+     lambda m: f"{m[1]} days without contact (over 2x the {m[2]}-day benchmark)"),
+    (re.compile(r"^(\d+)日間接触なし\(目安(\d+)日超\)$"),
+     lambda m: f"{m[1]} days without contact (over the {m[2]}-day benchmark)"),
+    (re.compile(r"^(.+?)に(\d+)日滞留\(目安(\d+)日\)$"),
+     lambda m: f"stuck at {m[1]} for {m[2]} days (benchmark {m[3]} days)"),
+    (re.compile(r"^完了予定日\((.+?)\)を過ぎても未受注$"),
+     lambda m: f"past the expected order date ({m[1]}) with no order yet"),
+    (re.compile(r"^ランクが (.+?) → (.+?) に低下$"),
+     lambda m: f"rank dropped from {m[1]} -> {m[2]}"),
+    (re.compile(r"^決裁者が未特定$"), lambda m: "decision-maker not identified"),
+    (re.compile(r"^直近の日報に停滞サイン「(.+?)」$"),
+     lambda m: f'stall signal "{m[1]}" in the latest daily report'),
+    (re.compile(r"^直近30日の活動が0件$"), lambda m: "no activity in the last 30 days"),
+    (re.compile(r"^完了予定日\((.+?)\)を過ぎても案件がオープン$"),
+     lambda m: f"past the expected order date ({m[1]}); deal still open"),
+    (re.compile(r"^(\d+)日活動がないままアクティブ扱い$"),
+     lambda m: f"marked active despite {m[1]} days with no activity"),
+    (re.compile(r"^必須項目が未入力: (.+)$"),
+     lambda m: "missing required fields: "
+               + ", ".join(_FIELD_EN.get(f, f) for f in m[1].split("・"))),
+    (re.compile(r"^ランクは『(.+?)』だが健全度は赤$"),
+     lambda m: f'rank is "{m[1]}" but health is red'),
+    (re.compile(r"^(.+?)への更新を裏づける日報がない$"),
+     lambda m: f"no daily report supports the update to {m[1]}"),
+]
+
+
+def _en_signal(s: str) -> str:
+    for pat, fn in _SIGNAL_EN:
+        m = pat.match(s)
+        if m:
+            return fn(m)  # type: ignore[operator]
+    return s
 
 
 def _parse(d: str | None) -> date | None:
@@ -45,31 +85,12 @@ def _yen(n) -> str:
         return "¥0"
 
 
-def _name_forms(name: str) -> list[str]:
-    """A customer name plus its bare form (corporate prefix/suffix removed), so
-    '有限会社村田印刷' is found from a note that just says '村田印刷'."""
-    forms = {name}
-    bare = name
-    for tok in _CORP_TOKENS:
-        bare = bare.replace(tok, "")
-    bare = bare.strip()
-    if len(bare) >= 2:
-        forms.add(bare)
-    return [f for f in forms if f]
-
-
 def match_customer_in_note(note: str) -> dict | None:
-    """Find the most specific known customer named in the note (substring match
-    on the full or bare name). Longest match wins, so '大和商事システム' beats
-    '大和'. Returns the customer record or None."""
-    text = note or ""
-    best: tuple[int, dict] | None = None
-    for c in store.all_customers():
-        for form in _name_forms(c.get("name", "")):
-            if form and form in text:
-                if best is None or len(form) > best[0]:
-                    best = (len(form), c)
-    return best[1] if best else None
+    """Find the most specific known customer named in the note — across Japanese,
+    English, romaji and alias forms (e.g. 'Aozora Services' -> あおぞらサービス).
+    Longest match wins and ambiguous forms resolve to None; the alias-aware logic
+    lives in the store so tools and the coach share one resolver."""
+    return store.match_customer_in_text(note)
 
 
 def _pick_deal(customer_id: str) -> dict | None:
@@ -95,12 +116,37 @@ def _customer_history(customer_id: str, exclude_deal_id: str) -> str:
     return f"{len(deals)} prior deal(s) — {won} won, {lost} lost, {open_} open"
 
 
+def corpus_knowledge(note: str, principle_ids: list[str], max_n: int = 3) -> list[str]:
+    """Approved knowledge-corpus principles relevant to this situation, as
+    'P00x: <statement> (source <interview ids>)' lines. Draws from the similar
+    case's principle ids plus any approved items matching the note — so the
+    model's read can apply validated senior knowledge, never invented advice.
+    Every line is interview-traceable; nothing here is synthesized."""
+    ids: list[str] = list(dict.fromkeys(principle_ids))
+    for it in kstore.approved_items(query=note)[:3]:
+        pid = it.provenance.principle_id
+        if pid and pid not in ids:
+            ids.append(pid)
+    lines: list[str] = []
+    for pid in ids[:max_n]:
+        p = kstore.get_principle(pid)
+        if not p:
+            continue
+        srcs = ", ".join(p.interview_ids)
+        lines.append(f"{pid}: {p.statement}" + (f" (source {srcs})" if srcs else ""))
+    return lines
+
+
 def build_commentary_context(note: str, deal_id: str | None = None,
-                             today: date | None = None) -> tuple[str, dict]:
+                             today: date | None = None,
+                             lang: str = "ja") -> tuple[str, dict]:
     """Return (context_text, meta). `meta` carries has_customer_context and the
     resolved customer/deal for the UI. context_text is the grounded package fed
-    to the model (English labels; values verbatim from records)."""
+    to the model (English labels; values verbatim from records). When lang=='en'
+    the Japanese signal/flag reasons are rendered in English so the model has no
+    Japanese to leak into an English read."""
     today = today or config.today()
+    tr = _en_signal if lang == "en" else (lambda s: s)
 
     deal = store.get_deal(deal_id) if deal_id else None
     customer = None
@@ -128,7 +174,7 @@ def build_commentary_context(note: str, deal_id: str | None = None,
 
     acts = store.activities_for_deal(deal["deal_id"])
     res = score_deal(deal, acts, today=today)
-    flags = deal_flags(deal, acts, res.band, today=today)
+    flags = deal_flags(deal, acts, health_band=res.band, today=today)
     last_act = acts[0].get("activity_date") if acts else None
     inactive = _days_since(last_act, today)
     rank_since = _days_since(deal.get("rank_updated_at"), today)
@@ -149,13 +195,13 @@ def build_commentary_context(note: str, deal_id: str | None = None,
     )
     if rank_since is not None:
         lines.append(f"RANK AGE: at rank {deal.get('order_rank','-')} for {rank_since} days")
-    reasons = res.top_reasons(3)
+    reasons = [tr(r) for r in res.top_reasons(3)]
     lines.append(
         f"DEAL HEALTH: {res.band} (risk {res.score}/100)"
         + (f" — signals: {'; '.join(reasons)}" if reasons else "")
     )
     if flags:
-        lines.append("RELIABILITY FLAGS: " + "; ".join(f.message for f in flags))
+        lines.append("RELIABILITY FLAGS: " + "; ".join(tr(f.message) for f in flags))
     if inactive is not None:
         lines.append(f"INACTIVITY: last activity {last_act} ({inactive} days ago)")
     else:
@@ -182,11 +228,19 @@ def build_commentary_context(note: str, deal_id: str | None = None,
                          f"[{a.get('activity_type','-')}] {snippet}")
 
     similar = find_similar_cases(note, deal=deal, max_n=1, today=today)
+    sim_pids: list[str] = []
     if similar:
         s = similar[0]
+        sim_pids = s["principle_ids"]
         lines.append(
             f"SIMILAR PAST CASE: {s['customer']} ({s['product_category']}) "
             f"— {s['outcome']}; teaches principle(s) {', '.join(s['principle_ids'])}"
         )
+
+    corpus = corpus_knowledge(note, sim_pids)
+    if corpus:
+        lines.append("RELEVANT CORPUS KNOWLEDGE (validated senior principles — "
+                     "apply where they fit, cite the Pxxx id):")
+        lines.extend(f"  - {c}" for c in corpus)
 
     return "\n".join(lines), meta

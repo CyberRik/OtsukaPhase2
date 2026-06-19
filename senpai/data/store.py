@@ -27,9 +27,22 @@ def _load() -> dict[str, list[dict]]:
     return data
 
 
+@lru_cache(maxsize=1)
+def customer_aliases() -> dict[str, list[str]]:
+    """English / romaji / known-alias forms per customer_id (customer_aliases.json).
+    Keys starting with '_' (e.g. '_comment') are metadata and skipped."""
+    path = config.SEED_DIR / "customer_aliases.json"
+    if not path.exists():
+        return {}
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v for k, v in raw.items() if not k.startswith("_") and isinstance(v, list)}
+
+
 def reload() -> None:
     """Drop the cache (used by tests / after regenerating seed)."""
     _load.cache_clear()
+    customer_aliases.cache_clear()
+    _alias_index.cache_clear()
 
 
 # --- collections -----------------------------------------------------------
@@ -173,7 +186,8 @@ def reports_for_rep(employee_id: str) -> list[dict]:
 
 
 def find_customer_by_name(name: str) -> dict | None:
-    """Loose match: exact, then substring (handles 'アクメ商事' vs '株式会社アクメ商事')."""
+    """Loose JA match: exact, then substring (handles 'アクメ商事' vs '株式会社アクメ商事').
+    For cross-language resolution (English/romaji/alias) use resolve_customer."""
     if not name:
         return None
     n = name.strip()
@@ -183,4 +197,79 @@ def find_customer_by_name(name: str) -> dict | None:
     for c in all_customers():
         if n in c["name"] or c["name"] in n:
             return c
+    return None
+
+
+# --- alias-aware customer resolution ---------------------------------------
+# Resolves Japanese, English, romaji and known-alias forms to the canonical
+# customer record — BEFORE any retrieval. Built so a name that maps to more than
+# one customer is treated as ambiguous and never guessed (we'd rather miss than
+# fabricate the wrong customer's facts).
+_CORP_TOKENS = ["株式会社", "有限会社", "合同会社", "(株)", "（株）", "(有)", "（有）"]
+
+
+def _norm(s: str) -> str:
+    """Case/space-insensitive key. JA text is unaffected by lower()."""
+    return " ".join((s or "").split()).lower()
+
+
+def name_forms(name: str) -> list[str]:
+    """A customer name plus its bare form (corporate prefix/suffix removed), so
+    '有限会社村田印刷' is found from text that just says '村田印刷'."""
+    forms = {name}
+    bare = name
+    for tok in _CORP_TOKENS:
+        bare = bare.replace(tok, "")
+    bare = bare.strip()
+    if len(bare) >= 2:
+        forms.add(bare)
+    return [f for f in forms if f]
+
+
+@lru_cache(maxsize=1)
+def _alias_index() -> dict[str, set[str]]:
+    """Map a normalized name/alias key -> set of customer_ids that answer to it.
+    A key owned by >1 customer is ambiguous (callers must not guess)."""
+    aliases = customer_aliases()
+    idx: dict[str, set[str]] = {}
+    for c in all_customers():
+        cid = c["customer_id"]
+        keys = set(name_forms(c.get("name", ""))) | set(aliases.get(cid, []))
+        for k in keys:
+            kk = _norm(k)
+            if len(kk) >= 2:
+                idx.setdefault(kk, set()).add(cid)
+    return idx
+
+
+def resolve_customer(query: str) -> dict | None:
+    """Resolve a customer from an id, JA name, English/romaji name or known alias.
+    Returns None when the query is empty, unknown, or ambiguous (maps to >1
+    customer) — never a guess. This is the single entry point tools and the coach
+    use before retrieval."""
+    if not query:
+        return None
+    q = query.strip()
+    by_id = get_customer(q)
+    if by_id:
+        return by_id
+    ids = _alias_index().get(_norm(q))
+    if ids:
+        return get_customer(next(iter(ids))) if len(ids) == 1 else None
+    # Fall back to loose JA substring match (legacy behaviour) for partial JA names.
+    return find_customer_by_name(q)
+
+
+def match_customer_in_text(text: str) -> dict | None:
+    """Find the customer named anywhere in free text — across JA, English, romaji
+    and alias forms. Longest match wins (so 'Aozora Services' beats 'Aozora', and
+    '大和商事システム' beats '大和'); an ambiguous winning form resolves to None so
+    we never attribute the wrong customer's history."""
+    low = (text or "").lower()
+    best: tuple[int, set[str]] | None = None
+    for key, ids in _alias_index().items():
+        if key in low and (best is None or len(key) > best[0]):
+            best = (len(key), ids)
+    if best and len(best[1]) == 1:
+        return get_customer(next(iter(best[1])))
     return None

@@ -6,9 +6,14 @@ import {
   ArrowRight,
   BookMarked,
   Bot,
+  ChevronDown,
   CornerDownLeft,
+  Database,
   Eye,
   Award,
+  Building2,
+  ExternalLink,
+  Globe,
   GraduationCap,
   History,
   Languages,
@@ -25,7 +30,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { api, narrateStream } from "@/lib/api";
+import { api, narrateStream, chatStream, type ChatEvent } from "@/lib/api";
 import type {
   CoachExample,
   CoachResponse,
@@ -367,6 +372,7 @@ function CoachingCard({
   const [showJa, setShowJa] = useState(false);
   const [narr, setNarr] = useState<string | null>(null);
   const [narrModel, setNarrModel] = useState<string | null>(null);
+  const [narrGrounded, setNarrGrounded] = useState<string | null>(null);
   const [narrating, setNarrating] = useState(false);
   const [narrTried, setNarrTried] = useState(false);
   const [thinking, setThinking] = useState(false);
@@ -375,6 +381,9 @@ function CoachingCard({
   const [narrJa, setNarrJa] = useState<string | null>(null);
   const [narrJaShown, setNarrJaShown] = useState(false);
   const [narrJaLoading, setNarrJaLoading] = useState(false);
+  // AI-first: the deterministic six lenses are demoted to a collapsible
+  // "supporting evidence" panel, hidden by default.
+  const [showEvidence, setShowEvidence] = useState(false);
   const rel = relevantPrinciples(note, principles);
   const tipMap = buildTipMap(items);
 
@@ -389,6 +398,9 @@ function CoachingCard({
         case "start":
           model = e.model ?? null;
           setNarrModel(model);
+          break;
+        case "context":
+          setNarrGrounded(e.grounded ? (e.customer ?? null) : null);
           break;
         case "thinking":
           setThinking(true);
@@ -425,6 +437,13 @@ function CoachingCard({
     if (!acc) setNarrJa(null);
   }
 
+  // AI-first: stream the senior's read as soon as the coaching card mounts,
+  // so the grounded interpretation — not the deterministic checklist — leads.
+  useEffect(() => {
+    explain();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const relIds = rel.map((p) => p.principle_id);
   const similar = similarItems(relIds, items);
 
@@ -437,79 +456,8 @@ function CoachingCard({
         <LiveBadge live={live} />
       </div>
 
-      {/* 1–6: the six lenses, each collapsible */}
-      <div>
-        <div className="eyebrow mb-2 flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> {t("chat.lenses")}</div>
-        <Accordion type="multiple" defaultValue={["observations", "missing_info", "risks"]} className="space-y-2.5">
-          {resp.sections.map((meta) => (
-            <LensSection
-              key={meta.key}
-              meta={meta}
-              items={resp.result[meta.key] ?? []}
-              seniorLabel={t("coach.seniorDrawer")}
-              lang={lang}
-              tipMap={tipMap}
-            />
-          ))}
-        </Accordion>
-
-        {/* English mode: keep the JA source one click away (provenance) */}
-        {lang === "en" && (
-          <div className="mt-2.5">
-            <button
-              onClick={() => setShowJa((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              <Languages className="h-3.5 w-3.5" />
-              {showJa ? t("chat.hideJa") : t("chat.viewJa")}
-            </button>
-            {showJa && (
-              <div className="animate-fade-up mt-2.5 rounded-xl border border-dashed border-border bg-muted/30 p-4">
-                <div className="eyebrow mb-2">{t("chat.jaOriginalTitle")}</div>
-                <p className="mb-3 text-[11.5px] leading-snug text-muted-foreground">{t("chat.jaOriginalHint")}</p>
-                <div className="space-y-3">
-                  {resp.sections.map((meta) => {
-                    const its = resp.result[meta.key] ?? [];
-                    if (!its.length) return null;
-                    return (
-                      <div key={meta.key}>
-                        <div className="font-jp text-[12.5px] font-semibold text-foreground/80">{meta.ja}</div>
-                        <ul className="mt-1 space-y-1">
-                          {its.map((it, i) => (
-                            <li key={i} className="flex gap-2 font-jp text-[12.5px] leading-relaxed text-foreground/75">
-                              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current" />
-                              <span>{it}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Similar past cases — Pillar 2: Experience */}
-      <SimilarCases note={note} principles={principles} />
-
-      {/* 6: relevant principles + 7: provenance (expandable) */}
-      <div>
-        <div className="eyebrow mb-2 flex items-center gap-1.5"><BookMarked className="h-3.5 w-3.5" /> {t("chat.relevantPrinciples")}</div>
-        {rel.length ? (
-          <Accordion type="multiple" defaultValue={rel[0] ? [rel[0].principle_id] : []} className="space-y-2.5">
-            {rel.map((p) => <PrincipleRef key={p.principle_id} p={p} />)}
-          </Accordion>
-        ) : (
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
-            {t("chat.noPrinciples")}
-          </div>
-        )}
-      </div>
-
-      {/* Optional senior commentary — last in the guided flow, on demand */}
+      {/* Senior's read (AI) — primary, grounded in the corpus + deal record,
+          streamed as soon as the card mounts. */}
       <div>
         {!narrTried && !narrating && (
           <button
@@ -539,11 +487,18 @@ function CoachingCard({
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
                 )}
               </span>
-              {narrModel && (
-                <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  {t("chat.poweredBy", { model: narrModel })}
-                </span>
-              )}
+              <span className="flex items-center gap-1.5">
+                {narrGrounded && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-conf-high/10 px-2 py-0.5 text-[10px] font-medium text-conf-high">
+                    <Database className="h-2.5 w-2.5" /> {t("chat.groundedIn", { customer: narrGrounded })}
+                  </span>
+                )}
+                {narrModel && (
+                  <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    {t("chat.poweredBy", { model: narrModel })}
+                  </span>
+                )}
+              </span>
             </div>
             {narr ? (
               <NarrationMd text={narr} />
@@ -594,6 +549,91 @@ function CoachingCard({
         {narrTried && !narrating && !narr && (
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
             {t("chat.explainUnavailable")}
+          </div>
+        )}
+      </div>
+
+      {/* Supporting evidence — the deterministic six-lens checklist, demoted to a
+          collapsible panel (it's the trust layer beneath the senior's read). */}
+      <div>
+        <button
+          onClick={() => setShowEvidence((v) => !v)}
+          className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-left transition-colors hover:border-primary/40"
+        >
+          <span className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" /> {t("chat.supportingEvidence")}
+          </span>
+          <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showEvidence && "rotate-180")} />
+        </button>
+        {showEvidence && (
+          <div className="animate-fade-up mt-3">
+            <Accordion type="multiple" defaultValue={["observations", "missing_info", "risks"]} className="space-y-2.5">
+              {resp.sections.map((meta) => (
+                <LensSection
+                  key={meta.key}
+                  meta={meta}
+                  items={resp.result[meta.key] ?? []}
+                  seniorLabel={t("coach.seniorDrawer")}
+                  lang={lang}
+                  tipMap={tipMap}
+                />
+              ))}
+            </Accordion>
+
+            {/* English mode: keep the JA source one click away (provenance) */}
+            {lang === "en" && (
+              <div className="mt-2.5">
+                <button
+                  onClick={() => setShowJa((v) => !v)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                >
+                  <Languages className="h-3.5 w-3.5" />
+                  {showJa ? t("chat.hideJa") : t("chat.viewJa")}
+                </button>
+                {showJa && (
+                  <div className="animate-fade-up mt-2.5 rounded-xl border border-dashed border-border bg-muted/30 p-4">
+                    <div className="eyebrow mb-2">{t("chat.jaOriginalTitle")}</div>
+                    <p className="mb-3 text-[11.5px] leading-snug text-muted-foreground">{t("chat.jaOriginalHint")}</p>
+                    <div className="space-y-3">
+                      {resp.sections.map((meta) => {
+                        const its = resp.result[meta.key] ?? [];
+                        if (!its.length) return null;
+                        return (
+                          <div key={meta.key}>
+                            <div className="font-jp text-[12.5px] font-semibold text-foreground/80">{meta.ja}</div>
+                            <ul className="mt-1 space-y-1">
+                              {its.map((it, i) => (
+                                <li key={i} className="flex gap-2 font-jp text-[12.5px] leading-relaxed text-foreground/75">
+                                  <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current" />
+                                  <span>{it}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Similar past cases — Pillar 2: Experience */}
+      <SimilarCases note={note} principles={principles} />
+
+      {/* Relevant principles + provenance (the corpus the read draws on) */}
+      <div>
+        <div className="eyebrow mb-2 flex items-center gap-1.5"><BookMarked className="h-3.5 w-3.5" /> {t("chat.relevantPrinciples")}</div>
+        {rel.length ? (
+          <Accordion type="multiple" defaultValue={rel[0] ? [rel[0].principle_id] : []} className="space-y-2.5">
+            {rel.map((p) => <PrincipleRef key={p.principle_id} p={p} />)}
+          </Accordion>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
+            {t("chat.noPrinciples")}
           </div>
         )}
       </div>
@@ -656,13 +696,184 @@ function FollowUp({ icon: Icon, label, onClick, active }: { icon: LucideIcon; la
   );
 }
 
+// --- intent routing: research question vs. note coaching --------------------
+// Review Coach stays a coaching surface (notes / reports / opportunity reviews).
+// Only clearly research-style *questions about a customer* divert to the
+// tool-calling assistant — so this never becomes a generic chatbot. Triggers are
+// deliberately narrow (phrasings that don't occur in a pasted daily report), and
+// long text is treated as a note. A deal attached to the message always = coaching.
+const RESEARCH_TRIGGERS: RegExp[] = [
+  /tell me about/i,
+  /\bresearch\b/i,
+  /what (do|does) .*(company|customer|client|they|it) do/i,
+  /who are (their|the)\b/i,
+  /what should i know/i,
+  /before (approaching|i approach|contacting|the meeting|the call|reaching out)/i,
+  /background on/i,
+  /find out about/i,
+  /について教えて/, /を調べて/, /について調べ/, /どんな(会社|企業)/,
+  /知っておくべき/, /リサーチ/, /訪問前/, /事業内容/,
+  /競合(を教え|は誰|はどこ|を調べ|について教え)/,
+];
+
+function isResearchQuestion(text: string): boolean {
+  if (text.length > 220) return false; // long = a pasted note → coaching
+  return RESEARCH_TRIGGERS.some((re) => re.test(text));
+}
+
+// Friendly labels for the tools the research assistant calls.
+const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIcon }> = {
+  query_spr: { ja: "社内の顧客・案件", en: "Internal records", icon: Database },
+  find_similar_deals: { ja: "類似案件", en: "Similar deals", icon: Layers },
+  score_deal_health: { ja: "案件健全度", en: "Deal health", icon: AlertTriangle },
+  lookup_customer_environment: { ja: "IT環境", en: "IT environment", icon: Building2 },
+  get_product_info: { ja: "製品情報", en: "Product info", icon: BookMarked },
+  get_seasonal_context: { ja: "時期・予算", en: "Seasonal context", icon: History },
+  web_search: { ja: "Web検索", en: "Web search", icon: Globe },
+};
+
+// --- Customer Research card (tool-calling assistant, single-turn) ------------
+// Streams /api/chat with role="research": the model resolves the customer
+// (alias-aware), checks internal records FIRST, then web-searches only to fill
+// gaps. We surface the tools it consulted and any web sources, so the answer is
+// auditable — a grounded research read, not a free chatbot reply.
+function ResearchCard({ note }: { note: string }) {
+  const { t, lang } = useT();
+  const [tools, setTools] = useState<{ name: string; args: string; result: string }[]>([]);
+  const [answer, setAnswer] = useState("");
+  const [model, setModel] = useState<string | null>(null);
+  const [status, setStatus] = useState<"running" | "done" | "error">("running");
+
+  useEffect(() => {
+    let alive = true;
+    const ctrl = new AbortController();
+    const collected: { name: string; args: string; result: string }[] = [];
+    let acc = "";
+    chatStream(
+      note,
+      [],            // single-turn: each research question stands alone (not a chat)
+      "research",
+      (e: ChatEvent) => {
+        if (!alive) return;
+        switch (e.type) {
+          case "start":
+            setModel(e.model ?? null);
+            break;
+          case "tool":
+            collected.push({ name: e.name, args: e.args, result: e.result });
+            setTools([...collected]);
+            break;
+          case "answer":
+            acc = e.text;
+            setAnswer(acc);
+            break;
+          case "done":
+            setModel(e.model ?? model);
+            break;
+          // error → handled after the stream resolves
+        }
+      },
+      { signal: ctrl.signal },
+    ).then(() => {
+      if (!alive) return;
+      const ok = acc.trim() && acc.trim() !== "(no response)";
+      setStatus(ok ? "done" : "error");
+    });
+    return () => { alive = false; ctrl.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note]);
+
+  // Surface web sources (URLs) pulled by web_search, for citation.
+  const webUrls = Array.from(
+    new Set(
+      tools
+        .filter((tl) => tl.name === "web_search")
+        .flatMap((tl) => tl.result.match(/https?:\/\/[^\s)）]+/g) ?? []),
+    ),
+  );
+
+  return (
+    <div className="space-y-3 rounded-xl border border-navy/25 bg-navy/[0.02] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-navy">
+          <Search className="h-3.5 w-3.5" /> {t("chat.researchTitle")}
+          <span className="rounded bg-navy/10 px-1 py-0.5 text-[9px] font-semibold tracking-wide text-navy">AI</span>
+          {status === "running" && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-navy" />}
+        </span>
+        {model && (
+          <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+            {t("chat.poweredBy", { model })}
+          </span>
+        )}
+      </div>
+      <p className="text-[11.5px] leading-snug text-muted-foreground">{t("chat.researchHint")}</p>
+
+      {/* sources consulted — the tools the model actually called, in order */}
+      {tools.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <div className="eyebrow mb-1.5 flex items-center gap-1.5"><Database className="h-3 w-3" /> {t("chat.researchSources")}</div>
+          <ul className="space-y-1">
+            {tools.map((tl, i) => {
+              const meta = TOOL_LABEL[tl.name];
+              const Icon = meta?.icon ?? Search;
+              const label = meta ? (lang === "ja" ? meta.ja : meta.en) : tl.name;
+              return (
+                <li key={i} className="flex items-center gap-2 text-[12px] text-foreground/80">
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-navy/70" />
+                  <span className="font-medium">{label}</span>
+                  {tl.args && <span className="truncate font-mono text-[10.5px] text-muted-foreground">{tl.args}</span>}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* the grounded answer */}
+      {answer ? (
+        <NarrationMd text={answer} />
+      ) : status === "running" ? (
+        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          <span className="flex gap-1">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-navy [animation-delay:-0.3s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-navy [animation-delay:-0.15s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-navy" />
+          </span>
+          {t("chat.researchingGeneric")}
+        </div>
+      ) : (
+        <p className="text-[13px] text-muted-foreground">{t("chat.researchUnavailable")}</p>
+      )}
+
+      {/* web citations */}
+      {webUrls.length > 0 && (
+        <div className="border-t border-border pt-2.5">
+          <div className="eyebrow mb-1.5 flex items-center gap-1.5"><Globe className="h-3 w-3" /> {t("chat.researchWeb")}</div>
+          <ul className="space-y-1">
+            {webUrls.map((u) => (
+              <li key={u}>
+                <a href={u} target="_blank" rel="noopener noreferrer"
+                   className="inline-flex items-center gap-1 text-[12px] text-primary hover:underline">
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{u}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- message model ---------------------------------------------------------
 type Msg =
   | { id: number; role: "senpai"; kind: "intro" }
   | { id: number; role: "senpai"; kind: "prompt"; text: string }
   | { id: number; role: "user"; kind: "note"; note: string; noteJa?: string; dealLabel?: string; jp?: boolean }
   | { id: number; role: "senpai"; kind: "loading" }
-  | { id: number; role: "senpai"; kind: "coaching"; note: string; resp: CoachResponse; live: boolean };
+  | { id: number; role: "senpai"; kind: "coaching"; note: string; resp: CoachResponse; live: boolean }
+  | { id: number; role: "senpai"; kind: "research"; note: string };
 
 function Avatar({ who }: { who: "senpai" | "user" }) {
   return who === "senpai" ? (
@@ -741,6 +952,21 @@ export function CoachChat({
     const display = (opts?.display ?? engineText).trim();
     const jp = opts?.jp ?? lang === "ja";
     const dealLabel = deal ? deals.find((d) => d.deal_id === deal)?.customer : undefined;
+
+    // Routing: a research-style question (and no deal attached) goes to the
+    // tool-calling assistant; everything else stays the Review Coach. Attaching a
+    // deal always means "review this opportunity" → coaching.
+    if (!deal && isResearchQuestion(clean)) {
+      setMessages((m) => [
+        ...m,
+        { id: nextId(), role: "user", kind: "note", note: display, noteJa: display !== clean ? clean : undefined, jp },
+        { id: nextId(), role: "senpai", kind: "research", note: clean },
+      ]);
+      setNote("");
+      setDealId("");
+      return; // ResearchCard streams on its own; no global busy lock
+    }
+
     const loadingId = nextId();
     setMessages((m) => [
       ...m,
@@ -825,6 +1051,13 @@ export function CoachChat({
                   </span>
                   {t("chat.thinking")}
                 </div>
+              </Row>
+            );
+          }
+          if (m.kind === "research") {
+            return (
+              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+                <ResearchCard note={m.note} />
               </Row>
             );
           }
