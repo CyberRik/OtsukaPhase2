@@ -1,20 +1,19 @@
-"use client";
-
-import { useT } from "@/lib/i18n";
+import { api } from "@/lib/api";
 import { PageHeader } from "@/components/site/page-header";
+import { GrowthDashboard } from "@/components/growth/growth-dashboard";
 
-export default function JuniorReportsPage() {
-  const { t } = useT();
+export const dynamic = "force-dynamic";
+
+export default async function JuniorGrowthPage() {
+  const { data } = await api.growth();
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrowKey="nav.reports"
-        titleKey="reports.title"
-        leadKey="reports.lead"
+        titleKey="growth.title"
+        leadKey="growth.lead"
       />
-      <div className="rounded-xl border border-dashed border-border p-12 text-center text-[14px] text-muted-foreground">
-        {t("reports.empty")}
-      </div>
+      <GrowthDashboard initial={data} />
     </div>
   );
 }

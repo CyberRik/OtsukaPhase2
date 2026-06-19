@@ -8,9 +8,13 @@ import {
   Bot,
   CornerDownLeft,
   Eye,
+  Award,
   GraduationCap,
+  History,
+  Languages,
   Layers,
   Lightbulb,
+  XCircle,
   type LucideIcon,
   MessagesSquare,
   RotateCcw,
@@ -29,13 +33,16 @@ import type {
   DealRow,
   KnowledgeItem,
   Principle,
+  SimilarCase,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatYen } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { PRINCIPLE_KEYWORDS, principleText, tagText } from "@/lib/content-i18n";
+import { PRINCIPLE_KEYWORDS, buildTipMap } from "@/lib/content-i18n";
+import { JpOriginalBadge } from "@/components/jp-original-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { TranslatedText } from "@/components/site/translated-text";
 import {
   Accordion,
   AccordionContent,
@@ -92,9 +99,16 @@ function similarItems(relIds: string[], items: KnowledgeItem[], max = 2): Knowle
 }
 
 // --- senior tip embedded in a lens item ------------------------------------
-function SeniorTip({ raw, label }: { raw: string; label: string }) {
+// The "出典/確度" chrome is parsed into chips; only the tip body is content that
+// needs translating. We translate it from approved knowledge items (tipMap);
+// when no mapping exists we keep the JA original and flag it with a badge.
+function SeniorTip({
+  raw, label, lang, tipMap,
+}: {
+  raw: string; label: string; lang: "ja" | "en"; tipMap: Record<string, string>;
+}) {
   const m = raw.match(SENIOR_RE);
-  if (!m) return <span>{raw}</span>;
+  if (!m) return <TranslatedText text={raw} />;
   const [, srcs, conf, tip] = m;
   const ids = srcs.split("・").map((s) => s.trim()).filter((s) => s && s !== "—");
   return (
@@ -106,19 +120,20 @@ function SeniorTip({ raw, label }: { raw: string; label: string }) {
         <SourceChips ids={ids} />
         <ConfidenceBadge level={(conf.trim() as Confidence) || "unverified"} />
       </div>
-      <p className="font-jp text-[13px] leading-relaxed text-foreground/90">{tip}</p>
+      <TranslatedText className="text-[13px] leading-relaxed text-foreground/90 block" text={tip} />
     </div>
   );
 }
 
 // --- one of the six lenses, collapsible ------------------------------------
 function LensSection({
-  meta, items, seniorLabel, lang,
+  meta, items, seniorLabel, lang, tipMap,
 }: {
   meta: { key: string; ja: string; en: string; icon: string };
   items: string[];
   seniorLabel: string;
   lang: "ja" | "en";
+  tipMap: Record<string, string>;
 }) {
   const Icon = ICONS[meta.icon] ?? Lightbulb;
   const tone = TONES[meta.key] ?? "text-primary bg-primary/10";
@@ -140,16 +155,19 @@ function LensSection({
         <AccordionContent className="px-4">
           <ul className="space-y-2.5">
             {count === 0 && <li className="text-[13px] text-muted-foreground">—</li>}
-            {items.map((it, i) =>
-              it.startsWith("先輩の知見") ? (
-                <li key={i}><SeniorTip raw={it} label={seniorLabel} /></li>
-              ) : (
-                <li key={i} className="flex gap-2.5 font-jp text-[13.5px] leading-relaxed text-foreground/90">
+            {items.map((it, i) => {
+              if (it.startsWith("先輩の知見")) {
+                return <li key={i}><SeniorTip raw={it} label={seniorLabel} lang={lang} tipMap={tipMap} /></li>;
+              }
+              return (
+                <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed text-foreground/90">
                   <span className={cn("mt-[7px] h-1 w-1 shrink-0 rounded-full", tone.split(" ")[0], "bg-current")} />
-                  <span>{it}</span>
+                  <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <TranslatedText text={it} />
+                  </span>
                 </li>
-              ),
-            )}
+              );
+            })}
           </ul>
         </AccordionContent>
       </div>
@@ -160,7 +178,6 @@ function LensSection({
 // --- relevant principle with expandable provenance -------------------------
 function PrincipleRef({ p }: { p: Principle }) {
   const { t, lang } = useT();
-  const st = principleText(lang, p);
   return (
     <AccordionItem value={p.principle_id} className="border-b-0">
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -170,12 +187,10 @@ function PrincipleRef({ p }: { p: Principle }) {
               <span className="font-mono text-[11px] text-muted-foreground">{p.principle_id}</span>
               <ConfidenceBadge level={principleConfidence(p)} />
             </span>
-            <span className={cn("text-[13.5px] font-medium leading-snug text-foreground/90", lang === "ja" && "font-jp")}>
-              {st.text}
-            </span>
+            <TranslatedText className="text-[13.5px] font-medium leading-snug text-foreground/90 block" text={p.statement} />
             <span className="flex flex-wrap gap-1">
               {p.tags.slice(0, 3).map((tg) => (
-                <Badge key={tg} variant="default">#{tagText(lang, tg).text}</Badge>
+                <Badge key={tg} variant="default">#<TranslatedText text={tg} /></Badge>
               ))}
             </span>
           </span>
@@ -234,6 +249,103 @@ function NarrationMd({ text }: { text: string }) {
   );
 }
 
+// --- Similar Past Cases (Pillar 2: Experience) -----------------------------
+// Real closed deals that rhyme with the current note, each tagged with its
+// outcome and the validated principle it teaches. Grounded in the store; the
+// "lesson" is an approved, interview-traceable principle, never invented advice.
+function CaseCard({ c, principles }: { c: SimilarCase; principles: Principle[] }) {
+  const { t, lang } = useT();
+  const won = c.outcome === "won";
+  const lessons = c.principle_ids
+    .map((id) => principles.find((p) => p.principle_id === id))
+    .filter((p): p is Principle => Boolean(p));
+  return (
+    <div className={cn(
+      "overflow-hidden rounded-xl border bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04)]",
+      won ? "border-conf-high/30" : "border-band-red/30",
+    )}>
+      <div className={cn(
+        "flex items-center justify-between gap-2 px-4 py-2.5",
+        won ? "bg-conf-high/[0.06]" : "bg-band-red/[0.05]",
+      )}>
+        <span className="flex items-center gap-2">
+          <span className={cn(
+            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",
+            won ? "bg-conf-high/15 text-conf-high" : "bg-band-red/15 text-band-red",
+          )}>
+            {won ? <Award className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+            {won ? t("chat.caseWon") : t("chat.caseLost")}
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground">{c.deal_id}</span>
+        </span>
+        <span className="text-[11px] text-muted-foreground">{formatYen(c.amount)}</span>
+      </div>
+      <div className="px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <TranslatedText className="font-jp text-[13px] font-medium text-foreground block" text={c.customer} />
+          <Badge variant="default"><TranslatedText text={c.product_category} /></Badge>
+        </div>
+        <p className={cn("mt-1.5 text-[13px] leading-snug text-foreground/85", lang === "ja" && "font-jp")}>
+          {t(`chat.caseTheme.${c.theme}`)}
+        </p>
+        {lessons.length > 0 && (
+          <div className="mt-3 border-t border-border pt-2.5">
+            <div className="eyebrow mb-1.5 flex items-center gap-1"><Lightbulb className="h-3 w-3" /> {t("chat.caseLessons")}</div>
+            <ul className="space-y-1.5">
+              {lessons.map((p) => {
+                return (
+                  <li key={p.principle_id} className="flex gap-2">
+                    <span className="mt-[3px] font-mono text-[10px] text-muted-foreground">{p.principle_id}</span>
+                    <span className="flex-1 text-[12.5px] leading-snug text-foreground/85">
+                      <TranslatedText text={p.statement} />
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SimilarCases({ note, principles }: { note: string; principles: Principle[] }) {
+  const { t } = useT();
+  const [cases, setCases] = useState<SimilarCase[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    api.similarCases(note).then(({ data }) => { if (alive) setCases(data.cases); });
+    return () => { alive = false; };
+  }, [note]);
+
+  return (
+    <div>
+      <div className="eyebrow mb-1 flex items-center gap-1.5"><History className="h-3.5 w-3.5" /> {t("chat.similarCases")}</div>
+      <p className="mb-2.5 text-[11.5px] text-muted-foreground">{t("chat.similarCasesSub")}</p>
+      {cases === null ? (
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground">
+          <span className="flex gap-1">
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
+          </span>
+          {t("chat.caseLoading")}
+        </div>
+      ) : cases.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
+          {t("chat.caseNone")}
+        </div>
+      ) : (
+        <div className="grid gap-2.5">
+          {cases.map((c) => <CaseCard key={c.deal_id} c={c} principles={principles} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- the structured coaching response --------------------------------------
 function CoachingCard({
   resp, note, live, principles, items,
@@ -243,12 +355,19 @@ function CoachingCard({
 }) {
   const { t, lang } = useT();
   const [showSimilar, setShowSimilar] = useState(false);
+  const [showJa, setShowJa] = useState(false);
   const [narr, setNarr] = useState<string | null>(null);
   const [narrModel, setNarrModel] = useState<string | null>(null);
   const [narrating, setNarrating] = useState(false);
   const [narrTried, setNarrTried] = useState(false);
   const [thinking, setThinking] = useState(false);
+  // The senior commentary is dynamic model output, so in English mode we
+  // generate it in English and lazily fetch the JA original on demand.
+  const [narrJa, setNarrJa] = useState<string | null>(null);
+  const [narrJaShown, setNarrJaShown] = useState(false);
+  const [narrJaLoading, setNarrJaLoading] = useState(false);
   const rel = relevantPrinciples(note, principles);
+  const tipMap = buildTipMap(items);
 
   async function explain() {
     if (narrating) return;
@@ -276,12 +395,27 @@ function CoachingCard({
           break;
         // fallback | unavailable | error → acc stays empty → fallback message
       }
-    });
+    }, { lang });
     setThinking(false);
     setNarrTried(true);
     setNarrating(false);
     if (!acc) setNarr(null);
   }
+
+  // Lazily stream the Japanese original of the commentary (English mode only),
+  // so the source text stays inspectable without a second call up front.
+  async function toggleNarrJa() {
+    if (narrJa || narrJaShown) { setNarrJaShown((v) => !v); return; }
+    setNarrJaShown(true);
+    setNarrJaLoading(true);
+    let acc = "";
+    await narrateStream(note, undefined, (e) => {
+      if (e.type === "delta") { acc += e.text; setNarrJa(acc); }
+    }, { lang: "ja" });
+    setNarrJaLoading(false);
+    if (!acc) setNarrJa(null);
+  }
+
   const relIds = rel.map((p) => p.principle_id);
   const similar = similarItems(relIds, items);
 
@@ -305,12 +439,68 @@ function CoachingCard({
               items={resp.result[meta.key] ?? []}
               seniorLabel={t("coach.seniorDrawer")}
               lang={lang}
+              tipMap={tipMap}
             />
           ))}
         </Accordion>
+
+        {/* English mode: keep the JA source one click away (provenance) */}
+        {lang === "en" && (
+          <div className="mt-2.5">
+            <button
+              onClick={() => setShowJa((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Languages className="h-3.5 w-3.5" />
+              {showJa ? t("chat.hideJa") : t("chat.viewJa")}
+            </button>
+            {showJa && (
+              <div className="animate-fade-up mt-2.5 rounded-xl border border-dashed border-border bg-muted/30 p-4">
+                <div className="eyebrow mb-2">{t("chat.jaOriginalTitle")}</div>
+                <p className="mb-3 text-[11.5px] leading-snug text-muted-foreground">{t("chat.jaOriginalHint")}</p>
+                <div className="space-y-3">
+                  {resp.sections.map((meta) => {
+                    const its = resp.result[meta.key] ?? [];
+                    if (!its.length) return null;
+                    return (
+                      <div key={meta.key}>
+                        <div className="font-jp text-[12.5px] font-semibold text-foreground/80">{meta.ja}</div>
+                        <ul className="mt-1 space-y-1">
+                          {its.map((it, i) => (
+                            <li key={i} className="flex gap-2 font-jp text-[12.5px] leading-relaxed text-foreground/75">
+                              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current" />
+                              <span>{it}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* The senior's explanation — on-demand, streamed token-by-token */}
+      {/* Similar past cases — Pillar 2: Experience */}
+      <SimilarCases note={note} principles={principles} />
+
+      {/* 6: relevant principles + 7: provenance (expandable) */}
+      <div>
+        <div className="eyebrow mb-2 flex items-center gap-1.5"><BookMarked className="h-3.5 w-3.5" /> {t("chat.relevantPrinciples")}</div>
+        {rel.length ? (
+          <Accordion type="multiple" defaultValue={rel[0] ? [rel[0].principle_id] : []} className="space-y-2.5">
+            {rel.map((p) => <PrincipleRef key={p.principle_id} p={p} />)}
+          </Accordion>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
+            {t("chat.noPrinciples")}
+          </div>
+        )}
+      </div>
+
+      {/* Optional senior commentary — last in the guided flow, on demand */}
       <div>
         {!narrTried && !narrating && (
           <button
@@ -358,6 +548,37 @@ function CoachingCard({
                 {thinking ? t("chat.thinking") : t("chat.explaining")}
               </div>
             )}
+
+            {/* English commentary: the JA original, generated on demand */}
+            {lang === "en" && narr && !narrating && (
+              <div className="mt-4 border-t border-border pt-3">
+                <button
+                  onClick={toggleNarrJa}
+                  className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:text-primary"
+                >
+                  <Languages className="h-3.5 w-3.5" />
+                  {narrJaShown ? t("chat.hideJa") : t("chat.viewJaCommentary")}
+                </button>
+                {narrJaShown && (
+                  <div className="animate-fade-up mt-2.5 rounded-lg border border-dashed border-border bg-muted/30 p-3">
+                    {narrJaLoading && !narrJa ? (
+                      <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+                        <span className="flex gap-1">
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
+                          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
+                        </span>
+                        {t("chat.commentaryJaLoading")}
+                      </div>
+                    ) : narrJa ? (
+                      <NarrationMd text={narrJa} />
+                    ) : (
+                      <p className="text-[12.5px] text-muted-foreground">{t("chat.explainUnavailable")}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -368,27 +589,12 @@ function CoachingCard({
         )}
       </div>
 
-      {/* 6: relevant principles + 7: provenance (expandable) */}
-      <div>
-        <div className="eyebrow mb-2 flex items-center gap-1.5"><BookMarked className="h-3.5 w-3.5" /> {t("chat.relevantPrinciples")}</div>
-        {rel.length ? (
-          <Accordion type="multiple" defaultValue={rel[0] ? [rel[0].principle_id] : []} className="space-y-2.5">
-            {rel.map((p) => <PrincipleRef key={p.principle_id} p={p} />)}
-          </Accordion>
-        ) : (
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
-            {t("chat.noPrinciples")}
-          </div>
-        )}
-      </div>
-
       {/* similar situations (revealed on demand) */}
       {showSimilar && similar.length > 0 && (
         <div className="animate-fade-up">
           <div className="eyebrow mb-2 flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> {t("chat.similarTitle")}</div>
           <div className="grid gap-2.5 sm:grid-cols-2">
             {similar.map((it) => {
-              const sc = principleText(lang, { principle_id: it.provenance.principle_id, statement: it.principle_statement });
               return (
                 <Link
                   key={it.item_id}
@@ -399,9 +605,7 @@ function CoachingCard({
                     <span className="font-mono text-[11px] text-muted-foreground">{it.item_id}</span>
                     <ConfidenceBadge level={it.confidence} />
                   </div>
-                  <p className={cn("mt-2 line-clamp-3 text-[12.5px] leading-snug text-foreground/85", lang === "ja" && "font-jp")}>
-                    {sc.text}
-                  </p>
+                  <TranslatedText className="mt-2 line-clamp-3 text-[12.5px] leading-snug text-foreground/85 block" text={it.principle_statement} />
                 </Link>
               );
             })}
@@ -445,7 +649,7 @@ function FollowUp({ icon: Icon, label, onClick, active }: { icon: LucideIcon; la
 type Msg =
   | { id: number; role: "senpai"; kind: "intro" }
   | { id: number; role: "senpai"; kind: "prompt"; text: string }
-  | { id: number; role: "user"; kind: "note"; note: string; dealLabel?: string }
+  | { id: number; role: "user"; kind: "note"; note: string; noteJa?: string; dealLabel?: string; jp?: boolean }
   | { id: number; role: "senpai"; kind: "loading" }
   | { id: number; role: "senpai"; kind: "coaching"; note: string; resp: CoachResponse; live: boolean };
 
@@ -457,6 +661,20 @@ function Avatar({ who }: { who: "senpai" | "user" }) {
   ) : (
     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
       <UserRound className="h-[18px] w-[18px]" />
+    </div>
+  );
+}
+
+function UserNote({ note, noteJa, dealLabel, jp }: { note: string; noteJa?: string; dealLabel?: string; jp?: boolean }) {
+  const { t } = useT();
+  return (
+    <div className="rounded-xl rounded-tl-sm border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      {dealLabel && (
+        <Badge variant="accent" className="mb-2 font-jp">
+          <TranslatedText text={dealLabel} />
+        </Badge>
+      )}
+      <TranslatedText className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-foreground/90 block" text={note} />
     </div>
   );
 }
@@ -483,11 +701,34 @@ export function CoachChat({
   const [note, setNote] = useState("");
   const [dealId, setDealId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [translatedCustomers, setTranslatedCustomers] = useState<Record<string, string>>({});
   const idRef = useRef(1);
   const bottomRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const nextId = () => idRef.current++;
+
+  useEffect(() => {
+    if (lang === "ja") {
+      setTranslatedCustomers({});
+      return;
+    }
+    deals.forEach((d) => {
+      fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: d.customer, lang: "en" })
+      })
+        .then(res => res.json())
+        .then(resData => {
+          setTranslatedCustomers(prev => ({
+            ...prev,
+            [d.deal_id]: resData.translated || d.customer
+          }));
+        })
+        .catch(() => {});
+    });
+  }, [deals, lang]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -502,14 +743,20 @@ export function CoachChat({
     return () => window.removeEventListener("senpai:review-another", onAnother);
   }, [t]);
 
-  async function submit(text: string, deal: string) {
-    const clean = text.trim();
+  // `engineText` always drives the keyword-based coach (Japanese for seed
+  // examples); `opts.display` is what the user sees in the bubble. They differ
+  // only for the English example cards, so coaching output stays meaningful
+  // while the visible note reads natively English.
+  async function submit(engineText: string, deal: string, opts?: { display?: string; jp?: boolean }) {
+    const clean = engineText.trim();
     if (!clean || busy) return;
+    const display = (opts?.display ?? engineText).trim();
+    const jp = opts?.jp ?? lang === "ja";
     const dealLabel = deal ? deals.find((d) => d.deal_id === deal)?.customer : undefined;
     const loadingId = nextId();
     setMessages((m) => [
       ...m,
-      { id: nextId(), role: "user", kind: "note", note: clean, dealLabel },
+      { id: nextId(), role: "user", kind: "note", note: display, noteJa: display !== clean ? clean : undefined, dealLabel, jp },
       { id: loadingId, role: "senpai", kind: "loading" },
     ]);
     setNote("");
@@ -534,12 +781,7 @@ export function CoachChat({
           if (m.role === "user") {
             return (
               <Row key={m.id} who="user" name={t("chat.you")}>
-                <div className="rounded-xl rounded-tl-sm border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-                  {m.dealLabel && (
-                    <Badge variant="accent" className="mb-2 font-jp">{m.dealLabel}</Badge>
-                  )}
-                  <p className="whitespace-pre-wrap font-jp text-[13.5px] leading-relaxed text-foreground/90">{m.note}</p>
-                </div>
+                <UserNote note={m.note} noteJa={m.noteJa} dealLabel={m.dealLabel} jp={m.jp} />
               </Row>
             );
           }
@@ -552,20 +794,22 @@ export function CoachChat({
                   <div className="mt-4">
                     <div className="eyebrow mb-2">{t("chat.startExample")}</div>
                     <div className="grid gap-2 sm:grid-cols-2">
-                      {examples.map((ex) => (
-                        <button
-                          key={ex.title}
-                          disabled={busy}
-                          onClick={() => submit(ex.note, "")}
-                          className="rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.03] disabled:opacity-50"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <Sparkles className="h-3.5 w-3.5 text-primary" />
-                            <span className="font-jp text-[13px] font-medium text-foreground">{ex.title}</span>
-                          </div>
-                          <div className="mt-0.5 font-jp text-[11px] leading-snug text-muted-foreground">{ex.hint}</div>
-                        </button>
-                      ))}
+                      {examples.map((ex) => {
+                        return (
+                          <button
+                            key={ex.title}
+                            disabled={busy}
+                            onClick={() => submit(ex.note, "", { display: ex.note, jp: lang === "ja" })}
+                            className="rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.03] disabled:opacity-50"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
+                              <TranslatedText className="text-[13px] font-medium text-foreground block" text={ex.title} />
+                            </div>
+                            <TranslatedText className="mt-0.5 text-[11px] leading-snug text-muted-foreground block" text={ex.hint} />
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -628,7 +872,9 @@ export function CoachChat({
             >
               <option value="">{t("coach.none")}</option>
               {deals.map((d) => (
-                <option key={d.deal_id} value={d.deal_id}>{d.deal_id} · {d.customer}</option>
+                <option key={d.deal_id} value={d.deal_id}>
+                  {d.deal_id} · {translatedCustomers[d.deal_id] || d.customer}
+                </option>
               ))}
             </select>
             <Button variant="seal" size="sm" disabled={busy || !note.trim()} onClick={() => submit(note, dealId)} className="gap-1.5">

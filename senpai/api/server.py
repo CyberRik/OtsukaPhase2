@@ -32,7 +32,16 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from senpai import config
-from senpai.coach.review import format_review, narrate_review, narration_prompt, review_note
+from senpai.coach.cases import find_similar_cases
+from senpai.coaching import coaching_workspace
+from senpai.growth import junior_reps, rep_growth
+from senpai.coach.review import (
+    format_review,
+    narrate_review,
+    narration_prompt,
+    narration_prompt_en,
+    review_note,
+)
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
@@ -119,6 +128,60 @@ def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
         for f in flags
     ]
     return row, flag_rows
+
+
+def _build_timeline(deal_id: str, acts: list[dict]) -> list[dict]:
+    """Chronological event log for a deal — Pillar 2, Experience. Folds the deal's
+    sales activities, its quote, and any orders into one ascending timeline, and
+    marks stretches of silence (>30 days) so juniors and managers can *see* how
+    the deal actually moved. Pure read-over of existing records; the frontend
+    localizes the type labels."""
+    events: list[dict] = []
+    for a in acts:
+        d = a.get("activity_date")
+        if not d:
+            continue
+        events.append({
+            "date": d,
+            "kind": "activity",
+            "type": a.get("activity_type", ""),
+            "title": a.get("business_card_info") or "",
+            "detail": a.get("daily_report") or "",
+            "amount": None,
+        })
+    q = store.quote_for_deal(deal_id)
+    if q and q.get("quoted_at"):
+        events.append({
+            "date": q["quoted_at"], "kind": "quote", "type": q.get("quote_type", ""),
+            "title": q.get("product_mid_category") or q.get("product_major_category") or "",
+            "detail": "", "amount": q.get("quote_amount"),
+        })
+    for o in store.orders_for_deal(deal_id):
+        if o.get("ordered_at"):
+            events.append({
+                "date": o["ordered_at"], "kind": "order", "type": "",
+                "title": o.get("product_name") or "", "detail": o.get("supplier") or "",
+                "amount": o.get("total_sales_amount"),
+            })
+
+    events.sort(key=lambda e: e["date"])
+
+    # Insert silence markers between consecutive events more than 30 days apart.
+    out: list[dict] = []
+    prev: date | None = None
+    for ev in events:
+        try:
+            cur = date.fromisoformat(ev["date"])
+        except (ValueError, TypeError):
+            cur = None
+        if prev and cur and (cur - prev).days > 30:
+            out.append({"date": prev.isoformat(), "kind": "gap", "type": "",
+                        "title": "", "detail": "", "amount": None,
+                        "days": (cur - prev).days})
+        out.append(ev)
+        if cur:
+            prev = cur
+    return out
 
 
 def _principle_payload(p) -> dict:
@@ -221,6 +284,7 @@ def deal_detail(deal_id: str):
             }
             for i, a in enumerate(acts)
         ],
+        "timeline": _build_timeline(deal_id, acts),
         "report": None,
     }
 
@@ -232,6 +296,18 @@ class CoachRequest(BaseModel):
     note: str
     deal_id: str | None = None
     narrate: bool = False
+    lang: str = "ja"  # narration output language ("ja" | "en") — presentation only
+
+class TranslateRequest(BaseModel):
+    text: str
+    target_lang: str
+
+@app.post("/api/translate")
+def translate_text(req: TranslateRequest):
+    from senpai.llm.client import simple_complete
+    prompt = f"Translate the following text to {req.target_lang}. Return ONLY the translated text. Do not include any other commentary. Original text:\n\n{req.text}"
+    translated = simple_complete([{"role": "user", "content": prompt}], temperature=0.0)
+    return {"translated_text": translated}
 
 
 # Optional LLM narration. Off unless SENPAI_USE_LLM is truthy, so the coach
@@ -289,12 +365,14 @@ def coach_narrate(req: CoachRequest):
     acts = store.activities_for_deal(req.deal_id) if deal else None
     r = review_note(req.note, deal=deal, notes=acts, report=None)
 
+    prompt = narration_prompt_en(r) if req.lang == "en" else narration_prompt(r)
+
     def gen():
         from senpai.llm import client
         yield _sse({"type": "start", "model": config.MODEL})
         full, emitted, last_think = "", 0, 0
         try:
-            for piece in client.stream_complete([{"role": "user", "content": narration_prompt(r)}]):
+            for piece in client.stream_complete([{"role": "user", "content": prompt}]):
                 full += piece
                 if "</think>" in full:                         # reasoning done → answer region
                     answer = full.split("</think>", 1)[1].lstrip("\n ")
@@ -319,6 +397,16 @@ def coach_narrate(req: CoachRequest):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.post("/api/coach/similar-cases")
+def coach_similar_cases(req: CoachRequest):
+    """Real past deals that rhyme with the current situation — Pillar 2,
+    Experience. Read-only retrieval over closed deals; each case carries its
+    outcome and the validated principle it teaches (see senpai.coach.cases)."""
+    deal = store.get_deal(req.deal_id) if req.deal_id else None
+    cases = find_similar_cases(req.note, deal=deal, max_n=3, today=_today())
+    return {"cases": cases}
 
 
 @app.get("/api/coach/examples")
@@ -346,6 +434,33 @@ def coach_examples():
                 "hint": "決裁者の感触だけで成約間近と判断していないか",
             },
         ]
+    }
+
+
+# ---------------------------------------------------------------------------
+# manager coaching workspace ("where should I coach today?")
+# ---------------------------------------------------------------------------
+@app.get("/api/coaching")
+def coaching():
+    """Manager's daily workspace — Needs Coaching queue, team trends, Confidence
+    vs Reality, and a weekly digest. Read-only aggregation over the existing
+    deal-health + flags engines; see senpai.coaching."""
+    return coaching_workspace(today=_today())
+
+
+# ---------------------------------------------------------------------------
+# growth (Pillar 3 — Motivation)
+# ---------------------------------------------------------------------------
+@app.get("/api/growth")
+def growth(rep: str | None = None):
+    """A junior's 'My Growth' picture — reviews, principles touched, coaching
+    streak, monthly activity, and skill progression. Read-only over the store;
+    see senpai.growth. `rep` is an employee_id; defaults to the first junior."""
+    juniors = junior_reps()
+    eid = rep or (juniors[0]["employee_id"] if juniors else "")
+    return {
+        "growth": rep_growth(eid, today=_today()),
+        "juniors": [{"employee_id": r["employee_id"], "name": r["name"]} for r in juniors],
     }
 
 

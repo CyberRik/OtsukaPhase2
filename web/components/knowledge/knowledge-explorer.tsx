@@ -5,16 +5,7 @@ import { BookOpen, CheckCircle2, FileText, Search, Users } from "lucide-react";
 import type { KnowledgeItem, Principle, Source } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import {
-  ITEM_EN,
-  PRINCIPLE_EN,
-  TAG_EN,
-  pickList,
-  pickText,
-  principleText,
-  sourceNoteText,
-  tagText,
-} from "@/lib/content-i18n";
+import { PRINCIPLE_EN, TAG_EN } from "@/lib/content-i18n";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { JpOriginalBadge } from "@/components/jp-original-badge";
@@ -22,6 +13,7 @@ import { SourceChip, SourceChips } from "@/components/source-chip";
 import { ProvenanceList } from "@/components/provenance";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveBadge } from "@/components/site/live-badge";
+import { TranslatedText } from "@/components/site/translated-text";
 
 function SourceStrip({ sources }: { sources: Source[] }) {
   const { lang } = useT();
@@ -29,7 +21,6 @@ function SourceStrip({ sources }: { sources: Source[] }) {
     <div className="grid gap-3 md:grid-cols-3">
       {sources.map((s) => {
         const Icon = s.kind === "interview" ? Users : FileText;
-        const note = sourceNoteText(lang, s.source_id, s.notes);
         return (
           <div key={s.source_id} className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <div className="flex items-center justify-between">
@@ -38,9 +29,8 @@ function SourceStrip({ sources }: { sources: Source[] }) {
             </div>
             <div className="mt-2 flex items-center gap-1.5 text-[12px] font-medium capitalize text-foreground">
               {s.kind} · {s.participant_role}
-              {note.fallback && <JpOriginalBadge />}
             </div>
-            <p className={cn("mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground", note.fallback && "font-jp")}>{note.text}</p>
+            <TranslatedText className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground block" text={s.notes} />
           </div>
         );
       })}
@@ -50,14 +40,13 @@ function SourceStrip({ sources }: { sources: Source[] }) {
 
 function ItemCard({ item }: { item: KnowledgeItem }) {
   const { t, lang } = useT();
-  const en = ITEM_EN[item.item_id];
-  const scenario = pickText(lang, item.scenario, en?.scenario);
+  const scenario = item.scenario;
   const facets = [
-    { label: t("knowledge.signals"), j: item.signals, e: en?.signals, tone: "text-primary" },
-    { label: t("knowledge.questions"), j: item.questions, e: en?.questions, tone: "text-navy" },
-    { label: t("knowledge.risks"), j: item.risks, e: en?.risks, tone: "text-band-red" },
-    { label: t("knowledge.alternatives"), j: item.alternatives, e: en?.alternatives, tone: "text-conf-high" },
-  ].map((f) => ({ ...f, ...pickList(lang, f.j, f.e) }));
+    { label: t("knowledge.signals"), vals: item.signals, tone: "text-primary" },
+    { label: t("knowledge.questions"), vals: item.questions, tone: "text-navy" },
+    { label: t("knowledge.risks"), vals: item.risks, tone: "text-band-red" },
+    { label: t("knowledge.alternatives"), vals: item.alternatives, tone: "text-conf-high" },
+  ];
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex flex-wrap items-center gap-2">
@@ -68,16 +57,18 @@ function ItemCard({ item }: { item: KnowledgeItem }) {
             <CheckCircle2 className="h-3.5 w-3.5" /> {t("knowledge.groundingPassed")}
           </span>
         )}
-        {scenario.fallback && <JpOriginalBadge />}
       </div>
-      <p className={cn("mt-3 text-[14px] leading-relaxed text-foreground/90", scenario.fallback && "font-jp")}>{scenario.text}</p>
+      <TranslatedText className="mt-3 text-[14px] leading-relaxed text-foreground/90 block" text={scenario} />
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {facets.map((f) => (
           <div key={f.label}>
             <div className={cn("text-[10px] font-semibold uppercase tracking-[0.06em]", f.tone)}>{f.label}</div>
             <ul className="mt-1.5 space-y-1">
               {f.vals.map((v, i) => (
-                <li key={i} className={cn("text-[12.5px] leading-snug text-muted-foreground", f.fallback && "font-jp")}>· {v}</li>
+                <li key={i} className="text-[12.5px] leading-snug text-muted-foreground flex items-start gap-1">
+                  <span className="shrink-0">·</span>
+                  <TranslatedText text={v} />
+                </li>
               ))}
             </ul>
           </div>
@@ -145,7 +136,6 @@ export function KnowledgeExplorer({
           <div className="max-h-[620px] space-y-2 overflow-y-auto pr-1">
             {filtered.map((p) => {
               const active = p.principle_id === selected?.principle_id;
-              const st = principleText(lang, p);
               return (
                 <button
                   key={p.principle_id}
@@ -164,10 +154,9 @@ export function KnowledgeExplorer({
                       </Badge>
                     </div>
                   </div>
-                  <p className={cn("mt-2 line-clamp-2 text-[13px] leading-snug text-foreground/90", st.fallback && "font-jp")}>{st.text}</p>
+                  <TranslatedText className="mt-2 line-clamp-2 text-[13px] leading-snug text-foreground/90 block" text={p.statement} />
                   <div className="mt-2 flex items-center gap-2">
                     <SourceChips ids={p.interview_ids} />
-                    {st.fallback && <JpOriginalBadge />}
                   </div>
                 </button>
               );
@@ -196,17 +185,15 @@ export function KnowledgeExplorer({
                     {selected.status === "approved" ? t("knowledge.statusApproved") : t("knowledge.statusCandidate")}
                   </Badge>
                 </div>
-                {(() => {
-                  const st = principleText(lang, selected);
-                  return (
-                    <div className="mt-3 flex items-start gap-2">
-                      <h2 className={cn("text-xl font-semibold leading-snug tracking-tight", st.fallback && "font-jp")}>{st.text}</h2>
-                      {st.fallback && <JpOriginalBadge className="mt-1.5 shrink-0" />}
-                    </div>
-                  );
-                })()}
+                <div className="mt-3 flex items-start gap-2">
+                  <TranslatedText className="text-xl font-semibold leading-snug tracking-tight block" text={selected.statement} />
+                </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {selected.tags.map((tg) => <Badge key={tg} variant="default">#{tagText(lang, tg).text}</Badge>)}
+                  {selected.tags.map((tg) => (
+                    <Badge key={tg} variant="default">
+                      #<TranslatedText text={tg} />
+                    </Badge>
+                  ))}
                 </div>
                 <div className="mt-6 border-t border-border pt-5">
                   <ProvenanceList citations={selected.support} />

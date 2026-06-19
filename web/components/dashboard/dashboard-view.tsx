@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
 import { cn, compactYen, formatYen } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { BandDot, BandPill } from "@/components/band";
 import { Badge } from "@/components/ui/badge";
 import { LiveBadge } from "@/components/site/live-badge";
 import { DealDrawer } from "./deal-drawer";
+import { TranslatedText } from "@/components/site/translated-text";
 
 const SEV_ORDER = { high: 0, medium: 1, low: 2 } as const;
 const SEV_TONE: Record<string, string> = { high: "text-band-red", medium: "text-band-yellow", low: "text-muted-foreground" };
@@ -26,10 +27,33 @@ function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: 
 type View = "dashboard" | "pipeline" | "reliability";
 
 export function DashboardView({ initial, live, view = "dashboard" }: { initial: DashboardData; live: boolean; view?: View }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [rep, setRep] = useState("(all)");
   const [openId, setOpenId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
+  const [translatedReps, setTranslatedReps] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (lang === "ja") {
+      setTranslatedReps({});
+      return;
+    }
+    initial.reps.forEach((r) => {
+      fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: r, lang: "en" })
+      })
+        .then(res => res.json())
+        .then(resData => {
+          setTranslatedReps(prev => ({
+            ...prev,
+            [r]: resData.translated || r
+          }));
+        })
+        .catch(() => {});
+    });
+  }, [initial.reps, lang]);
 
   const deals = useMemo(
     () => (rep === "(all)" ? initial.deals : initial.deals.filter((d) => d.rep === rep)),
@@ -73,7 +97,11 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
             className="h-9 rounded-lg border border-input bg-card px-3 text-[13px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="(all)">{t("dash.everyone")}</option>
-            {initial.reps.map((r) => <option key={r} value={r}>{r}</option>)}
+            {initial.reps.map((r) => (
+              <option key={r} value={r}>
+                {translatedReps[r] || r}
+              </option>
+            ))}
           </select>
           <span className="text-[12px] text-muted-foreground">{t("common.asOf")} {initial.today}</span>
         </div>
@@ -125,10 +153,14 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
                 <tr key={d.deal_id} onClick={() => openDeal(d.deal_id)}
                   className="cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50">
                   <td className="px-4 py-3">
-                    <div className="font-jp font-medium text-foreground">{d.customer}</div>
+                    <div className="font-jp font-medium text-foreground">
+                      <TranslatedText text={d.customer} />
+                    </div>
                     <div className="font-mono text-[11px] text-muted-foreground">{d.deal_id}</div>
                   </td>
-                  <td className="hidden px-4 py-3 font-jp text-muted-foreground md:table-cell">{d.rep}</td>
+                  <td className="hidden px-4 py-3 font-jp text-muted-foreground md:table-cell">
+                    <TranslatedText text={d.rep} />
+                  </td>
                   <td className="hidden px-4 py-3 capitalize text-muted-foreground sm:table-cell">{d.stage}</td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums">{compactYen(d.amount)}</td>
                   <td className="px-4 py-3"><BandPill band={d.band} score={d.score} /></td>
@@ -164,11 +196,15 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
                   <AlertTriangle className={cn("mt-0.5 h-4 w-4 shrink-0", SEV_TONE[f.severity])} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="font-jp font-medium text-foreground">{f.customer}</span>
+                      <span className="font-jp font-medium text-foreground">
+                        <TranslatedText text={f.customer} />
+                      </span>
                       <span className="font-mono">{f.deal_id}</span>
                       <Badge variant="outline">{f.severity}</Badge>
                     </div>
-                    <p className="mt-1 font-jp text-[13px] leading-snug text-foreground/90">{f.message}</p>
+                    <p className="mt-1 font-jp text-[13px] leading-snug text-foreground/90">
+                      <TranslatedText text={f.message} />
+                    </p>
                   </div>
                 </button>
               ))}

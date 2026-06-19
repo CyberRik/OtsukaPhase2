@@ -29,6 +29,13 @@ client = OpenAI(
     max_retries=0,
 )
 
+fallback_client = OpenAI(
+    base_url=config.FALLBACK_BASE_URL,
+    api_key="dummy",
+    timeout=config.LLM_TIMEOUT,
+    max_retries=0,
+)
+
 
 def _parse_xlam(content: str | None):
     """exp3 sometimes emits XLAM-style `[func(a=1, b='x'), ...]` as plain text
@@ -63,10 +70,17 @@ def simple_complete(messages: list[dict], temperature: float = 0.3,
     (e.g. narration) can fall back to a templated string. Strips any
     `<think>...</think>` reasoning span (the served model is a reasoning
     distill) so callers get only the final coaching text."""
-    resp = client.chat.completions.create(
-        model=config.MODEL, messages=messages, temperature=temperature,
-        max_tokens=max_tokens or config.LLM_MAX_TOKENS,
-    )
+    try:
+        resp = client.chat.completions.create(
+            model=config.MODEL, messages=messages, temperature=temperature,
+            max_tokens=max_tokens or config.LLM_MAX_TOKENS,
+        )
+    except Exception as e:
+        print(f"⚠️ Primary server failed ({e}). Trying fallback...")
+        resp = fallback_client.chat.completions.create(
+            model=config.FALLBACK_MODEL, messages=messages, temperature=temperature,
+            max_tokens=max_tokens or config.LLM_MAX_TOKENS,
+        )
     content = resp.choices[0].message.content or ""
     content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
     return content.strip()
@@ -78,10 +92,17 @@ def stream_complete(messages: list[dict], temperature: float = 0.3,
     (vLLM supports SSE streaming natively). Yields raw content deltas, including
     any `<think>` reasoning — callers decide how to present the thinking phase.
     Raises on transport error so callers can fall back."""
-    stream = client.chat.completions.create(
-        model=config.MODEL, messages=messages, temperature=temperature,
-        max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
-    )
+    try:
+        stream = client.chat.completions.create(
+            model=config.MODEL, messages=messages, temperature=temperature,
+            max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
+        )
+    except Exception as e:
+        print(f"⚠️ Primary server failed ({e}). Trying fallback stream...")
+        stream = fallback_client.chat.completions.create(
+            model=config.FALLBACK_MODEL, messages=messages, temperature=temperature,
+            max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
+        )
     for chunk in stream:
         if not chunk.choices:
             continue
@@ -105,9 +126,16 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
                 model=config.MODEL, messages=convo, tools=tools,
                 tool_choice="auto", temperature=0.0,
             )
-        except Exception as e:  # noqa: BLE001
-            answer = f"⚠️ サーバーエラー: {e}"
-            break
+        except Exception as e:
+            print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
+            try:
+                resp = fallback_client.chat.completions.create(
+                    model=config.FALLBACK_MODEL, messages=convo, tools=tools,
+                    tool_choice="auto", temperature=0.0,
+                )
+            except Exception as fe:
+                answer = f"⚠️ サーバーエラー: {e} (Fallback: {fe})"
+                break
 
         msg = resp.choices[0].message
         if msg.tool_calls:

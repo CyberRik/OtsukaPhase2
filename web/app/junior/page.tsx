@@ -5,13 +5,13 @@ import Link from "next/link";
 import { ArrowRight, FileText, GraduationCap, Library, type LucideIcon, Target, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { principleText } from "@/lib/content-i18n";
+
 import { cn } from "@/lib/utils";
 import type { Principle } from "@/lib/types";
 import { SourceChips } from "@/components/source-chip";
 import { ConfidenceBadge } from "@/components/confidence-badge";
-import { JpOriginalBadge } from "@/components/jp-original-badge";
 import { Badge } from "@/components/ui/badge";
+import { TranslatedText } from "@/components/site/translated-text";
 
 export default function JuniorHome() {
   const { t, lang } = useT();
@@ -97,7 +97,6 @@ export default function JuniorHome() {
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {learn.map((p) => {
-            const st = principleText(lang, p);
             return (
             <Link key={p.principle_id} href="/junior/knowledge"
               className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors hover:bg-muted/40">
@@ -105,11 +104,10 @@ export default function JuniorHome() {
                 <span className="font-mono text-[11px] text-muted-foreground">{p.principle_id}</span>
                 <Badge variant="accent" className="gap-1"><Users className="h-3 w-3" /> {t("jhome.twoSourceFull")}</Badge>
               </div>
-              <p className={cn("mt-2 text-[14px] leading-snug text-foreground/90", st.fallback && "font-jp")}>{st.text}</p>
+              <TranslatedText className="mt-2 text-[14px] leading-snug text-foreground/90 block" text={p.statement} />
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <SourceChips ids={p.interview_ids} />
                 <ConfidenceBadge level="high" />
-                {st.fallback && <JpOriginalBadge />}
               </div>
             </Link>
             );

@@ -1,10 +1,11 @@
-"use client";
-
-import { useT } from "@/lib/i18n";
+import { api } from "@/lib/api";
 import { PageHeader } from "@/components/site/page-header";
+import { ManagerCoaching } from "@/components/coaching/manager-coaching";
 
-export default function ManagerCoachingPage() {
-  const { t } = useT();
+export const dynamic = "force-dynamic";
+
+export default async function ManagerCoachingPage() {
+  const { data } = await api.coaching();
   return (
     <div className="space-y-8">
       <PageHeader
@@ -12,9 +13,7 @@ export default function ManagerCoachingPage() {
         titleKey="coaching.title"
         leadKey="coaching.lead"
       />
-      <div className="rounded-xl border border-dashed border-border p-12 text-center text-[14px] text-muted-foreground">
-        {t("coaching.none")}
-      </div>
+      <ManagerCoaching data={data} />
     </div>
   );
 }

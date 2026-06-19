@@ -281,6 +281,30 @@ def narration_prompt(r: CoachReview) -> str:
     )
 
 
+def narration_prompt_en(r: CoachReview) -> str:
+    """English-mode narration prompt. Same findings as `narration_prompt`, only
+    the output language/headings change — a presentation concern, not coaching
+    logic. The model re-frames the identical points in English; it must not add
+    facts or pick one answer."""
+    def _bul(items: list[str]) -> str:
+        return "; ".join(items) if items else "none"
+
+    return (
+        "You are a senior sales mentor coaching a junior rep. Re-frame the "
+        "analysis below in a teaching tone, in natural English. Rules: (1) use "
+        "ONLY the points given; add no new facts or numbers (2) never present a "
+        "single 'right answer' — offer them as several options (3) keep these six "
+        "headings: What a senior notices / Missing information / Risk signals / "
+        "Questions to ask / Possible next moves / Decision factors.\n"
+        f"What a senior notices: {_bul(r.observations)}\n"
+        f"Missing information: {_bul(r.missing_info)}\n"
+        f"Risk signals: {_bul(r.risks)}\n"
+        f"Questions to ask: {_bul(r.questions)}\n"
+        f"Possible next moves: {_bul(r.next_actions)}\n"
+        f"Decision factors: {_bul(r.decision_factors)}\n"
+    )
+
+
 def narrate_review(r: CoachReview, use_llm: bool = True) -> str:
     """Optionally let the model rephrase the SAME findings into smoother coaching
     language. The model is forbidden to add facts or pick one answer; on any
