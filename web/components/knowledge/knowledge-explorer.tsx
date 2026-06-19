@@ -5,7 +5,7 @@ import { BookOpen, CheckCircle2, FileText, Search, Users } from "lucide-react";
 import type { KnowledgeItem, Principle, Source } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { PRINCIPLE_EN, TAG_EN } from "@/lib/content-i18n";
+import { PRINCIPLE_EN, TAG_EN, ITEM_EN, sourceNoteText, principleText, tagText, pickText, pickList } from "@/lib/content-i18n";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { JpOriginalBadge } from "@/components/jp-original-badge";
@@ -13,7 +13,6 @@ import { SourceChip, SourceChips } from "@/components/source-chip";
 import { ProvenanceList } from "@/components/provenance";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveBadge } from "@/components/site/live-badge";
-import { TranslatedText } from "@/components/site/translated-text";
 
 function SourceStrip({ sources }: { sources: Source[] }) {
   const { lang } = useT();
@@ -21,6 +20,7 @@ function SourceStrip({ sources }: { sources: Source[] }) {
     <div className="grid gap-3 md:grid-cols-3">
       {sources.map((s) => {
         const Icon = s.kind === "interview" ? Users : FileText;
+        const sn = sourceNoteText(lang, s.source_id, s.notes);
         return (
           <div key={s.source_id} className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <div className="flex items-center justify-between">
@@ -30,7 +30,10 @@ function SourceStrip({ sources }: { sources: Source[] }) {
             <div className="mt-2 flex items-center gap-1.5 text-[12px] font-medium capitalize text-foreground">
               {s.kind} · {s.participant_role}
             </div>
-            <TranslatedText className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground block" text={s.notes} />
+            <span className="mt-1 line-clamp-2 text-[11px] leading-snug text-muted-foreground block">
+              {sn.text}
+              {sn.fallback && <JpOriginalBadge />}
+            </span>
           </div>
         );
       })}
@@ -40,12 +43,13 @@ function SourceStrip({ sources }: { sources: Source[] }) {
 
 function ItemCard({ item }: { item: KnowledgeItem }) {
   const { t, lang } = useT();
-  const scenario = item.scenario;
+  const enItem = ITEM_EN[item.item_id];
+  const sc = pickText(lang, item.scenario, enItem?.scenario);
   const facets = [
-    { label: t("knowledge.signals"), vals: item.signals, tone: "text-primary" },
-    { label: t("knowledge.questions"), vals: item.questions, tone: "text-navy" },
-    { label: t("knowledge.risks"), vals: item.risks, tone: "text-band-red" },
-    { label: t("knowledge.alternatives"), vals: item.alternatives, tone: "text-conf-high" },
+    { label: t("knowledge.signals"), jaVals: item.signals, enVals: enItem?.signals, tone: "text-primary" },
+    { label: t("knowledge.questions"), jaVals: item.questions, enVals: enItem?.questions, tone: "text-navy" },
+    { label: t("knowledge.risks"), jaVals: item.risks, enVals: enItem?.risks, tone: "text-band-red" },
+    { label: t("knowledge.alternatives"), jaVals: item.alternatives, enVals: enItem?.alternatives, tone: "text-conf-high" },
   ];
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
@@ -58,21 +62,28 @@ function ItemCard({ item }: { item: KnowledgeItem }) {
           </span>
         )}
       </div>
-      <TranslatedText className="mt-3 text-[14px] leading-relaxed text-foreground/90 block" text={scenario} />
+      <span className="mt-3 text-[14px] leading-relaxed text-foreground/90 block">
+        {sc.text}
+        {sc.fallback && <JpOriginalBadge />}
+      </span>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        {facets.map((f) => (
-          <div key={f.label}>
-            <div className={cn("text-[10px] font-semibold uppercase tracking-[0.06em]", f.tone)}>{f.label}</div>
-            <ul className="mt-1.5 space-y-1">
-              {f.vals.map((v, i) => (
-                <li key={i} className="text-[12.5px] leading-snug text-muted-foreground flex items-start gap-1">
-                  <span className="shrink-0">·</span>
-                  <TranslatedText text={v} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        {facets.map((f) => {
+          const { vals, fallback } = pickList(lang, f.jaVals, f.enVals);
+          return (
+            <div key={f.label}>
+              <div className={cn("text-[10px] font-semibold uppercase tracking-[0.06em]", f.tone)}>{f.label}</div>
+              <ul className="mt-1.5 space-y-1">
+                {vals.map((v, i) => (
+                  <li key={i} className="text-[12.5px] leading-snug text-muted-foreground flex items-start gap-1">
+                    <span className="shrink-0">·</span>
+                    <span>{v}</span>
+                  </li>
+                ))}
+              </ul>
+              {fallback && <JpOriginalBadge />}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -136,6 +147,7 @@ export function KnowledgeExplorer({
           <div className="max-h-[620px] space-y-2 overflow-y-auto pr-1">
             {filtered.map((p) => {
               const active = p.principle_id === selected?.principle_id;
+              const st = principleText(lang, p);
               return (
                 <button
                   key={p.principle_id}
@@ -154,7 +166,10 @@ export function KnowledgeExplorer({
                       </Badge>
                     </div>
                   </div>
-                  <TranslatedText className="mt-2 line-clamp-2 text-[13px] leading-snug text-foreground/90 block" text={p.statement} />
+                  <span className="mt-2 line-clamp-2 text-[13px] leading-snug text-foreground/90 block">
+                    {st.text}
+                    {st.fallback && <JpOriginalBadge />}
+                  </span>
                   <div className="mt-2 flex items-center gap-2">
                     <SourceChips ids={p.interview_ids} />
                   </div>
@@ -186,14 +201,22 @@ export function KnowledgeExplorer({
                   </Badge>
                 </div>
                 <div className="mt-3 flex items-start gap-2">
-                  <TranslatedText className="text-xl font-semibold leading-snug tracking-tight block" text={selected.statement} />
+                  {(() => { const st = principleText(lang, selected); return (
+                    <span className="text-xl font-semibold leading-snug tracking-tight block">
+                      {st.text}
+                      {st.fallback && <JpOriginalBadge />}
+                    </span>
+                  ); })()}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {selected.tags.map((tg) => (
-                    <Badge key={tg} variant="default">
-                      #<TranslatedText text={tg} />
-                    </Badge>
-                  ))}
+                  {selected.tags.map((tg) => {
+                    const tt = tagText(lang, tg);
+                    return (
+                      <Badge key={tg} variant="default">
+                        #{tt.text}
+                      </Badge>
+                    );
+                  })}
                 </div>
                 <div className="mt-6 border-t border-border pt-5">
                   <ProvenanceList citations={selected.support} />

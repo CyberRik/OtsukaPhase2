@@ -6,12 +6,13 @@ import { api } from "@/lib/api";
 import type { DealDetail } from "@/lib/types";
 import { formatYen } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { customerText, repText, flagMessageText, signalReasonText } from "@/lib/content-i18n";
+import { JpOriginalBadge } from "@/components/jp-original-badge";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { BandPill, RiskMeter } from "@/components/band";
 import { DealTimeline } from "@/components/dashboard/deal-timeline";
-import { TranslatedText } from "@/components/site/translated-text";
 
 const SEV: Record<string, string> = {
   high: "border-band-red/30 bg-band-red/5 text-band-red",
@@ -24,7 +25,7 @@ export function DealDrawer({
 }: {
   dealId: string | null; open: boolean; onOpenChange: (o: boolean) => void;
 }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const [detail, setDetail] = useState<DealDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -53,12 +54,12 @@ export function DealDrawer({
                 <span className="capitalize">{detail.deal.stage}</span>
               </div>
               <DialogTitle className="font-jp">
-                <TranslatedText text={detail.deal.customer} />
+                {(() => { const ct = customerText(lang, detail.deal.customer); return <>{ct.text}{ct.fallback && <JpOriginalBadge />}</>; })()}
               </DialogTitle>
               <DialogDescription className="flex flex-wrap items-center gap-3 font-jp">
                 <span className="inline-flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
-                  <TranslatedText text={detail.deal.rep} />
+                  {(() => { const rt = repText(lang, detail.deal.rep); return <>{rt.text}{rt.fallback && <JpOriginalBadge />}</>; })()}
                 </span>
                 <span className="inline-flex items-center gap-1"><TrendingUp className="h-3.5 w-3.5" /> {formatYen(detail.deal.amount)}</span>
                 <span className="inline-flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" /> {detail.deal.expected_close_date ?? "—"}</span>
@@ -74,16 +75,20 @@ export function DealDrawer({
               <div className="eyebrow mb-3">{t("dash.signalBreakdown")} · {t("dash.whyScore")}</div>
               <ul className="space-y-2">
                 {detail.signals.length === 0 && <li className="text-[13px] text-muted-foreground">{t("dash.noSignals")}</li>}
-                {detail.signals.map((s) => (
-                  <li key={s.name} className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2">
-                    <span className="mt-0.5 inline-flex h-6 min-w-9 items-center justify-center rounded bg-band-red/10 px-1.5 font-mono text-[11px] font-semibold text-band-red">
-                      +{s.points}
-                    </span>
-                    <span className="font-jp text-[13px] leading-snug text-foreground/90">
-                      <TranslatedText text={s.reason} />
-                    </span>
-                  </li>
-                ))}
+                {detail.signals.map((s) => {
+                  const sr = signalReasonText(lang, s.reason);
+                  return (
+                    <li key={s.name} className="flex items-start gap-3 rounded-lg border border-border bg-card px-3 py-2">
+                      <span className="mt-0.5 inline-flex h-6 min-w-9 items-center justify-center rounded bg-band-red/10 px-1.5 font-mono text-[11px] font-semibold text-band-red">
+                        +{s.points}
+                      </span>
+                      <span className="font-jp text-[13px] leading-snug text-foreground/90">
+                        {sr.text}
+                        {sr.fallback && <JpOriginalBadge />}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
 
@@ -91,17 +96,21 @@ export function DealDrawer({
               <section>
                 <div className="eyebrow mb-3">{t("dash.relFlags")}</div>
                 <ul className="space-y-2">
-                  {detail.flags.map((f) => (
-                    <li key={f.name} className={`rounded-lg border px-3 py-2 ${SEV[f.severity] ?? SEV.low}`}>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="border-current/30 text-current">{f.severity}</Badge>
-                        <span className="font-mono text-[10px] opacity-70">{f.name}</span>
-                      </div>
-                      <p className="mt-1 font-jp text-[13px] leading-snug">
-                        <TranslatedText text={f.message} />
-                      </p>
-                    </li>
-                  ))}
+                  {detail.flags.map((f) => {
+                    const fm = flagMessageText(lang, f.message);
+                    return (
+                      <li key={f.name} className={`rounded-lg border px-3 py-2 ${SEV[f.severity] ?? SEV.low}`}>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="border-current/30 text-current">{f.severity}</Badge>
+                          <span className="font-mono text-[10px] opacity-70">{f.name}</span>
+                        </div>
+                        <p className="mt-1 font-jp text-[13px] leading-snug">
+                          {fm.text}
+                          {fm.fallback && <JpOriginalBadge />}
+                        </p>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             )}

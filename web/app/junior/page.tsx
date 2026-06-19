@@ -5,13 +5,12 @@ import Link from "next/link";
 import { ArrowRight, FileText, GraduationCap, Library, type LucideIcon, Target, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-
+import { principleText } from "@/lib/content-i18n";
 import { cn } from "@/lib/utils";
 import type { Principle } from "@/lib/types";
 import { SourceChips } from "@/components/source-chip";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { Badge } from "@/components/ui/badge";
-import { TranslatedText } from "@/components/site/translated-text";
 
 export default function JuniorHome() {
   const { t, lang } = useT();
@@ -104,7 +103,7 @@ export default function JuniorHome() {
                 <span className="font-mono text-[11px] text-muted-foreground">{p.principle_id}</span>
                 <Badge variant="accent" className="gap-1"><Users className="h-3 w-3" /> {t("jhome.twoSourceFull")}</Badge>
               </div>
-              <TranslatedText className="mt-2 text-[14px] leading-snug text-foreground/90 block" text={p.statement} />
+              <span className="mt-2 text-[14px] leading-snug text-foreground/90 block">{principleText(lang, p).text}</span>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <SourceChips ids={p.interview_ids} />
                 <ConfidenceBadge level="high" />

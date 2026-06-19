@@ -37,12 +37,14 @@ import type {
 } from "@/lib/types";
 import { cn, formatYen } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
-import { PRINCIPLE_KEYWORDS, buildTipMap } from "@/lib/content-i18n";
+import {
+  PRINCIPLE_KEYWORDS, buildTipMap, pickText,
+  customerText, productCategoryText, principleText, tagText, coachLineText, coachExampleText,
+} from "@/lib/content-i18n";
 import { JpOriginalBadge } from "@/components/jp-original-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { TranslatedText } from "@/components/site/translated-text";
 import {
   Accordion,
   AccordionContent,
@@ -108,9 +110,13 @@ function SeniorTip({
   raw: string; label: string; lang: "ja" | "en"; tipMap: Record<string, string>;
 }) {
   const m = raw.match(SENIOR_RE);
-  if (!m) return <TranslatedText text={raw} />;
+  if (!m) {
+    const cl = coachLineText(lang, raw);
+    return <span className="text-[13px] leading-relaxed text-foreground/90">{cl.text}{cl.fallback && <JpOriginalBadge />}</span>;
+  }
   const [, srcs, conf, tip] = m;
   const ids = srcs.split("・").map((s) => s.trim()).filter((s) => s && s !== "—");
+  const tipLoc = pickText(lang, tip, tipMap[tip]);
   return (
     <div className="rounded-lg border border-primary/20 bg-primary/[0.04] p-3">
       <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -120,7 +126,9 @@ function SeniorTip({
         <SourceChips ids={ids} />
         <ConfidenceBadge level={(conf.trim() as Confidence) || "unverified"} />
       </div>
-      <TranslatedText className="text-[13px] leading-relaxed text-foreground/90 block" text={tip} />
+      <span className="text-[13px] leading-relaxed text-foreground/90 block">
+        {tipLoc.text}{tipLoc.fallback && <JpOriginalBadge />}
+      </span>
     </div>
   );
 }
@@ -159,11 +167,12 @@ function LensSection({
               if (it.startsWith("先輩の知見")) {
                 return <li key={i}><SeniorTip raw={it} label={seniorLabel} lang={lang} tipMap={tipMap} /></li>;
               }
+              const cl = coachLineText(lang, it);
               return (
                 <li key={i} className="flex gap-2.5 text-[13.5px] leading-relaxed text-foreground/90">
                   <span className={cn("mt-[7px] h-1 w-1 shrink-0 rounded-full", tone.split(" ")[0], "bg-current")} />
                   <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                    <TranslatedText text={it} />
+                    {cl.text}{cl.fallback && <JpOriginalBadge />}
                   </span>
                 </li>
               );
@@ -187,10 +196,10 @@ function PrincipleRef({ p }: { p: Principle }) {
               <span className="font-mono text-[11px] text-muted-foreground">{p.principle_id}</span>
               <ConfidenceBadge level={principleConfidence(p)} />
             </span>
-            <TranslatedText className="text-[13.5px] font-medium leading-snug text-foreground/90 block" text={p.statement} />
+            <span className="text-[13.5px] font-medium leading-snug text-foreground/90 block">{principleText(lang, p).text}</span>
             <span className="flex flex-wrap gap-1">
               {p.tags.slice(0, 3).map((tg) => (
-                <Badge key={tg} variant="default">#<TranslatedText text={tg} /></Badge>
+                <Badge key={tg} variant="default">#{tagText(lang, tg).text}</Badge>
               ))}
             </span>
           </span>
@@ -282,8 +291,8 @@ function CaseCard({ c, principles }: { c: SimilarCase; principles: Principle[] }
       </div>
       <div className="px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
-          <TranslatedText className="font-jp text-[13px] font-medium text-foreground block" text={c.customer} />
-          <Badge variant="default"><TranslatedText text={c.product_category} /></Badge>
+          <span className="font-jp text-[13px] font-medium text-foreground">{customerText(lang, c.customer).text}</span>
+          <Badge variant="default">{productCategoryText(lang, c.product_category).text}</Badge>
         </div>
         <p className={cn("mt-1.5 text-[13px] leading-snug text-foreground/85", lang === "ja" && "font-jp")}>
           {t(`chat.caseTheme.${c.theme}`)}
@@ -297,7 +306,7 @@ function CaseCard({ c, principles }: { c: SimilarCase; principles: Principle[] }
                   <li key={p.principle_id} className="flex gap-2">
                     <span className="mt-[3px] font-mono text-[10px] text-muted-foreground">{p.principle_id}</span>
                     <span className="flex-1 text-[12.5px] leading-snug text-foreground/85">
-                      <TranslatedText text={p.statement} />
+                      {principleText(lang, p).text}
                     </span>
                   </li>
                 );
@@ -605,7 +614,9 @@ function CoachingCard({
                     <span className="font-mono text-[11px] text-muted-foreground">{it.item_id}</span>
                     <ConfidenceBadge level={it.confidence} />
                   </div>
-                  <TranslatedText className="mt-2 line-clamp-3 text-[12.5px] leading-snug text-foreground/85 block" text={it.principle_statement} />
+                  <span className="mt-2 line-clamp-3 text-[12.5px] leading-snug text-foreground/85 block">
+                    {principleText(lang, { principle_id: it.provenance.principle_id, statement: it.principle_statement }).text}
+                  </span>
                 </Link>
               );
             })}
@@ -666,15 +677,15 @@ function Avatar({ who }: { who: "senpai" | "user" }) {
 }
 
 function UserNote({ note, noteJa, dealLabel, jp }: { note: string; noteJa?: string; dealLabel?: string; jp?: boolean }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   return (
     <div className="rounded-xl rounded-tl-sm border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       {dealLabel && (
         <Badge variant="accent" className="mb-2 font-jp">
-          <TranslatedText text={dealLabel} />
+          {customerText(lang, dealLabel).text}
         </Badge>
       )}
-      <TranslatedText className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-foreground/90 block" text={note} />
+      <span className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-foreground/90 block">{note}</span>
     </div>
   );
 }
@@ -701,34 +712,11 @@ export function CoachChat({
   const [note, setNote] = useState("");
   const [dealId, setDealId] = useState("");
   const [busy, setBusy] = useState(false);
-  const [translatedCustomers, setTranslatedCustomers] = useState<Record<string, string>>({});
   const idRef = useRef(1);
   const bottomRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const nextId = () => idRef.current++;
-
-  useEffect(() => {
-    if (lang === "ja") {
-      setTranslatedCustomers({});
-      return;
-    }
-    deals.forEach((d) => {
-      fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: d.customer, lang: "en" })
-      })
-        .then(res => res.json())
-        .then(resData => {
-          setTranslatedCustomers(prev => ({
-            ...prev,
-            [d.deal_id]: resData.translated || d.customer
-          }));
-        })
-        .catch(() => {});
-    });
-  }, [deals, lang]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -795,18 +783,19 @@ export function CoachChat({
                     <div className="eyebrow mb-2">{t("chat.startExample")}</div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {examples.map((ex) => {
+                        const loc = coachExampleText(lang, ex);
                         return (
                           <button
                             key={ex.title}
                             disabled={busy}
-                            onClick={() => submit(ex.note, "", { display: ex.note, jp: lang === "ja" })}
+                            onClick={() => submit(loc.engineNote, "", { display: loc.note, jp: lang === "ja" })}
                             className="rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.03] disabled:opacity-50"
                           >
                             <div className="flex items-center gap-1.5">
                               <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
-                              <TranslatedText className="text-[13px] font-medium text-foreground block" text={ex.title} />
+                              <span className="text-[13px] font-medium text-foreground">{loc.title}</span>
                             </div>
-                            <TranslatedText className="mt-0.5 text-[11px] leading-snug text-muted-foreground block" text={ex.hint} />
+                            <span className="mt-0.5 text-[11px] leading-snug text-muted-foreground block">{loc.hint}</span>
                           </button>
                         );
                       })}
@@ -873,7 +862,7 @@ export function CoachChat({
               <option value="">{t("coach.none")}</option>
               {deals.map((d) => (
                 <option key={d.deal_id} value={d.deal_id}>
-                  {d.deal_id} · {translatedCustomers[d.deal_id] || d.customer}
+                  {d.deal_id} · {customerText(lang, d.customer).text}
                 </option>
               ))}
             </select>

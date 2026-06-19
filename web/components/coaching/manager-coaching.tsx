@@ -19,8 +19,8 @@ import type {
   ConfVRItem,
 } from "@/lib/types";
 import { useT } from "@/lib/i18n";
+import { repText, customerText } from "@/lib/content-i18n";
 import { cn } from "@/lib/utils";
-import { TranslatedText } from "@/components/site/translated-text";
 
 const PRIORITY_TONE: Record<string, string> = {
   high: "bg-band-red/10 text-band-red border-band-red/30",
@@ -66,14 +66,14 @@ function SummaryDigest({ s }: { s: CoachingWorkspace["summary"] }) {
 
 // --- Section 1: Needs Coaching ---------------------------------------------
 function NeedsCard({ c }: { c: CoachingCardItem }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2">
           <span className={cn("h-2 w-2 rounded-full", BAND_DOT[c.band] ?? "bg-muted")} />
           <span className="font-jp text-[14px] font-semibold text-foreground">
-            <TranslatedText text={c.rep} />
+            {repText(lang, c.rep).text}
           </span>
         </span>
         <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", PRIORITY_TONE[c.priority])}>
@@ -86,7 +86,7 @@ function NeedsCard({ c }: { c: CoachingCardItem }) {
         </span>
         <span className="font-mono text-[10px] text-muted-foreground">{c.deal_id}</span>
         <span className="font-jp text-[11px] text-muted-foreground">
-          · <TranslatedText text={c.customer} />
+          · {customerText(lang, c.customer).text}
         </span>
       </div>
       <p className="mt-2 text-[12.5px] leading-relaxed text-foreground/75">
@@ -128,7 +128,7 @@ function TrendRow({ tr, max }: { tr: CoachingTrend; max: number }) {
 
 // --- Section 3: Confidence vs Reality (signature) --------------------------
 function ConfCard({ c }: { c: ConfVRItem }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const mismatch = c.status === "mismatch";
   return (
     <div className={cn(
@@ -139,10 +139,10 @@ function ConfCard({ c }: { c: ConfVRItem }) {
         mismatch ? "bg-band-red/[0.05]" : "bg-conf-high/[0.06]")}>
         <span className="flex items-center gap-2">
           <span className="font-jp text-[13px] font-semibold text-foreground">
-            <TranslatedText text={c.rep} />
+            {repText(lang, c.rep).text}
           </span>
           <span className="font-jp text-[11px] text-muted-foreground">
-            · <TranslatedText text={c.customer} />
+            · {customerText(lang, c.customer).text}
           </span>
         </span>
         <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold",

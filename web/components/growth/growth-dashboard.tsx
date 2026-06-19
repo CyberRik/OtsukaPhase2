@@ -15,9 +15,8 @@ import { api } from "@/lib/api";
 import type { GrowthResponse } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { tagText } from "@/lib/content-i18n";
+import { tagText, repText, departmentText } from "@/lib/content-i18n";
 import { Badge } from "@/components/ui/badge";
-import { TranslatedText } from "@/components/site/translated-text";
 
 function monthLabel(ym: string, lang: "ja" | "en"): string {
   const [y, m] = ym.split("-").map(Number);
@@ -60,29 +59,6 @@ export function GrowthDashboard({ initial }: { initial: GrowthResponse }) {
   const [data, setData] = useState<GrowthResponse>(initial);
   const [rep, setRep] = useState<string>(initial.growth.rep.employee_id);
   const [loading, setLoading] = useState(false);
-  const [translatedJuniors, setTranslatedJuniors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (lang === "ja") {
-      setTranslatedJuniors({});
-      return;
-    }
-    data.juniors.forEach((j) => {
-      fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: j.name, lang: "en" })
-      })
-        .then(res => res.json())
-        .then(resData => {
-          setTranslatedJuniors(prev => ({
-            ...prev,
-            [j.employee_id]: resData.translated || j.name
-          }));
-        })
-        .catch(() => {});
-    });
-  }, [data.juniors, lang]);
 
   useEffect(() => {
     if (rep === data.growth.rep.employee_id) return;
@@ -107,11 +83,11 @@ export function GrowthDashboard({ initial }: { initial: GrowthResponse }) {
           </span>
           <div>
             <div className="font-jp text-[15px] font-semibold text-foreground">
-              <TranslatedText text={g.rep.name} />
+              {repText(lang, g.rep.name).text}
             </div>
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className="font-jp">
-                <TranslatedText text={g.rep.department} />
+                {departmentText(lang, g.rep.department).text}
               </span>
               {g.rep.specialty_tags.map((tg) => (
                 <Badge key={tg} variant="default">#{tagText(lang, tg).text}</Badge>
@@ -128,7 +104,7 @@ export function GrowthDashboard({ initial }: { initial: GrowthResponse }) {
           >
             {data.juniors.map((j) => (
               <option key={j.employee_id} value={j.employee_id}>
-                {translatedJuniors[j.employee_id] || j.name}
+                {repText(lang, j.name).text}
               </option>
             ))}
           </select>

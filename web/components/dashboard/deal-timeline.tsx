@@ -4,7 +4,6 @@ import { CalendarClock, Package, Receipt, ZapOff, type LucideIcon } from "lucide
 import type { TimelineEvent } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { cn, formatYen } from "@/lib/utils";
-import { TranslatedText } from "@/components/site/translated-text";
 
 // Visual chronological log of a deal — Pillar 2: Experience. Folds activities,
 // quotes, and orders into one sequence and surfaces stretches of silence, so a
@@ -62,12 +61,12 @@ export function DealTimeline({ events }: { events: TimelineEvent[] }) {
             </div>
             {!gap && ev.title && (
               <div className="mt-0.5 font-jp text-[11.5px] text-muted-foreground">
-                <TranslatedText text={ev.title} />
+                {ev.title}
               </div>
             )}
             {!gap && ev.detail && (
               <p className="mt-0.5 font-jp text-[12.5px] leading-snug text-foreground/80">
-                <TranslatedText text={ev.detail} />
+                {ev.detail}
               </p>
             )}
           </li>
