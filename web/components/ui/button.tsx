@@ -11,7 +11,7 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
         outline: "border border-input bg-card hover:bg-muted text-foreground",
         ghost: "hover:bg-muted text-foreground",
-        seal: "bg-vermilion text-white hover:bg-vermilion/90 shadow-sm",
+        seal: "bg-navy text-navy-foreground hover:bg-navy/90 shadow-sm",
         subtle: "bg-secondary text-secondary-foreground hover:bg-secondary/70",
       },
       size: {

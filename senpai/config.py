@@ -9,6 +9,9 @@ numbers buried in the engine).
 Env:
   BASE_URL      default http://127.0.0.1:8765/v1   (vLLM OpenAI endpoint)
   MODEL         default exp3
+  LLM_TIMEOUT   default 120 (seconds) — per-request inference timeout
+  LLM_STREAM    default 1 — stream tokens from the server when supported
+  LLM_MAX_TOKENS default 1024 — cap on generated tokens for narration
   SENPAI_TODAY  default unset → date.today(); set YYYY-MM-DD to pin the
                 "current date" used by scoring (handy for a reproducible demo
                 against the committed seed data, whose reference is 2026-06-16).
@@ -19,10 +22,33 @@ import os
 from datetime import date
 from pathlib import Path
 
-# --- Model server (shared with demo/) ---------------------------------------
+# --- Model server -----------------------------------------------------------
+# Any OpenAI-compatible endpoint works here: vLLM (`vllm serve … --port 8765`)
+# is the production target; ollama's `/v1` and the Phase-1 demo server are
+# drop-in compatible too. Only this URL + MODEL change between backends.
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8765/v1")
 MODEL = os.environ.get("MODEL", "exp3")
 MAX_TOOL_ROUNDS = 4
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+# --- Inference tunables -----------------------------------------------------
+LLM_TIMEOUT = _env_float("LLM_TIMEOUT", 120.0)        # seconds, per request
+LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 1024)
+LLM_STREAM = os.environ.get("LLM_STREAM", "1").lower() not in ("0", "false", "no", "")
 
 # --- Paths ------------------------------------------------------------------
 PKG_DIR = Path(__file__).resolve().parent

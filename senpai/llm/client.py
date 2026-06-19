@@ -11,6 +11,7 @@ from __future__ import annotations
 import ast
 import json
 import re
+from collections.abc import Iterator
 
 from openai import OpenAI
 
@@ -18,7 +19,15 @@ from senpai import config
 from senpai.tools.impl import dispatch
 from senpai.tools.schemas import TOOLS
 
-client = OpenAI(base_url=config.BASE_URL, api_key="dummy")
+# A single OpenAI-compatible client. `timeout`/`max_retries` keep a slow or down
+# inference server (vLLM/ollama) from hanging the API — callers fall back to the
+# deterministic render on any error.
+client = OpenAI(
+    base_url=config.BASE_URL,
+    api_key="dummy",
+    timeout=config.LLM_TIMEOUT,
+    max_retries=0,
+)
 
 
 def _parse_xlam(content: str | None):
@@ -48,13 +57,37 @@ def _parse_xlam(content: str | None):
     return calls or None
 
 
-def simple_complete(messages: list[dict], temperature: float = 0.3) -> str:
+def simple_complete(messages: list[dict], temperature: float = 0.3,
+                    max_tokens: int | None = None) -> str:
     """One plain completion, no tools. Raises on transport error so callers
-    (e.g. narration) can fall back to a templated string."""
+    (e.g. narration) can fall back to a templated string. Strips any
+    `<think>...</think>` reasoning span (the served model is a reasoning
+    distill) so callers get only the final coaching text."""
     resp = client.chat.completions.create(
         model=config.MODEL, messages=messages, temperature=temperature,
+        max_tokens=max_tokens or config.LLM_MAX_TOKENS,
     )
-    return (resp.choices[0].message.content or "").strip()
+    content = resp.choices[0].message.content or ""
+    content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
+    return content.strip()
+
+
+def stream_complete(messages: list[dict], temperature: float = 0.3,
+                    max_tokens: int | None = None) -> Iterator[str]:
+    """Stream a completion token-by-token from the OpenAI-compatible server
+    (vLLM supports SSE streaming natively). Yields raw content deltas, including
+    any `<think>` reasoning — callers decide how to present the thinking phase.
+    Raises on transport error so callers can fall back."""
+    stream = client.chat.completions.create(
+        model=config.MODEL, messages=messages, temperature=temperature,
+        max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
+    )
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta
+        if delta and delta.content:
+            yield delta.content
 
 
 def stream_turn(convo: list[dict], tools: list[dict] | None = None):

@@ -41,6 +41,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        navy: {
+          DEFAULT: "hsl(var(--navy))",
+          foreground: "hsl(var(--navy-foreground))",
+        },
         // semantic — deal health bands
         band: {
           red: "hsl(var(--band-red))",
@@ -54,7 +58,6 @@ const config: Config = {
           low: "hsl(var(--conf-low))",
           unverified: "hsl(var(--conf-unverified))",
         },
-        vermilion: "hsl(var(--vermilion))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -63,8 +66,9 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "var(--font-jp)", "system-ui", "sans-serif"],
-        serif: ["var(--font-serif)", "var(--font-jp)", "Georgia", "serif"],
+        serif: ["var(--font-sans)", "var(--font-jp)", "system-ui", "sans-serif"],
         jp: ["var(--font-jp)", "var(--font-sans)", "sans-serif"],
+        display: ["var(--font-sans)", "var(--font-jp)", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       letterSpacing: {

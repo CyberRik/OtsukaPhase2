@@ -177,7 +177,7 @@ def review_note(note: str, deal: dict | None = None,
         for reason in res.top_reasons(3):
             r.observations.append(f"案件データ上のサイン: {reason}")
             r.risks.append(reason)
-        for fl in deal_flags(deal, notes or [], report, res.band, today=today):
+        for fl in deal_flags(deal, notes or [], res.band, today=today):
             r.missing_info.append(fl.message)
         r.decision_factors.append(f"現在の段階: {deal.get('stage', '-')}(健全度 {res.band})")
 
@@ -259,19 +259,14 @@ def format_review(r: CoachReview) -> str:
     return "\n".join(blocks)
 
 
-def narrate_review(r: CoachReview, use_llm: bool = True) -> str:
-    """Optionally let exp3 rephrase the SAME findings into smoother coaching
-    language. The model is forbidden to add facts or pick one answer; on any
-    failure we return the deterministic render."""
-    fallback = format_review(r)
-    if not use_llm:
-        return fallback
-    from senpai.llm import client
-
+def narration_prompt(r: CoachReview) -> str:
+    """The exact prompt used to ask the model to rephrase the SAME findings.
+    Extracted so streaming and non-streaming paths share one source of truth —
+    the coaching content is identical either way."""
     def _bul(items: list[str]) -> str:
         return "、".join(items) if items else "なし"
 
-    prompt = (
+    return (
         "あなたは新人営業を育てる先輩です。以下の分析結果を、教えるトーンで"
         "整理し直してください。守るべきルール: (1)与えられた点だけを使い、"
         "新しい事実や数字を足さない (2)『正解は一つ』にせず、複数の選択肢として"
@@ -284,8 +279,19 @@ def narrate_review(r: CoachReview, use_llm: bool = True) -> str:
         f"取りうる一手: {_bul(r.next_actions)}\n"
         f"判断要因: {_bul(r.decision_factors)}\n"
     )
+
+
+def narrate_review(r: CoachReview, use_llm: bool = True) -> str:
+    """Optionally let the model rephrase the SAME findings into smoother coaching
+    language. The model is forbidden to add facts or pick one answer; on any
+    failure we return the deterministic render."""
+    fallback = format_review(r)
+    if not use_llm:
+        return fallback
+    from senpai.llm import client
+
     try:
-        out = client.simple_complete([{"role": "user", "content": prompt}])
+        out = client.simple_complete([{"role": "user", "content": narration_prompt(r)}])
         return out or fallback
     except Exception:  # noqa: BLE001 — server down → deterministic render
         return fallback

@@ -21,16 +21,18 @@ Design contract (kept stable for the frontend):
 """
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import asdict
 from datetime import date
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from senpai import config
-from senpai.coach.review import review_note
+from senpai.coach.review import format_review, narrate_review, narration_prompt, review_note
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
@@ -75,25 +77,32 @@ def _today() -> date:
     return config.today()
 
 
+def _last_activity_date(acts: list[dict]) -> str | None:
+    """Most recent activity_date for a deal (acts are newest-first)."""
+    return next((a.get("activity_date") for a in acts if a.get("activity_date")), None)
+
+
 def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
-    notes = store.notes_for_deal(d["deal_id"])
-    res = score_deal(d, notes, today=today)
-    report = store.report_for_deal(d["deal_id"])
-    flags = deal_flags(d, notes, report, res.band, today=today)
-    last = d.get("last_contact_date")
+    acts = store.activities_for_deal(d["deal_id"])
+    res = score_deal(d, acts, today=today)
+    flags = deal_flags(d, acts, res.band, today=today)
+    rep = store.rep_name(store.deal_rep_id(d))
+    customer = store.customer_name(d["customer_id"])
+    last = _last_activity_date(acts)
     stale_days = (today - date.fromisoformat(last)).days if last else None
+    regressed = config.rank_num(d.get("order_rank")) > config.rank_num(d.get("initial_order_rank"))
     row = {
         "deal_id": d["deal_id"],
-        "customer": store.customer_name(d["customer_id"]),
-        "rep": store.rep_name(d["rep_id"]),
-        "stage": d["stage"],
-        "amount": d["amount"],
+        "customer": customer,
+        "rep": rep,
+        "stage": d.get("order_rank", ""),
+        "amount": d.get("total_order_amount", 0),
         "band": res.band,
         "chip": _CHIP[res.band],
         "score": res.score,
         "days_stale": stale_days,
-        "close_date": d["expected_close_date"],
-        "slips": max(0, len(d.get("close_date_history", [])) - 1),
+        "close_date": d.get("expected_order_date"),
+        "slips": 1 if regressed else 0,
         "n_flags": len(flags),
         "decision_maker_identified": d.get("decision_maker_identified", False),
         "rep_close_likelihood": d.get("rep_close_likelihood"),
@@ -101,8 +110,8 @@ def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
     flag_rows = [
         {
             "deal_id": d["deal_id"],
-            "customer": store.customer_name(d["customer_id"]),
-            "rep": store.rep_name(d["rep_id"]),
+            "customer": customer,
+            "rep": rep,
             "severity": f.severity,
             "flag": f.name,
             "message": f.message,
@@ -162,8 +171,7 @@ def dashboard(rep: str | None = None):
 
     order = {"high": 0, "medium": 1, "low": 2}
     flagged.sort(key=lambda r: order.get(r["severity"], 3))
-    reps = sorted({r["rep"] for d in store.open_deals()
-                   for r in [{"rep": store.rep_name(d["rep_id"])}]})
+    reps = sorted({store.rep_name(store.deal_rep_id(d)) for d in store.open_deals()})
     kpis = {
         "open_deals": len(rows),
         "at_risk": sum(1 for r in rows if r["band"] == "red"),
@@ -182,31 +190,38 @@ def deal_detail(deal_id: str):
     if d is None:
         raise HTTPException(404, f"deal {deal_id} not found")
     today = _today()
-    notes = store.notes_for_deal(deal_id)
-    res = score_deal(d, notes, today=today)
-    report = store.report_for_deal(deal_id)
-    flags = deal_flags(d, notes, report, res.band, today=today)
+    acts = store.activities_for_deal(deal_id)
+    res = score_deal(d, acts, today=today)
+    flags = deal_flags(d, acts, res.band, today=today)
     return {
         "deal": {
             "deal_id": d["deal_id"],
             "customer": store.customer_name(d["customer_id"]),
-            "rep": store.rep_name(d["rep_id"]),
-            "stage": d["stage"],
-            "amount": d["amount"],
-            "expected_close_date": d.get("expected_close_date"),
-            "last_contact_date": d.get("last_contact_date"),
+            "rep": store.rep_name(store.deal_rep_id(d)),
+            "stage": d.get("order_rank", ""),
+            "amount": d.get("total_order_amount", 0),
+            "expected_close_date": d.get("expected_order_date"),
+            "last_contact_date": _last_activity_date(acts),
             "decision_maker_identified": d.get("decision_maker_identified", False),
             "rep_close_likelihood": d.get("rep_close_likelihood"),
             "close_date_history": d.get("close_date_history", []),
             "stage_history": d.get("stage_history", []),
-            "products": d.get("products", []),
+            "products": [d["product_category"]] if d.get("product_category") else [],
         },
         "score": res.score,
         "band": res.band,
         "signals": [asdict(s) for s in sorted(res.signals, key=lambda x: x.points, reverse=True)],
         "flags": [asdict(f) for f in flags],
-        "notes": notes,
-        "report": report,
+        "notes": [
+            {
+                "note_id": f"{deal_id}-{i}",
+                "date": a.get("activity_date"),
+                "channel": a.get("activity_type", ""),
+                "text": a.get("daily_report", ""),
+            }
+            for i, a in enumerate(acts)
+        ],
+        "report": None,
     }
 
 
@@ -216,20 +231,94 @@ def deal_detail(deal_id: str):
 class CoachRequest(BaseModel):
     note: str
     deal_id: str | None = None
+    narrate: bool = False
+
+
+# Optional LLM narration. Off unless SENPAI_USE_LLM is truthy, so the coach
+# stays deterministic by default; when on, the served model only *rephrases*
+# the deterministic findings (never adds facts), with fallback baked in.
+USE_LLM = os.environ.get("SENPAI_USE_LLM", "0").lower() not in ("0", "false", "", "no")
 
 
 @app.post("/api/coach/review")
 def coach_review(req: CoachRequest):
     deal = store.get_deal(req.deal_id) if req.deal_id else None
-    notes = store.notes_for_deal(req.deal_id) if deal else None
-    report = store.report_for_deal(req.deal_id) if deal else None
-    r = review_note(req.note, deal=deal, notes=notes, report=report)
+    acts = store.activities_for_deal(req.deal_id) if deal else None
+    r = review_note(req.note, deal=deal, notes=acts, report=None)
+
+    narration = None
+    llm_model = None
+    if USE_LLM and req.narrate:
+        out = narrate_review(r, use_llm=True)
+        # narrate_review falls back to the deterministic render on any model
+        # failure; only treat it as live narration when it actually differs.
+        if out and out.strip() != format_review(r).strip():
+            narration = out
+            llm_model = config.MODEL
+
     return {
         "teach_note": TEACH_NOTE,
         "sections": COACH_SECTIONS,
         "used_deal": r.used_deal,
         "result": {s["key"]: getattr(r, s["key"]) for s in COACH_SECTIONS},
+        "narration": narration,
+        "llm_model": llm_model,
     }
+
+
+def _sse(obj: dict) -> str:
+    """Encode one Server-Sent Event frame."""
+    return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+
+@app.post("/api/coach/narrate")
+def coach_narrate(req: CoachRequest):
+    """Stream the senior commentary token-by-token (SSE) straight from the
+    vLLM/OpenAI endpoint. The deterministic Review Coach is computed first and is
+    unchanged; this only streams the optional rephrasing. Event types:
+      start | thinking | delta | done | fallback | unavailable | error
+    The frontend renders deltas live and falls back to the deterministic card on
+    `fallback`/`unavailable`/`error`."""
+    if not USE_LLM:
+        return StreamingResponse(
+            iter([_sse({"type": "unavailable", "reason": "llm_disabled"})]),
+            media_type="text/event-stream",
+        )
+
+    deal = store.get_deal(req.deal_id) if req.deal_id else None
+    acts = store.activities_for_deal(req.deal_id) if deal else None
+    r = review_note(req.note, deal=deal, notes=acts, report=None)
+
+    def gen():
+        from senpai.llm import client
+        yield _sse({"type": "start", "model": config.MODEL})
+        full, emitted, last_think = "", 0, 0
+        try:
+            for piece in client.stream_complete([{"role": "user", "content": narration_prompt(r)}]):
+                full += piece
+                if "</think>" in full:                         # reasoning done → answer region
+                    answer = full.split("</think>", 1)[1].lstrip("\n ")
+                elif "<think>" in full:                        # still reasoning
+                    answer = ""
+                else:                                          # model emitted no <think> at all
+                    answer = full
+                if answer:
+                    new = answer[emitted:]
+                    if new:
+                        emitted += len(new)
+                        yield _sse({"type": "delta", "text": new})
+                elif len(full) - last_think >= 48:             # throttled progress while thinking
+                    last_think = len(full)
+                    yield _sse({"type": "thinking", "chars": len(full)})
+            yield _sse({"type": "done", "model": config.MODEL} if emitted else {"type": "fallback"})
+        except Exception:  # noqa: BLE001 — server down/timeout → client falls back
+            yield _sse({"type": "error", "reason": "unreachable"})
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/api/coach/examples")
