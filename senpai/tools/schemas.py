@@ -282,10 +282,12 @@ def _pick(*names: str) -> list[dict]:
 
 
 # Junior assistant: the in-context coaching tools + web_search.
+# (review_sales_note is intentionally excluded — it bridges to the friend-owned
+#  coach experiment and is kept out of our chat surface for isolation.)
 JUNIOR_TOOLS = _pick(
     "query_spr", "find_similar_deals", "retrieve_playbook",
     "lookup_customer_environment", "get_product_info", "score_deal_health",
-    "review_sales_note", "draft_daily_report", "route_to_expert",
+    "draft_daily_report", "route_to_expert",
     "get_seasonal_context", "web_search",
 )
 

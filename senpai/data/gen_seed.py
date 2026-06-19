@@ -173,6 +173,17 @@ PLAYBOOK_SITUATIONS = [
 ]
 
 
+# Legacy-field maps: only used to populate backward-compat aliases on each deal so
+# the friend-owned web-app/coach experiment (which reads d["stage"], d["amount"],
+# etc.) keeps working. The canonical fields above mirror the real SPR schema.
+_STAGE_FROM_RANK = {"6_P": "lead", "5_C": "qualified", "4_B": "proposal",
+                    "3_A": "negotiation", "2_A+": "closing", "1_Confirmed": "closing",
+                    "7_Lost": "lost", "8_Cancelled": "lost"}
+_LIKELIHOOD_FROM_RANK = {"2_A+": "high", "3_A": "high", "1_Confirmed": "high",
+                         "4_B": "med", "5_C": "low", "6_P": "low",
+                         "7_Lost": "low", "8_Cancelled": "low"}
+
+
 def _company_name(rnd):
     return f"{rnd.choice(_PREFIX)}{rnd.choice(_STEM)}{rnd.choice(_SUFFIX)}"
 
@@ -304,6 +315,21 @@ def generate():
             "initial_order_rank": initial_rank,
             "days_back_from_confirmed": (until_order if confirmed else None),
         }
+        # Backward-compat aliases (consumed only by the friend-owned experiment).
+        deal.update({
+            "rep_id": emp,
+            "stage": _STAGE_FROM_RANK.get(order_rank, "lead"),
+            "amount": amount,
+            "status": status,
+            "expected_close_date": expected_order,
+            "close_date_history": [expected_order],
+            "last_contact_date": _iso(last_activity),
+            "decision_maker_identified": has_dm,
+            "rep_close_likelihood": _LIKELIHOOD_FROM_RANK.get(order_rank, "low"),
+            "stage_history": [{"stage": _STAGE_FROM_RANK.get(order_rank, "lead"),
+                               "entered_date": _iso(rank_updated)}],
+            "products": [prod["product_code"]],
+        })
         deals.append(deal)
 
         # --- sales_activities for this deal (the activity log / daily reports)

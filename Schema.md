@@ -121,3 +121,53 @@
 | `quote_id` | Associated quote ID *(if applicable)* |
 | `order_id` | Associated order ID *(if applicable)* |
 | `deal_id` | Associated deal ID *(if applicable)* |
+
+---
+
+# How Senpai's pipeline maps to this schema
+
+The Senpai pipeline is built **directly against these four tables** so that, once we get
+real SPR access, deployment is a drop-in: replace the synthetic seed with the real export
+and nothing else changes. Until then, `senpai/data/gen_seed.py` generates byte-stable
+synthetic data in exactly this shape.
+
+### Tables we mirror (canonical)
+`senpai/data/seed/{deals,orders,quotes,sales_activities}.json` — field-for-field as above.
+
+### Supplementary reference data (not part of the SPR export)
+These are referenced *by* the SPR tables and would come from master data / other systems /
+knowledge mining: `reps.json` (resolved from `sales_info.employee_id`), `customers.json`,
+`products.json`, `playbook.json` (mined from `daily_report`), and `environments.json`
+(customer IT environment — **a gap**: not present in the four SPR tables; confirm its source).
+
+### Deal-health signals → source fields
+The deterministic scorer (`senpai/health/scoring.py`) reads only real fields:
+
+| Signal | Source field(s) |
+|---|---|
+| staleness | latest `sales_activities.activity_date` |
+| rank stagnation | `rank_updated_at` vs `order_rank` benchmark |
+| order date passed | `days_until_order` / `expected_order_date` |
+| rank regression | `order_rank` vs `initial_order_rank` |
+| missing decision-maker | `sales_activities.business_card_info` (title) |
+| stall language | latest `sales_activities.daily_report` |
+| low activity | gap in `sales_activities.activity_date` |
+
+Report-reliability flags (`senpai/health/flags.py`) use the same fields plus `order_rank`
+(optimism-mismatch: a strong rank with red health), `total_order_amount`, and
+`expected_order_date`.
+
+### `order_rank` is the spine
+`1_Confirmed` = won · `2_A+ … 6_P` = live pipeline (lower number = stronger) ·
+`7_Lost` / `8_Cancelled` = dead. Benchmarks and the open/won/dead sets live in
+`senpai/config.py` (`RANK_BENCHMARKS`, `OPEN_RANKS`, …) so the rules stay auditable.
+
+### Open questions for the data owner
+Full `order_rank` history (not just first + latest, needed for regression) · how
+`order_rank` is assigned (rep-manual vs rule-based) · `daily_report` fill-rate/length ·
+`opportunity_id` ↔ `deal_id` cardinality · where customer IT-environment data lives ·
+anonymization rules.
+
+> **Note:** each deal row also carries a few legacy alias fields (`stage`, `amount`,
+> `expected_close_date`, …). These are **not** part of this schema — they exist only so a
+> separate, in-progress web-app experiment keeps running, and can be dropped once it migrates.

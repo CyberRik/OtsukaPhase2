@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 
 from senpai import config
-from senpai.coach.review import format_review, review_note
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
@@ -30,7 +29,7 @@ def _score_open_deals(rep_id: str = ""):
             continue
         acts = store.activities_for_deal(d["deal_id"])
         res = score_deal(d, acts)
-        flags = deal_flags(d, acts, res.band)
+        flags = deal_flags(d, acts, health_band=res.band)
         out.append((d, res, flags))
     return out
 
@@ -162,12 +161,13 @@ def draft_daily_report(activity: str = "", deal_id: str = "") -> str:
 
 
 def review_sales_note(note: str = "", deal_id: str = "") -> str:
-    """Coach a junior on a raw meeting note / daily report. Returns a senior's
-    reasoning scaffold (notices / missing info / risks / questions / possible
-    next moves / decision factors) — never a single 'correct answer'. If a
-    deal_id is given, the deterministic deal signals reinforce the text reading."""
+    """Bridge to the Sales Review Coach (a separate, friend-owned experiment under
+    senpai.coach). Kept here only so the coach's own tests can reach it; it is NOT
+    part of our chat tool surface. The coach is imported lazily so our pipeline's
+    import graph never depends on it."""
     if not (note or "").strip():
         return "レビューするメモ・日報の本文を入力してください。"
+    from senpai.coach.review import format_review, review_note   # lazy: keep us decoupled
     deal = store.get_deal(deal_id) if deal_id else None
     notes = store.notes_for_deal(deal_id) if deal else None
     report = store.report_for_deal(deal_id) if deal else None

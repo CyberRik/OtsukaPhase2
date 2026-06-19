@@ -25,10 +25,16 @@ class Flag:
 
 
 def deal_flags(deal: dict, activities: list[dict] | None = None,
-               health_band: str | None = None,
+               report: dict | None = None, health_band: str | None = None,
                today: date | None = None) -> list[Flag]:
     """Return all reliability flags that fire for a deal. `health_band` (from
-    scoring) drives the optimism-mismatch check."""
+    scoring) drives the optimism-mismatch check.
+
+    `report` is accepted but unused — it exists only for backward compatibility
+    with the friend-owned web-app/coach experiment, whose callers pass a report
+    object positionally (deal, activities, report, health_band, today). Our own
+    callers pass `health_band=` by keyword and omit `report`."""
+    del report   # intentionally unused (compat slot)
     today = today or config.today()
     activities = activities or []
     flags: list[Flag] = []

@@ -144,6 +144,34 @@ def rep_name(employee_id: str) -> str:
     return r["name"] if r else employee_id
 
 
+# --- backward-compat shims (for the friend-owned web-app / coach experiment) ---
+# Our pipeline reads sales_activities directly; the experiment still calls the old
+# notes/report API. These derive old-shaped data from sales_activities so that code
+# keeps working unchanged. They are NOT used by our pipeline.
+def notes_for_deal(deal_id: str) -> list[dict]:
+    """Old 'notes' shape, derived from sales_activities (newest first). Each row
+    carries both the new keys and the legacy aliases (date/text/channel/rep_id)."""
+    out = []
+    for a in activities_for_deal(deal_id):
+        out.append({**a,
+                    "date": a.get("activity_date"),
+                    "text": a.get("daily_report"),
+                    "channel": a.get("activity_type"),
+                    "rep_id": (a.get("sales_info") or {}).get("employee_id")})
+    return out
+
+
+def report_for_deal(deal_id: str) -> dict | None:
+    """No standalone report object exists in the SPR schema (daily_report lives on
+    activities). Returned as None for compat; callers tolerate it."""
+    return None
+
+
+def reports_for_rep(employee_id: str) -> list[dict]:
+    """Compat alias — daily-report activities for a rep."""
+    return daily_reports_for_rep(employee_id)
+
+
 def find_customer_by_name(name: str) -> dict | None:
     """Loose match: exact, then substring (handles 'アクメ商事' vs '株式会社アクメ商事')."""
     if not name:
