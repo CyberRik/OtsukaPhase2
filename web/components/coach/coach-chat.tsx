@@ -1,4 +1,3 @@
-import { ExplainabilityPanel } from "@/components/coach/explainability-card";
 "use client";
 
 import { useEffect, useRef, useState } from "react";
