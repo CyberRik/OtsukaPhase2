@@ -232,6 +232,8 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
     is stripped so only the user-facing answer streams."""
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
+    from senpai.retrieval import trace as _trace
+    _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
 
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
@@ -274,7 +276,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
             result = dispatch(name, args)
             tool_log.append((name, _fmt_args(args), result))
             convo.append({"role": "tool", "tool_call_id": cid, "content": result})
-            yield {"type": "tool", "name": name, "args": _fmt_args(args), "result": result}
+            ev = {"type": "tool", "name": name, "args": _fmt_args(args), "result": result}
+            retrieval = _trace.drain()  # any chunks this tool retrieved (Explorer)
+            if retrieval:
+                ev["retrieval"] = retrieval
+            yield ev
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.

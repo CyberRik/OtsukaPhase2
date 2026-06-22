@@ -162,15 +162,20 @@ def _use_dense(corpus: str) -> bool:
 # candidate pool (which otherwise lets a mediocre note that appears in both BM25 and
 # dense lists outrank an excellent dense-only match), and yields diverse results.
 def _ranks_by_text(scores: np.ndarray, meta: tuple[dict, ...], pool: int,
-                   min_score: float = 0.0) -> tuple[dict[str, int], dict[str, int]]:
+                   min_score: float = 0.0,
+                   allowed: set[int] | None = None) -> tuple[dict[str, int], dict[str, int]]:
     """Rank *distinct texts* by their best row score (desc), keeping only texts
     whose best score exceeds `min_score`. Returns ({text: 1-based rank},
     {text: representative row index}). Dropping non-positive scores is what stops a
     signal with *no real match* (e.g. BM25 on a purely-semantic query) from injecting
-    arbitrarily-ranked noise into the fusion."""
+    arbitrarily-ranked noise into the fusion. When `allowed` is given, only those
+    row indices are considered — this is how account-scoping restricts retrieval to
+    a single customer's records before ranking."""
     best_idx: dict[str, int] = {}
     best_score: dict[str, float] = {}
     for i, sc in enumerate(scores):
+        if allowed is not None and i not in allowed:
+            continue
         t = meta[i].get("text", "")
         if t not in best_score or sc > best_score[t]:
             best_score[t] = float(sc)
@@ -215,10 +220,17 @@ def _cross_encoder():
 
 # --- public API -------------------------------------------------------------
 def semantic_search(query: str, corpus: str = "activities", limit: int = 5,
-                    tags: list[str] | None = None, pool: int = 50) -> list[dict]:
+                    tags: list[str] | None = None, pool: int = 50,
+                    customer_id: str | None = None) -> list[dict]:
     """Hybrid (BM25 + dense, RRF-fused) search over a committed corpus. Falls back
     to BM25, then keyword, depending on what's installed. `tags` are folded into
-    the query and give a small exact-match boost (used by playbook retrieval)."""
+    the query and give a small exact-match boost (used by playbook retrieval).
+
+    Account-scoping (grounding P0): when `customer_id` is given, retrieval is
+    restricted to that customer's own rows BEFORE ranking — so a coaching/assistant
+    turn about one account can never surface another customer's notes. If the
+    customer has no indexed rows the result is empty (the caller decides whether to
+    fall back); scoping never silently widens to other customers."""
     meta = _load_meta(corpus)
     if not meta:
         return []
@@ -226,6 +238,12 @@ def semantic_search(query: str, corpus: str = "activities", limit: int = 5,
     effective = " ".join([query or "", *tags]).strip()
     if not effective:
         return []
+
+    allowed: set[int] | None = None
+    if customer_id:
+        allowed = {i for i, m in enumerate(meta) if m.get("customer_id") == customer_id}
+        if not allowed:
+            return []   # scoped account has no indexed rows — never widen to others
 
     # Each signal contributes a (ranks_by_text, weight) plus a text→representative
     # row map; RRF fuses per distinct text. Dense is weighted higher (config).
@@ -235,13 +253,14 @@ def semantic_search(query: str, corpus: str = "activities", limit: int = 5,
     bm = _bm25_for(corpus)
     if bm is not None:
         bm25, _ = bm
-        ranks, idx = _ranks_by_text(np.asarray(bm25.get_scores(_tokenize(effective))), meta, pool)
+        ranks, idx = _ranks_by_text(np.asarray(bm25.get_scores(_tokenize(effective))),
+                                    meta, pool, allowed=allowed)
         signals.append((ranks, config.BM25_WEIGHT))
         rep.update(idx)
 
     if _use_dense(corpus):
         sims = _load_vectors(corpus) @ _dense_query_vector(effective)
-        ranks, idx = _ranks_by_text(sims, meta, pool)
+        ranks, idx = _ranks_by_text(sims, meta, pool, allowed=allowed)
         signals.append((ranks, config.DENSE_WEIGHT))
         rep.update(idx)                              # dense representative preferred
 
@@ -252,7 +271,7 @@ def semantic_search(query: str, corpus: str = "activities", limit: int = 5,
                 fused[text] = fused.get(text, 0.0) + weight / (config.RRF_K + r)
     else:  # no BM25, no dense → pure keyword fallback (still deduped by text)
         kw = _keyword_scores(effective, meta)
-        ranks, idx = _ranks_by_text(kw, meta, pool)
+        ranks, idx = _ranks_by_text(kw, meta, pool, allowed=allowed)
         rep.update(idx)
         fused = {t: 1.0 / (config.RRF_K + r) for t, r in ranks.items() if kw[idx[t]] > 0}
 

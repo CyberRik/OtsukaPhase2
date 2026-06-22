@@ -61,14 +61,20 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "search_notes",
-            "description": "Semantic search across the team's daily reports (日報). Finds notes that "
+            "description": "Semantic search across daily reports (日報). Finds notes that "
                            "mean the same thing as the query even when worded differently (e.g. "
-                           "'予算が理由で停滞' also surfaces 'コスト面で渋い'). Use to find precedents, "
-                           "recurring objections, or how others handled a similar situation.",
+                           "'予算が理由で停滞' also surfaces 'コスト面で渋い'). ALWAYS pass `customer` "
+                           "(the account in focus) for any account-specific question — this "
+                           "restricts the search to that customer's own notes. Omit `customer` "
+                           "ONLY for deliberate cross-account research; results then span all "
+                           "customers and are labelled as such.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {"type": "string", "description": "What to look for, in natural language"},
+                    "customer": {"type": "string", "description": "The account in focus (name or ID). "
+                                 "Scopes the search to this customer's notes. Pass it whenever the "
+                                 "question is about a specific account."},
                     "limit": {"type": "integer", "description": "Max notes to return (default 5)"},
                 },
                 "required": ["query"],

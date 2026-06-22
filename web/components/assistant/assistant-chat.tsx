@@ -6,9 +6,10 @@ import {
   FileText, Globe, Layers, Loader2, Mail, Receipt, Route, Search, Send,
   ShieldCheck, Sparkles, UserSearch, Wrench, type LucideIcon,
 } from "lucide-react";
-import { chatStream, type ChatEvent, type ChatRole, type ChatTurn } from "@/lib/api";
+import { chatStream, type ChatEvent, type ChatRole, type ChatTurn, type RetrievalTrace } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 
 type ToolCall = { name: string; args: string; result: string };
 type SourceState = {
@@ -25,6 +26,7 @@ type Msg = {
   research?: boolean;         // turn was routed to the research pipeline
   sources?: SourceState[];    // research source ledger
   webUrls?: WebCitation[];    // external citations
+  retrieval?: RetrievalTrace[]; // retrieval explorer trace (per-chunk provenance)
 };
 
 // Human labels + icons for each tool, so the grounding ledger reads like
@@ -136,7 +138,11 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
           if (e.role === "research") patch((m) => ({ ...m, research: true, sources: [] }));
           break;
         case "tool":
-          patch((m) => ({ ...m, tools: [...m.tools, { name: e.name, args: e.args, result: e.result }] }));
+          patch((m) => ({
+            ...m,
+            tools: [...m.tools, { name: e.name, args: e.args, result: e.result }],
+            retrieval: e.retrieval ? [...(m.retrieval ?? []), ...e.retrieval] : m.retrieval,
+          }));
           break;
         case "source":
           patch((m) => ({
@@ -353,6 +359,11 @@ function MessageBubble({ m, t, lang }: { m: Msg; t: (k: string) => string; lang:
             })}
           </div>
         </details>
+      )}
+
+      {/* Retrieval Explorer — per-chunk provenance, scope and scores */}
+      {m.retrieval && m.retrieval.length > 0 && (
+        <RetrievalExplorer traces={m.retrieval} open={running} lang={lang} />
       )}
 
       {/* Answer */}

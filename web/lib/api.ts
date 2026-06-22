@@ -142,9 +142,27 @@ export async function narrateStream(
 // `tool` event before the final `answer`.
 export type ChatRole = "junior" | "manager" | "research";
 
+// One retrieval event surfaced by a tool — the Retrieval Explorer's data.
+export interface RetrievalItem {
+  id: string;
+  customer?: string | null;
+  customer_id?: string;
+  score: number;
+  text?: string;
+}
+export interface RetrievalTrace {
+  source: string;            // "notes_semantic" | "knowledge_keyword" | "graph"
+  scope: string;             // "account:<id>" | "all"
+  items: RetrievalItem[];
+  query?: string;
+  mode?: string;
+  customer?: string | null;
+  intent?: string;
+}
+
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
-  | { type: "tool"; name: string; args: string; result: string }
+  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[] }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: unknown[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }
   | { type: "deal_choices"; status: "ambiguous"; deals: unknown[] }

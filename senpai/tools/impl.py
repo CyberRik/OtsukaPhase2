@@ -492,6 +492,11 @@ def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:
     except (TypeError, ValueError):
         limit = 4
     hits = _search_knowledge(query=query, tags=tags or [], limit=limit)
+    from senpai.retrieval import trace as _trace
+    _trace.record(
+        "knowledge_keyword", scope="all", query=query,  # corpus is general, not per-account
+        items=[{"id": kind, "customer": None, "score": int(score), "text": text}
+               for score, kind, text in hits])
     if not hits:
         return ("該当する社内ナレッジが見つかりませんでした。"
                 "route_to_expert の利用を検討してください。")
@@ -499,25 +504,62 @@ def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:
     return "社内ナレッジ:\n- " + "\n- ".join(lines)
 
 
-def search_notes(query: str = "", limit: int = 5) -> str:
+def search_notes(query: str = "", limit: int = 5, customer: str = "") -> str:
     """Semantic search over the field's daily reports (日報). Finds activities that
     *mean* the same thing as the query, not just share keywords — e.g. a search for
     『予算が理由で停滞』 surfaces 「コスト面で渋い」notes too. Returns dated, attributed
-    snippets with their deal/customer so the rep can drill in."""
+    snippets with their deal/customer + retrieval score so the rep can drill in.
+
+    Grounding P0 — account scoping: pass `customer` (the account in focus) to
+    restrict the search to that customer's own notes (the default for any
+    account-specific question). If `customer` is omitted, we still try to detect a
+    customer named in the query and scope to it; only when no account can be
+    resolved do we fall back to a cross-account search (clearly labelled). A scoped
+    search never widens to other customers."""
     from senpai.retrieval.semantic import semantic_search
     try:
         limit = int(limit)
     except (TypeError, ValueError):
         limit = 5
-    hits = semantic_search(query, corpus="activities", limit=limit)
+
+    # Resolve the account in focus: explicit arg first, then a customer named in the
+    # query; None ⇒ no account resolved ⇒ cross-account fallback (preserves behavior).
+    cust = None
+    if customer:
+        cust = store.resolve_customer(customer) or store.get_customer(customer)
+    if not cust and query:
+        cust = store.match_customer_in_text(query)
+    cid = cust.get("customer_id") if cust else None
+
+    from senpai.retrieval import semantic as _sem
+    from senpai.retrieval import trace as _trace
+    hits = semantic_search(query, corpus="activities", limit=limit, customer_id=cid)
+
+    # Observability: record exactly what was retrieved (Retrieval Explorer spine).
+    _trace.record(
+        "notes_semantic",
+        scope=(f"account:{cid}" if cid else "all"),
+        query=query, mode=_sem.mode(),
+        customer=(cust.get("name") if cust else None),
+        items=[{"id": f"{h.get('deal_id', '-')}@{h.get('activity_date', '?')}",
+                "customer_id": h.get("customer_id", ""),
+                "customer": store.customer_name(h.get("customer_id", "")) or h.get("customer_id", ""),
+                "score": round(float(h.get("score", 0)), 4),
+                "text": h.get("snippet", "")} for h in hits])
+
     if not hits:
+        if cid:
+            return f"{cust.get('name', cid)} の日報で該当するものは見つかりませんでした。"
         return "該当する日報は見つかりませんでした。"
+
+    scope = (f"（{cust.get('name')} に限定）" if cid
+             else "（全社横断・特定顧客に絞れず）")
     lines = []
     for h in hits:
-        cust = store.customer_name(h.get("customer_id", "")) or h.get("customer_id", "")
-        lines.append(f"{h.get('activity_date', '?')}・{h.get('deal_id', '-')}（{cust}）: "
-                     f"{h.get('snippet', '')}")
-    return "関連する日報:\n- " + "\n- ".join(lines)
+        cn = store.customer_name(h.get("customer_id", "")) or h.get("customer_id", "")
+        lines.append(f"{h.get('activity_date', '?')}・{h.get('deal_id', '-')}（{cn}）"
+                     f"[score {h.get('score', 0):.3f}]: {h.get('snippet', '')}")
+    return f"関連する日報{scope}:\n- " + "\n- ".join(lines)
 
 
 def query_graph(intent: str = "reps_who_win", category: str = "", industry: str = "",
@@ -526,10 +568,15 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
     """Multi-hop questions over the customer→deal→activity→rep→product graph.
     intent: 'reps_who_win' | 'account' | 'connections' | 'similar'."""
     from senpai.graph import query as gq
+    from senpai.retrieval import trace as _trace
     try:
         limit = int(limit)
     except (TypeError, ValueError):
         limit = 8
+    # account intent is customer-scoped; the relational intents are cross-account
+    # by design (and are research/manager-only per the governance table).
+    _trace.record("graph", scope=(f"account:{customer}" if intent == "account" and customer else "all"),
+                  intent=intent, query=" ".join(x for x in [category, industry, customer, deal_id] if x))
 
     if intent == "reps_who_win":
         rows = gq.reps_who_win(category=category, industry=industry,
