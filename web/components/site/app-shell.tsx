@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Building2,
   FileText,
   GraduationCap,
   Home,
@@ -30,6 +31,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/junior", key: "nav.home", icon: Home },
     { href: "/junior/assistant", key: "nav.assistant", icon: MessagesSquare },
     { href: "/junior/coach", key: "nav.coach", icon: GraduationCap },
+    { href: "/junior/accounts", key: "nav.accounts", icon: Building2 },
     { href: "/junior/prepare", key: "nav.prepare", icon: Target },
     { href: "/junior/knowledge", key: "nav.knowledge", icon: Library },
     { href: "/junior/reports", key: "nav.reports", icon: FileText },
@@ -38,6 +40,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/manager", key: "nav.dashboard", icon: LayoutDashboard },
     { href: "/manager/assistant", key: "nav.assistant", icon: MessagesSquare },
     { href: "/manager/pipeline", key: "nav.pipeline", icon: ListTree },
+    { href: "/manager/accounts", key: "nav.accounts", icon: Building2 },
     { href: "/manager/coaching", key: "nav.coaching", icon: Lightbulb },
     { href: "/manager/reliability", key: "nav.reliability", icon: ShieldAlert },
     { href: "/manager/knowledge", key: "nav.mknowledge", icon: Library },

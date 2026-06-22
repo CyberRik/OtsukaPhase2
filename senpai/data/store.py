@@ -155,6 +155,18 @@ def orders_for_deal(deal_id: str) -> list[dict]:
     return [o for o in all_orders() if o["order_id"] in oids]
 
 
+def orders_for_customer(customer_id: str) -> list[dict]:
+    """All orders for a customer, newest first (the account's purchase history)."""
+    rows = [o for o in all_orders() if o.get("customer_id") == customer_id]
+    return sorted(rows, key=lambda o: o.get("ordered_at", ""), reverse=True)
+
+
+def quotes_for_customer(customer_id: str) -> list[dict]:
+    """All quotes for a customer, newest first (the account's quoting history)."""
+    rows = [q for q in all_quotes() if q.get("customer_id") == customer_id]
+    return sorted(rows, key=lambda q: q.get("quoted_at", ""), reverse=True)
+
+
 # --- display helpers -------------------------------------------------------
 def customer_name(customer_id: str) -> str:
     c = get_customer(customer_id)

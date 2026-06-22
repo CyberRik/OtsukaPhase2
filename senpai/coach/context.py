@@ -362,6 +362,18 @@ def build_commentary_context(note: str, deal_id: str | None = None,
     lines.append("CUSTOMER HISTORY: "
                  + _customer_history(deal["customer_id"], deal["deal_id"]))
 
+    # Account-level cross-link: the deal lives inside a wider relationship. Surface
+    # the account's overall health so the read can weigh THIS deal against the whole
+    # account ("stalled deal, but the account is healthy and buying repeatedly").
+    try:
+        from senpai.account.health import account_health
+        ah = account_health(deal["customer_id"], today=today)
+        lines.append(
+            f"ACCOUNT CONTEXT: overall account health {ah.band} ({ah.score}/100, "
+            f"higher=healthier) across the customer's whole relationship")
+    except Exception:  # noqa: BLE001 — never let the cross-link break the deal read
+        pass
+
     recent = acts[:3]
     if recent:
         lines.append("RECENT ACTIVITY:")

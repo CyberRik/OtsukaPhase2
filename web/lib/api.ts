@@ -13,6 +13,7 @@ import {
   SOURCES_FALLBACK,
 } from "./fixtures";
 import type {
+  AccountSummary,
   CoachExample,
   CoachingWorkspace,
   CoachResponse,
@@ -86,6 +87,8 @@ export const api = {
   growth: (rep?: string) =>
     get<GrowthResponse>(`/api/growth${rep ? `?rep=${encodeURIComponent(rep)}` : ""}`, GROWTH_FALLBACK),
   coaching: () => get<CoachingWorkspace>("/api/coaching", COACHING_FALLBACK),
+  account: (customerId: string) =>
+    get<AccountSummary | null>(`/api/account/${encodeURIComponent(customerId)}`, null),
 };
 
 // --- Streaming senior commentary (SSE from the vLLM-backed bridge) ----------
@@ -186,6 +189,41 @@ export async function chatStream(
   }
   await readSSE(res, (obj) => onEvent(obj as ChatEvent), () =>
     onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+// --- Streaming account commentary (SSE) -------------------------------------
+// Senior account-manager read over a whole customer relationship. Mirrors
+// narrateStream; any transport failure surfaces as an `unavailable` event.
+export type AccountCommentaryEvent =
+  | { type: "start"; model?: string; endpoint?: string }
+  | { type: "context"; customer?: string; customer_id?: string; score?: number; band?: string }
+  | { type: "delta"; text: string }
+  | { type: "done"; model?: string }
+  | { type: "unavailable"; reason?: string };
+
+export async function accountCommentaryStream(
+  customerId: string,
+  onEvent: (e: AccountCommentaryEvent) => void,
+  opts?: { lang?: "ja" | "en"; signal?: AbortSignal },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(
+      `${BASE}/api/account/${encodeURIComponent(customerId)}/commentary?lang=${opts?.lang ?? "ja"}`,
+      { method: "POST", headers: { "Content-Type": "application/json" },
+        cache: "no-store", signal: opts?.signal },
+    );
+  } catch {
+    onEvent({ type: "unavailable", reason: "network" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    onEvent({ type: "unavailable", reason: `http_${res.status}` });
+    return;
+  }
+  await readSSE(res, (obj) => onEvent(obj as AccountCommentaryEvent), () =>
+    onEvent({ type: "unavailable", reason: "stream" }),
   );
 }
 

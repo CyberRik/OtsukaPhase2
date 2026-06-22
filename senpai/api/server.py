@@ -109,6 +109,7 @@ def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
     row = {
         "deal_id": d["deal_id"],
         "customer": customer,
+        "customer_id": d["customer_id"],
         "rep": rep,
         "stage": d.get("order_rank", ""),
         "amount": d.get("total_order_amount", 0),
@@ -266,6 +267,7 @@ def deal_detail(deal_id: str):
         "deal": {
             "deal_id": d["deal_id"],
             "customer": store.customer_name(d["customer_id"]),
+            "customer_id": d["customer_id"],
             "rep": store.rep_name(store.deal_rep_id(d)),
             "stage": d.get("order_rank", ""),
             "amount": d.get("total_order_amount", 0),
@@ -853,41 +855,117 @@ def coach_similar_cases(req: CoachRequest):
 
 @app.get("/api/coach/examples")
 def coach_examples():
-    # Each seed example is anchored to a REAL deal_id, so "try one" always runs
-    # the grounded path (build_commentary_context resolves the deal at high
-    # confidence) — never the "no matching customer" fallback. The notes name the
-    # deal's actual customer too, so text resolution would also succeed.
+    # Each seed example is anchored to a REAL, stable deal_id, so "try one" always
+    # runs the grounded path (build_commentary_context resolves the deal at high
+    # confidence) — never the "no matching customer" fallback. The notes are
+    # deliberately customer-AGNOSTIC: the seed regenerates (deal_id is stable but
+    # its customer/dates are not), so naming a company in the note text would
+    # eventually mismatch the deal's actual customer. The deal_id alone grounds it.
     return {
         "examples": [
             {
                 "title": "前向きだが決裁者が不明",
                 "deal_id": "D001",
-                "note": "村田印刷を訪問。担当者は前向きで『ほぼ決まり』との感触。"
-                        "受注確度は高いと見ている。ただ決裁者にはまだ会えていない。",
+                "note": "担当者は前向きで『ほぼ決まり』との感触。受注確度は高いと見ている。"
+                        "ただ決裁者にはまだ会えていない。",
                 "hint": "高い確度が案件の実態・決裁者の状況と噛み合っているか",
             },
             {
                 "title": "競合と比較中",
                 "deal_id": "D021",
-                "note": "山田電機、競合製品と比較中。価格が高いと言われ、見積は提示済み。"
+                "note": "競合製品と比較中。価格が高いと言われ、見積は提示済み。"
                         "次回までに再提案する予定。",
                 "hint": "価格勝負に流される前に差別化軸を考える",
             },
             {
                 "title": "初回訪問・IT環境を確認",
                 "deal_id": "D016",
-                "note": "富士産業へ初回訪問。先方のPC環境とネットワーク構成を一通り確認できた。"
+                "note": "初回訪問。先方のPC環境とネットワーク構成を一通り確認できた。"
                         "担当者は忙しそうだった。",
                 "hint": "情報収集に走り、関係構築と決裁者の把握が後回しに",
             },
             {
                 "title": "部長は前向き",
                 "deal_id": "D008",
-                "note": "大和商事の部長は前向きで好感触。現場のIT担当にはまだ会えていない。",
+                "note": "部長は前向きで好感触。現場のIT担当にはまだ会えていない。",
                 "hint": "決裁者の感触だけで成約間近と判断していないか",
             },
         ]
     }
+
+
+# ---------------------------------------------------------------------------
+# account intelligence — account-level (not deal-level) reasoning
+# ---------------------------------------------------------------------------
+@app.get("/api/account/{customer_id}")
+def account(customer_id: str):
+    """One grounded roll-up of a whole customer relationship: headline aggregates,
+    account health, relationship-trajectory patterns and expansion opportunities.
+    Deterministic; see senpai.account."""
+    from senpai.account import build_account_summary
+    s = build_account_summary(customer_id, today=_today())
+    if s is None:
+        raise HTTPException(404, f"customer {customer_id} not found")
+    return s.to_dict()
+
+
+@app.post("/api/account/{customer_id}/commentary")
+def account_commentary(customer_id: str, lang: str = "ja"):
+    """Stream a senior account-manager's read of the whole relationship (SSE).
+    Grounded in the deterministic account context package; reasoning disabled for
+    low latency, pinned to the primary endpoint (no silent fallback). Event types:
+      start | context | delta | done | unavailable"""
+    from senpai.account import build_account_context, account_commentary_prompt
+
+    if not USE_LLM:
+        return StreamingResponse(
+            iter([_sse({"type": "unavailable", "reason": "llm_disabled"})]),
+            media_type="text/event-stream",
+        )
+
+    context_text, ctx_meta = build_account_context(customer_id, today=_today(), lang=lang)
+    if not ctx_meta["has_account"]:
+        return StreamingResponse(
+            iter([_sse({"type": "unavailable", "reason": "account_not_found"})]),
+            media_type="text/event-stream",
+        )
+    prompt = account_commentary_prompt(context_text, lang=lang)
+
+    def gen():
+        from senpai.llm import client
+        yield _sse({"type": "start", "model": config.MODEL, "endpoint": config.BASE_URL})
+        yield _sse({"type": "context", "customer": ctx_meta["customer"],
+                    "customer_id": customer_id, "score": ctx_meta["score"],
+                    "band": ctx_meta["band"]})
+        full, emitted = "", 0
+        try:
+            for piece in client.stream_complete(
+                [{"role": "user", "content": prompt}],
+                temperature=0.5, max_tokens=config.LLM_NARRATE_MAX_TOKENS,
+                no_think=True, allow_fallback=False,
+            ):
+                full += piece
+                if "</think>" in full:
+                    answer = full.split("</think>", 1)[1].lstrip("\n ")
+                elif "<think>" in full:
+                    answer = ""
+                else:
+                    answer = full
+                new = answer[emitted:]
+                if new:
+                    emitted += len(new)
+                    yield _sse({"type": "delta", "text": new})
+            if emitted:
+                yield _sse({"type": "done", "model": config.MODEL})
+            else:
+                yield _sse({"type": "unavailable", "reason": "empty"})
+        except Exception:  # noqa: BLE001 — primary endpoint down/timeout (no fallback)
+            yield _sse({"type": "unavailable", "reason": "unreachable"})
+
+    return StreamingResponse(
+        gen(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ---------------------------------------------------------------------------

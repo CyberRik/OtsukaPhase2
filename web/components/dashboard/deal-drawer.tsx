@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarClock, TrendingUp, User } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ArrowUpRight, Building2, CalendarClock, TrendingUp, User } from "lucide-react";
 import { api } from "@/lib/api";
-import type { DealDetail } from "@/lib/types";
+import type { AccountHealth, DealDetail } from "@/lib/types";
 import { formatYen } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { customerText, repText, flagMessageText, signalReasonText } from "@/lib/content-i18n";
@@ -11,7 +13,7 @@ import { JpOriginalBadge } from "@/components/jp-original-badge";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { BandPill, RiskMeter } from "@/components/band";
+import { BandDot, BandPill, RiskMeter } from "@/components/band";
 import { DealTimeline } from "@/components/dashboard/deal-timeline";
 
 const SEV: Record<string, string> = {
@@ -26,14 +28,26 @@ export function DealDrawer({
   dealId: string | null; open: boolean; onOpenChange: (o: boolean) => void;
 }) {
   const { t, lang } = useT();
+  const pathname = usePathname();
+  const role = pathname?.startsWith("/manager") ? "manager" : "junior";
   const [detail, setDetail] = useState<DealDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [acctHealth, setAcctHealth] = useState<AccountHealth | null>(null);
 
   useEffect(() => {
     if (!open || !dealId) return;
     setLoading(true);
     setDetail(null);
-    api.deal(dealId).then(({ data }) => { setDetail(data); setLoading(false); });
+    setAcctHealth(null);
+    api.deal(dealId).then(({ data }) => {
+      setDetail(data);
+      setLoading(false);
+      // Fetch the account roll-up so the deal can be weighed against the whole
+      // relationship — the deal↔account cross-link.
+      if (data?.deal.customer_id) {
+        api.account(data.deal.customer_id).then(({ data: a }) => setAcctHealth(a?.health ?? null));
+      }
+    });
   }, [open, dealId]);
 
   return (
@@ -70,6 +84,29 @@ export function DealDrawer({
               <BandPill band={detail.band} score={detail.score} />
               <div className="w-40"><RiskMeter score={detail.score} band={detail.band} /></div>
             </div>
+
+            {/* Account cross-link: weigh this deal against the whole relationship */}
+            {acctHealth && (
+              <Link
+                href={`/${role}/accounts/${detail.deal.customer_id}`}
+                onClick={() => onOpenChange(false)}
+                className="flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.03] px-4 py-3 transition-colors hover:border-primary/50"
+              >
+                <span className="flex items-center gap-2 text-[13px]">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <span className="text-muted-foreground">
+                    {lang === "ja" ? "このアカウントの健全度" : "This account has Health"}
+                  </span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                    <BandDot band={acctHealth.band} /> {acctHealth.score}/100
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-primary">
+                  {lang === "ja" ? "アカウント分析を見る" : "View Account Intelligence"}
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
+            )}
 
             <section>
               <div className="eyebrow mb-3">{t("dash.signalBreakdown")} · {t("dash.whyScore")}</div>

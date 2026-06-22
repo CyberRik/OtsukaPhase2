@@ -8,6 +8,7 @@ export type ItemStatus = "draft" | "approved" | "needs_edit" | "rejected";
 export interface DealRow {
   deal_id: string;
   customer: string;
+  customer_id: string;
   rep: string;
   stage: string;
   amount: number;
@@ -65,6 +66,7 @@ export interface DealDetail {
   deal: {
     deal_id: string;
     customer: string;
+    customer_id: string;
     rep: string;
     stage: string;
     amount: number;
@@ -106,6 +108,79 @@ export interface SimilarCase {
   decision_maker: boolean;
   discounted: boolean;
   n_activities: number;
+}
+
+// --- Account Intelligence (mirrors senpai/account/*.to_dict) ----------------
+export interface AccountHealthDimension {
+  name: string;
+  points: number;
+  max: number;
+  reason: string;
+}
+
+export interface AccountHealth {
+  score: number;
+  band: Band;
+  dimensions: AccountHealthDimension[];
+}
+
+export interface AccountPattern {
+  id: string;
+  label_ja: string;
+  label_en: string;
+  evidence: string;
+  polarity: "positive" | "risk" | "neutral";
+}
+
+// Expansion opportunities (kind set) and positive trajectory patterns share the
+// expansion_signals array, so the type is a permissive union of both shapes.
+export interface AccountSignal {
+  kind?: "cross_sell" | "upsell" | "growth";
+  target?: string;
+  rationale?: string;
+  evidence?: string;
+  confidence?: "low" | "medium" | "high";
+  id?: string;
+  label_ja?: string;
+  label_en?: string;
+  polarity?: "positive" | "risk" | "neutral";
+}
+
+export interface AccountQuote {
+  quote_id: string;
+  amount: number;
+  product: string | null;
+  discount_rate: number | null;
+  quoted_at: string | null;
+  order_flag: string | null;
+}
+
+export interface AccountOrder {
+  order_id: string;
+  amount: number;
+  product: string | null;
+  ordered_at: string | null;
+}
+
+export interface AccountSummary {
+  customer_id: string;
+  customer: string;
+  industry: string;
+  size: string;
+  active_deals: number;
+  won_deals: number;
+  lost_deals: number;
+  total_pipeline: number;
+  historical_revenue: number;
+  activity_trend: string;
+  last_activity: string | null;
+  recent_quotes: AccountQuote[];
+  recent_orders: AccountOrder[];
+  environment: string | null;
+  health: AccountHealth;
+  risk_signals: AccountPattern[];
+  expansion_signals: AccountSignal[];
+  recommended_focus: string;
 }
 
 export interface CoachSectionMeta {
