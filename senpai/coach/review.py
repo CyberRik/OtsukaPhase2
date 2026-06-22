@@ -59,6 +59,26 @@ class CoachReview:
     decision_factors: list[str] = field(default_factory=list)
     used_deal: bool = False
     explanations: list = field(default_factory=list)  # list[Explanation]
+    # Grounding P0: absence-derived gaps as bilingual OPEN QUESTIONS (never facts).
+    # A note merely omitting "決裁者" yields a question to ask, not a claim that the
+    # decision-maker is unknown. Consumed by the Senior Commentary prompt.
+    open_questions: list[dict] = field(default_factory=list)  # [{"ja":..,"en":..}]
+
+
+# English phrasings for each absence lens' open question (the lens question text
+# itself is authored in Japanese). Keyed by Lens.name so English commentary never
+# has to paste a raw Japanese question string.
+_LENS_QUESTION_EN: dict[str, str] = {
+    "decision_maker": "Has the decision-maker been identified, and is anyone else involved in the decision?",
+    "timeline": "When does the customer expect to decide, and is the next contact date set?",
+    "criteria": "What criteria will the customer use to evaluate options (price / support / track record)?",
+    "next_step": "What is the agreed next step, and who owns it?",
+    "budget": "Is a budget confirmed, and what is its scale?",
+}
+_COMPETITION_Q = {
+    "ja": "他社と比較されていますか？どこと、どの点で比べられていますか？",
+    "en": "Are competitors being compared, and if so against whom and on what points?",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +178,8 @@ def review_note(note: str, deal: dict | None = None,
             r.questions.append(lens.question)
             r.risks.append(lens.risk)
             r.decision_factors.append(lens.factor)
+            r.open_questions.append({"ja": lens.question,
+                                     "en": _LENS_QUESTION_EN.get(lens.name, lens.question)})
             fired_tags.extend(lens.tags)
             fired_lenses.append({
                 "name": lens.name, "cues": lens.cues,
@@ -175,6 +197,7 @@ def review_note(note: str, deal: dict | None = None,
     if comp_hit:
         r.observations.append(f"競合の存在を示す言葉「{comp_hit}」がある")
         r.questions.append("他社さんと比較されていますか？どこと、どの点で比べられていますか？")
+        r.open_questions.append(dict(_COMPETITION_Q))
         r.decision_factors.append("競合がいる → 価格以外の差別化軸(保守・実績)が要る")
         fired_tags.append("競合")
 
@@ -331,66 +354,84 @@ def narration_prompt_en(r: CoachReview) -> str:
 
 
 def commentary_prompt(note: str, r: CoachReview, context_text: str,
-                      has_context: bool, lang: str = "ja") -> str:
-    """Senior Commentary prompt — NOT a restatement of the six lenses.
+                      has_context: bool, lang: str = "ja",
+                      customer_name: str | None = None,
+                      deal_id: str | None = None) -> str:
+    """Senior Commentary prompt — grounded, three-section, never speculative.
 
-    The deterministic coach already lists what's missing / risky. This asks the
-    model for an *experienced rep's interpretation* layered on top of the real
-    business context: what is actually happening, what a senior would focus on,
-    the likely customer dynamics, and one or two concrete moves. Strictly
-    grounded — it must use only the supplied context and never invent customer
-    facts. Short and conversational, to keep latency low."""
-    # The coach findings are given only so the model AVOIDS repeating them.
-    notice = "、".join(r.observations[:4]) if lang != "en" else "; ".join(r.observations[:4])
-    risks = "、".join(r.risks[:4]) if lang != "en" else "; ".join(r.risks[:4])
+    Grounding P0 structure: the model may state only what the records support
+    (Known Facts), turn every information gap into an Open Question (never a
+    customer-fact claim), and derive Preparation Suggestions from those two. It is
+    forbidden to infer hidden motivations / politics / stakeholder behaviour /
+    budget talk, to name any other customer or deal, or to invent examples. When a
+    fact is absent it asks; it does not narrate."""
+    # Absence-derived gaps are fed as QUESTIONS, never as asserted observations.
+    qs = [q.get(lang, q.get("ja", "")) for q in r.open_questions]
+    sep = "; " if lang == "en" else "／"
+    open_qs = sep.join(dict.fromkeys(q for q in qs if q)) or (
+        "none" if lang == "en" else "なし")
+    cn = customer_name or ("the current customer" if lang == "en" else "本顧客")
+    did = deal_id or ("the current deal" if lang == "en" else "本案件")
 
     if lang == "en":
         return (
-            "You are an experienced sales manager giving a junior rep your honest "
-            "read on a situation. Think it through first, then talk to them like a "
-            "person — not a form. Add senior JUDGMENT grounded in the context.\n\n"
-            "Cover these four angles in natural, conversational English. Let it "
-            "flow as prose and weave them together — do not fill fixed headings:\n"
-            "- what is actually happening here\n"
-            "- what an experienced rep would focus on, specific to THIS deal "
-            "(not generic advice)\n"
-            "- the likely customer dynamics behind the scenes (internal "
-            "evaluation, budget cycle, competing priorities)\n"
-            "- one or two concrete next moves\n\n"
-            "Ground every statement in the CONTEXT facts and quote its numbers "
-            "exactly as written (days inactive, rank age, rank, amount) — never "
-            "invent customer facts. If the context says no customer was found, say "
-            "your read is based on the note alone. The rep already has the "
-            "checklist below — build on it and go deeper rather than restating it. "
-            "Where a RELEVANT CORPUS KNOWLEDGE principle fits, apply it and cite "
-            "its id (e.g. 'per P001'). Write in English (gloss any domain term "
-            "like 稟議). No preamble — be concise, but say as much as the situation "
-            "genuinely needs.\n\n"
+            "You are an experienced sales manager helping a junior rep PREPARE for "
+            "this account. Grounding is the priority: state only what the records "
+            "support, and turn anything missing into a question — never a claim.\n\n"
+            "Write under exactly these three headings, in natural English:\n\n"
+            "### Known Facts\n"
+            "Only facts directly stated in CONTEXT (CRM, activity, notes, quotes, "
+            "orders, account context, deterministic signals). Quote numbers exactly "
+            "as written (days inactive, rank age, rank, amount, dates). Do NOT add, "
+            "infer, or summarise new facts. If CONTEXT says no customer was found, "
+            "list only what the note itself states.\n\n"
+            "### Open Questions\n"
+            "Phrase every information gap as a question to ask — never as a fact. "
+            "Include these unanswered points as questions: " + open_qs + "\n\n"
+            "### Preparation Suggestions\n"
+            "1–3 concrete things to prepare before the meeting, derived only from "
+            "the Known Facts and Open Questions. You may cite a principle id (e.g. "
+            "P001) ONLY if it appears in RELEVANT CORPUS KNOWLEDGE below.\n\n"
+            "RULES (strict):\n"
+            "- Never infer hidden customer motivations, internal politics, "
+            "stakeholder behaviour, or budget discussions.\n"
+            "- If the records do not support a statement, move it to Open Questions "
+            "— do not assert it and do not build a narrative.\n"
+            f"- Never name any customer other than {cn}. Never cite any deal other "
+            f"than {did}.\n"
+            "- Never reference another customer as an example and never invent "
+            "examples or unnamed 'past cases'.\n"
+            "- Cite only principle ids (Pxxx) that literally appear in CONTEXT.\n"
+            "- Do not use speculative language ('likely', 'probably', 'they must "
+            "be…') about the customer's situation.\n\n"
             f"CONTEXT (from records):\n{context_text}\n\n"
-            f"THE REP ALREADY HAS THIS CHECKLIST (build on it, don't restate): "
-            f"notices — {notice}; risks — {risks}\n\n"
             f"REP'S NOTE:\n{note}"
         )
     return (
-        "あなたは経験豊富な営業マネージャーです。後輩に、この状況をどう読むかを"
-        "率直に伝えてください。まず頭の中で整理し、その上で『書式』ではなく人として"
-        "語りかけてください。文脈に基づく『先輩の判断』を加えること。\n\n"
-        "次の4つの観点を、自然な会話調の日本語で織り交ぜて書いてください"
-        "（見出しの穴埋めではなく、つながった文章で）:\n"
-        "- 実際に何が起きているか\n"
-        "- 経験豊富な営業ならこの案件で何に注目するか（一般論ではなく案件に即して）\n"
-        "- 顧客側で起きていそうな力学（社内検討・予算サイクル・優先順位など）\n"
-        "- 具体的な次の一手を1〜2個\n\n"
-        "すべての記述を文脈の事実に基づかせ、数字（停滞日数・ランク経過日数・ランク・"
-        "金額）は文脈どおり正確に引用すること。顧客に関する事実を創作しないこと。"
-        "文脈に顧客が見つからない場合は、メモのみに基づく読みだと明記すること。"
-        "後輩は下記のチェックリストを既に持っています。繰り返さず、その先を掘り下げて"
-        "ください。RELEVANT CORPUS KNOWLEDGE の原則が当てはまる場合は助言に活かし、"
-        "その id（例:『P001より』）を示すこと。前置きは不要。簡潔に、ただし状況が"
-        "必要とするだけは語ってください。\n\n"
-        f"文脈（記録より）:\n{context_text}\n\n"
-        f"後輩が既に持っているチェックリスト（繰り返さず掘り下げる）: 気づき — {notice}"
-        f"／リスク — {risks}\n\n"
+        "あなたは経験豊富な営業マネージャーです。後輩がこのアカウントを訪問前に"
+        "準備できるよう支援します。最優先は『根拠に基づくこと』。記録が裏づける"
+        "ことだけを述べ、欠けている点はすべて『問い』に変え、断定しないこと。\n\n"
+        "次の3つの見出しで、自然な日本語で書いてください:\n\n"
+        "### 確認できている事実\n"
+        "CONTEXT（記録: CRM・活動履歴・メモ・見積・受注・アカウント情報・"
+        "決定論的シグナル）に明記された事実だけを記載する。数字（停滞日数・ランク"
+        "経過日数・ランク・金額・日付）は記録どおり正確に引用する。推論・補完・"
+        "要約で新しい事実を加えない。記録に顧客が見つからない場合は、メモに書かれた"
+        "ことだけを記載する。\n\n"
+        "### 確認すべき問い\n"
+        "情報が欠けている点は、すべて『問い』の形で挙げる（断定しない）。次の"
+        "未確認事項を問いとして含める: " + open_qs + "\n\n"
+        "### 準備の提案\n"
+        "上記の事実と問いだけから導ける、訪問前の具体的な準備を1〜3個。原則id"
+        "（例: P001）は、下記 RELEVANT CORPUS KNOWLEDGE に出てくる場合のみ引用してよい。\n\n"
+        "厳守ルール:\n"
+        "- 顧客の隠れた動機・社内政治・関係者の振る舞い・予算に関する社内事情を推測しない。\n"
+        "- 記録が裏づけない事項は断定せず『確認すべき問い』に回す（物語を作らない）。\n"
+        f"- {cn} 以外の顧客名を出さない。{did} 以外の案件IDを出さない。\n"
+        "- 他の顧客や過去事例を例として引用しない。例を創作しない。\n"
+        "- CONTEXT に実際に出てくる原則id（Pxxx）以外は引用しない。\n"
+        "- 顧客の状況について「おそらく」「可能性が高い」等の憶測表現を使わない。\n\n"
+        f"CONTEXT（記録より）:\n{context_text}\n\n"
         f"後輩のメモ:\n{note}"
     )
 

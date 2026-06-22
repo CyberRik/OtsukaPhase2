@@ -443,7 +443,9 @@ def coach_narrate(req: CoachRequest):
     context_text, ctx_meta = build_commentary_context(
         req.note, deal_id=req.deal_id, today=_today(), lang=req.lang)
     prompt = commentary_prompt(req.note, r, context_text,
-                               ctx_meta["has_customer_context"], lang=req.lang)
+                               ctx_meta["has_customer_context"], lang=req.lang,
+                               customer_name=ctx_meta.get("customer"),
+                               deal_id=ctx_meta.get("deal_id"))
 
     def gen():
         from senpai.llm import client
