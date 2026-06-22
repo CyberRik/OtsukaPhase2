@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import re
 from datetime import date
+from typing import Literal
 
 from senpai import config
 from senpai.coach.cases import find_similar_cases
@@ -23,6 +24,8 @@ from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
 from senpai.knowledge import store as kstore
+
+MatchConfidence = Literal["high", "medium", "low", "none"]
 
 # Deterministic signal/flag reasons are authored in Japanese (the engine stays
 # unchanged). For English commentary we render them in English IN THE CONTEXT so
@@ -85,12 +88,98 @@ def _yen(n) -> str:
         return "¥0"
 
 
+# rep_close_likelihood is stored as high/med/low; render it readably in both
+# languages so the model can weigh stated confidence against the hard signals.
+_CLOSE_LABEL = {
+    "high": {"ja": "高", "en": "high"},
+    "med": {"ja": "中", "en": "medium"},
+    "medium": {"ja": "中", "en": "medium"},
+    "low": {"ja": "低", "en": "low"},
+}
+
+
+def _close_label(v, lang: str) -> str:
+    return _CLOSE_LABEL.get(str(v).lower(), {}).get(lang, str(v) if v else "?")
+
+
+def _env_summary(customer_id: str) -> str | None:
+    """One-line IT-environment digest from the customer's environment record
+    (PCs / OS / network), or None when nothing is on file."""
+    env = store.get_environment(customer_id)
+    if not env:
+        return None
+    parts = [env.get("pc"), env.get("os"), env.get("network")]
+    body = " / ".join(p for p in parts if p)
+    return body or None
+
+
+def _quote_summary(deal_id: str) -> str | None:
+    """Quote line with the figures a senior actually weighs: amount, product,
+    and discount depth — not just 'on record'."""
+    q = store.quote_for_deal(deal_id)
+    if not q:
+        return None
+    product = (q.get("product_mid_category") or q.get("product_major_category")
+               or q.get("product_minor_category") or "-")
+    bits = [f"{_yen(q.get('quote_amount', 0))}", product]
+    disc = q.get("discount_rate")
+    if disc:
+        bits.append(f"discount {disc}%")
+    if q.get("quoted_at"):
+        bits.append(f"quoted {q['quoted_at']}")
+    return " | ".join(bits)
+
+
+def _orders_summary(orders: list[dict]) -> str | None:
+    """Order-history digest: count, total value, most recent date."""
+    if not orders:
+        return None
+    total = sum(o.get("total_sales_amount", 0) or 0 for o in orders)
+    last = max((o.get("ordered_at") for o in orders if o.get("ordered_at")), default=None)
+    out = f"{len(orders)} order(s), total {_yen(total)}"
+    if last:
+        out += f", last {last}"
+    return out
+
+
 def match_customer_in_note(note: str) -> dict | None:
     """Find the most specific known customer named in the note — across Japanese,
     English, romaji and alias forms (e.g. 'Aozora Services' -> あおぞらサービス).
     Longest match wins and ambiguous forms resolve to None; the alias-aware logic
     lives in the store so tools and the coach share one resolver."""
     return store.match_customer_in_text(note)
+
+
+def _resolve_customer_cascade(
+    note: str,
+) -> tuple[dict | None, MatchConfidence, str]:
+    """Four-tier resolution cascade for a free-text note.
+
+    Returns (customer, confidence, method) where confidence is:
+      "high"   — exact id / alias / longest-substring match
+      "medium" — fuzzy character-similarity match (score ≥ 0.72)
+      "low"    — name-extraction guess (company suffix/prefix pattern)
+      "none"   — no customer identified
+
+    Callers must treat "medium" and "low" matches as unverified — the context
+    block they produce is clearly labelled so the model knows to hedge."""
+    # Tier 1 — exact & alias (existing, highest confidence)
+    customer = store.match_customer_in_text(note)
+    if customer:
+        return customer, "high", "alias"
+
+    # Tier 2 — fuzzy character-similarity
+    fuzzy_c, fuzzy_score = store.fuzzy_match_customer_in_text(note)
+    if fuzzy_c:
+        return fuzzy_c, "medium", f"fuzzy(score={fuzzy_score:.2f})"
+
+    # Tier 3 — name-pattern extraction → alias lookup on extracted candidates
+    for cname in store.extract_company_names_from_text(note):
+        res = store.resolve_customer_detailed(cname)
+        if res.status == "resolved" and res.customer:
+            return res.customer, "low", f"name_extract({cname!r})"
+
+    return None, "none", "none"
 
 
 def _pick_deal(customer_id: str) -> dict | None:
@@ -144,32 +233,74 @@ def build_commentary_context(note: str, deal_id: str | None = None,
     resolved customer/deal for the UI. context_text is the grounded package fed
     to the model (English labels; values verbatim from records). When lang=='en'
     the Japanese signal/flag reasons are rendered in English so the model has no
-    Japanese to leak into an English read."""
+    Japanese to leak into an English read.
+
+    Resolution cascade (recorded in meta['match_method'] and meta['confidence']):
+      high   — explicit deal_id, or exact/alias name match in the note
+      medium — fuzzy character-similarity match (verify before relying on facts)
+      low    — company-name-pattern extraction (likely match, unconfirmed)
+      none   — no customer identified; context is note-only
+    """
     today = today or config.today()
     tr = _en_signal if lang == "en" else (lambda s: s)
 
-    deal = store.get_deal(deal_id) if deal_id else None
-    customer = None
+    # --- Resolution cascade ---
+    deal: dict | None = None
+    customer: dict | None = None
+    confidence: MatchConfidence = "none"
+    match_method: str = "none"
+
+    if deal_id:
+        deal = store.get_deal(deal_id)
+        if deal:
+            customer = store.get_customer(deal["customer_id"])
+            confidence = "high"
+            match_method = "deal_id"
+
     if deal is None:
-        customer = match_customer_in_note(note)
+        customer, confidence, match_method = _resolve_customer_cascade(note)
         if customer:
             deal = _pick_deal(customer["customer_id"])
-    if deal is not None and customer is None:
-        customer = store.get_customer(deal["customer_id"])
 
     meta = {
         "has_customer_context": bool(deal),
         "customer": customer.get("name") if customer else None,
         "deal_id": deal["deal_id"] if deal else None,
+        "confidence": confidence,
+        "match_method": match_method,
     }
 
     if deal is None:
-        return (
+        no_match_note = (
+            "顧客情報が見つかりませんでした。メモのテキストとコーチの所見のみに"
+            "基づいて読んでください。顧客に関する事実・履歴・数字・案件状況を"
+            "創作しないでください。"
+            if lang != "en" else
             "NO MATCHING CUSTOMER OR DEAL FOUND IN RECORDS.\n"
             "The note could not be linked to a known customer. Base the read on "
             "the note text and the coach findings only. Do NOT invent any "
-            "customer facts, history, numbers, or deal status.",
-            meta,
+            "customer facts, history, numbers, or deal status."
+        )
+        return no_match_note, meta
+
+    # Confidence prefix — appended when the match was approximate so the model
+    # knows to hedge and tell the rep to verify the attribution.
+    _conf_prefix = ""
+    if confidence == "medium":
+        cname = customer.get("name", "") if customer else ""
+        _conf_prefix = (
+            f"[APPROXIMATE MATCH — method: {match_method}. "
+            f"Customer '{cname}' was matched by character similarity, not an "
+            f"exact name. Verify the attribution is correct before acting on "
+            f"the facts below; if wrong, treat this as a note-only read.]\n\n"
+        )
+    elif confidence == "low":
+        cname = customer.get("name", "") if customer else ""
+        _conf_prefix = (
+            f"[LOW CONFIDENCE MATCH — method: {match_method}. "
+            f"Customer '{cname}' was guessed from a company-name pattern in the "
+            f"note. The match may be incorrect; hedge any customer-specific "
+            f"claims accordingly.]\n\n"
         )
 
     acts = store.activities_for_deal(deal["deal_id"])
@@ -178,7 +309,6 @@ def build_commentary_context(note: str, deal_id: str | None = None,
     last_act = acts[0].get("activity_date") if acts else None
     inactive = _days_since(last_act, today)
     rank_since = _days_since(deal.get("rank_updated_at"), today)
-    quote = store.quote_for_deal(deal["deal_id"])
     orders = store.orders_for_deal(deal["deal_id"])
 
     lines: list[str] = []
@@ -200,20 +330,35 @@ def build_commentary_context(note: str, deal_id: str | None = None,
         f"DEAL HEALTH: {res.band} (risk {res.score}/100)"
         + (f" — signals: {'; '.join(reasons)}" if reasons else "")
     )
+
+    # Confidence vs reality — the rep's stated optimism next to the hard facts.
+    # Surfacing both lets the model judge when self-reported confidence outruns
+    # the evidence (e.g. "close-likelihood high, but no decision-maker + red").
+    close = deal.get("rep_close_likelihood")
+    dm = deal.get("decision_maker_identified")
+    if close is not None or dm is not None:
+        dm_txt = ("yes" if dm else "no") if dm is not None else "?"
+        lines.append(
+            f"CONFIDENCE vs REALITY: rep close-likelihood = {_close_label(close, lang)}"
+            f" | decision-maker identified = {dm_txt}"
+        )
+
     if flags:
         lines.append("RELIABILITY FLAGS: " + "; ".join(tr(f.message) for f in flags))
     if inactive is not None:
         lines.append(f"INACTIVITY: last activity {last_act} ({inactive} days ago)")
     else:
         lines.append("INACTIVITY: no recorded activity")
-    if quote:
-        disc = quote.get("discount_rate")
-        lines.append("QUOTE: on record"
-                     + (f" (discount {disc}%)" if disc else ""))
-    else:
-        lines.append("QUOTE: none on record")
-    lines.append(f"ORDERS: {len(orders)} line(s) on record" if orders
-                 else "ORDERS: none on record")
+
+    quote_line = _quote_summary(deal["deal_id"])
+    lines.append(f"QUOTE: {quote_line}" if quote_line else "QUOTE: none on record")
+    orders_line = _orders_summary(orders)
+    lines.append(f"ORDERS: {orders_line}" if orders_line else "ORDERS: none on record")
+
+    env_line = _env_summary(deal["customer_id"])
+    if env_line:
+        lines.append(f"IT ENVIRONMENT: {env_line}")
+
     lines.append("CUSTOMER HISTORY: "
                  + _customer_history(deal["customer_id"], deal["deal_id"]))
 
@@ -243,4 +388,4 @@ def build_commentary_context(note: str, deal_id: str | None = None,
                      "apply where they fit, cite the Pxxx id):")
         lines.extend(f"  - {c}" for c in corpus)
 
-    return "\n".join(lines), meta
+    return _conf_prefix + "\n".join(lines), meta

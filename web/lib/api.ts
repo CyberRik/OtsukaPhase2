@@ -145,6 +145,7 @@ export type ChatEvent =
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: unknown[] }
   | { type: "source"; key: string; label: string; status: "found" | "not_found" | "ambiguous" | "skipped" | "error"; count?: number; detail?: string }
   | { type: "web"; status: "found" | "not_found" | "error"; query: string; answer?: string; results?: { title?: string; url?: string; content?: string }[]; live?: boolean; reason?: string }
+  | { type: "delta"; text: string }
   | { type: "answer"; text: string }
   | { type: "done"; model?: string }
   | { type: "unavailable"; reason?: string }

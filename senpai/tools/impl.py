@@ -14,6 +14,7 @@ from senpai import config
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
+from senpai.retrieval.knowledge import search_knowledge as _search_knowledge
 from senpai.retrieval.playbook import find_similar_deals, retrieve_playbook
 from senpai.tools.web import web_search
 
@@ -356,6 +357,149 @@ def get_seasonal_context(month: int = 0) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Sales demo tools — ported from demo/tools.py, re-grounded on the real store
+# ---------------------------------------------------------------------------
+def _resolve_product(product: str) -> dict | None:
+    """Resolve a product by code (e.g. 'MFP30') or a (fuzzy) name match."""
+    if not product:
+        return None
+    p = store.get_product(str(product).strip().upper())
+    if p:
+        return p
+    pl = str(product).strip().lower()
+    for x in store.all_products():
+        if pl == x["product_name"].lower():
+            return x
+    for x in store.all_products():
+        if pl in x["product_name"].lower() or x["product_name"].lower() in pl:
+            return x
+    return None
+
+
+def search_products(category: str = "", max_price: float = None,
+                    min_price: float = None, keyword: str = "") -> str:
+    """Search the real Otsuka product catalog by category / price band / keyword."""
+    hits = []
+    for p in store.all_products():
+        cat = f"{p.get('major', '')} {p.get('mid', '')} {p.get('minor', '')}"
+        if category and category.strip() not in cat:
+            continue
+        price = p.get("standard_unit_price", 0)
+        if max_price is not None and price > float(max_price):
+            continue
+        if min_price is not None and price < float(min_price):
+            continue
+        if keyword:
+            k = keyword.strip()
+            if k not in p["product_name"] and k not in p.get("specs", ""):
+                continue
+        hits.append(p)
+    if not hits:
+        return "条件に合う製品は見つかりませんでした。"
+    hits.sort(key=lambda p: p.get("standard_unit_price", 0))
+    lines = [f"{p['product_code']} — {p['product_name']} — ¥{p['standard_unit_price']:,}"
+             f"（{p.get('mid', p.get('major', ''))}）" for p in hits]
+    return f"該当製品 {len(hits)}件:\n- " + "\n- ".join(lines)
+
+
+def create_quote(items, discount_pct: float = 0, customer: str = "",
+                 tax_pct: float = 10) -> str:
+    """Build a price quote (estimate) from real catalog products: line totals,
+    optional discount, tax, grand total. Never persisted — the rep edits/sends."""
+    if isinstance(items, str):
+        try:
+            items = json.loads(items)
+        except json.JSONDecodeError:
+            return "[error] 見積項目を解析できませんでした。"
+    if not isinstance(items, list) or not items:
+        return "[error] 見積する製品がありません。"
+    lines, skipped, subtotal = [], [], 0
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        p = _resolve_product(it.get("sku") or it.get("name") or it.get("product") or "")
+        qty = int(it.get("qty", 1) or 1)
+        if not p:
+            skipped.append(str(it.get("sku") or it.get("name") or it.get("product")))
+            continue
+        price = p.get("standard_unit_price", 0)
+        line_total = price * qty
+        subtotal += line_total
+        lines.append(f"  {qty} × {p['product_name']} @ ¥{price:,} = ¥{line_total:,}")
+    if not lines:
+        return f"[error] 指定された製品が見つかりませんでした: {', '.join(skipped)}"
+    discount_pct = float(discount_pct or 0)
+    tax_pct = float(tax_pct if tax_pct is not None else 10)
+    discount = round(subtotal * discount_pct / 100)
+    taxed_base = subtotal - discount
+    tax = round(taxed_base * tax_pct / 100)
+    total = taxed_base + tax
+    header = f"見積書（{customer}様）" if customer else "見積書"
+    out = [f"【{header}・ドラフト／送信はされません】", "明細:", *lines,
+           f"小計: ¥{subtotal:,}"]
+    if discount:
+        out.append(f"値引 ({discount_pct:g}%): -¥{discount:,}")
+    out.append(f"消費税 ({tax_pct:g}%): ¥{tax:,}")
+    out.append(f"合計: ¥{total:,}")
+    if skipped:
+        out.append(f"（未登録のため除外: {', '.join(skipped)}）")
+    return "\n".join(out)
+
+
+def schedule_meeting(title: str = "", date: str = "", start_time: str = "",
+                     duration_hours: float = 1, attendees=None,
+                     description: str = "") -> str:
+    """Draft a calendar booking. Simulated (no live calendar in the demo) — the
+    rep confirms before anything is actually scheduled."""
+    if not (title and date and start_time):
+        return "[error] title / date / start_time を指定してください。"
+    if isinstance(attendees, str):
+        attendees = [a.strip() for a in attendees.split(",") if a.strip()]
+    attendees = attendees or []
+    who = f" / 参加者{len(attendees)}名" if attendees else ""
+    return (f"【予定ドラフト（未確定）】「{title}」{date} {start_time} JST "
+            f"／{float(duration_hours or 1):g}時間{who}"
+            + (f"\n議題: {description}" if description else ""))
+
+
+def send_email(to: str = "", subject: str = "", body: str = "") -> str:
+    """Prepare an email draft. Never actually sends — human stays in the loop."""
+    if not to:
+        return "[error] 宛先 (to) を指定してください。"
+    return (f"【メール下書き（送信はされません）】\n宛先: {to}\n件名: {subject}\n\n{body}")
+
+
+_CALENDAR_CANNED = [
+    "10:00 朝礼／案件確認",
+    "13:00 顧客訪問（デモ）",
+    "16:30 提案資料の作成",
+]
+
+
+def get_calendar(day: str = "today") -> str:
+    """Today's (or a given day's) schedule. Simulated demo data."""
+    d = config.today().isoformat() if str(day).lower() in ("today", "") else day
+    return f"{d} の予定:\n- " + "\n- ".join(_CALENDAR_CANNED)
+
+
+def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:
+    """RAG over the validated knowledge corpus (principles + approved coaching
+    items + playbook). Returns short, attributed/cited snippets to ground answers."""
+    if isinstance(tags, str):
+        tags = [tags]
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 4
+    hits = _search_knowledge(query=query, tags=tags or [], limit=limit)
+    if not hits:
+        return ("該当する社内ナレッジが見つかりませんでした。"
+                "route_to_expert の利用を検討してください。")
+    lines = [f"[{kind}] {text}" for _score, kind, text in hits]
+    return "社内ナレッジ:\n- " + "\n- ".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # Dispatch (mirrors demo/tools.py)
 # ---------------------------------------------------------------------------
 _DISPATCH = {
@@ -377,6 +521,13 @@ _DISPATCH = {
     "rep_coaching_focus": rep_coaching_focus,
     "draft_message": draft_message,
     "web_search": web_search,
+    # Sales demo tools (ported from demo/tools.py, re-grounded on the store)
+    "search_products": search_products,
+    "create_quote": create_quote,
+    "schedule_meeting": schedule_meeting,
+    "send_email": send_email,
+    "get_calendar": get_calendar,
+    "search_knowledge": search_knowledge,
 }
 
 

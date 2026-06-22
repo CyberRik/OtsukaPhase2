@@ -64,6 +64,7 @@ const ja: Dict = {
 
   // junior nav
   "nav.home": "ホーム",
+  "nav.assistant": "アシスタント",
   "nav.coach": "レビュー・コーチ",
   "nav.knowledge": "ナレッジ・ライブラリ",
   "nav.reports": "マイ成長",
@@ -74,6 +75,21 @@ const ja: Dict = {
   "nav.coaching": "育成機会",
   "nav.reliability": "日報の信頼性",
   "nav.mknowledge": "ナレッジ",
+
+  // assistant (tool-calling chat)
+  "assistant.title.junior": "営業アシスタント",
+  "assistant.title.manager": "マネージャー・アシスタント",
+  "assistant.lead.junior": "自然な日本語で質問してください。社内データに基づき、先輩の知見・案件の健全度・製品や見積をその場で返します。各回答の「ツール呼び出し」を開くと、実際に使ったツールを確認できます。",
+  "assistant.lead.manager": "チームの案件・日報・パイプラインについて質問してください。リスクの高い案件やコーチング観点を、社内データと先輩の原則に基づいて返します。",
+  "assistant.placeholder": "質問を入力…",
+  "assistant.send": "送信",
+  "assistant.stop": "停止",
+  "assistant.clear": "クリア",
+  "assistant.examplesLabel": "例を試す",
+  "assistant.toolsUsed": "件のツール呼び出し — 詳細を表示",
+  "assistant.working": "ツールを実行中…",
+  "assistant.empty": "下の例から試すか、質問を入力してください。",
+  "assistant.error": "サーバーに接続できませんでした。モデルが起動しているか確認してください。",
 
   // junior home
   "jhome.eyebrow": "オンボーディング",
@@ -413,6 +429,7 @@ const en: Dict = {
   "login.switchRole": "Choose a different role",
 
   "nav.home": "Home",
+  "nav.assistant": "Assistant",
   "nav.coach": "Review Coach",
   "nav.knowledge": "Knowledge Library",
   "nav.reports": "My Growth",
@@ -422,6 +439,20 @@ const en: Dict = {
   "nav.coaching": "Coaching",
   "nav.reliability": "Report Reliability",
   "nav.mknowledge": "Knowledge",
+
+  "assistant.title.junior": "Sales Assistant",
+  "assistant.title.manager": "Manager Assistant",
+  "assistant.lead.junior": "Ask in plain language. Grounded in internal data, it returns a senior's perspective, deal health, products and quotes on the spot. Open “tool call(s)” under any answer to see exactly which tools ran.",
+  "assistant.lead.manager": "Ask about your team's deals, reports and pipeline. It surfaces at-risk deals and coaching angles, grounded in internal data and senior principles.",
+  "assistant.placeholder": "Ask a question…",
+  "assistant.send": "Send",
+  "assistant.stop": "Stop",
+  "assistant.clear": "Clear",
+  "assistant.examplesLabel": "Try an example",
+  "assistant.toolsUsed": "tool call(s) — show details",
+  "assistant.working": "Running tools…",
+  "assistant.empty": "Try an example below, or type a question.",
+  "assistant.error": "Couldn't reach the server. Check that the model is running.",
 
   "jhome.eyebrow": "Onboarding",
   "jhome.title": "Move forward today — with a senior's eye.",

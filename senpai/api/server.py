@@ -358,6 +358,8 @@ def coach_review(req: CoachRequest):
             narration = out
             llm_model = config.MODEL
 
+    ctx_text, ctx_meta = build_commentary_context(
+        req.note, deal_id=req.deal_id, today=_today(), lang=req.lang)
     return {
         "teach_note": TEACH_NOTE,
         "sections": COACH_SECTIONS,
@@ -365,6 +367,13 @@ def coach_review(req: CoachRequest):
         "result": {s["key"]: getattr(r, s["key"]) for s in COACH_SECTIONS},
         "narration": narration,
         "llm_model": llm_model,
+        "resolution": {
+            "customer": ctx_meta.get("customer"),
+            "deal_id": ctx_meta.get("deal_id"),
+            "confidence": ctx_meta.get("confidence", "none"),
+            "match_method": ctx_meta.get("match_method", "none"),
+            "grounded": ctx_meta.get("has_customer_context", False),
+        },
     }
 
 
@@ -417,7 +426,9 @@ def coach_narrate(req: CoachRequest):
                     "endpoint": config.BASE_URL})
         # Tell the UI what real records the read is grounded in (or that none matched).
         yield _sse({"type": "context", "grounded": ctx_meta["has_customer_context"],
-                    "customer": ctx_meta["customer"], "deal_id": ctx_meta["deal_id"]})
+                    "customer": ctx_meta["customer"], "deal_id": ctx_meta["deal_id"],
+                    "confidence": ctx_meta.get("confidence", "none"),
+                    "match_method": ctx_meta.get("match_method", "none")})
         full, emitted, last_think = "", 0, 0
         try:
             for piece in client.stream_complete(
@@ -471,8 +482,13 @@ def _junior_system() -> str:
     return (
         "あなたは大塚商会の新人営業を支える『先輩(senpai)』アシスタントです。"
         "回答は必ず社内データ(SPR・プレイブック・顧客環境・案件健全度)に基づき、"
-        "ツールを使って事実を確認してから答えてください。プレイブックを引用する際は"
-        "提供者名を添えること。自信が持てない時は route_to_expert で適切な先輩に橋渡し"
+        "ツールを使って事実を確認してから答えてください。"
+        "「どう対応すべきか」を問われたら、まず search_knowledge で社内ナレッジ"
+        "(先輩の原則・承認済み事例・プレイブック)を引き、出典を添えて答えること。"
+        "製品の相談には search_products / create_quote、訪問調整には schedule_meeting、"
+        "連絡文の準備には send_email を使えます(いずれも下書きで、送信・確定はしません)。"
+        "プレイブックを引用する際は提供者名を添えること。"
+        "自信が持てない時は route_to_expert で適切な先輩に橋渡し"
         "してください。外部情報が必要な時は web_search を使ってください。"
         "日本語で、簡潔かつ実務的に答えます。"
         f"本日は {_today().isoformat()} です。"
@@ -484,7 +500,11 @@ def _manager_system() -> str:
         "あなたは大塚商会の営業マネージャーを支えるアシスタントです。"
         "チーム全体の案件健全度・日報・パイプラインを把握し、リスクの高い案件や"
         "コーチングが必要な担当を、必ずツールで取得した社内データに基づいて示します。"
-        "数字は与えられたものだけを使い、創作しないこと。外部情報が必要な時は "
+        "数字は与えられたものだけを使い、創作しないこと。コーチングの根拠は "
+        "search_knowledge で社内ナレッジ(先輩の原則・承認済み事例・プレイブック)を引き、"
+        "出典を添えて示すこと。製品の確認や見積例には search_products / create_quote、"
+        "調整や連絡文の準備には schedule_meeting / send_email を使えます"
+        "(いずれも下書きで、送信・確定はしません)。外部情報が必要な時は "
         "web_search を使ってください。日本語で簡潔に答えます。"
         f"本日は {_today().isoformat()} です。"
     )
@@ -552,6 +572,30 @@ def _research_target(message: str) -> str:
     for pat in _RESEARCH_PREFIXES:
         target = re.sub(pat, "", target, flags=re.IGNORECASE)
     return target.strip(" \t\r\n?？。.")
+
+
+# Japanese research cues. Kept narrow on purpose: paired with a customer-resolution
+# check below so coaching questions ("値引きについて教えて") never get hijacked.
+_RESEARCH_CUES_JA = ("について教えて", "について調べて", "のことを教えて",
+                     "の情報を教えて", "を調べて", "について知りたい",
+                     "リサーチ", "背景を教えて")
+
+
+def _is_research_intent(message: str) -> bool:
+    """True when the message is a customer-research request *and* names a customer
+    we actually have. Auto-routes those turns to the source-grounded research
+    pipeline; everything else stays in the tool-calling loop."""
+    msg = (message or "").strip()
+    has_cue = (
+        any(re.search(p, msg, flags=re.IGNORECASE) for p in _RESEARCH_PREFIXES)
+        or any(cue in msg for cue in _RESEARCH_CUES_JA)
+    )
+    if not has_cue:
+        return False
+    target = _research_target(msg)
+    if not target:
+        return False
+    return store.resolve_customer_detailed(target).status in ("resolved", "ambiguous")
 
 
 def _public_customer(c: dict | None) -> dict | None:
@@ -756,10 +800,15 @@ def chat(req: ChatRequest):
     The model decides which tools to call; each executed tool is surfaced to the
     UI (name, args, result) before the final answer is sent. Grounded entirely in
     the deterministic store/scoring engine plus web_search. Event types:
-      start | tool | answer | done | error
-    On any model/transport failure the tool loop returns an error string, which
-    we emit as a single `answer` (never a crash)."""
-    if req.role == "research":
+      start | tool | delta | answer | done | error
+    The final answer streams token-by-token (`delta` events) so the Assistant
+    feels as live as Review Coach. On any model/transport failure the loop emits
+    a single `answer` with the error text (never a crash).
+
+    Research intent ("tell me about / research <customer>") is auto-detected and
+    routed to the dedicated, source-grounded `research_stream` — one Assistant
+    surface, the right pipeline behind it."""
+    if req.role == "research" or _is_research_intent(req.message):
         return StreamingResponse(
             research_stream(req),
             media_type="text/event-stream",
@@ -775,18 +824,12 @@ def chat(req: ChatRequest):
     convo.append({"role": "user", "content": req.message})
 
     def gen():
-        from senpai.llm.client import stream_turn   # lazy: keep module import light
+        from senpai.llm.client import stream_chat_turn  # lazy: keep import light
         yield _sse({"type": "start", "model": config.MODEL,
                     "endpoint": config.BASE_URL, "role": req.role})
-        emitted = 0           # tool_log entries already streamed to the client
-        answer = None
         try:
-            for tool_log, answer in stream_turn(convo, tools=tools):
-                for name, args, result in tool_log[emitted:]:
-                    yield _sse({"type": "tool", "name": name,
-                                "args": args, "result": result})
-                emitted = len(tool_log)
-            yield _sse({"type": "answer", "text": answer or ""})
+            for ev in stream_chat_turn(convo, tools=tools):
+                yield _sse(ev)
             yield _sse({"type": "done", "model": config.MODEL})
         except Exception as e:  # noqa: BLE001 — never crash the stream
             yield _sse({"type": "error", "reason": str(e)})
@@ -810,26 +853,37 @@ def coach_similar_cases(req: CoachRequest):
 
 @app.get("/api/coach/examples")
 def coach_examples():
+    # Each seed example is anchored to a REAL deal_id, so "try one" always runs
+    # the grounded path (build_commentary_context resolves the deal at high
+    # confidence) — never the "no matching customer" fallback. The notes name the
+    # deal's actual customer too, so text resolution would also succeed.
     return {
         "examples": [
             {
-                "title": "前向きだが先送り",
-                "note": "お客様は社内で検討してから連絡するとのこと。前向きな反応だった。",
-                "hint": "決裁者・期日・次の一手が抜けやすい典型例",
+                "title": "前向きだが決裁者が不明",
+                "deal_id": "D001",
+                "note": "村田印刷を訪問。担当者は前向きで『ほぼ決まり』との感触。"
+                        "受注確度は高いと見ている。ただ決裁者にはまだ会えていない。",
+                "hint": "高い確度が案件の実態・決裁者の状況と噛み合っているか",
             },
             {
-                "title": "競合比較中",
-                "note": "競合製品と比較中とのこと。価格が高いと言われた。次回までに見積を再提出する予定。",
+                "title": "競合と比較中",
+                "deal_id": "D021",
+                "note": "山田電機、競合製品と比較中。価格が高いと言われ、見積は提示済み。"
+                        "次回までに再提案する予定。",
                 "hint": "価格勝負に流される前に差別化軸を考える",
             },
             {
-                "title": "初回訪問の報告",
-                "note": "初回訪問。先方のPC環境とネットワーク構成を一通り確認できた。担当者は忙しそうだった。",
-                "hint": "情報収集に走り、関係構築と関心事の把握が後回しに",
+                "title": "初回訪問・IT環境を確認",
+                "deal_id": "D016",
+                "note": "富士産業へ初回訪問。先方のPC環境とネットワーク構成を一通り確認できた。"
+                        "担当者は忙しそうだった。",
+                "hint": "情報収集に走り、関係構築と決裁者の把握が後回しに",
             },
             {
-                "title": "部長が前向き",
-                "note": "部長は前向きで、ほぼ決まりという感触。現場のIT担当には会えていない。",
+                "title": "部長は前向き",
+                "deal_id": "D008",
+                "note": "大和商事の部長は前向きで好感触。現場のIT担当にはまだ会えていない。",
                 "hint": "決裁者の感触だけで成約間近と判断していないか",
             },
         ]

@@ -337,3 +337,88 @@ def match_customer_in_text(text: str) -> dict | None:
     if best and len(best[1]) == 1:
         return get_customer(next(iter(best[1])))
     return None
+
+
+# --- fallback resolution: fuzzy matching + company-name extraction ----------
+
+_COMPANY_SUFFIXES = (
+    "商事", "商会", "製作所", "印刷", "サービス", "システム",
+    "電機", "工業", "建設", "産業", "電子", "情報", "物産", "興業",
+)
+_COMPANY_PREFIXES_RE = (
+    r"株式会社\s*([^\s、。\n]{2,10})",
+    r"有限会社\s*([^\s、。\n]{2,10})",
+    r"合同会社\s*([^\s、。\n]{2,10})",
+    r"([^\s、。\n]{2,10})\s*(?:株式会社|有限会社|合同会社|（株）|\(株\))",
+)
+
+
+def extract_company_names_from_text(text: str) -> list[str]:
+    """Pull likely company name tokens from free text using suffix/prefix patterns.
+    Returns unique candidates, longest first — callers try each through the
+    resolver (exact/alias) to find a match."""
+    import re
+    found: list[str] = []
+    # Explicit legal-form patterns
+    for pat in _COMPANY_PREFIXES_RE:
+        for m in re.finditer(pat, text):
+            cand = m.group(0).strip()
+            if len(cand) >= 2:
+                found.append(cand)
+    # Suffix patterns: e.g. 'アクメ商事', '大和システム'
+    for suf in _COMPANY_SUFFIXES:
+        for m in re.finditer(rf"([^\s、。\n]{{1,8}}{re.escape(suf)})", text):
+            found.append(m.group(0))
+    # De-dup, longest first
+    seen: set[str] = set()
+    out: list[str] = []
+    for c in sorted(found, key=len, reverse=True):
+        if c not in seen:
+            seen.add(c)
+            out.append(c)
+    return out
+
+
+def fuzzy_match_customer_in_text(
+    text: str,
+    threshold: float = 0.72,
+) -> tuple[dict | None, float]:
+    """Approximate customer match when exact/alias lookup finds nothing.
+
+    Slides a window the length of each alias key over the normalised note text
+    and scores character-level similarity (difflib SequenceMatcher). Only
+    unambiguous alias keys (mapping to exactly one customer) are considered.
+    Keys shorter than 4 normalised chars are skipped to avoid false positives.
+
+    Returns (customer, best_score). customer is None when best_score < threshold.
+    """
+    import difflib
+
+    low = (text or "").lower()
+    if not low:
+        return None, 0.0
+
+    best_c: dict | None = None
+    best_score = 0.0
+
+    for key, ids in _alias_index().items():
+        if len(key) < 4 or len(ids) != 1:
+            continue
+        klen = len(key)
+        if klen > len(low):
+            # Try full note as single window
+            r = difflib.SequenceMatcher(None, key, low, autojunk=False).ratio()
+            if r > best_score:
+                best_score = r
+                if r >= threshold:
+                    best_c = get_customer(next(iter(ids)))
+            continue
+        for start in range(len(low) - klen + 1):
+            window = low[start: start + klen]
+            r = difflib.SequenceMatcher(None, key, window, autojunk=False).ratio()
+            if r > best_score:
+                best_score = r
+                if r >= threshold:
+                    best_c = get_customer(next(iter(ids)))
+
+    return (best_c if best_score >= threshold else None), best_score

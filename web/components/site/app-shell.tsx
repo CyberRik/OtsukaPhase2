@@ -13,6 +13,7 @@ import {
   ListTree,
   LogOut,
   type LucideIcon,
+  MessagesSquare,
   ShieldAlert,
   Target,
 } from "lucide-react";
@@ -27,6 +28,7 @@ type NavItem = { href: string; key: string; icon: LucideIcon };
 const NAV: Record<Role, NavItem[]> = {
   junior: [
     { href: "/junior", key: "nav.home", icon: Home },
+    { href: "/junior/assistant", key: "nav.assistant", icon: MessagesSquare },
     { href: "/junior/coach", key: "nav.coach", icon: GraduationCap },
     { href: "/junior/prepare", key: "nav.prepare", icon: Target },
     { href: "/junior/knowledge", key: "nav.knowledge", icon: Library },
@@ -34,6 +36,7 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   manager: [
     { href: "/manager", key: "nav.dashboard", icon: LayoutDashboard },
+    { href: "/manager/assistant", key: "nav.assistant", icon: MessagesSquare },
     { href: "/manager/pipeline", key: "nav.pipeline", icon: ListTree },
     { href: "/manager/coaching", key: "nav.coaching", icon: Lightbulb },
     { href: "/manager/reliability", key: "nav.reliability", icon: ShieldAlert },

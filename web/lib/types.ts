@@ -128,6 +128,7 @@ export interface CoachExample {
   title: string;
   note: string;
   hint: string;
+  deal_id?: string;   // seed examples are anchored to a real deal for grounding
 }
 
 export interface Citation {

@@ -268,6 +268,126 @@ TOOLS = [
             },
         },
     },
+    # --- Knowledge RAG + sales-action tools (ported from demo/tools.py) -------
+    {
+        "type": "function",
+        "function": {
+            "name": "search_knowledge",
+            "description": "Search the validated internal knowledge corpus — senior-rep "
+                           "principles, approved coaching cases and the playbook — for advice "
+                           "grounded in real interviews. Returns short attributed/cited snippets. "
+                           "Prefer this over web_search for 'how should I handle…' questions.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The situation in natural language"},
+                    "tags": {"type": "array", "items": {"type": "string"},
+                             "description": "Optional situation tags (e.g. '値引き', '決定先延ばし')"},
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_products",
+            "description": "Search the Otsuka product catalog by category, price range, or keyword. "
+                           "Returns matching products with code, name and unit price (JPY).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "category": {"type": "string",
+                                 "description": "Category term to match (e.g. '複合機', 'サーバー', 'PC')"},
+                    "max_price": {"type": "number", "description": "Maximum unit price in JPY"},
+                    "min_price": {"type": "number", "description": "Minimum unit price in JPY"},
+                    "keyword": {"type": "string", "description": "Free-text term to match in name/specs"},
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "create_quote",
+            "description": "Build a price quote (estimate) for one or more catalog products: line "
+                           "totals, optional discount, tax and grand total. A draft — never sent.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "description": "Products to quote.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "sku": {"type": "string", "description": "Product code or name"},
+                                "qty": {"type": "integer", "description": "Quantity"},
+                            },
+                            "required": ["sku", "qty"],
+                        },
+                    },
+                    "discount_pct": {"type": "number", "description": "Discount percent on the subtotal (0-100)"},
+                    "customer": {"type": "string", "description": "Customer/company name for the header"},
+                    "tax_pct": {"type": "number", "description": "Sales-tax percent (default 10)"},
+                },
+                "required": ["items"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "schedule_meeting",
+            "description": "Draft a calendar booking (simulated — the rep confirms before it is "
+                           "actually scheduled). Resolve relative dates to YYYY-MM-DD first.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Meeting title"},
+                    "date": {"type": "string", "description": "Date as YYYY-MM-DD"},
+                    "start_time": {"type": "string", "description": "Start time as 24h HH:MM (JST)"},
+                    "duration_hours": {"type": "number", "description": "Length in hours (default 1)"},
+                    "attendees": {"type": "array", "items": {"type": "string"},
+                                  "description": "Attendee names or emails"},
+                    "description": {"type": "string", "description": "Optional agenda/notes"},
+                },
+                "required": ["title", "date", "start_time"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "send_email",
+            "description": "Prepare an email draft to a recipient. Never actually sends — the human "
+                           "edits and sends. Use for follow-ups / quote delivery messages.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "to": {"type": "string", "description": "Recipient name or email address"},
+                    "subject": {"type": "string"},
+                    "body": {"type": "string"},
+                },
+                "required": ["to", "subject", "body"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_calendar",
+            "description": "Get the schedule for a given day (YYYY-MM-DD or 'today'). Simulated demo data.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "day": {"type": "string", "description": "Date as YYYY-MM-DD or 'today'"},
+                },
+                "required": ["day"],
+            },
+        },
+    },
 ]
 
 
@@ -285,9 +405,10 @@ def _pick(*names: str) -> list[dict]:
 # (review_sales_note is intentionally excluded — it bridges to the friend-owned
 #  coach experiment and is kept out of our chat surface for isolation.)
 JUNIOR_TOOLS = _pick(
-    "query_spr", "find_similar_deals", "retrieve_playbook",
-    "lookup_customer_environment", "get_product_info", "score_deal_health",
-    "draft_daily_report", "route_to_expert",
+    "query_spr", "find_similar_deals", "retrieve_playbook", "search_knowledge",
+    "lookup_customer_environment", "get_product_info", "search_products",
+    "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
+    "send_email", "get_calendar", "route_to_expert",
     "get_seasonal_context", "web_search",
 )
 
@@ -295,7 +416,8 @@ JUNIOR_TOOLS = _pick(
 MANAGER_TOOLS = _pick(
     "query_spr", "score_deal_health", "list_at_risk_deals",
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
-    "draft_message", "web_search",
+    "search_knowledge", "search_products", "create_quote", "schedule_meeting",
+    "send_email", "get_calendar", "draft_message", "web_search",
 )
 
 # Research assistant ("tell me about this customer"): read-only lookups, internal

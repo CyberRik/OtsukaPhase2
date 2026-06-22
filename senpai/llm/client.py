@@ -219,6 +219,115 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
     yield tool_log, answer
 
 
+def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
+    """Web-facing tool loop that *streams the final answer* token-by-token.
+
+    Same loop as `stream_turn` (kept intact for the Gradio apps), but instead of
+    a single blocking final completion it streams the answering round so the web
+    Assistant feels as live as Review Coach. Yields typed event dicts:
+      {"type": "tool", "name", "args", "result"}   — one per executed tool
+      {"type": "delta", "text"}                     — answer tokens as they arrive
+      {"type": "answer", "text"}                    — the full answer (terminal)
+    `convo` is mutated in place (demo semantics). Reasoning (`<think>…</think>`)
+    is stripped so only the user-facing answer streams."""
+    tools = tools if tools is not None else TOOLS
+    tool_log: list[tuple[str, str, str]] = []
+
+    for round_i in range(config.MAX_TOOL_ROUNDS):
+        last_round = round_i == config.MAX_TOOL_ROUNDS - 1
+        try:
+            resp = client.chat.completions.create(
+                model=config.MODEL, messages=convo, tools=tools,
+                tool_choice="auto", temperature=0.0,
+            )
+        except Exception as e:  # noqa: BLE001
+            print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
+            try:
+                resp = fallback_client.chat.completions.create(
+                    model=config.FALLBACK_MODEL, messages=convo, tools=tools,
+                    tool_choice="auto", temperature=0.0,
+                )
+            except Exception as fe:  # noqa: BLE001
+                yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
+                return
+
+        msg = resp.choices[0].message
+        if msg.tool_calls:
+            calls = [(tc.id, tc.function.name, tc.function.arguments)
+                     for tc in msg.tool_calls]
+        else:
+            parsed = _parse_xlam(msg.content)
+            calls = [(f"call_{len(tool_log) + i}", name, json.dumps(args))
+                     for i, (name, args) in enumerate(parsed)] if parsed else []
+
+        # No tool calls → this is the answering round. Re-run it as a stream so
+        # the answer flows token-by-token instead of arriving all at once.
+        if not calls:
+            yield from _stream_final_answer(convo, tools)
+            return
+
+        convo.append({"role": "assistant", "content": None, "tool_calls": [
+            {"id": cid, "type": "function",
+             "function": {"name": name, "arguments": args}}
+            for cid, name, args in calls]})
+        for cid, name, args in calls:
+            result = dispatch(name, args)
+            tool_log.append((name, _fmt_args(args), result))
+            convo.append({"role": "tool", "tool_call_id": cid, "content": result})
+            yield {"type": "tool", "name": name, "args": _fmt_args(args), "result": result}
+
+        if last_round:
+            # Hit the tool budget — force a final answer from what we have.
+            yield from _stream_final_answer(convo, tools)
+            return
+
+
+def _stream_final_answer(convo: list[dict], tools: list[dict] | None):
+    """Stream one tool-free completion as the answer, stripping any reasoning.
+    Emits `delta` events live and a terminal `answer` with the full text."""
+    full, emitted = "", 0
+    try:
+        stream = client.chat.completions.create(
+            model=config.MODEL, messages=convo, temperature=0.0,
+            max_tokens=config.LLM_MAX_TOKENS, stream=True,
+        )
+    except Exception:  # noqa: BLE001 — fall back to a single blocking answer
+        try:
+            resp = fallback_client.chat.completions.create(
+                model=config.FALLBACK_MODEL, messages=convo, temperature=0.0,
+                max_tokens=config.LLM_MAX_TOKENS,
+            )
+            text = re.sub(r"<think>.*?</think>", "",
+                          resp.choices[0].message.content or "", flags=re.DOTALL).strip()
+            yield {"type": "answer", "text": text or "(no response)"}
+        except Exception as fe:  # noqa: BLE001
+            yield {"type": "answer", "text": f"⚠️ サーバーエラー: {fe}"}
+        return
+
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta
+        piece = getattr(delta, "content", None) if delta else None
+        if not piece:
+            continue
+        full += piece
+        # Strip any echoed reasoning span; only stream what follows it.
+        if "</think>" in full:
+            answer = full.split("</think>", 1)[1].lstrip("\n ")
+        elif "<think>" in full:
+            answer = ""
+        else:
+            answer = full
+        new = answer[emitted:]
+        if new:
+            emitted += len(new)
+            yield {"type": "delta", "text": new}
+
+    final = re.sub(r"<think>.*?</think>", "", full, flags=re.DOTALL).strip()
+    yield {"type": "answer", "text": final or "(no response)"}
+
+
 def _fmt_args(arguments) -> str:
     try:
         d = json.loads(arguments) if isinstance(arguments, str) else (arguments or {})

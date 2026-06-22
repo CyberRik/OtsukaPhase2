@@ -362,9 +362,9 @@ function SimilarCases({ note, principles }: { note: string; principles: Principl
 
 // --- the structured coaching response --------------------------------------
 function CoachingCard({
-  resp, note, live, principles, items,
+  resp, note, live, dealId, principles, items,
 }: {
-  resp: CoachResponse; note: string; live: boolean;
+  resp: CoachResponse; note: string; live: boolean; dealId?: string;
   principles: Principle[]; items: KnowledgeItem[];
 }) {
   const { t, lang } = useT();
@@ -393,7 +393,7 @@ function CoachingCard({
     setThinking(true);
     let acc = "";
     let model: string | null = null;
-    await narrateStream(note, undefined, (e) => {
+    await narrateStream(note, dealId, (e) => {
       switch (e.type) {
         case "start":
           model = e.model ?? null;
@@ -430,7 +430,7 @@ function CoachingCard({
     setNarrJaShown(true);
     setNarrJaLoading(true);
     let acc = "";
-    await narrateStream(note, undefined, (e) => {
+    await narrateStream(note, dealId, (e) => {
       if (e.type === "delta") { acc += e.text; setNarrJa(acc); }
     }, { lang: "ja" });
     setNarrJaLoading(false);
@@ -963,7 +963,7 @@ type Msg =
   | { id: number; role: "senpai"; kind: "prompt"; text: string }
   | { id: number; role: "user"; kind: "note"; note: string; noteJa?: string; dealLabel?: string; jp?: boolean }
   | { id: number; role: "senpai"; kind: "loading" }
-  | { id: number; role: "senpai"; kind: "coaching"; note: string; resp: CoachResponse; live: boolean }
+  | { id: number; role: "senpai"; kind: "coaching"; note: string; resp: CoachResponse; live: boolean; dealId?: string }
   | { id: number; role: "senpai"; kind: "research"; note: string };
 
 function Avatar({ who }: { who: "senpai" | "user" }) {
@@ -1071,7 +1071,7 @@ export function CoachChat({
     setMessages((m) =>
       m.map((msg) =>
         msg.id === loadingId
-          ? { id: loadingId, role: "senpai", kind: "coaching", note: clean, resp: data, live }
+          ? { id: loadingId, role: "senpai", kind: "coaching", note: clean, resp: data, live, dealId: deal || undefined }
           : msg,
       ),
     );
@@ -1105,7 +1105,7 @@ export function CoachChat({
                           <button
                             key={ex.title}
                             disabled={busy}
-                            onClick={() => submit(loc.engineNote, "", { display: loc.note, jp: lang === "ja" })}
+                            onClick={() => submit(loc.engineNote, ex.deal_id ?? "", { display: loc.note, jp: lang === "ja" })}
                             className="rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.03] disabled:opacity-50"
                           >
                             <div className="flex items-center gap-1.5">
@@ -1154,7 +1154,7 @@ export function CoachChat({
           }
           return (
             <Row key={m.id} who="senpai" name={t("chat.senpai")}>
-              <CoachingCard resp={m.resp} note={m.note} live={m.live} principles={principles} items={items} />
+              <CoachingCard resp={m.resp} note={m.note} live={m.live} dealId={m.dealId} principles={principles} items={items} />
             </Row>
           );
         })}
