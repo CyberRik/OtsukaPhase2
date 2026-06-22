@@ -31,8 +31,11 @@ scoring/flags/dashboard are unaffected.
 data/store.py  ── single source of truth (committed seed JSON, real SPR schema)
    │
    ├─ health/scoring.py   ── deterministic 0–100 risk score + JP reasons   ┐
-   ├─ health/flags.py     ── report-reliability flags                      │ GPU-free core
+   ├─ health/flags.py     ── report-reliability flags                      │
    ├─ retrieval/playbook.py ── playbook + similar-deal lookup              │
+   ├─ retrieval/semantic.py ── hybrid search: BM25 + dense (RRF-fused)     │ GPU-free core
+   │    └ data/index/*      ── committed embedding vectors (build_index.py) │  (dense embeds
+   ├─ graph/build.py,query.py ── knowledge graph + multi-hop queries        │   the query only)
    ├─ tools/impl.py       ── tool executors + dispatch() (never raises)    │
    ├─ tools/web.py        ── web_search (Tavily + canned fallback)         │
    ├─ tools/schemas.py    ── OpenAI schemas + JUNIOR_TOOLS / MANAGER_TOOLS  ┘
@@ -47,7 +50,8 @@ data/store.py  ── single source of truth (committed seed JSON, real SPR sche
 
 Everything reads through `data/store.py`, so the data model lives in exactly one place. The
 two chats share one tool loop (`llm/client.py:stream_turn`) and differ only by the tool set
-they pass.
+they pass. Retrieval (semantic search + graph) and scoring are **all GPU-free**: only exp3's
+narration/chat needs the model server.
 
 ---
 
@@ -59,15 +63,21 @@ tables mirror [`../Schema.md`](../Schema.md) field-for-field:
 
 | Seed file | Rows | Notes |
 |---|---|---|
-| `deals.json` | 60 | opportunity-level: `order_rank`, financials, `expected_order_date`/`days_until_order` |
-| `sales_activities.json` | ~186 | the interaction log: `activity_date`, `daily_report`, `business_card_info`, `customer_challenge` |
-| `quotes.json` | ~50 | `quote_amount`, `discount_rate`, `similar_quote_count`, `quote_expiry_date` |
-| `orders.json` | ~19 | realised order lines (confirmed deals): unit prices, gross profit, supplier |
+| `deals.json` | 520 | opportunity-level: `order_rank`, financials, `expected_order_date`/`days_until_order` |
+| `sales_activities.json` | ~2,300 | the interaction log: `activity_date`, `daily_report`, `business_card_info`, `customer_challenge` |
+| `quotes.json` | ~480 | `quote_amount`, `discount_rate`, `similar_quote_count`, `quote_expiry_date` |
+| `orders.json` | 280 | realised order lines (confirmed deals): unit prices, gross profit, supplier |
+
+The seed is a **large, multi-year** pipeline (~150 customers, 520 deals across FY2023–2026:
+~140 live / 280 won / 100 lost). See [`../docs/synthetic_dataset.md`](../docs/synthetic_dataset.md).
 
 Plus **supplementary reference data** the SPR tables only reference (master data / mined,
-not part of the SPR export): `reps.json` (resolved from `sales_info.employee_id`),
-`customers.json`, `products.json`, `playbook.json` (mined from `daily_report`), and
-`environments.json` (customer IT environment — **a known gap**, not in the four SPR tables).
+not part of the SPR export): `reps.json` (24, resolved from `sales_info.employee_id`),
+`customers.json` (150), `products.json` (29), `playbook.json` (mined from `daily_report`),
+`environments.json` (customer IT environment — **a known gap**, not in the four SPR tables),
+`customer_aliases.json` (auto-derived English/romaji forms for resolution), and
+`rank_history.json` (a normalized order-rank change log — the Schema.md "full rank history"
+gap, kept out of the field-for-field `deals` table).
 
 **`order_rank` is the spine.** `1_Confirmed` = won · `2_A+ … 6_P` = live pipeline (lower
 number = stronger) · `7_Lost`/`8_Cancelled` = dead. The open/won/dead sets and per-rank
@@ -99,6 +109,27 @@ checks: `close_date_passed`, `stale_active`, `missing_fields`, `optimism_mismatc
 
 ---
 
+## Retrieval — semantic search + knowledge graph
+
+Beyond keyword/tag lookup, Senpai retrieves by **meaning** and by **relationships**. Both are
+GPU-free and degrade gracefully. Full details: [`../docs/retrieval.md`](../docs/retrieval.md).
+
+- **Hybrid semantic search** (`retrieval/semantic.py`). **BM25** (Japanese, Janome-tokenized,
+  content-words only) ⊕ **dense embeddings** (fastembed/ONNX, multilingual-MiniLM), fused with
+  **Reciprocal Rank Fusion** (dense-weighted). Corpus vectors are precomputed and **committed**
+  (`data/index/`, built by `retrieval/build_index.py`), so only the live query is embedded.
+  Degrades `dense+BM25 → BM25 → keyword` when libs/vectors are absent. `retrieve_playbook` uses
+  this internally; the `search_notes` tool exposes it over the ~2,300 daily reports.
+- **Knowledge graph** (`graph/build.py`, `graph/query.py`). A `networkx`
+  customer→deal→activity→rep→product graph, built from the store at runtime, answers multi-hop
+  questions via the `query_graph` tool: `reps_who_win` (e.g. *"who wins サーバー deals in 製造業
+  after a site survey"*), `account` (an account's whole network), `connections`, `similar`.
+
+Quality is covered by `scripts/stress_retrieval.py` (paraphrase recall, fusion sanity,
+determinism, fuzz robustness, latency) on top of the unit tests.
+
+---
+
 ## Tools
 
 OpenAI function schemas (`tools/schemas.py`) + a `dispatch()` executor (`tools/impl.py`) that
@@ -108,7 +139,9 @@ returns short strings and never raises. Each chat passes its own role-scoped sub
 |---|:--:|:--:|---|
 | `query_spr` | ✓ | ✓ | Deals + recent activities by customer / rep / deal |
 | `find_similar_deals` | ✓ | | Comparable deals for a new/thin customer |
-| `retrieve_playbook` | ✓ | | Attributed senior tactics by tags/keywords |
+| `retrieve_playbook` | ✓ | | Attributed senior tactics (hybrid semantic ranked) |
+| `search_notes` | ✓ | ✓ | Semantic search over daily reports (finds paraphrases) |
+| `query_graph` | | ✓ | Multi-hop graph: who-wins-what, account network, connections |
 | `lookup_customer_environment` | ✓ | | Customer PC/OS/network record |
 | `get_product_info` | ✓ | | Specs/price/manual excerpt + category |
 | `score_deal_health` | ✓ | ✓ | A deal's band + risk + reasons |
@@ -129,11 +162,20 @@ returns short strings and never raises. Each chat passes its own role-scoped sub
 From the repo root (`OtsukaPhase2/`):
 
 ```bash
-.venv/bin/pip install -r requirements.txt      # gradio, openai, streamlit, pandas, pytest
+.venv/bin/pip install -r requirements.txt
+# core: gradio, openai, streamlit, pandas, pytest
+# retrieval: fastembed (ONNX/CPU), rank-bm25, janome, networkx — all GPU-free
 ```
 
 The model is **served** by the external vLLM venv (same as the Phase-1 demo) — nothing to
-install there. The dashboard and tests need none of it (pure Python).
+install there. The dashboard, retrieval and tests need none of it (pure Python / CPU).
+
+The semantic index is **committed** under `data/index/`. Only rebuild it after changing the
+seed or the tokenizer/embedding model (downloads the embed model once, then runs offline):
+
+```bash
+python -m senpai.retrieval.build_index          # writes data/index/* (byte-stable)
+```
 
 ## Run
 
@@ -164,14 +206,22 @@ Sanity-check the server before a chat demo:
 | `SENPAI_TODAY` | unset → real date | `config.today()` | Pin scoring's "today" (e.g. `2026-06-16`) |
 | `UI_HOST` / `UI_PORT` | `127.0.0.1` / `7860`,`7861` | chats | Bind address / port |
 | `TAVILY_API_KEY` | — | `tools/web.py` | Enables real web search |
+| `SENPAI_USE_EMBEDDINGS` | `1` | `retrieval/semantic.py` | Dense layer on; `0` = BM25-only |
+| `SENPAI_USE_RERANKER` | `0` | `retrieval/semantic.py` | Optional cross-encoder rerank |
+| `SENPAI_EMBED_MODEL` | MiniLM-multilingual | `build_index.py` | fastembed model id |
+| `SENPAI_DENSE_WEIGHT` / `SENPAI_BM25_WEIGHT` / `SENPAI_RRF_K` | `3` / `1` / `60` | `semantic.py` | Fusion tuning |
 
 ## Verify (no GPU)
 
 ```bash
 export SENPAI_TODAY=2026-06-16
-.venv/bin/pytest tests/test_scoring.py tests/test_flags.py tests/test_manager_tools.py   # 22 tests
-.venv/bin/python -m senpai.tools.impl            # one canned call per tool
-python -m senpai.data.gen_seed                   # regenerate; byte-stable (re-running is a no-op)
+.venv/bin/pytest -q                              # full suite (hermetic, BM25-only retrieval)
+.venv/bin/python -m senpai.tools.impl            # one canned call per tool (incl. search_notes / query_graph)
+python -m senpai.data.gen_seed                   # regenerate seed; byte-stable (re-run is a no-op)
+
+# Retrieval-specific:
+SENPAI_TEST_DENSE=1 .venv/bin/pytest tests/test_semantic.py tests/test_graph.py   # incl. dense path
+.venv/bin/python scripts/stress_retrieval.py     # stress harness: paraphrase recall, fuzz, latency
 ```
 
 ---

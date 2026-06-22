@@ -1,7 +1,9 @@
-"""Lightweight keyword/tag retrieval over the playbook and similar deals.
+"""Retrieval over the playbook and similar deals.
 
-No embeddings — deliberately simple, deterministic scoring on tags and substring
-matches. Good enough for grounding the junior assistant and fully GPU-free.
+Playbook retrieval is **hybrid semantic** (BM25 + dense embeddings, fused) when the
+committed index is present (senpai/retrieval/semantic.py), and falls back to the
+original keyword/tag scoring below when it isn't — so callers always get results
+offline. `find_similar_deals` stays a deterministic feature-match. All GPU-free.
 """
 from __future__ import annotations
 
@@ -12,11 +14,8 @@ def _tokens(text: str) -> list[str]:
     return [t for t in (text or "").replace("、", " ").replace("。", " ").split() if t]
 
 
-def retrieve_playbook(query: str = "", tags: list[str] | None = None,
-                      limit: int = 3) -> list[dict]:
-    """Rank playbook entries by tag overlap + substring hits against the query.
-    Returns the top `limit` entries (each the raw playbook dict)."""
-    tags = [t.strip() for t in (tags or []) if t.strip()]
+def _retrieve_playbook_keyword(query: str, tags: list[str], limit: int) -> list[dict]:
+    """Original deterministic tag-overlap + substring scoring (the fallback)."""
     q = (query or "").strip()
     scored = []
     for entry in store.all_playbook():
@@ -35,6 +34,27 @@ def retrieve_playbook(query: str = "", tags: list[str] | None = None,
             scored.append((score, entry))
     scored.sort(key=lambda x: x[0], reverse=True)
     return [e for _, e in scored[:limit]]
+
+
+def retrieve_playbook(query: str = "", tags: list[str] | None = None,
+                      limit: int = 3) -> list[dict]:
+    """Rank playbook entries by relevance to a situation. Uses hybrid semantic
+    search when the index is available, else keyword/tag scoring. Returns the top
+    `limit` entries as raw playbook dicts (unchanged shape for all callers)."""
+    tags = [t.strip() for t in (tags or []) if t.strip()]
+    q = (query or "").strip()
+    if q or tags:
+        try:
+            from senpai.retrieval import semantic
+            hits = semantic.semantic_search(q, corpus="playbook", limit=limit, tags=tags)
+            if hits:
+                by_id = {e["entry_id"]: e for e in store.all_playbook()}
+                out = [by_id[h["entry_id"]] for h in hits if h.get("entry_id") in by_id]
+                if out:
+                    return out[:limit]
+        except Exception:  # noqa: BLE001 — any index/dep issue → keyword fallback
+            pass
+    return _retrieve_playbook_keyword(q, tags, limit)
 
 
 def find_similar_deals(customer_id: str = "", industry: str = "",

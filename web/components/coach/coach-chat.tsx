@@ -385,8 +385,16 @@ function CoachingCard({
   // AI-first: the deterministic six lenses are demoted to a collapsible
   // "supporting evidence" panel, hidden by default.
   const [showEvidence, setShowEvidence] = useState(false);
+  
   const rel = relevantPrinciples(note, principles);
   const tipMap = buildTipMap(items);
+
+  const realityCheckMeta = resp.sections.find((s) => s.key === "reality_check");
+  const realityCheckItems = realityCheckMeta ? resp.result["reality_check"] : [];
+  const evidenceSections = resp.sections.filter((s) => s.key !== "reality_check");
+
+  const topActions = resp.account_context?.deterministic_imperatives || [];
+  const displayPrinciples = rel.slice(0, 2);
 
   async function explain() {
     if (narrating) return;
@@ -457,7 +465,36 @@ function CoachingCard({
         <LiveBadge live={live} />
       </div>
 
-      {/* Senior's read (AI) — primary, grounded in the corpus + deal record,
+      {/* 1. Reality Check (if triggered) */}
+      {realityCheckMeta && realityCheckItems?.length > 0 && (
+        <div className="rounded-xl border border-band-red/40 bg-band-red/5 p-4">
+          <div className="mb-2 flex items-center gap-2 text-[13px] font-semibold text-band-red">
+            <AlertTriangle className="h-4 w-4" /> {realityCheckMeta[lang as "ja" | "en"] || realityCheckMeta.en}
+          </div>
+          <ul className="space-y-1.5">
+            {realityCheckItems.map((item, i) => (
+              <li key={i} className="text-[12.5px] leading-snug text-foreground/90">{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 2. Top Priority Actions (Account Context deterministic imperatives) */}
+      {topActions.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="eyebrow mb-2 flex items-center gap-1.5"><Route className="h-3.5 w-3.5" /> Top Priority Actions</div>
+          <ul className="space-y-2">
+            {topActions.map((act, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13px] leading-relaxed text-foreground/90">
+                <span className="mt-[6px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                <span>{act}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 3. Senior's read (AI) — primary, grounded in the corpus + deal record,
           streamed as soon as the card mounts. */}
       <div>
         {!narrTried && !narrating && (
@@ -554,36 +591,93 @@ function CoachingCard({
         )}
       </div>
 
-      {/* Supporting evidence — the deterministic six-lens checklist, demoted to a
-          collapsible panel (it's the trust layer beneath the senior's read). */}
+      {/* 4. Relevant Principles (Simplified View) */}
+      <div>
+        <div className="eyebrow mb-3 flex items-center gap-1.5"><BookMarked className="h-3.5 w-3.5" /> {t("chat.relevantPrinciples")}</div>
+        {displayPrinciples.length > 0 ? (
+          <div className="space-y-3">
+            {displayPrinciples.map((p) => {
+              const confidenceText = principleConfidence(p) === "high" ? "High Confidence" :
+                                     principleConfidence(p) === "medium" ? "Medium Confidence" : "Low Confidence";
+              return (
+                <div key={p.principle_id} className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="font-mono text-[12px] font-semibold text-foreground">{p.principle_id}</span>
+                    <span className="text-[11px] font-medium text-muted-foreground">({confidenceText})</span>
+                  </div>
+                  <p className="mb-3 text-[13px] leading-relaxed text-foreground/90">
+                    {principleText(lang, p).text}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.tags.map((tg) => (
+                      <span key={tg} className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        #{tagText(lang, tg).text}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
+            {t("chat.noPrinciples")}
+          </div>
+        )}
+      </div>
+
+      {/* Evidence Drawer — hides complex traceability & derivation */}
       <div>
         <button
           onClick={() => setShowEvidence((v) => !v)}
           className="flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-left transition-colors hover:border-primary/40"
         >
           <span className="flex items-center gap-1.5 text-[13px] font-medium text-foreground">
-            <Layers className="h-3.5 w-3.5 text-muted-foreground" /> {t("chat.supportingEvidence")}
+            <Layers className="h-3.5 w-3.5 text-muted-foreground" /> Show Evidence
           </span>
           <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", showEvidence && "rotate-180")} />
         </button>
         {showEvidence && (
-          <div className="animate-fade-up mt-3">
-            <Accordion type="multiple" defaultValue={["observations", "missing_info", "risks"]} className="space-y-2.5">
-              {resp.sections.map((meta) => (
-                <LensSection
-                  key={meta.key}
-                  meta={meta}
-                  items={resp.result[meta.key] ?? []}
-                  seniorLabel={t("coach.seniorDrawer")}
-                  lang={lang}
-                  tipMap={tipMap}
-                />
-              ))}
-            </Accordion>
+          <div className="animate-fade-up mt-4 space-y-8 border-t border-border pt-4">
+            
+            {/* Deterministic Lenses */}
+            <div>
+              <div className="eyebrow mb-3 flex items-center gap-1.5"><Search className="h-3.5 w-3.5" /> Deterministic Lens Analysis</div>
+              <Accordion type="multiple" defaultValue={["observations", "missing_info", "risks"]} className="space-y-2.5">
+                {evidenceSections.map((meta) => (
+                  <LensSection
+                    key={meta.key}
+                    meta={meta}
+                    items={resp.result[meta.key] ?? []}
+                    seniorLabel={t("coach.seniorDrawer")}
+                    lang={lang}
+                    tipMap={tipMap}
+                  />
+                ))}
+              </Accordion>
+            </div>
+
+            {/* Similar Past Cases */}
+            <div>
+              <div className="eyebrow mb-3 flex items-center gap-1.5"><History className="h-3.5 w-3.5" /> Similar Past Cases</div>
+              <SimilarCases note={note} principles={principles} />
+            </div>
+
+            {/* Full Traceability & Verbatims */}
+            <div>
+              <div className="eyebrow mb-3 flex items-center gap-1.5"><Database className="h-3.5 w-3.5" /> Principle Provenance & Verbatims</div>
+              {rel.length > 0 ? (
+                <Accordion type="multiple" className="space-y-2.5">
+                  {rel.map((p) => <PrincipleRef key={p.principle_id} p={p} />)}
+                </Accordion>
+              ) : (
+                <div className="text-[13px] text-muted-foreground">No principles matched.</div>
+              )}
+            </div>
 
             {/* English mode: keep the JA source one click away (provenance) */}
             {lang === "en" && (
-              <div className="mt-2.5">
+              <div>
                 <button
                   onClick={() => setShowJa((v) => !v)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
@@ -596,7 +690,7 @@ function CoachingCard({
                     <div className="eyebrow mb-2">{t("chat.jaOriginalTitle")}</div>
                     <p className="mb-3 text-[11.5px] leading-snug text-muted-foreground">{t("chat.jaOriginalHint")}</p>
                     <div className="space-y-3">
-                      {resp.sections.map((meta) => {
+                      {evidenceSections.map((meta) => {
                         const its = resp.result[meta.key] ?? [];
                         if (!its.length) return null;
                         return (
@@ -622,60 +716,11 @@ function CoachingCard({
         )}
       </div>
 
-      {/* Explainability — Why did each recommendation fire? */}
-      {resp.explanations && resp.explanations.length > 0 && (
-        <ExplainabilityPanel explanations={resp.explanations} />
-      )}
-
-      {/* Similar past cases — Pillar 2: Experience */}
-      <SimilarCases note={note} principles={principles} />
-
-      {/* Relevant principles + provenance (the corpus the read draws on) */}
-      <div>
-        <div className="eyebrow mb-2 flex items-center gap-1.5"><BookMarked className="h-3.5 w-3.5" /> {t("chat.relevantPrinciples")}</div>
-        {rel.length ? (
-          <Accordion type="multiple" defaultValue={rel[0] ? [rel[0].principle_id] : []} className="space-y-2.5">
-            {rel.map((p) => <PrincipleRef key={p.principle_id} p={p} />)}
-          </Accordion>
-        ) : (
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-4 text-[13px] text-muted-foreground">
-            {t("chat.noPrinciples")}
-          </div>
-        )}
-      </div>
-
-      {/* similar situations (revealed on demand) */}
-      {showSimilar && similar.length > 0 && (
-        <div className="animate-fade-up">
-          <div className="eyebrow mb-2 flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> {t("chat.similarTitle")}</div>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {similar.map((it) => {
-              return (
-                <Link
-                  key={it.item_id}
-                  href="/junior/knowledge"
-                  className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors hover:bg-muted/40"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-muted-foreground">{it.item_id}</span>
-                    <ConfidenceBadge level={it.confidence} />
-                  </div>
-                  <span className="mt-2 line-clamp-3 text-[12.5px] leading-snug text-foreground/85 block">
-                    {principleText(lang, { principle_id: it.provenance.principle_id, statement: it.principle_statement }).text}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* follow-up actions */}
       <div className="rounded-xl border border-border bg-muted/30 p-3">
         <div className="eyebrow mb-2">{t("chat.followUps")}</div>
         <div className="flex flex-wrap gap-2">
           <FollowUp icon={RotateCcw} label={t("chat.reviewAnother")} onClick={() => window.dispatchEvent(new CustomEvent("senpai:review-another"))} />
-          <FollowUp icon={Layers} label={t("chat.similar")} active={showSimilar} onClick={() => setShowSimilar((v) => !v)} />
           <Link
             href="/junior/knowledge"
             className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
@@ -1205,3 +1250,4 @@ export function CoachChat({
     </div>
   );
 }
+// End of coach-chat.tsx

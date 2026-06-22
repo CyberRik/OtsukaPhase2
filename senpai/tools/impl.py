@@ -105,8 +105,8 @@ def retrieve_playbook_tool(query: str = "", tags=None) -> str:
         return "該当するプレイブックがありません。route_to_expert の利用を検討してください。"
     lines = []
     for e in hits:
-        author = store.rep_name(e["author_rep_id"])
-        lines.append(f"[{'/'.join(e['situation_tags'])}] {e['text']}(提供: {author})")
+        entry_id = e.get("entry_id", "Unknown")
+        lines.append(f"[{'/'.join(e['situation_tags'])}] {e['text']}(出典: Playbook {entry_id})")
     return "プレイブック:\n- " + "\n- ".join(lines)
 
 
@@ -499,6 +499,77 @@ def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:
     return "社内ナレッジ:\n- " + "\n- ".join(lines)
 
 
+def search_notes(query: str = "", limit: int = 5) -> str:
+    """Semantic search over the field's daily reports (日報). Finds activities that
+    *mean* the same thing as the query, not just share keywords — e.g. a search for
+    『予算が理由で停滞』 surfaces 「コスト面で渋い」notes too. Returns dated, attributed
+    snippets with their deal/customer so the rep can drill in."""
+    from senpai.retrieval.semantic import semantic_search
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 5
+    hits = semantic_search(query, corpus="activities", limit=limit)
+    if not hits:
+        return "該当する日報は見つかりませんでした。"
+    lines = []
+    for h in hits:
+        cust = store.customer_name(h.get("customer_id", "")) or h.get("customer_id", "")
+        lines.append(f"{h.get('activity_date', '?')}・{h.get('deal_id', '-')}（{cust}）: "
+                     f"{h.get('snippet', '')}")
+    return "関連する日報:\n- " + "\n- ".join(lines)
+
+
+def query_graph(intent: str = "reps_who_win", category: str = "", industry: str = "",
+                after_activity_type: str = "", customer: str = "", deal_id: str = "",
+                entity_a: str = "", entity_b: str = "", limit: int = 8) -> str:
+    """Multi-hop questions over the customer→deal→activity→rep→product graph.
+    intent: 'reps_who_win' | 'account' | 'connections' | 'similar'."""
+    from senpai.graph import query as gq
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 8
+
+    if intent == "reps_who_win":
+        rows = gq.reps_who_win(category=category, industry=industry,
+                               after_activity_type=after_activity_type)[:limit]
+        if not rows:
+            return "条件に合う実績が見つかりませんでした。"
+        cond = "／".join(x for x in [category, industry, after_activity_type] if x) or "全体"
+        lines = [f"{r['rep_name']}（{r['rep_id']}）勝率{r['win_rate']*100:.0f}% "
+                 f"（{r['won']}/{r['closed']}件）例: {', '.join(r['example_deal_ids'][:3])}"
+                 for r in rows]
+        return f"勝ちパターン分析【{cond}】:\n- " + "\n- ".join(lines)
+
+    if intent == "account":
+        g = gq.account_graph(customer)
+        if g.get("status") != "found":
+            return f"顧客「{customer}」は見つかりません。"
+        reps = "、".join(r["name"] for r in g["reps"]) or "—"
+        prods = "、".join(p["name"] for p in g["products"]) or "—"
+        deals = "\n  ".join(f"{d['deal_id']} {d['name']}（{d['rank']}/{d['outcome']}・"
+                            f"¥{d['amount']:,}）" for d in g["deals"][:limit]) or "—"
+        return (f"{g['name']}（{g['industry']}/{g['size']}）の関係図:\n"
+                f"担当: {reps}\n製品: {prods}\n案件:\n  {deals}")
+
+    if intent == "connections":
+        r = gq.connections(entity_a, entity_b)
+        if r.get("status") != "found":
+            return f"「{entity_a}」と「{entity_b}」を結ぶ経路は見つかりませんでした。"
+        path = " → ".join(f"{n['label']}[{n['kind']}]" for n in r["path"])
+        return f"{r['hops']}ホップの経路: {path}"
+
+    if intent == "similar":
+        rows = gq.similar_by_graph(deal_id, limit=limit)
+        if not rows:
+            return f"{deal_id} に関連する案件は見つかりませんでした。"
+        lines = [f"{r['deal_id']} {r['name']}（{r['outcome']}・関連度{r['score']}）" for r in rows]
+        return f"{deal_id} と関係の深い案件:\n- " + "\n- ".join(lines)
+
+    return f"[error] 未知のintent: {intent}（reps_who_win/account/connections/similar）"
+
+
 # ---------------------------------------------------------------------------
 # Dispatch (mirrors demo/tools.py)
 # ---------------------------------------------------------------------------
@@ -528,6 +599,8 @@ _DISPATCH = {
     "send_email": send_email,
     "get_calendar": get_calendar,
     "search_knowledge": search_knowledge,
+    "search_notes": search_notes,
+    "query_graph": query_graph,
 }
 
 
@@ -559,6 +632,7 @@ if __name__ == "__main__":
         ("query_spr", {"rep_id": "R05"}),
         ("find_similar_deals", {"customer": "C01"}),
         ("retrieve_playbook", {"query": "お客様が決定を先延ばし", "tags": ["決定先延ばし"]}),
+        ("search_notes", {"query": "予算が厳しく決裁が止まっている", "limit": 3}),
         ("lookup_customer_environment", {"customer": "C01"}),
         ("get_product_info", {"product": "MFP30"}),
         ("score_deal_health", {"deal_id": "D001"}),
@@ -568,6 +642,8 @@ if __name__ == "__main__":
         ("summarize_reports", {"rep_id": "R05"}),
         ("get_seasonal_context", {"month": 2}),
         ("list_at_risk_deals", {"limit": 5}),
+        ("query_graph", {"intent": "reps_who_win", "category": "サーバー"}),
+        ("query_graph", {"intent": "account", "customer": "C28"}),
         ("team_pipeline_overview", {}),
         ("team_report_digest", {}),
         ("rep_coaching_focus", {}),

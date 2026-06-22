@@ -60,6 +60,24 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "search_notes",
+            "description": "Semantic search across the team's daily reports (日報). Finds notes that "
+                           "mean the same thing as the query even when worded differently (e.g. "
+                           "'予算が理由で停滞' also surfaces 'コスト面で渋い'). Use to find precedents, "
+                           "recurring objections, or how others handled a similar situation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "What to look for, in natural language"},
+                    "limit": {"type": "integer", "description": "Max notes to return (default 5)"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "lookup_customer_environment",
             "description": "Get the customer's IT environment record (PCs, OS, network) — the "
                            "handoff information a rep needs before a technical visit.",
@@ -388,6 +406,36 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_graph",
+            "description": "Answer relational, multi-hop questions over the sales knowledge graph "
+                           "(customer→deal→activity→rep→product) that simple lookups can't. Intents: "
+                           "'reps_who_win' (who has the best win-rate on deals filtered by category / "
+                           "industry / activity type — e.g. 'reps who win サーバー deals in 製造業 after "
+                           "a site survey'); 'account' (one customer's whole deal/rep/product network); "
+                           "'connections' (how two entities are linked); 'similar' (deals related to a "
+                           "deal_id by shared rep/product/industry).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "intent": {"type": "string",
+                               "description": "'reps_who_win' | 'account' | 'connections' | 'similar'"},
+                    "category": {"type": "string", "description": "Product category filter, e.g. 'サーバー'"},
+                    "industry": {"type": "string", "description": "Customer industry filter, e.g. '製造'"},
+                    "after_activity_type": {"type": "string",
+                                            "description": "Require deals that had this activity type, e.g. '001_Scheduled'"},
+                    "customer": {"type": "string", "description": "Customer name/ID (intent='account')"},
+                    "deal_id": {"type": "string", "description": "Deal ID (intent='similar'), e.g. 'D012'"},
+                    "entity_a": {"type": "string", "description": "First entity (intent='connections')"},
+                    "entity_b": {"type": "string", "description": "Second entity (intent='connections')"},
+                    "limit": {"type": "integer", "description": "Max rows (default 8)"},
+                },
+                "required": ["intent"],
+            },
+        },
+    },
 ]
 
 
@@ -406,17 +454,18 @@ def _pick(*names: str) -> list[dict]:
 #  coach experiment and is kept out of our chat surface for isolation.)
 JUNIOR_TOOLS = _pick(
     "query_spr", "find_similar_deals", "retrieve_playbook", "search_knowledge",
-    "lookup_customer_environment", "get_product_info", "search_products",
+    "search_notes", "lookup_customer_environment", "get_product_info", "search_products",
     "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
     "send_email", "get_calendar", "route_to_expert",
     "get_seasonal_context", "web_search",
 )
 
-# Manager: team analytics + drill-down + drafting + web_search.
+# Manager: team analytics + drill-down + drafting + semantic/graph search + web.
 MANAGER_TOOLS = _pick(
     "query_spr", "score_deal_health", "list_at_risk_deals",
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
-    "search_knowledge", "search_products", "create_quote", "schedule_meeting",
+    "search_knowledge", "search_notes", "query_graph", "search_products",
+    "create_quote", "schedule_meeting",
     "send_email", "get_calendar", "draft_message", "web_search",
 )
 
@@ -425,7 +474,7 @@ MANAGER_TOOLS = _pick(
 # is a grounded research surface, not a generic chat. Order mirrors the intended
 # source priority (internal records → deal signals → web).
 RESEARCH_TOOLS = _pick(
-    "query_spr", "find_similar_deals", "score_deal_health",
+    "query_spr", "find_similar_deals", "score_deal_health", "search_notes",
     "lookup_customer_environment", "get_product_info",
     "get_seasonal_context", "web_search",
 )

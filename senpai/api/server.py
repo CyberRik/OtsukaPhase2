@@ -105,7 +105,10 @@ def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
     customer = store.customer_name(d["customer_id"])
     last = _last_activity_date(acts)
     stale_days = (today - date.fromisoformat(last)).days if last else None
-    regressed = config.rank_num(d.get("order_rank")) > config.rank_num(d.get("initial_order_rank"))
+    
+    cd_history = d.get("close_date_history", [])
+    slips = max(0, len(cd_history) - 1)
+    
     row = {
         "deal_id": d["deal_id"],
         "customer": customer,
@@ -325,51 +328,74 @@ USE_LLM = os.environ.get("SENPAI_USE_LLM", "0").lower() not in ("0", "false", ""
 
 
 @app.post("/api/coach/review")
+@app.post("/api/coach/review")
 def coach_review(req: CoachRequest):
-    if "matsuda" in req.note.lower() or "松田" in req.note:
-        from senpai.matsuda import build_matsuda_context
-        ctx = build_matsuda_context("C28")
-        ans = ctx.answer(req.note)
-        return {
-            "teach_note": "Matsuda Context Mode (Deterministic)",
-            "sections": COACH_SECTIONS,
-            "used_deal": "Matsuda Account View",
-            "result": {
-                "observations": [ans],
-                "missing_info": ["(Answered from synthesized context)"],
-                "risks": [],
-                "questions": [],
-                "next_actions": [],
-                "decision_factors": []
-            },
-            "narration": ans,
-            "llm_model": "deterministic-matsuda",
-            "explanations": [],
-        }
-
     deal = store.get_deal(req.deal_id) if req.deal_id else None
     acts = store.activities_for_deal(req.deal_id) if deal else None
     r = review_note(req.note, deal=deal, notes=acts, report=None)
+
+    # Phase 3: Data vs Reality Check intercept
+    reality_check_text = None
+    if deal and acts is not None:
+        today = _today()
+        res = score_deal(deal, acts, today=today)
+        flags = deal_flags(deal, acts, res.band, today=today)
+        
+        has_optimism_mismatch = any(f.name == "optimism_mismatch" for f in flags)
+        rep_likelihood = deal.get("rep_close_likelihood")
+        
+        if has_optimism_mismatch or (rep_likelihood == "high" and res.band == "red"):
+            flag_msgs = [f.message for f in flags if f.name == "optimism_mismatch"]
+            reason = flag_msgs[0] if flag_msgs else "担当の見込みとデータの健全度が食い違っています。"
+            reality_check_text = f"🚨 データと実態のズレを検知: {reason} 抜け漏れがないか再確認してください。"
+
+    # Phase 1 & 2: Account Context Resolution
+    from senpai.matsuda import build_account_context
+    customer = None
+    if deal:
+        customer = store.get_customer(deal.get("customer_id"))
+    else:
+        customer = store.match_customer_in_text(req.note)
+
+    account_context_payload = None
+    if customer:
+        try:
+            ctx = build_account_context(customer["customer_id"])
+            account_context_payload = ctx.to_llm_payload()
+        except Exception:
+            pass
 
     narration = None
     llm_model = None
     if USE_LLM and req.narrate:
         out = narrate_review(r, use_llm=True)
-        # narrate_review falls back to the deterministic render on any model
-        # failure; only treat it as live narration when it actually differs.
         if out and out.strip() != format_review(r).strip():
             narration = out
             llm_model = config.MODEL
 
+    sections = list(COACH_SECTIONS)
+    result_dict = {s["key"]: getattr(r, s["key"]) for s in COACH_SECTIONS}
+
+    if reality_check_text:
+        sections.insert(0, {
+            "key": "reality_check",
+            "ja": "データと実態のズレ",
+            "en": "Data vs Reality Check",
+            "icon": "alert"
+        })
+        result_dict["reality_check"] = [reality_check_text]
+
     ctx_text, ctx_meta = build_commentary_context(
         req.note, deal_id=req.deal_id, today=_today(), lang=req.lang)
+
     return {
         "teach_note": TEACH_NOTE,
-        "sections": COACH_SECTIONS,
+        "sections": sections,
         "used_deal": r.used_deal,
-        "result": {s["key"]: getattr(r, s["key"]) for s in COACH_SECTIONS},
+        "result": result_dict,
         "narration": narration,
         "llm_model": llm_model,
+        "account_context": account_context_payload,
         "resolution": {
             "customer": ctx_meta.get("customer"),
             "deal_id": ctx_meta.get("deal_id"),
@@ -377,7 +403,7 @@ def coach_review(req: CoachRequest):
             "match_method": ctx_meta.get("match_method", "none"),
             "grounded": ctx_meta.get("has_customer_context", False),
         },
-        "explanations": [e.to_dict() for e in r.explanations],
+        "explanations": [e.to_dict() for e in getattr(r, "explanations", [])],
     }
 
 
@@ -425,17 +451,6 @@ def coach_narrate(req: CoachRequest):
             iter([_sse({"type": "unavailable", "reason": "llm_disabled"})]),
             media_type="text/event-stream",
         )
-
-    if "matsuda" in req.note.lower() or "松田" in req.note:
-        from senpai.matsuda import build_matsuda_context
-        ctx = build_matsuda_context("C28")
-        ans = ctx.answer(req.note)
-        def _gen():
-            yield _sse({"type": "start", "model": "matsuda-synthesizer", "endpoint": "local"})
-            yield _sse({"type": "context", "grounded": True, "customer": "有限会社松田サービス", "deal_id": "Context"})
-            yield _sse({"type": "delta", "text": ans})
-            yield _sse({"type": "done", "model": "matsuda-synthesizer"})
-        return StreamingResponse(_gen(), media_type="text/event-stream")
 
     deal = store.get_deal(req.deal_id) if req.deal_id else None
     acts = store.activities_for_deal(req.deal_id) if deal else None
@@ -524,10 +539,10 @@ def _junior_system() -> str:
         "回答は必ず社内データ(SPR・プレイブック・顧客環境・案件健全度)に基づき、"
         "ツールを使って事実を確認してから答えてください。"
         "「どう対応すべきか」を問われたら、まず search_knowledge で社内ナレッジ"
-        "(先輩の原則・承認済み事例・プレイブック)を引き、出典を添えて答えること。"
+        "(先輩の原則・承認済み事例・プレイブック)を引き、指定された構造化出典ID（例: Playbook PB12）をそのまま添えて答えること。"
         "製品の相談には search_products / create_quote、訪問調整には schedule_meeting、"
         "連絡文の準備には send_email を使えます(いずれも下書きで、送信・確定はしません)。"
-        "プレイブックを引用する際は提供者名を添えること。"
+        "絶対に人名や提供者名を推測・生成しないでください。"
         "自信が持てない時は route_to_expert で適切な先輩に橋渡し"
         "してください。外部情報が必要な時は web_search を使ってください。"
         "日本語で、簡潔かつ実務的に答えます。"
@@ -542,7 +557,8 @@ def _manager_system() -> str:
         "コーチングが必要な担当を、必ずツールで取得した社内データに基づいて示します。"
         "数字は与えられたものだけを使い、創作しないこと。コーチングの根拠は "
         "search_knowledge で社内ナレッジ(先輩の原則・承認済み事例・プレイブック)を引き、"
-        "出典を添えて示すこと。製品の確認や見積例には search_products / create_quote、"
+        "指定された構造化出典ID（例: Playbook PB12）をそのまま添えて示すこと。絶対に人名や提供者名を推測・生成しないでください。"
+        "製品の確認や見積例には search_products / create_quote、"
         "調整や連絡文の準備には schedule_meeting / send_email を使えます"
         "(いずれも下書きで、送信・確定はしません)。外部情報が必要な時は "
         "web_search を使ってください。日本語で簡潔に答えます。"

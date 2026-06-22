@@ -1,0 +1,14 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "dim": 384,
+  "corpora": {
+    "activities": {
+      "count": 2337,
+      "hash": "a8ca175749d07a056d05650727975362ca4a72a950b6acaeb24148e88ba90cc5"
+    },
+    "playbook": {
+      "count": 31,
+      "hash": "9375d67c651a509ffec638ee7e12b4d90492c796b878cbf6118284047151a1cb"
+    }
+  }
+}

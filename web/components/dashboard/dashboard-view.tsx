@@ -120,6 +120,7 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
                 <th className="hidden px-4 py-3 sm:table-cell">{t("dash.col.stage")}</th>
                 <th className="px-4 py-3 text-right">{t("dash.col.amount")}</th>
                 <th className="px-4 py-3">{t("dash.col.health")}</th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell">Slips</th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell">{t("dash.col.stale")}</th>
                 <th className="px-4 py-3 text-right">{t("dash.col.flags")}</th>
                 <th className="px-2 py-3" />
@@ -141,6 +142,9 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
                   <td className="hidden px-4 py-3 capitalize text-muted-foreground sm:table-cell">{d.stage}</td>
                   <td className="px-4 py-3 text-right font-mono tabular-nums">{compactYen(d.amount)}</td>
                   <td className="px-4 py-3"><BandPill band={d.band} score={d.score} /></td>
+                  <td className="hidden px-4 py-3 text-right font-mono tabular-nums text-muted-foreground lg:table-cell">
+                    {d.slips > 0 ? <span className="text-band-red">⚠️ {d.slips}</span> : "0"}
+                  </td>
                   <td className="hidden px-4 py-3 text-right font-mono tabular-nums text-muted-foreground lg:table-cell">
                     {d.days_stale != null ? `${d.days_stale}d` : "—"}
                   </td>

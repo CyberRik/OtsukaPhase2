@@ -198,6 +198,16 @@ export interface CoachResponse {
   narration?: string | null;
   llm_model?: string | null;
   explanations?: Explanation[];
+  account_context?: {
+    account_profile?: {
+      name: string;
+      industry?: string;
+      environment_constraints?: string;
+    };
+    deterministic_imperatives?: string[];
+    applicable_principles?: string[];
+    historical_success_reference?: any[];
+  } | null;
 }
 
 export interface CoachExample {

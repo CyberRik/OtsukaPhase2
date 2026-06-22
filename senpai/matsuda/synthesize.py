@@ -6,11 +6,11 @@ from senpai import config
 from senpai.data import store
 from senpai.health import scoring, flags
 from senpai.retrieval.playbook import retrieve_playbook, find_similar_deals
-from senpai.matsuda.context import DealView, MatsudaContext
+from senpai.matsuda.context import DealView, AccountContext
 
-def build_matsuda_context(customer_id: str = "C28") -> MatsudaContext:
+def build_account_context(customer_id: str) -> AccountContext:
     """Synthesizes all available information about the specified customer 
-    (defaults to C28 Matsuda Service) into a single MatsudaContext."""
+    into a single AccountContext."""
     store.reload() # Ensure fresh data
     today = config.today()
     
@@ -148,7 +148,7 @@ def build_matsuda_context(customer_id: str = "C28") -> MatsudaContext:
     if not next_actions:
         next_actions.append("すべての案件が順調です。引き続き現在のペースでフォローしてください。")
         
-    return MatsudaContext(
+    return AccountContext(
         built_at=today,
         customer=customer,
         environment=environment,

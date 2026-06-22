@@ -93,6 +93,32 @@ COACH_USE_CORPUS = os.environ.get("SENPAI_COACH_CORPUS", "1").lower() not in ("0
 # --- Paths ------------------------------------------------------------------
 PKG_DIR = Path(__file__).resolve().parent
 SEED_DIR = PKG_DIR / "data" / "seed"
+INDEX_DIR = PKG_DIR / "data" / "index"   # committed dense-embedding vectors (build_index.py)
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() not in ("0", "false", "no", "")
+
+
+# --- Retrieval (hybrid semantic search) -------------------------------------
+# Dense embeddings run on CPU via fastembed (ONNX); corpus vectors are precomputed
+# and committed under INDEX_DIR, so only the query is embedded at runtime. Hybrid
+# search fuses BM25 + dense via Reciprocal Rank Fusion. Everything degrades to
+# BM25 (then keyword) when the libs/vectors are missing — mirrors SENPAI_USE_LLM.
+EMBED_MODEL = os.environ.get(
+    "SENPAI_EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+# Dense layer on by default; set SENPAI_USE_EMBEDDINGS=0 for a hermetic BM25-only run
+# (tests / no-network CI). semantic.py still no-ops dense if fastembed/vectors absent.
+USE_EMBEDDINGS = _env_bool("SENPAI_USE_EMBEDDINGS", True)
+USE_RERANKER = _env_bool("SENPAI_USE_RERANKER", False)   # optional cross-encoder, off by default
+RRF_K = _env_int("SENPAI_RRF_K", 60)                     # Reciprocal Rank Fusion constant
+# Fusion weights — dense carries more weight than lexical BM25 because, on these
+# short Japanese notes, the embedding model is the stronger signal for paraphrases.
+BM25_WEIGHT = _env_float("SENPAI_BM25_WEIGHT", 1.0)
+DENSE_WEIGHT = _env_float("SENPAI_DENSE_WEIGHT", 3.0)
 
 # Fixed anchor used by data/gen_seed.py so the committed seed JSON is byte-stable
 # no matter what day it is regenerated. Scoring uses today() (below), which on the

@@ -383,6 +383,20 @@ def build_commentary_context(note: str, deal_id: str | None = None,
     except Exception:  # noqa: BLE001 — never let the cross-link break the deal read
         pass
 
+    try:
+        from senpai.matsuda import build_account_context
+        actx = build_account_context(deal["customer_id"])
+        payload = actx.to_llm_payload()
+        if payload.get("account_profile", {}).get("environment_constraints"):
+            lines.append(f"ENVIRONMENT: {payload['account_profile']['environment_constraints']}")
+        if payload.get("deterministic_imperatives"):
+            lines.append("DETERMINISTIC NEXT ACTIONS (System identified highest priority risks):")
+            for imp in payload["deterministic_imperatives"]:
+                lines.append(f"  - {imp}")
+    except Exception:
+        pass
+        pass
+
     recent = acts[:3]
     if recent:
         lines.append("RECENT ACTIVITY:")

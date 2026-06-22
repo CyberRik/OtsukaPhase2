@@ -64,8 +64,8 @@ def search_knowledge(query: str = "", tags: list[str] | None = None,
 
     # 3. Senior-rep playbook tactical snippets.
     for e in retrieve_playbook(query=q, tags=tags):
-        author = dstore.rep_name(e.get("author_rep_id", ""))
-        results.append((1, "プレイブック", f"{e['text']}（提供: {author}）"))
+        entry_id = e.get("entry_id", "Unknown")
+        results.append((1, "プレイブック", f"{e['text']}（出典: Playbook {entry_id}）"))
 
     results.sort(key=lambda r: r[0], reverse=True)
     return results[:limit]

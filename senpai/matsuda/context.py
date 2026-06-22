@@ -62,10 +62,10 @@ class DealView:
 
 
 @dataclass
-class MatsudaContext:
-    """A persistent, single-object synthesis of everything known about Matsuda.
+class AccountContext:
+    """A persistent, single-object synthesis of everything known about an Account.
 
-    Built once by `synthesize.build_matsuda_context()`. Follow-up questions are
+    Built once by `synthesize.build_account_context()`. Follow-up questions are
     answered from these fields alone (see `answer`)."""
     built_at: date
     customer: dict
@@ -287,10 +287,36 @@ class MatsudaContext:
     # ----------------------------------------------------------------------
     # Inspectable markdown report
     # ----------------------------------------------------------------------
+    def to_llm_payload(self) -> dict:
+        """Returns a highly optimized token-efficient package for LLM injection."""
+        c = self.customer
+        e = self.environment
+        profile = {
+            "name": c.get("name", "Unknown"),
+            "industry": c.get("industry", "Unknown")
+        }
+        if e and e.get("notes"):
+            profile["environment_constraints"] = e.get("notes")
+
+        # extract playbook text directly
+        principles = [p.get("text", "") for p in self.playbook if p.get("text")]
+        
+        # trim won_similar to minimal tokens
+        won = [{"deal_id": d["deal_id"], "industry": d.get("industry", ""), "size": d.get("size", "")} 
+               for d in self.won_similar_deals]
+
+        return {
+            "account_profile": profile,
+            "deterministic_imperatives": self.next_actions,
+            "applicable_principles": principles,
+            "historical_success_reference": won
+        }
+
     def to_markdown(self) -> str:
+
         c = self.customer
         L: list[str] = []
-        L.append(f"# MatsudaContext — {self.name}")
+        L.append(f"# AccountContext — {self.name}")
         L.append("")
         L.append(f"> Synthesized {self.built_at.isoformat()} · "
                  f"deterministic (GPU-free) · answered without re-fetching data")
