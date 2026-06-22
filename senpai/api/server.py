@@ -386,6 +386,26 @@ def _sse(obj: dict) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
 
+# Reasoning tags vary by sampling: the model emits either <think> or <thinking>
+# (and the matching close). Match both spellings so a reasoning block is never
+# leaked into the user-facing answer.
+_THINK_CLOSE = re.compile(r"</think(?:ing)?>", re.IGNORECASE)
+_THINK_OPEN = re.compile(r"<think(?:ing)?>", re.IGNORECASE)
+
+
+def _strip_reasoning(full: str) -> str | None:
+    """The answer portion of a partial stream with any reasoning block removed.
+
+    Returns None while still inside an unclosed <think>/<thinking> block (the
+    caller surfaces a 'thinking' indicator); otherwise the visible answer text."""
+    m = _THINK_CLOSE.search(full)
+    if m:
+        return full[m.end():].lstrip("\n -")
+    if _THINK_OPEN.search(full):
+        return None
+    return full
+
+
 @app.post("/api/coach/narrate")
 def coach_narrate(req: CoachRequest):
     """Stream the Senior Commentary token-by-token (SSE).
@@ -393,9 +413,10 @@ def coach_narrate(req: CoachRequest):
     This is an experienced rep's *interpretation* layered on the deterministic
     coach — grounded in a retrieved business-context package (customer, deal
     health, activity, history, similar cases), NOT a restatement of the lenses.
-    Reasoning is disabled (low latency) and the request is pinned to the primary
-    GGUF endpoint — on any failure we emit an explicit `unavailable`, never a
-    silent switch to another model. Event types:
+    Reasoning is OFF by default (fast live path); set SENPAI_NARRATE_THINK=1 to let
+    the model think first (slower, richer) — either way any <think>/<thinking>
+    block is stripped before streaming. The request is pinned to the primary GGUF
+    endpoint — on any failure we emit an explicit `unavailable`. Event types:
       start | context | thinking | delta | done | unavailable
     The frontend renders deltas live and shows "Senior commentary unavailable" on
     `unavailable`."""
@@ -438,27 +459,40 @@ def coach_narrate(req: CoachRequest):
             for piece in client.stream_complete(
                 [{"role": "user", "content": prompt}],
                 temperature=0.5, max_tokens=config.LLM_NARRATE_MAX_TOKENS,
-                no_think=True, allow_fallback=False,
+                no_think=not config.NARRATE_THINK, allow_fallback=False,
             ):
                 full += piece
-                if "</think>" in full:                         # strip any echoed think block
-                    answer = full.split("</think>", 1)[1].lstrip("\n ")
-                elif "<think>" in full:
-                    answer = ""
-                else:
-                    answer = full
+                answer = _strip_reasoning(full)                 # hide any reasoning block
                 if answer:
                     new = answer[emitted:]
                     if new:
                         emitted += len(new)
                         yield _sse({"type": "delta", "text": new})
-                elif len(full) - last_think >= 48:
+                elif answer is None and len(full) - last_think >= 48:
                     last_think = len(full)
                     yield _sse({"type": "thinking", "chars": len(full)})
             if emitted:
                 yield _sse({"type": "done", "model": config.MODEL})
             else:
-                yield _sse({"type": "unavailable", "reason": "empty"})
+                # Reasoning consumed the whole budget before any answer token (a
+                # long <think> block on a contended GPU). Retry once with thinking
+                # off so the rep always gets a grounded read, never a blank.
+                fb, fb_emitted = "", 0
+                for piece in client.stream_complete(
+                    [{"role": "user", "content": prompt}],
+                    temperature=0.5, max_tokens=config.LLM_NARRATE_MAX_TOKENS,
+                    no_think=True, allow_fallback=False,
+                ):
+                    fb += piece
+                    ans = _strip_reasoning(fb)
+                    new = ans[fb_emitted:] if ans else ""
+                    if new:
+                        fb_emitted += len(new)
+                        yield _sse({"type": "delta", "text": new})
+                if fb_emitted:
+                    yield _sse({"type": "done", "model": config.MODEL})
+                else:
+                    yield _sse({"type": "unavailable", "reason": "empty"})
         except Exception:  # noqa: BLE001 — primary endpoint down/timeout (no fallback)
             yield _sse({"type": "unavailable", "reason": "unreachable"})
 

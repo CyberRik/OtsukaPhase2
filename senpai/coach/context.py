@@ -228,7 +228,9 @@ def corpus_knowledge(note: str, principle_ids: list[str], max_n: int = 3) -> lis
 
 def build_commentary_context(note: str, deal_id: str | None = None,
                              today: date | None = None,
-                             lang: str = "ja") -> tuple[str, dict]:
+                             lang: str = "ja",
+                             include_similar_cases: bool | None = None,
+                             include_corpus: bool | None = None) -> tuple[str, dict]:
     """Return (context_text, meta). `meta` carries has_customer_context and the
     resolved customer/deal for the UI. context_text is the grounded package fed
     to the model (English labels; values verbatim from records). When lang=='en'
@@ -243,6 +245,13 @@ def build_commentary_context(note: str, deal_id: str | None = None,
     """
     today = today or config.today()
     tr = _en_signal if lang == "en" else (lambda s: s)
+    # Grounding-audit P0 toggles (fall back to config defaults). Similar cases are
+    # cross-customer and off by default; corpus principles are on. Explicit args
+    # let the audit harness run the A/B/C contamination conditions.
+    if include_similar_cases is None:
+        include_similar_cases = config.COACH_USE_SIMILAR_CASES
+    if include_corpus is None:
+        include_corpus = config.COACH_USE_CORPUS
 
     # --- Resolution cascade ---
     deal: dict | None = None
@@ -384,20 +393,24 @@ def build_commentary_context(note: str, deal_id: str | None = None,
             lines.append(f"  - {a.get('activity_date','?')} "
                          f"[{a.get('activity_type','-')}] {snippet}")
 
-    similar = find_similar_cases(note, deal=deal, max_n=1, today=today)
     sim_pids: list[str] = []
-    if similar:
-        s = similar[0]
-        sim_pids = s["principle_ids"]
-        lines.append(
-            f"SIMILAR PAST CASE: {s['customer']} ({s['product_category']}) "
-            f"— {s['outcome']}; teaches principle(s) {', '.join(s['principle_ids'])}"
-        )
+    if include_similar_cases:
+        similar = find_similar_cases(note, deal=deal, max_n=1, today=today)
+        if similar:
+            s = similar[0]
+            sim_pids = s["principle_ids"]
+            lines.append(
+                f"SIMILAR PAST CASE: {s['customer']} ({s['product_category']}) "
+                f"— {s['outcome']}; teaches principle(s) {', '.join(s['principle_ids'])}"
+            )
 
-    corpus = corpus_knowledge(note, sim_pids)
-    if corpus:
-        lines.append("RELEVANT CORPUS KNOWLEDGE (validated senior principles — "
-                     "apply where they fit, cite the Pxxx id):")
-        lines.extend(f"  - {c}" for c in corpus)
+    if include_corpus:
+        corpus = corpus_knowledge(note, sim_pids)
+        if corpus:
+            lines.append("RELEVANT CORPUS KNOWLEDGE (validated senior principles — "
+                         "apply where they fit, cite the Pxxx id):")
+            lines.extend(f"  - {c}" for c in corpus)
 
+    meta["included_similar_cases"] = include_similar_cases
+    meta["included_corpus"] = include_corpus
     return _conf_prefix + "\n".join(lines), meta

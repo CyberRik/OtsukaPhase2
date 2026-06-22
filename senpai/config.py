@@ -70,11 +70,25 @@ def _env_int(name: str, default: int) -> int:
 # --- Inference tunables -----------------------------------------------------
 LLM_TIMEOUT = _env_float("LLM_TIMEOUT", 120.0)        # seconds, per request
 LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 1024)
-# Senior Commentary is meant to be a *short* conversational read, not long-form
-# reasoning. Cap it tightly so latency stays low (with thinking disabled, wall
-# time scales ~linearly with output length on the shared GPU). ~110–150 words.
-LLM_NARRATE_MAX_TOKENS = _env_int("LLM_NARRATE_MAX_TOKENS", 300)
+# Senior Commentary budget. Default sized for the fast live path (thinking OFF):
+# enough for a flowing conversational read, not long-form. If NARRATE_THINK is
+# enabled (reasoning ON, for a pre-warmed cache when the GPU is free), raise this
+# to ~2400 so the hidden <think> block plus the answer both fit without truncation.
+LLM_NARRATE_MAX_TOKENS = _env_int("LLM_NARRATE_MAX_TOKENS", 600)
+# Reasoning on Senior Commentary. OFF by default: on the shared ~11 tok/s box a
+# <think> block adds ~2 min/call, too slow for a live demo. Flip on (with a higher
+# LLM_NARRATE_MAX_TOKENS) for offline/pre-warmed generation where quality wins.
+NARRATE_THINK = os.environ.get("SENPAI_NARRATE_THINK", "0").lower() not in ("0", "false", "no", "")
 LLM_STREAM = os.environ.get("LLM_STREAM", "1").lower() not in ("0", "false", "no", "")
+
+# --- Review Coach grounding controls ----------------------------------------
+# Grounding-audit P0: similar past cases are CROSS-CUSTOMER by construction
+# (find_similar_cases injects another customer's closed deal ~99% of the time),
+# which risks narrative contamination — the model reasoning from analogy rather
+# than this customer's own evidence. Disabled by default while we verify grounding.
+# Corpus principles (playbooks) are kept; they are a separate, evaluated axis.
+COACH_USE_SIMILAR_CASES = os.environ.get("SENPAI_COACH_SIMILAR_CASES", "0").lower() not in ("0", "false", "no", "")
+COACH_USE_CORPUS = os.environ.get("SENPAI_COACH_CORPUS", "1").lower() not in ("0", "false", "no", "")
 
 # --- Paths ------------------------------------------------------------------
 PKG_DIR = Path(__file__).resolve().parent
