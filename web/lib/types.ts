@@ -197,6 +197,7 @@ export interface CoachResponse {
   result: Record<string, string[]>;
   narration?: string | null;
   llm_model?: string | null;
+  explanations?: Explanation[];
 }
 
 export interface CoachExample {
@@ -268,6 +269,7 @@ export interface CoachingCardItem {
   band: Band;
   score: number;
   n_issues: number;
+  explanation?: Explanation;
 }
 
 export interface CoachingTrend {
@@ -338,4 +340,51 @@ export interface Source {
   date: string;
   uri: string;
   notes: string;
+}
+
+// --- Coaching Explainability ------------------------------------------------
+export interface TriggerCondition {
+  rule_id: string;
+  rule_type: "lens" | "signal" | "flag" | "issue" | "presence";
+  description: string;
+  description_en: string;
+  matched_data: Record<string, unknown>;
+}
+
+export interface EvidenceItem {
+  field: string;
+  value: string;
+  interpretation: string;
+  interpretation_en: string;
+}
+
+export interface ExplSimilarCase {
+  deal_id: string;
+  customer: string;
+  outcome: "won" | "lost";
+  relevance: string;
+  relevance_en: string;
+  principle_ids: string[];
+  lesson: string;
+}
+
+export interface OutcomeStats {
+  total_similar: number;
+  won: number;
+  lost: number;
+  loss_rate: number;
+  conditions_desc: string;
+  conditions_desc_en: string;
+}
+
+export interface Explanation {
+  recommendation_id: string;
+  recommendation_text: string;
+  triggers: TriggerCondition[];
+  evidence: EvidenceItem[];
+  similar_cases: ExplSimilarCase[];
+  outcome_stats: OutcomeStats | null;
+  confidence: "high" | "medium" | "low";
+  principle_id: string | null;
+  principle_statement: string | null;
 }

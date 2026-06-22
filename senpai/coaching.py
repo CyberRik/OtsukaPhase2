@@ -22,6 +22,7 @@ from collections import Counter
 from datetime import date
 
 from senpai import config
+from senpai.coach.explainability import explain_coaching_issue
 from senpai.data import store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import _d, _has_decision_maker, score_deal
@@ -153,12 +154,20 @@ def coaching_workspace(today: date | None = None) -> dict:
         # Headline issue for the queue card: highest priority, then declared order.
         if issues:
             top = min(issues, key=lambda i: (_PRIORITY_RANK[ISSUE_PRIORITY[i["issue"]]], _ORDER.index(i["issue"])))
+            explanation = explain_coaching_issue(
+                issue_key=top["issue"],
+                params=top["params"],
+                deal=deal,
+                activities=acts,
+                today=today,
+            )
             cards.append({
                 "deal_id": deal["deal_id"], "rep": rep,
                 "employee_id": store.deal_rep_id(deal), "customer": customer,
                 "issue": top["issue"], "priority": ISSUE_PRIORITY[top["issue"]],
                 "params": top["params"], "band": res.band, "score": res.score,
                 "n_issues": len(issues),
+                "explanation": explanation.to_dict(),
             })
 
         confvr.append(_confidence_vs_reality(deal, acts, res, today, rep, customer))

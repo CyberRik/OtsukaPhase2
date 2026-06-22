@@ -60,6 +60,7 @@ import { LiveBadge } from "@/components/site/live-badge";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import { SourceChips } from "@/components/source-chip";
 import { ProvenanceList } from "@/components/provenance";
+import { ExplainabilityPanel } from "@/components/coach/explainability-card";
 
 const ICONS: Record<string, LucideIcon> = {
   eye: Eye, search: Search, alert: AlertTriangle,
@@ -620,6 +621,11 @@ function CoachingCard({
           </div>
         )}
       </div>
+
+      {/* Explainability — Why did each recommendation fire? */}
+      {resp.explanations && resp.explanations.length > 0 && (
+        <ExplainabilityPanel explanations={resp.explanations} />
+      )}
 
       {/* Similar past cases — Pillar 2: Experience */}
       <SimilarCases note={note} principles={principles} />

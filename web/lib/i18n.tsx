@@ -360,6 +360,21 @@ const ja: Dict = {
   "coaching.sum.improving": "件が改善傾向",
   "coaching.workspaceEmpty": "いま対応が必要な案件はありません。",
 
+  // coaching explainability
+  "expl.why": "なぜこの推奨が出たか",
+  "expl.triggers": "トリガー条件",
+  "expl.evidence": "裏付けデータ",
+  "expl.cases": "類似の過去事例",
+  "expl.outcomes": "実績からの統計",
+  "expl.confidence": "確度",
+  "expl.principle": "基づく原則",
+  "expl.insufficient": "信頼できる統計に必要なデータが不足しています",
+  "expl.lossRate": "{rate}% が失注",
+  "expl.wonCount": "{n}件 受注",
+  "expl.lostCount": "{n}件 失注",
+  "expl.totalDeals": "{n}件の類似案件",
+  "expl.conditions": "条件",
+
   // reliability
   "reliability.title": "日報の信頼性",
   "reliability.lead": "書かれた状況が実際の信号と矛盾している案件を抽出します。健全度が赤なのに「見込み高」など、注意すべきズレを可視化します。",
@@ -714,6 +729,21 @@ const en: Dict = {
   "coaching.sum.topIssue": "Most common issue",
   "coaching.sum.improving": "opportunities trending up",
   "coaching.workspaceEmpty": "Nothing needs attention right now.",
+
+  // coaching explainability
+  "expl.why": "Why this recommendation?",
+  "expl.triggers": "Trigger conditions",
+  "expl.evidence": "Supporting evidence",
+  "expl.cases": "Similar historical cases",
+  "expl.outcomes": "Observed outcomes",
+  "expl.confidence": "Confidence",
+  "expl.principle": "Based on principle",
+  "expl.insufficient": "Insufficient data for reliable statistics",
+  "expl.lossRate": "{rate}% lost",
+  "expl.wonCount": "{n} won",
+  "expl.lostCount": "{n} lost",
+  "expl.totalDeals": "{n} similar deals",
+  "expl.conditions": "Conditions",
 
   "reliability.title": "Report Reliability",
   "reliability.lead": "Surfaces deals whose written status contradicts the actual signals — health is red but the rep says 'high likelihood', and other gaps worth a look.",

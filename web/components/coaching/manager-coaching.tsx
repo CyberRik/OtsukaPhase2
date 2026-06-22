@@ -21,6 +21,7 @@ import type {
 import { useT } from "@/lib/i18n";
 import { repText, customerText } from "@/lib/content-i18n";
 import { cn } from "@/lib/utils";
+import { ExplainabilityChip } from "@/components/coach/explainability-card";
 
 const PRIORITY_TONE: Record<string, string> = {
   high: "bg-band-red/10 text-band-red border-band-red/30",
@@ -92,6 +93,11 @@ function NeedsCard({ c }: { c: CoachingCardItem }) {
       <p className="mt-2 text-[12.5px] leading-relaxed text-foreground/75">
         {t(`coaching.reason.${c.issue}`, c.params)}
       </p>
+      {c.explanation && (
+        <div className="mt-2.5">
+          <ExplainabilityChip explanation={c.explanation} />
+        </div>
+      )}
     </div>
   );
 }

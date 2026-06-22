@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from senpai import config
+from senpai.coach.explainability import build_review_explanations
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
 
@@ -57,6 +58,7 @@ class CoachReview:
     next_actions: list[str] = field(default_factory=list)
     decision_factors: list[str] = field(default_factory=list)
     used_deal: bool = False
+    explanations: list = field(default_factory=list)  # list[Explanation]
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +148,7 @@ def review_note(note: str, deal: dict | None = None,
     today = today or config.today()
     r = CoachReview(used_deal=deal is not None)
     fired_tags: list[str] = []
+    fired_lenses: list[dict] = []   # structured lens data for explainability
 
     # --- absence lenses: the senior's checklist of unasked questions ---------
     for lens in LENSES:
@@ -156,6 +159,10 @@ def review_note(note: str, deal: dict | None = None,
             r.risks.append(lens.risk)
             r.decision_factors.append(lens.factor)
             fired_tags.extend(lens.tags)
+            fired_lenses.append({
+                "name": lens.name, "cues": lens.cues,
+                "tags": lens.tags, "observation": lens.observation,
+            })
 
     # --- presence detectors -------------------------------------------------
     stall_hit = next((w for w in config.STALL_LEXICON if w in text), None)
@@ -172,12 +179,16 @@ def review_note(note: str, deal: dict | None = None,
         fired_tags.append("競合")
 
     # --- fuse structured signals when a real deal is supplied ---------------
+    fired_signals = []
+    fired_flags = []
     if deal is not None:
         res = score_deal(deal, notes or [], today=today)
+        fired_signals = list(res.signals)
         for reason in res.top_reasons(3):
             r.observations.append(f"案件データ上のサイン: {reason}")
             r.risks.append(reason)
-        for fl in deal_flags(deal, notes or [], res.band, today=today):
+        fired_flags = deal_flags(deal, notes or [], res.band, today=today)
+        for fl in fired_flags:
             r.missing_info.append(fl.message)
         r.decision_factors.append(f"現在の段階: {deal.get('stage', '-')}(健全度 {res.band})")
 
@@ -191,6 +202,20 @@ def review_note(note: str, deal: dict | None = None,
     for fld in ("observations", "missing_info", "risks", "questions",
                 "next_actions", "decision_factors"):
         setattr(r, fld, _dedup(getattr(r, fld)))
+
+    # --- build explanations -------------------------------------------------
+    r.explanations = build_review_explanations(
+        note=text,
+        fired_lenses=fired_lenses,
+        fired_signals=fired_signals,
+        fired_flags=fired_flags,
+        stall_hit=stall_hit,
+        comp_hit=comp_hit,
+        deal=deal,
+        activities=notes,
+        today=today,
+    )
+
     return r
 
 

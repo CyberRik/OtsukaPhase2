@@ -344,6 +344,7 @@ def coach_review(req: CoachRequest):
             },
             "narration": ans,
             "llm_model": "deterministic-matsuda",
+            "explanations": [],
         }
 
     deal = store.get_deal(req.deal_id) if req.deal_id else None
@@ -376,6 +377,7 @@ def coach_review(req: CoachRequest):
             "match_method": ctx_meta.get("match_method", "none"),
             "grounded": ctx_meta.get("has_customer_context", False),
         },
+        "explanations": [e.to_dict() for e in r.explanations],
     }
 
 
