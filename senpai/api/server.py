@@ -308,6 +308,7 @@ class CoachRequest(BaseModel):
     deal_id: str | None = None
     narrate: bool = False
     lang: str = "ja"  # narration output language ("ja" | "en") — presentation only
+    conversation_id: str | None = None  # reuse a built context across re-narrates
 
 class TranslateRequest(BaseModel):
     text: str
@@ -452,11 +453,25 @@ def coach_narrate(req: CoachRequest):
             media_type="text/event-stream",
         )
 
-    deal = store.get_deal(req.deal_id) if req.deal_id else None
-    acts = store.activities_for_deal(req.deal_id) if deal else None
-    r = review_note(req.note, deal=deal, notes=acts, report=None)
-    context_text, ctx_meta = build_commentary_context(
-        req.note, deal_id=req.deal_id, today=_today(), lang=req.lang)
+    # Conversation cache: re-narrating the SAME deal+note in a session reuses the
+    # already-built deterministic context package (review_note + commentary context)
+    # instead of recomputing it. The build is cheap, but caching keeps the grounded
+    # context byte-identical across re-narrates and signals provenance to the UI.
+    conversation_id = (req.conversation_id or "default").strip() or "default"
+    cache = _COACH_CONTEXTS.get(conversation_id)
+    cached_flag = bool(cache and cache["deal_id"] == req.deal_id and cache["note"] == req.note
+                       and cache["lang"] == req.lang)
+    if cached_flag:
+        r, context_text, ctx_meta = cache["r"], cache["context_text"], cache["meta"]
+    else:
+        deal = store.get_deal(req.deal_id) if req.deal_id else None
+        acts = store.activities_for_deal(req.deal_id) if deal else None
+        r = review_note(req.note, deal=deal, notes=acts, report=None)
+        context_text, ctx_meta = build_commentary_context(
+            req.note, deal_id=req.deal_id, today=_today(), lang=req.lang)
+        _COACH_CONTEXTS[conversation_id] = {
+            "deal_id": req.deal_id, "note": req.note, "lang": req.lang,
+            "r": r, "context_text": context_text, "meta": ctx_meta}
     prompt = commentary_prompt(req.note, r, context_text,
                                ctx_meta["has_customer_context"], lang=req.lang,
                                customer_name=ctx_meta.get("customer"),
@@ -465,12 +480,13 @@ def coach_narrate(req: CoachRequest):
     def gen():
         from senpai.llm import client
         yield _sse({"type": "start", "model": config.MODEL,
-                    "endpoint": config.BASE_URL})
+                    "endpoint": config.BASE_URL, "conversation_id": conversation_id})
         # Tell the UI what real records the read is grounded in (or that none matched).
         yield _sse({"type": "context", "grounded": ctx_meta["has_customer_context"],
                     "customer": ctx_meta["customer"], "deal_id": ctx_meta["deal_id"],
                     "confidence": ctx_meta.get("confidence", "none"),
-                    "match_method": ctx_meta.get("match_method", "none")})
+                    "match_method": ctx_meta.get("match_method", "none"),
+                    "cached": cached_flag})
         full, emitted, last_think = "", 0, 0
         try:
             for piece in client.stream_complete(
@@ -626,10 +642,18 @@ _RESEARCH_PREFIXES = [
 ]
 
 _RESEARCH_CONTEXTS: dict[str, ResearchBundle] = {}
+# Conversation caches (mirror _RESEARCH_CONTEXTS) so a multi-turn session keeps its
+# context across turns: the Assistant remembers the account in focus; Review Coach
+# reuses the built commentary-context package for the same deal instead of rebuilding.
+_CHAT_CONTEXTS: dict[str, dict] = {}        # conversation_id -> {customer_id, customer, deal_id}
+_COACH_CONTEXTS: dict[str, dict] = {}       # conversation_id -> {deal_id, note, r, context_text, meta}
 _DEAL_ID_RE = re.compile(r"\bD\d{3}\b", flags=re.IGNORECASE)
 _FOLLOWUP_RE = re.compile(
     r"^\s*(what|who|when|why|how|which|are|is|do|does|should)\b|"
-    r"\b(risk|risks|decision maker|last meeting|products?|next|happened|activity|activities)\b",
+    r"\b(risk|risks|decision maker|last meeting|products?|next|happened|activity|activities)\b|"
+    # Japanese continuation/question cues (no word boundaries in Japanese): follow-ups
+    # about the account already in focus — 次/何をすべき/リスク/直近/決裁 etc.
+    r"(次|今後|何を|どう|なぜ|いつ|誰|リスク|決裁|直近|前回|製品|案件|べき|他には|では)",
     flags=re.IGNORECASE,
 )
 
@@ -1108,7 +1132,36 @@ def chat(req: ChatRequest):
 
     tools, system_fn = _CHAT_ROLES.get(req.role, _CHAT_ROLES["junior"])
 
-    convo: list[dict] = [{"role": "system", "content": system_fn()}]
+    # Conversation context cache: remember the account in focus so follow-ups that
+    # don't re-name the customer ("what should I do next?", "what happened recently
+    # with this account?") stay scoped to the same customer. This also drives the
+    # Phase-1 account-scoped retrieval: the cached customer is injected into the
+    # system prompt so the model passes it to search_notes.
+    conversation_id = (req.conversation_id or "default").strip() or "default"
+    cached_ctx = _CHAT_CONTEXTS.get(conversation_id)
+    cust = store.match_customer_in_text(req.message)
+    msg_deal = _deal_id_in_text(req.message)
+    active: dict | None = None
+    cached_flag = False
+    if cust:
+        active = {"customer_id": cust["customer_id"], "customer": cust.get("name"),
+                  "deal_id": msg_deal or (cached_ctx or {}).get("deal_id")}
+    elif msg_deal and (d := store.get_deal(msg_deal)):
+        active = {"customer_id": d["customer_id"],
+                  "customer": store.customer_name(d["customer_id"]), "deal_id": msg_deal}
+    elif cached_ctx and _is_followup(req.message, True):
+        active, cached_flag = cached_ctx, True
+    if active and active.get("customer_id"):
+        _CHAT_CONTEXTS[conversation_id] = active
+
+    system = system_fn()
+    if active and active.get("customer"):
+        focus = active["customer"] + (f"（案件 {active['deal_id']}）" if active.get("deal_id") else "")
+        system += (f"\n\n【現在の対象顧客】{focus}。アカウント固有の質問では、"
+                   f"search_notes に customer='{active['customer']}' を渡し、この顧客の"
+                   f"記録に限定して回答すること。")
+
+    convo: list[dict] = [{"role": "system", "content": system}]
     for m in req.history:
         if m.role in ("user", "assistant") and m.content:
             convo.append({"role": m.role, "content": m.content})
@@ -1117,7 +1170,13 @@ def chat(req: ChatRequest):
     def gen():
         from senpai.llm.client import stream_chat_turn  # lazy: keep import light
         yield _sse({"type": "start", "model": config.MODEL,
-                    "endpoint": config.BASE_URL, "role": req.role})
+                    "endpoint": config.BASE_URL, "role": req.role,
+                    "conversation_id": conversation_id})
+        if active:
+            yield _sse({"type": "context", "status": "active",
+                        "conversation_id": conversation_id,
+                        "customer": active.get("customer"),
+                        "deal_id": active.get("deal_id"), "cached": cached_flag})
         try:
             for ev in stream_chat_turn(convo, tools=tools):
                 yield _sse(ev)

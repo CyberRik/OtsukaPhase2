@@ -95,7 +95,7 @@ export const api = {
 export type NarrateEvent =
   | { type: "start"; model?: string; endpoint?: string }
   | { type: "thinking"; chars: number }
-  | { type: "context"; grounded: boolean; customer?: string | null; deal_id?: string | null }
+  | { type: "context"; grounded: boolean; customer?: string | null; deal_id?: string | null; cached?: boolean }
   | { type: "delta"; text: string }
   | { type: "done"; model?: string }
   | { type: "fallback" }
@@ -111,14 +111,15 @@ export async function narrateStream(
   note: string,
   deal_id: string | undefined,
   onEvent: (e: NarrateEvent) => void,
-  opts?: { lang?: "ja" | "en"; signal?: AbortSignal },
+  opts?: { lang?: "ja" | "en"; signal?: AbortSignal; conversationId?: string },
 ): Promise<void> {
   let res: Response;
   try {
     res = await fetch(`${BASE}/api/coach/narrate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note, deal_id, narrate: true, lang: opts?.lang ?? "ja" }),
+      body: JSON.stringify({ note, deal_id, narrate: true, lang: opts?.lang ?? "ja",
+                             conversation_id: opts?.conversationId }),
       cache: "no-store",
       signal: opts?.signal,
     });

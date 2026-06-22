@@ -386,6 +386,12 @@ function CoachingCard({
   // "supporting evidence" panel, hidden by default.
   const [showEvidence, setShowEvidence] = useState(false);
   
+  // One conversation id per coaching card, so re-narrating (e.g. fetching the JA
+  // original) reuses the already-built deterministic context instead of rebuilding.
+  const convIdRef = useRef<string>(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID() : `coach-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+
   const rel = relevantPrinciples(note, principles);
   const tipMap = buildTipMap(items);
 
@@ -425,7 +431,7 @@ function CoachingCard({
           break;
         // fallback | unavailable | error → acc stays empty → fallback message
       }
-    }, { lang });
+    }, { lang, conversationId: convIdRef.current });
     setThinking(false);
     setNarrTried(true);
     setNarrating(false);
@@ -441,7 +447,7 @@ function CoachingCard({
     let acc = "";
     await narrateStream(note, dealId, (e) => {
       if (e.type === "delta") { acc += e.text; setNarrJa(acc); }
-    }, { lang: "ja" });
+    }, { lang: "ja", conversationId: convIdRef.current });
     setNarrJaLoading(false);
     if (!acc) setNarrJa(null);
   }
