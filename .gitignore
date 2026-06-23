@@ -227,3 +227,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Large training/raw datasets — exceed GitHub's 100 MB limit, not needed at runtime
+*.jsonl

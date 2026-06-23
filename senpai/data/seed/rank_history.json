@@ -1,0 +1,8062 @@
+[
+  {
+    "deal_id": "D001",
+    "rank": "3_A",
+    "changed_at": "2026-04-01"
+  },
+  {
+    "deal_id": "D001",
+    "rank": "3_A",
+    "changed_at": "2026-04-27"
+  },
+  {
+    "deal_id": "D002",
+    "rank": "2_A+",
+    "changed_at": "2026-03-08"
+  },
+  {
+    "deal_id": "D002",
+    "rank": "2_A+",
+    "changed_at": "2026-04-16"
+  },
+  {
+    "deal_id": "D003",
+    "rank": "3_A",
+    "changed_at": "2026-03-25"
+  },
+  {
+    "deal_id": "D003",
+    "rank": "3_A",
+    "changed_at": "2026-04-14"
+  },
+  {
+    "deal_id": "D004",
+    "rank": "3_A",
+    "changed_at": "2026-03-11"
+  },
+  {
+    "deal_id": "D004",
+    "rank": "3_A",
+    "changed_at": "2026-04-03"
+  },
+  {
+    "deal_id": "D005",
+    "rank": "2_A+",
+    "changed_at": "2026-05-22"
+  },
+  {
+    "deal_id": "D005",
+    "rank": "2_A+",
+    "changed_at": "2026-06-06"
+  },
+  {
+    "deal_id": "D006",
+    "rank": "3_A",
+    "changed_at": "2026-05-04"
+  },
+  {
+    "deal_id": "D006",
+    "rank": "3_A",
+    "changed_at": "2026-06-04"
+  },
+  {
+    "deal_id": "D007",
+    "rank": "4_B",
+    "changed_at": "2026-04-18"
+  },
+  {
+    "deal_id": "D007",
+    "rank": "4_B",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D008",
+    "rank": "5_C",
+    "changed_at": "2026-04-04"
+  },
+  {
+    "deal_id": "D008",
+    "rank": "5_C",
+    "changed_at": "2026-05-14"
+  },
+  {
+    "deal_id": "D009",
+    "rank": "6_P",
+    "changed_at": "2026-05-05"
+  },
+  {
+    "deal_id": "D009",
+    "rank": "6_P",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D010",
+    "rank": "2_A+",
+    "changed_at": "2026-05-02"
+  },
+  {
+    "deal_id": "D010",
+    "rank": "2_A+",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D011",
+    "rank": "4_B",
+    "changed_at": "2026-04-18"
+  },
+  {
+    "deal_id": "D011",
+    "rank": "4_B",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D012",
+    "rank": "4_B",
+    "changed_at": "2026-04-29"
+  },
+  {
+    "deal_id": "D012",
+    "rank": "4_B",
+    "changed_at": "2026-06-04"
+  },
+  {
+    "deal_id": "D013",
+    "rank": "4_B",
+    "changed_at": "2026-05-16"
+  },
+  {
+    "deal_id": "D013",
+    "rank": "4_B",
+    "changed_at": "2026-06-02"
+  },
+  {
+    "deal_id": "D014",
+    "rank": "4_B",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D014",
+    "rank": "4_B",
+    "changed_at": "2026-06-01"
+  },
+  {
+    "deal_id": "D015",
+    "rank": "3_A",
+    "changed_at": "2026-04-16"
+  },
+  {
+    "deal_id": "D015",
+    "rank": "6_P",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D016",
+    "rank": "2_A+",
+    "changed_at": "2026-04-25"
+  },
+  {
+    "deal_id": "D016",
+    "rank": "3_A",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D017",
+    "rank": "6_P",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D017",
+    "rank": "6_P",
+    "changed_at": "2026-05-24"
+  },
+  {
+    "deal_id": "D018",
+    "rank": "4_B",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D018",
+    "rank": "4_B",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D019",
+    "rank": "4_B",
+    "changed_at": "2026-04-04"
+  },
+  {
+    "deal_id": "D019",
+    "rank": "6_P",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D020",
+    "rank": "4_B",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D020",
+    "rank": "4_B",
+    "changed_at": "2026-05-31"
+  },
+  {
+    "deal_id": "D021",
+    "rank": "3_A",
+    "changed_at": "2026-05-26"
+  },
+  {
+    "deal_id": "D021",
+    "rank": "3_A",
+    "changed_at": "2026-06-11"
+  },
+  {
+    "deal_id": "D022",
+    "rank": "2_A+",
+    "changed_at": "2026-05-29"
+  },
+  {
+    "deal_id": "D022",
+    "rank": "5_C",
+    "changed_at": "2026-06-13"
+  },
+  {
+    "deal_id": "D023",
+    "rank": "6_P",
+    "changed_at": "2026-04-19"
+  },
+  {
+    "deal_id": "D023",
+    "rank": "6_P",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D024",
+    "rank": "2_A+",
+    "changed_at": "2026-04-29"
+  },
+  {
+    "deal_id": "D024",
+    "rank": "2_A+",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D025",
+    "rank": "2_A+",
+    "changed_at": "2026-04-13"
+  },
+  {
+    "deal_id": "D025",
+    "rank": "2_A+",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D026",
+    "rank": "2_A+",
+    "changed_at": "2026-04-21"
+  },
+  {
+    "deal_id": "D026",
+    "rank": "2_A+",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D027",
+    "rank": "3_A",
+    "changed_at": "2026-03-29"
+  },
+  {
+    "deal_id": "D027",
+    "rank": "3_A",
+    "changed_at": "2026-05-10"
+  },
+  {
+    "deal_id": "D028",
+    "rank": "6_P",
+    "changed_at": "2026-05-10"
+  },
+  {
+    "deal_id": "D028",
+    "rank": "6_P",
+    "changed_at": "2026-06-11"
+  },
+  {
+    "deal_id": "D029",
+    "rank": "5_C",
+    "changed_at": "2026-04-13"
+  },
+  {
+    "deal_id": "D029",
+    "rank": "5_C",
+    "changed_at": "2026-05-22"
+  },
+  {
+    "deal_id": "D030",
+    "rank": "6_P",
+    "changed_at": "2026-04-27"
+  },
+  {
+    "deal_id": "D030",
+    "rank": "6_P",
+    "changed_at": "2026-06-04"
+  },
+  {
+    "deal_id": "D031",
+    "rank": "2_A+",
+    "changed_at": "2026-05-24"
+  },
+  {
+    "deal_id": "D031",
+    "rank": "2_A+",
+    "changed_at": "2026-06-09"
+  },
+  {
+    "deal_id": "D032",
+    "rank": "3_A",
+    "changed_at": "2026-04-28"
+  },
+  {
+    "deal_id": "D032",
+    "rank": "3_A",
+    "changed_at": "2026-06-02"
+  },
+  {
+    "deal_id": "D033",
+    "rank": "4_B",
+    "changed_at": "2026-04-20"
+  },
+  {
+    "deal_id": "D033",
+    "rank": "4_B",
+    "changed_at": "2026-05-13"
+  },
+  {
+    "deal_id": "D034",
+    "rank": "3_A",
+    "changed_at": "2026-04-30"
+  },
+  {
+    "deal_id": "D034",
+    "rank": "5_C",
+    "changed_at": "2026-06-10"
+  },
+  {
+    "deal_id": "D035",
+    "rank": "2_A+",
+    "changed_at": "2026-05-21"
+  },
+  {
+    "deal_id": "D035",
+    "rank": "3_A",
+    "changed_at": "2026-06-11"
+  },
+  {
+    "deal_id": "D036",
+    "rank": "4_B",
+    "changed_at": "2026-05-11"
+  },
+  {
+    "deal_id": "D036",
+    "rank": "6_P",
+    "changed_at": "2026-06-14"
+  },
+  {
+    "deal_id": "D037",
+    "rank": "3_A",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D037",
+    "rank": "3_A",
+    "changed_at": "2026-05-31"
+  },
+  {
+    "deal_id": "D038",
+    "rank": "5_C",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D038",
+    "rank": "5_C",
+    "changed_at": "2026-06-03"
+  },
+  {
+    "deal_id": "D039",
+    "rank": "2_A+",
+    "changed_at": "2026-05-24"
+  },
+  {
+    "deal_id": "D039",
+    "rank": "2_A+",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D040",
+    "rank": "5_C",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D040",
+    "rank": "5_C",
+    "changed_at": "2026-06-11"
+  },
+  {
+    "deal_id": "D041",
+    "rank": "5_C",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D041",
+    "rank": "5_C",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D042",
+    "rank": "3_A",
+    "changed_at": "2026-05-05"
+  },
+  {
+    "deal_id": "D042",
+    "rank": "3_A",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D043",
+    "rank": "3_A",
+    "changed_at": "2026-05-04"
+  },
+  {
+    "deal_id": "D043",
+    "rank": "3_A",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D044",
+    "rank": "6_P",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D044",
+    "rank": "6_P",
+    "changed_at": "2026-05-28"
+  },
+  {
+    "deal_id": "D045",
+    "rank": "4_B",
+    "changed_at": "2026-05-26"
+  },
+  {
+    "deal_id": "D045",
+    "rank": "4_B",
+    "changed_at": "2026-06-10"
+  },
+  {
+    "deal_id": "D046",
+    "rank": "5_C",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D046",
+    "rank": "5_C",
+    "changed_at": "2026-06-08"
+  },
+  {
+    "deal_id": "D047",
+    "rank": "4_B",
+    "changed_at": "2026-05-14"
+  },
+  {
+    "deal_id": "D047",
+    "rank": "4_B",
+    "changed_at": "2026-05-29"
+  },
+  {
+    "deal_id": "D048",
+    "rank": "5_C",
+    "changed_at": "2026-04-23"
+  },
+  {
+    "deal_id": "D048",
+    "rank": "5_C",
+    "changed_at": "2026-06-01"
+  },
+  {
+    "deal_id": "D049",
+    "rank": "4_B",
+    "changed_at": "2026-04-14"
+  },
+  {
+    "deal_id": "D049",
+    "rank": "4_B",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D050",
+    "rank": "5_C",
+    "changed_at": "2026-04-24"
+  },
+  {
+    "deal_id": "D050",
+    "rank": "5_C",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D051",
+    "rank": "2_A+",
+    "changed_at": "2026-04-13"
+  },
+  {
+    "deal_id": "D051",
+    "rank": "4_B",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D052",
+    "rank": "6_P",
+    "changed_at": "2026-05-06"
+  },
+  {
+    "deal_id": "D052",
+    "rank": "6_P",
+    "changed_at": "2026-06-06"
+  },
+  {
+    "deal_id": "D053",
+    "rank": "4_B",
+    "changed_at": "2026-05-16"
+  },
+  {
+    "deal_id": "D053",
+    "rank": "4_B",
+    "changed_at": "2026-06-14"
+  },
+  {
+    "deal_id": "D054",
+    "rank": "2_A+",
+    "changed_at": "2026-05-03"
+  },
+  {
+    "deal_id": "D054",
+    "rank": "2_A+",
+    "changed_at": "2026-05-16"
+  },
+  {
+    "deal_id": "D055",
+    "rank": "3_A",
+    "changed_at": "2026-04-27"
+  },
+  {
+    "deal_id": "D055",
+    "rank": "5_C",
+    "changed_at": "2026-06-06"
+  },
+  {
+    "deal_id": "D056",
+    "rank": "3_A",
+    "changed_at": "2026-05-03"
+  },
+  {
+    "deal_id": "D056",
+    "rank": "5_C",
+    "changed_at": "2026-05-14"
+  },
+  {
+    "deal_id": "D057",
+    "rank": "5_C",
+    "changed_at": "2026-04-12"
+  },
+  {
+    "deal_id": "D057",
+    "rank": "5_C",
+    "changed_at": "2026-05-27"
+  },
+  {
+    "deal_id": "D058",
+    "rank": "3_A",
+    "changed_at": "2026-03-29"
+  },
+  {
+    "deal_id": "D058",
+    "rank": "6_P",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D059",
+    "rank": "5_C",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D059",
+    "rank": "5_C",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D060",
+    "rank": "6_P",
+    "changed_at": "2026-04-23"
+  },
+  {
+    "deal_id": "D060",
+    "rank": "6_P",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D061",
+    "rank": "5_C",
+    "changed_at": "2026-04-12"
+  },
+  {
+    "deal_id": "D061",
+    "rank": "5_C",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D062",
+    "rank": "5_C",
+    "changed_at": "2026-05-04"
+  },
+  {
+    "deal_id": "D062",
+    "rank": "5_C",
+    "changed_at": "2026-06-07"
+  },
+  {
+    "deal_id": "D063",
+    "rank": "5_C",
+    "changed_at": "2026-04-18"
+  },
+  {
+    "deal_id": "D063",
+    "rank": "5_C",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D064",
+    "rank": "5_C",
+    "changed_at": "2026-05-12"
+  },
+  {
+    "deal_id": "D064",
+    "rank": "5_C",
+    "changed_at": "2026-05-22"
+  },
+  {
+    "deal_id": "D065",
+    "rank": "3_A",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D065",
+    "rank": "3_A",
+    "changed_at": "2026-06-10"
+  },
+  {
+    "deal_id": "D066",
+    "rank": "4_B",
+    "changed_at": "2026-05-02"
+  },
+  {
+    "deal_id": "D066",
+    "rank": "6_P",
+    "changed_at": "2026-06-13"
+  },
+  {
+    "deal_id": "D067",
+    "rank": "2_A+",
+    "changed_at": "2026-05-13"
+  },
+  {
+    "deal_id": "D067",
+    "rank": "3_A",
+    "changed_at": "2026-06-12"
+  },
+  {
+    "deal_id": "D068",
+    "rank": "5_C",
+    "changed_at": "2026-04-19"
+  },
+  {
+    "deal_id": "D068",
+    "rank": "5_C",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D069",
+    "rank": "5_C",
+    "changed_at": "2026-05-28"
+  },
+  {
+    "deal_id": "D069",
+    "rank": "5_C",
+    "changed_at": "2026-06-08"
+  },
+  {
+    "deal_id": "D070",
+    "rank": "5_C",
+    "changed_at": "2026-04-19"
+  },
+  {
+    "deal_id": "D070",
+    "rank": "5_C",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D071",
+    "rank": "2_A+",
+    "changed_at": "2026-04-07"
+  },
+  {
+    "deal_id": "D071",
+    "rank": "4_B",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D072",
+    "rank": "4_B",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D072",
+    "rank": "4_B",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D073",
+    "rank": "2_A+",
+    "changed_at": "2026-04-10"
+  },
+  {
+    "deal_id": "D073",
+    "rank": "2_A+",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D074",
+    "rank": "4_B",
+    "changed_at": "2026-04-23"
+  },
+  {
+    "deal_id": "D074",
+    "rank": "4_B",
+    "changed_at": "2026-05-28"
+  },
+  {
+    "deal_id": "D075",
+    "rank": "5_C",
+    "changed_at": "2026-04-26"
+  },
+  {
+    "deal_id": "D075",
+    "rank": "5_C",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D076",
+    "rank": "2_A+",
+    "changed_at": "2026-05-06"
+  },
+  {
+    "deal_id": "D076",
+    "rank": "4_B",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D077",
+    "rank": "2_A+",
+    "changed_at": "2026-04-22"
+  },
+  {
+    "deal_id": "D077",
+    "rank": "2_A+",
+    "changed_at": "2026-05-21"
+  },
+  {
+    "deal_id": "D078",
+    "rank": "3_A",
+    "changed_at": "2026-05-04"
+  },
+  {
+    "deal_id": "D078",
+    "rank": "4_B",
+    "changed_at": "2026-06-14"
+  },
+  {
+    "deal_id": "D079",
+    "rank": "5_C",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D079",
+    "rank": "5_C",
+    "changed_at": "2026-06-02"
+  },
+  {
+    "deal_id": "D080",
+    "rank": "4_B",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D080",
+    "rank": "4_B",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D081",
+    "rank": "4_B",
+    "changed_at": "2026-05-11"
+  },
+  {
+    "deal_id": "D081",
+    "rank": "4_B",
+    "changed_at": "2026-05-24"
+  },
+  {
+    "deal_id": "D082",
+    "rank": "3_A",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D082",
+    "rank": "3_A",
+    "changed_at": "2026-05-29"
+  },
+  {
+    "deal_id": "D083",
+    "rank": "6_P",
+    "changed_at": "2026-04-16"
+  },
+  {
+    "deal_id": "D083",
+    "rank": "6_P",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D084",
+    "rank": "3_A",
+    "changed_at": "2026-04-16"
+  },
+  {
+    "deal_id": "D084",
+    "rank": "3_A",
+    "changed_at": "2026-05-22"
+  },
+  {
+    "deal_id": "D085",
+    "rank": "4_B",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D085",
+    "rank": "4_B",
+    "changed_at": "2026-06-01"
+  },
+  {
+    "deal_id": "D086",
+    "rank": "3_A",
+    "changed_at": "2026-04-24"
+  },
+  {
+    "deal_id": "D086",
+    "rank": "3_A",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D087",
+    "rank": "2_A+",
+    "changed_at": "2026-04-07"
+  },
+  {
+    "deal_id": "D087",
+    "rank": "2_A+",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D088",
+    "rank": "2_A+",
+    "changed_at": "2026-04-14"
+  },
+  {
+    "deal_id": "D088",
+    "rank": "2_A+",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D089",
+    "rank": "3_A",
+    "changed_at": "2026-04-20"
+  },
+  {
+    "deal_id": "D089",
+    "rank": "5_C",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D090",
+    "rank": "5_C",
+    "changed_at": "2026-05-12"
+  },
+  {
+    "deal_id": "D090",
+    "rank": "5_C",
+    "changed_at": "2026-06-13"
+  },
+  {
+    "deal_id": "D091",
+    "rank": "4_B",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D091",
+    "rank": "6_P",
+    "changed_at": "2026-06-11"
+  },
+  {
+    "deal_id": "D092",
+    "rank": "5_C",
+    "changed_at": "2026-05-01"
+  },
+  {
+    "deal_id": "D092",
+    "rank": "5_C",
+    "changed_at": "2026-06-04"
+  },
+  {
+    "deal_id": "D093",
+    "rank": "2_A+",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D093",
+    "rank": "4_B",
+    "changed_at": "2026-06-01"
+  },
+  {
+    "deal_id": "D094",
+    "rank": "4_B",
+    "changed_at": "2026-04-27"
+  },
+  {
+    "deal_id": "D094",
+    "rank": "4_B",
+    "changed_at": "2026-05-12"
+  },
+  {
+    "deal_id": "D095",
+    "rank": "3_A",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D095",
+    "rank": "3_A",
+    "changed_at": "2026-06-13"
+  },
+  {
+    "deal_id": "D096",
+    "rank": "3_A",
+    "changed_at": "2026-05-21"
+  },
+  {
+    "deal_id": "D096",
+    "rank": "4_B",
+    "changed_at": "2026-06-12"
+  },
+  {
+    "deal_id": "D097",
+    "rank": "5_C",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D097",
+    "rank": "5_C",
+    "changed_at": "2026-05-24"
+  },
+  {
+    "deal_id": "D098",
+    "rank": "3_A",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D098",
+    "rank": "4_B",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D099",
+    "rank": "3_A",
+    "changed_at": "2026-05-05"
+  },
+  {
+    "deal_id": "D099",
+    "rank": "4_B",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D100",
+    "rank": "4_B",
+    "changed_at": "2026-05-01"
+  },
+  {
+    "deal_id": "D100",
+    "rank": "5_C",
+    "changed_at": "2026-06-08"
+  },
+  {
+    "deal_id": "D101",
+    "rank": "3_A",
+    "changed_at": "2026-04-08"
+  },
+  {
+    "deal_id": "D101",
+    "rank": "3_A",
+    "changed_at": "2026-05-13"
+  },
+  {
+    "deal_id": "D102",
+    "rank": "2_A+",
+    "changed_at": "2026-04-25"
+  },
+  {
+    "deal_id": "D102",
+    "rank": "2_A+",
+    "changed_at": "2026-06-03"
+  },
+  {
+    "deal_id": "D103",
+    "rank": "5_C",
+    "changed_at": "2026-04-29"
+  },
+  {
+    "deal_id": "D103",
+    "rank": "5_C",
+    "changed_at": "2026-05-27"
+  },
+  {
+    "deal_id": "D104",
+    "rank": "3_A",
+    "changed_at": "2026-04-08"
+  },
+  {
+    "deal_id": "D104",
+    "rank": "3_A",
+    "changed_at": "2026-05-14"
+  },
+  {
+    "deal_id": "D105",
+    "rank": "5_C",
+    "changed_at": "2026-05-04"
+  },
+  {
+    "deal_id": "D105",
+    "rank": "5_C",
+    "changed_at": "2026-06-03"
+  },
+  {
+    "deal_id": "D106",
+    "rank": "3_A",
+    "changed_at": "2026-05-02"
+  },
+  {
+    "deal_id": "D106",
+    "rank": "3_A",
+    "changed_at": "2026-05-16"
+  },
+  {
+    "deal_id": "D107",
+    "rank": "5_C",
+    "changed_at": "2026-04-13"
+  },
+  {
+    "deal_id": "D107",
+    "rank": "5_C",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D108",
+    "rank": "2_A+",
+    "changed_at": "2026-05-06"
+  },
+  {
+    "deal_id": "D108",
+    "rank": "3_A",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D109",
+    "rank": "2_A+",
+    "changed_at": "2026-03-26"
+  },
+  {
+    "deal_id": "D109",
+    "rank": "2_A+",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D110",
+    "rank": "4_B",
+    "changed_at": "2026-04-11"
+  },
+  {
+    "deal_id": "D110",
+    "rank": "4_B",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D111",
+    "rank": "2_A+",
+    "changed_at": "2026-05-30"
+  },
+  {
+    "deal_id": "D111",
+    "rank": "2_A+",
+    "changed_at": "2026-06-12"
+  },
+  {
+    "deal_id": "D112",
+    "rank": "6_P",
+    "changed_at": "2026-05-13"
+  },
+  {
+    "deal_id": "D112",
+    "rank": "6_P",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D113",
+    "rank": "6_P",
+    "changed_at": "2026-04-03"
+  },
+  {
+    "deal_id": "D113",
+    "rank": "6_P",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D114",
+    "rank": "2_A+",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D114",
+    "rank": "3_A",
+    "changed_at": "2026-06-09"
+  },
+  {
+    "deal_id": "D115",
+    "rank": "3_A",
+    "changed_at": "2026-05-19"
+  },
+  {
+    "deal_id": "D115",
+    "rank": "4_B",
+    "changed_at": "2026-06-10"
+  },
+  {
+    "deal_id": "D116",
+    "rank": "3_A",
+    "changed_at": "2026-04-21"
+  },
+  {
+    "deal_id": "D116",
+    "rank": "3_A",
+    "changed_at": "2026-06-04"
+  },
+  {
+    "deal_id": "D117",
+    "rank": "3_A",
+    "changed_at": "2026-04-16"
+  },
+  {
+    "deal_id": "D117",
+    "rank": "3_A",
+    "changed_at": "2026-05-17"
+  },
+  {
+    "deal_id": "D118",
+    "rank": "3_A",
+    "changed_at": "2026-04-12"
+  },
+  {
+    "deal_id": "D118",
+    "rank": "3_A",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D119",
+    "rank": "2_A+",
+    "changed_at": "2026-04-21"
+  },
+  {
+    "deal_id": "D119",
+    "rank": "2_A+",
+    "changed_at": "2026-05-27"
+  },
+  {
+    "deal_id": "D120",
+    "rank": "3_A",
+    "changed_at": "2026-04-21"
+  },
+  {
+    "deal_id": "D120",
+    "rank": "3_A",
+    "changed_at": "2026-05-13"
+  },
+  {
+    "deal_id": "D121",
+    "rank": "2_A+",
+    "changed_at": "2026-03-29"
+  },
+  {
+    "deal_id": "D121",
+    "rank": "6_P",
+    "changed_at": "2026-05-12"
+  },
+  {
+    "deal_id": "D122",
+    "rank": "2_A+",
+    "changed_at": "2026-05-12"
+  },
+  {
+    "deal_id": "D122",
+    "rank": "2_A+",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D123",
+    "rank": "4_B",
+    "changed_at": "2026-04-24"
+  },
+  {
+    "deal_id": "D123",
+    "rank": "4_B",
+    "changed_at": "2026-05-22"
+  },
+  {
+    "deal_id": "D124",
+    "rank": "4_B",
+    "changed_at": "2026-04-11"
+  },
+  {
+    "deal_id": "D124",
+    "rank": "4_B",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D125",
+    "rank": "4_B",
+    "changed_at": "2026-05-06"
+  },
+  {
+    "deal_id": "D125",
+    "rank": "4_B",
+    "changed_at": "2026-05-26"
+  },
+  {
+    "deal_id": "D126",
+    "rank": "2_A+",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D126",
+    "rank": "2_A+",
+    "changed_at": "2026-05-26"
+  },
+  {
+    "deal_id": "D127",
+    "rank": "6_P",
+    "changed_at": "2026-04-07"
+  },
+  {
+    "deal_id": "D127",
+    "rank": "6_P",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D128",
+    "rank": "5_C",
+    "changed_at": "2026-04-25"
+  },
+  {
+    "deal_id": "D128",
+    "rank": "5_C",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D129",
+    "rank": "2_A+",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D129",
+    "rank": "2_A+",
+    "changed_at": "2026-05-22"
+  },
+  {
+    "deal_id": "D130",
+    "rank": "2_A+",
+    "changed_at": "2026-04-08"
+  },
+  {
+    "deal_id": "D130",
+    "rank": "4_B",
+    "changed_at": "2026-05-18"
+  },
+  {
+    "deal_id": "D131",
+    "rank": "3_A",
+    "changed_at": "2026-04-04"
+  },
+  {
+    "deal_id": "D131",
+    "rank": "6_P",
+    "changed_at": "2026-05-14"
+  },
+  {
+    "deal_id": "D132",
+    "rank": "5_C",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D132",
+    "rank": "5_C",
+    "changed_at": "2026-05-09"
+  },
+  {
+    "deal_id": "D133",
+    "rank": "2_A+",
+    "changed_at": "2026-05-25"
+  },
+  {
+    "deal_id": "D133",
+    "rank": "4_B",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D134",
+    "rank": "3_A",
+    "changed_at": "2026-05-10"
+  },
+  {
+    "deal_id": "D134",
+    "rank": "3_A",
+    "changed_at": "2026-06-05"
+  },
+  {
+    "deal_id": "D135",
+    "rank": "3_A",
+    "changed_at": "2026-03-30"
+  },
+  {
+    "deal_id": "D135",
+    "rank": "3_A",
+    "changed_at": "2026-05-10"
+  },
+  {
+    "deal_id": "D136",
+    "rank": "4_B",
+    "changed_at": "2026-04-06"
+  },
+  {
+    "deal_id": "D136",
+    "rank": "4_B",
+    "changed_at": "2026-05-15"
+  },
+  {
+    "deal_id": "D137",
+    "rank": "3_A",
+    "changed_at": "2026-05-08"
+  },
+  {
+    "deal_id": "D137",
+    "rank": "4_B",
+    "changed_at": "2026-05-27"
+  },
+  {
+    "deal_id": "D138",
+    "rank": "6_P",
+    "changed_at": "2026-04-27"
+  },
+  {
+    "deal_id": "D138",
+    "rank": "6_P",
+    "changed_at": "2026-06-08"
+  },
+  {
+    "deal_id": "D139",
+    "rank": "4_B",
+    "changed_at": "2026-04-21"
+  },
+  {
+    "deal_id": "D139",
+    "rank": "4_B",
+    "changed_at": "2026-05-20"
+  },
+  {
+    "deal_id": "D140",
+    "rank": "4_B",
+    "changed_at": "2026-05-11"
+  },
+  {
+    "deal_id": "D140",
+    "rank": "4_B",
+    "changed_at": "2026-06-11"
+  },
+  {
+    "deal_id": "D141",
+    "rank": "5_C",
+    "changed_at": "2024-12-06"
+  },
+  {
+    "deal_id": "D141",
+    "rank": "4_B",
+    "changed_at": "2025-01-03"
+  },
+  {
+    "deal_id": "D141",
+    "rank": "3_A",
+    "changed_at": "2025-01-30"
+  },
+  {
+    "deal_id": "D141",
+    "rank": "2_A+",
+    "changed_at": "2025-02-27"
+  },
+  {
+    "deal_id": "D141",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-27"
+  },
+  {
+    "deal_id": "D142",
+    "rank": "3_A",
+    "changed_at": "2025-12-27"
+  },
+  {
+    "deal_id": "D142",
+    "rank": "2_A+",
+    "changed_at": "2026-01-15"
+  },
+  {
+    "deal_id": "D142",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-03"
+  },
+  {
+    "deal_id": "D143",
+    "rank": "4_B",
+    "changed_at": "2025-01-17"
+  },
+  {
+    "deal_id": "D143",
+    "rank": "3_A",
+    "changed_at": "2025-02-10"
+  },
+  {
+    "deal_id": "D143",
+    "rank": "2_A+",
+    "changed_at": "2025-03-05"
+  },
+  {
+    "deal_id": "D143",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-29"
+  },
+  {
+    "deal_id": "D144",
+    "rank": "4_B",
+    "changed_at": "2024-04-04"
+  },
+  {
+    "deal_id": "D144",
+    "rank": "3_A",
+    "changed_at": "2024-04-27"
+  },
+  {
+    "deal_id": "D144",
+    "rank": "2_A+",
+    "changed_at": "2024-05-20"
+  },
+  {
+    "deal_id": "D144",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-12"
+  },
+  {
+    "deal_id": "D145",
+    "rank": "3_A",
+    "changed_at": "2024-07-01"
+  },
+  {
+    "deal_id": "D145",
+    "rank": "2_A+",
+    "changed_at": "2024-08-28"
+  },
+  {
+    "deal_id": "D145",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-25"
+  },
+  {
+    "deal_id": "D146",
+    "rank": "4_B",
+    "changed_at": "2025-09-22"
+  },
+  {
+    "deal_id": "D146",
+    "rank": "3_A",
+    "changed_at": "2025-10-30"
+  },
+  {
+    "deal_id": "D146",
+    "rank": "2_A+",
+    "changed_at": "2025-12-08"
+  },
+  {
+    "deal_id": "D146",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-15"
+  },
+  {
+    "deal_id": "D147",
+    "rank": "5_C",
+    "changed_at": "2026-01-24"
+  },
+  {
+    "deal_id": "D147",
+    "rank": "4_B",
+    "changed_at": "2026-02-12"
+  },
+  {
+    "deal_id": "D147",
+    "rank": "3_A",
+    "changed_at": "2026-03-04"
+  },
+  {
+    "deal_id": "D147",
+    "rank": "2_A+",
+    "changed_at": "2026-03-24"
+  },
+  {
+    "deal_id": "D147",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-12"
+  },
+  {
+    "deal_id": "D148",
+    "rank": "3_A",
+    "changed_at": "2025-05-26"
+  },
+  {
+    "deal_id": "D148",
+    "rank": "2_A+",
+    "changed_at": "2025-07-23"
+  },
+  {
+    "deal_id": "D148",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D149",
+    "rank": "3_A",
+    "changed_at": "2024-10-10"
+  },
+  {
+    "deal_id": "D149",
+    "rank": "2_A+",
+    "changed_at": "2024-11-24"
+  },
+  {
+    "deal_id": "D149",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-08"
+  },
+  {
+    "deal_id": "D150",
+    "rank": "4_B",
+    "changed_at": "2024-09-05"
+  },
+  {
+    "deal_id": "D150",
+    "rank": "3_A",
+    "changed_at": "2024-10-01"
+  },
+  {
+    "deal_id": "D150",
+    "rank": "2_A+",
+    "changed_at": "2024-10-28"
+  },
+  {
+    "deal_id": "D150",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D151",
+    "rank": "4_B",
+    "changed_at": "2024-08-22"
+  },
+  {
+    "deal_id": "D151",
+    "rank": "3_A",
+    "changed_at": "2024-10-03"
+  },
+  {
+    "deal_id": "D151",
+    "rank": "2_A+",
+    "changed_at": "2024-11-15"
+  },
+  {
+    "deal_id": "D151",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-27"
+  },
+  {
+    "deal_id": "D152",
+    "rank": "5_C",
+    "changed_at": "2026-01-05"
+  },
+  {
+    "deal_id": "D152",
+    "rank": "4_B",
+    "changed_at": "2026-02-04"
+  },
+  {
+    "deal_id": "D152",
+    "rank": "3_A",
+    "changed_at": "2026-03-07"
+  },
+  {
+    "deal_id": "D152",
+    "rank": "2_A+",
+    "changed_at": "2026-04-07"
+  },
+  {
+    "deal_id": "D152",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D153",
+    "rank": "4_B",
+    "changed_at": "2025-05-30"
+  },
+  {
+    "deal_id": "D153",
+    "rank": "3_A",
+    "changed_at": "2025-07-01"
+  },
+  {
+    "deal_id": "D153",
+    "rank": "2_A+",
+    "changed_at": "2025-08-03"
+  },
+  {
+    "deal_id": "D153",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-04"
+  },
+  {
+    "deal_id": "D154",
+    "rank": "4_B",
+    "changed_at": "2026-01-20"
+  },
+  {
+    "deal_id": "D154",
+    "rank": "3_A",
+    "changed_at": "2026-01-29"
+  },
+  {
+    "deal_id": "D154",
+    "rank": "2_A+",
+    "changed_at": "2026-02-08"
+  },
+  {
+    "deal_id": "D154",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-17"
+  },
+  {
+    "deal_id": "D155",
+    "rank": "3_A",
+    "changed_at": "2025-12-16"
+  },
+  {
+    "deal_id": "D155",
+    "rank": "2_A+",
+    "changed_at": "2026-01-01"
+  },
+  {
+    "deal_id": "D155",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-17"
+  },
+  {
+    "deal_id": "D156",
+    "rank": "4_B",
+    "changed_at": "2025-09-23"
+  },
+  {
+    "deal_id": "D156",
+    "rank": "3_A",
+    "changed_at": "2025-10-12"
+  },
+  {
+    "deal_id": "D156",
+    "rank": "2_A+",
+    "changed_at": "2025-10-30"
+  },
+  {
+    "deal_id": "D156",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-18"
+  },
+  {
+    "deal_id": "D157",
+    "rank": "4_B",
+    "changed_at": "2025-03-15"
+  },
+  {
+    "deal_id": "D157",
+    "rank": "3_A",
+    "changed_at": "2025-04-17"
+  },
+  {
+    "deal_id": "D157",
+    "rank": "2_A+",
+    "changed_at": "2025-05-20"
+  },
+  {
+    "deal_id": "D157",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-22"
+  },
+  {
+    "deal_id": "D158",
+    "rank": "4_B",
+    "changed_at": "2024-09-11"
+  },
+  {
+    "deal_id": "D158",
+    "rank": "3_A",
+    "changed_at": "2024-09-30"
+  },
+  {
+    "deal_id": "D158",
+    "rank": "2_A+",
+    "changed_at": "2024-10-18"
+  },
+  {
+    "deal_id": "D158",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-06"
+  },
+  {
+    "deal_id": "D159",
+    "rank": "4_B",
+    "changed_at": "2025-12-19"
+  },
+  {
+    "deal_id": "D159",
+    "rank": "3_A",
+    "changed_at": "2026-01-23"
+  },
+  {
+    "deal_id": "D159",
+    "rank": "2_A+",
+    "changed_at": "2026-02-27"
+  },
+  {
+    "deal_id": "D159",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-03"
+  },
+  {
+    "deal_id": "D160",
+    "rank": "5_C",
+    "changed_at": "2024-09-06"
+  },
+  {
+    "deal_id": "D160",
+    "rank": "4_B",
+    "changed_at": "2024-10-02"
+  },
+  {
+    "deal_id": "D160",
+    "rank": "3_A",
+    "changed_at": "2024-10-28"
+  },
+  {
+    "deal_id": "D160",
+    "rank": "2_A+",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D160",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-19"
+  },
+  {
+    "deal_id": "D161",
+    "rank": "5_C",
+    "changed_at": "2025-10-12"
+  },
+  {
+    "deal_id": "D161",
+    "rank": "4_B",
+    "changed_at": "2025-10-31"
+  },
+  {
+    "deal_id": "D161",
+    "rank": "3_A",
+    "changed_at": "2025-11-18"
+  },
+  {
+    "deal_id": "D161",
+    "rank": "2_A+",
+    "changed_at": "2025-12-07"
+  },
+  {
+    "deal_id": "D161",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-26"
+  },
+  {
+    "deal_id": "D162",
+    "rank": "4_B",
+    "changed_at": "2025-11-22"
+  },
+  {
+    "deal_id": "D162",
+    "rank": "3_A",
+    "changed_at": "2025-12-07"
+  },
+  {
+    "deal_id": "D162",
+    "rank": "2_A+",
+    "changed_at": "2025-12-21"
+  },
+  {
+    "deal_id": "D162",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-05"
+  },
+  {
+    "deal_id": "D163",
+    "rank": "4_B",
+    "changed_at": "2025-10-14"
+  },
+  {
+    "deal_id": "D163",
+    "rank": "3_A",
+    "changed_at": "2025-11-14"
+  },
+  {
+    "deal_id": "D163",
+    "rank": "2_A+",
+    "changed_at": "2025-12-15"
+  },
+  {
+    "deal_id": "D163",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-15"
+  },
+  {
+    "deal_id": "D164",
+    "rank": "4_B",
+    "changed_at": "2025-12-24"
+  },
+  {
+    "deal_id": "D164",
+    "rank": "3_A",
+    "changed_at": "2026-01-13"
+  },
+  {
+    "deal_id": "D164",
+    "rank": "2_A+",
+    "changed_at": "2026-02-03"
+  },
+  {
+    "deal_id": "D164",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-23"
+  },
+  {
+    "deal_id": "D165",
+    "rank": "4_B",
+    "changed_at": "2024-04-20"
+  },
+  {
+    "deal_id": "D165",
+    "rank": "3_A",
+    "changed_at": "2024-05-28"
+  },
+  {
+    "deal_id": "D165",
+    "rank": "2_A+",
+    "changed_at": "2024-07-04"
+  },
+  {
+    "deal_id": "D165",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-11"
+  },
+  {
+    "deal_id": "D166",
+    "rank": "4_B",
+    "changed_at": "2025-12-24"
+  },
+  {
+    "deal_id": "D166",
+    "rank": "3_A",
+    "changed_at": "2026-01-28"
+  },
+  {
+    "deal_id": "D166",
+    "rank": "2_A+",
+    "changed_at": "2026-03-05"
+  },
+  {
+    "deal_id": "D166",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-09"
+  },
+  {
+    "deal_id": "D167",
+    "rank": "4_B",
+    "changed_at": "2025-04-22"
+  },
+  {
+    "deal_id": "D167",
+    "rank": "3_A",
+    "changed_at": "2025-05-14"
+  },
+  {
+    "deal_id": "D167",
+    "rank": "2_A+",
+    "changed_at": "2025-06-05"
+  },
+  {
+    "deal_id": "D167",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-27"
+  },
+  {
+    "deal_id": "D168",
+    "rank": "4_B",
+    "changed_at": "2025-08-15"
+  },
+  {
+    "deal_id": "D168",
+    "rank": "3_A",
+    "changed_at": "2025-09-19"
+  },
+  {
+    "deal_id": "D168",
+    "rank": "2_A+",
+    "changed_at": "2025-10-25"
+  },
+  {
+    "deal_id": "D168",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-29"
+  },
+  {
+    "deal_id": "D169",
+    "rank": "4_B",
+    "changed_at": "2024-05-21"
+  },
+  {
+    "deal_id": "D169",
+    "rank": "3_A",
+    "changed_at": "2024-06-09"
+  },
+  {
+    "deal_id": "D169",
+    "rank": "2_A+",
+    "changed_at": "2024-06-27"
+  },
+  {
+    "deal_id": "D169",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-16"
+  },
+  {
+    "deal_id": "D170",
+    "rank": "5_C",
+    "changed_at": "2025-11-01"
+  },
+  {
+    "deal_id": "D170",
+    "rank": "4_B",
+    "changed_at": "2025-12-02"
+  },
+  {
+    "deal_id": "D170",
+    "rank": "3_A",
+    "changed_at": "2026-01-01"
+  },
+  {
+    "deal_id": "D170",
+    "rank": "2_A+",
+    "changed_at": "2026-01-31"
+  },
+  {
+    "deal_id": "D170",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-03"
+  },
+  {
+    "deal_id": "D171",
+    "rank": "4_B",
+    "changed_at": "2024-03-05"
+  },
+  {
+    "deal_id": "D171",
+    "rank": "3_A",
+    "changed_at": "2024-04-03"
+  },
+  {
+    "deal_id": "D171",
+    "rank": "2_A+",
+    "changed_at": "2024-05-02"
+  },
+  {
+    "deal_id": "D171",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-31"
+  },
+  {
+    "deal_id": "D172",
+    "rank": "3_A",
+    "changed_at": "2024-08-30"
+  },
+  {
+    "deal_id": "D172",
+    "rank": "2_A+",
+    "changed_at": "2024-09-16"
+  },
+  {
+    "deal_id": "D172",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-04"
+  },
+  {
+    "deal_id": "D173",
+    "rank": "4_B",
+    "changed_at": "2025-11-21"
+  },
+  {
+    "deal_id": "D173",
+    "rank": "3_A",
+    "changed_at": "2025-12-08"
+  },
+  {
+    "deal_id": "D173",
+    "rank": "2_A+",
+    "changed_at": "2025-12-24"
+  },
+  {
+    "deal_id": "D173",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-10"
+  },
+  {
+    "deal_id": "D174",
+    "rank": "3_A",
+    "changed_at": "2026-01-18"
+  },
+  {
+    "deal_id": "D174",
+    "rank": "2_A+",
+    "changed_at": "2026-01-31"
+  },
+  {
+    "deal_id": "D174",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-13"
+  },
+  {
+    "deal_id": "D175",
+    "rank": "3_A",
+    "changed_at": "2024-03-27"
+  },
+  {
+    "deal_id": "D175",
+    "rank": "2_A+",
+    "changed_at": "2024-05-04"
+  },
+  {
+    "deal_id": "D175",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-11"
+  },
+  {
+    "deal_id": "D176",
+    "rank": "5_C",
+    "changed_at": "2024-10-08"
+  },
+  {
+    "deal_id": "D176",
+    "rank": "4_B",
+    "changed_at": "2024-11-04"
+  },
+  {
+    "deal_id": "D176",
+    "rank": "3_A",
+    "changed_at": "2024-12-01"
+  },
+  {
+    "deal_id": "D176",
+    "rank": "2_A+",
+    "changed_at": "2024-12-29"
+  },
+  {
+    "deal_id": "D176",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-25"
+  },
+  {
+    "deal_id": "D177",
+    "rank": "4_B",
+    "changed_at": "2024-01-24"
+  },
+  {
+    "deal_id": "D177",
+    "rank": "3_A",
+    "changed_at": "2024-03-04"
+  },
+  {
+    "deal_id": "D177",
+    "rank": "2_A+",
+    "changed_at": "2024-04-13"
+  },
+  {
+    "deal_id": "D177",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-23"
+  },
+  {
+    "deal_id": "D178",
+    "rank": "4_B",
+    "changed_at": "2024-05-12"
+  },
+  {
+    "deal_id": "D178",
+    "rank": "3_A",
+    "changed_at": "2024-05-25"
+  },
+  {
+    "deal_id": "D178",
+    "rank": "2_A+",
+    "changed_at": "2024-06-08"
+  },
+  {
+    "deal_id": "D178",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-21"
+  },
+  {
+    "deal_id": "D179",
+    "rank": "5_C",
+    "changed_at": "2025-12-08"
+  },
+  {
+    "deal_id": "D179",
+    "rank": "4_B",
+    "changed_at": "2026-01-06"
+  },
+  {
+    "deal_id": "D179",
+    "rank": "3_A",
+    "changed_at": "2026-02-04"
+  },
+  {
+    "deal_id": "D179",
+    "rank": "2_A+",
+    "changed_at": "2026-03-04"
+  },
+  {
+    "deal_id": "D179",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-02"
+  },
+  {
+    "deal_id": "D180",
+    "rank": "3_A",
+    "changed_at": "2025-08-16"
+  },
+  {
+    "deal_id": "D180",
+    "rank": "2_A+",
+    "changed_at": "2025-10-09"
+  },
+  {
+    "deal_id": "D180",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-02"
+  },
+  {
+    "deal_id": "D181",
+    "rank": "4_B",
+    "changed_at": "2024-10-06"
+  },
+  {
+    "deal_id": "D181",
+    "rank": "3_A",
+    "changed_at": "2024-10-22"
+  },
+  {
+    "deal_id": "D181",
+    "rank": "2_A+",
+    "changed_at": "2024-11-07"
+  },
+  {
+    "deal_id": "D181",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D182",
+    "rank": "4_B",
+    "changed_at": "2025-10-04"
+  },
+  {
+    "deal_id": "D182",
+    "rank": "3_A",
+    "changed_at": "2025-10-18"
+  },
+  {
+    "deal_id": "D182",
+    "rank": "2_A+",
+    "changed_at": "2025-11-02"
+  },
+  {
+    "deal_id": "D182",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-16"
+  },
+  {
+    "deal_id": "D183",
+    "rank": "5_C",
+    "changed_at": "2024-07-22"
+  },
+  {
+    "deal_id": "D183",
+    "rank": "4_B",
+    "changed_at": "2024-08-05"
+  },
+  {
+    "deal_id": "D183",
+    "rank": "3_A",
+    "changed_at": "2024-08-19"
+  },
+  {
+    "deal_id": "D183",
+    "rank": "2_A+",
+    "changed_at": "2024-09-02"
+  },
+  {
+    "deal_id": "D183",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-16"
+  },
+  {
+    "deal_id": "D184",
+    "rank": "4_B",
+    "changed_at": "2026-02-21"
+  },
+  {
+    "deal_id": "D184",
+    "rank": "3_A",
+    "changed_at": "2026-03-08"
+  },
+  {
+    "deal_id": "D184",
+    "rank": "2_A+",
+    "changed_at": "2026-03-24"
+  },
+  {
+    "deal_id": "D184",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-08"
+  },
+  {
+    "deal_id": "D185",
+    "rank": "3_A",
+    "changed_at": "2025-09-02"
+  },
+  {
+    "deal_id": "D185",
+    "rank": "2_A+",
+    "changed_at": "2025-10-21"
+  },
+  {
+    "deal_id": "D185",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-09"
+  },
+  {
+    "deal_id": "D186",
+    "rank": "4_B",
+    "changed_at": "2024-07-21"
+  },
+  {
+    "deal_id": "D186",
+    "rank": "3_A",
+    "changed_at": "2024-08-31"
+  },
+  {
+    "deal_id": "D186",
+    "rank": "2_A+",
+    "changed_at": "2024-10-11"
+  },
+  {
+    "deal_id": "D186",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-21"
+  },
+  {
+    "deal_id": "D187",
+    "rank": "4_B",
+    "changed_at": "2025-01-30"
+  },
+  {
+    "deal_id": "D187",
+    "rank": "3_A",
+    "changed_at": "2025-03-11"
+  },
+  {
+    "deal_id": "D187",
+    "rank": "2_A+",
+    "changed_at": "2025-04-20"
+  },
+  {
+    "deal_id": "D187",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-30"
+  },
+  {
+    "deal_id": "D188",
+    "rank": "4_B",
+    "changed_at": "2024-04-25"
+  },
+  {
+    "deal_id": "D188",
+    "rank": "3_A",
+    "changed_at": "2024-05-18"
+  },
+  {
+    "deal_id": "D188",
+    "rank": "2_A+",
+    "changed_at": "2024-06-09"
+  },
+  {
+    "deal_id": "D188",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-02"
+  },
+  {
+    "deal_id": "D189",
+    "rank": "5_C",
+    "changed_at": "2025-12-07"
+  },
+  {
+    "deal_id": "D189",
+    "rank": "4_B",
+    "changed_at": "2025-12-22"
+  },
+  {
+    "deal_id": "D189",
+    "rank": "3_A",
+    "changed_at": "2026-01-05"
+  },
+  {
+    "deal_id": "D189",
+    "rank": "2_A+",
+    "changed_at": "2026-01-20"
+  },
+  {
+    "deal_id": "D189",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-04"
+  },
+  {
+    "deal_id": "D190",
+    "rank": "4_B",
+    "changed_at": "2024-08-02"
+  },
+  {
+    "deal_id": "D190",
+    "rank": "3_A",
+    "changed_at": "2024-09-06"
+  },
+  {
+    "deal_id": "D190",
+    "rank": "2_A+",
+    "changed_at": "2024-10-10"
+  },
+  {
+    "deal_id": "D190",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-14"
+  },
+  {
+    "deal_id": "D191",
+    "rank": "4_B",
+    "changed_at": "2024-09-26"
+  },
+  {
+    "deal_id": "D191",
+    "rank": "3_A",
+    "changed_at": "2024-10-24"
+  },
+  {
+    "deal_id": "D191",
+    "rank": "2_A+",
+    "changed_at": "2024-11-20"
+  },
+  {
+    "deal_id": "D191",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-18"
+  },
+  {
+    "deal_id": "D192",
+    "rank": "4_B",
+    "changed_at": "2024-08-30"
+  },
+  {
+    "deal_id": "D192",
+    "rank": "3_A",
+    "changed_at": "2024-09-12"
+  },
+  {
+    "deal_id": "D192",
+    "rank": "2_A+",
+    "changed_at": "2024-09-24"
+  },
+  {
+    "deal_id": "D192",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-07"
+  },
+  {
+    "deal_id": "D193",
+    "rank": "5_C",
+    "changed_at": "2024-10-23"
+  },
+  {
+    "deal_id": "D193",
+    "rank": "4_B",
+    "changed_at": "2024-11-03"
+  },
+  {
+    "deal_id": "D193",
+    "rank": "3_A",
+    "changed_at": "2024-11-13"
+  },
+  {
+    "deal_id": "D193",
+    "rank": "2_A+",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D193",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-04"
+  },
+  {
+    "deal_id": "D194",
+    "rank": "5_C",
+    "changed_at": "2025-12-27"
+  },
+  {
+    "deal_id": "D194",
+    "rank": "4_B",
+    "changed_at": "2026-01-19"
+  },
+  {
+    "deal_id": "D194",
+    "rank": "3_A",
+    "changed_at": "2026-02-12"
+  },
+  {
+    "deal_id": "D194",
+    "rank": "2_A+",
+    "changed_at": "2026-03-08"
+  },
+  {
+    "deal_id": "D194",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-31"
+  },
+  {
+    "deal_id": "D195",
+    "rank": "3_A",
+    "changed_at": "2025-05-11"
+  },
+  {
+    "deal_id": "D195",
+    "rank": "2_A+",
+    "changed_at": "2025-05-31"
+  },
+  {
+    "deal_id": "D195",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-20"
+  },
+  {
+    "deal_id": "D196",
+    "rank": "3_A",
+    "changed_at": "2025-05-21"
+  },
+  {
+    "deal_id": "D196",
+    "rank": "2_A+",
+    "changed_at": "2025-06-11"
+  },
+  {
+    "deal_id": "D196",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-01"
+  },
+  {
+    "deal_id": "D197",
+    "rank": "4_B",
+    "changed_at": "2024-08-23"
+  },
+  {
+    "deal_id": "D197",
+    "rank": "3_A",
+    "changed_at": "2024-09-18"
+  },
+  {
+    "deal_id": "D197",
+    "rank": "2_A+",
+    "changed_at": "2024-10-14"
+  },
+  {
+    "deal_id": "D197",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-09"
+  },
+  {
+    "deal_id": "D198",
+    "rank": "4_B",
+    "changed_at": "2024-04-09"
+  },
+  {
+    "deal_id": "D198",
+    "rank": "3_A",
+    "changed_at": "2024-04-30"
+  },
+  {
+    "deal_id": "D198",
+    "rank": "2_A+",
+    "changed_at": "2024-05-21"
+  },
+  {
+    "deal_id": "D198",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-11"
+  },
+  {
+    "deal_id": "D199",
+    "rank": "5_C",
+    "changed_at": "2025-03-18"
+  },
+  {
+    "deal_id": "D199",
+    "rank": "4_B",
+    "changed_at": "2025-03-29"
+  },
+  {
+    "deal_id": "D199",
+    "rank": "3_A",
+    "changed_at": "2025-04-10"
+  },
+  {
+    "deal_id": "D199",
+    "rank": "2_A+",
+    "changed_at": "2025-04-22"
+  },
+  {
+    "deal_id": "D199",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-03"
+  },
+  {
+    "deal_id": "D200",
+    "rank": "3_A",
+    "changed_at": "2024-10-16"
+  },
+  {
+    "deal_id": "D200",
+    "rank": "2_A+",
+    "changed_at": "2024-12-05"
+  },
+  {
+    "deal_id": "D200",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-24"
+  },
+  {
+    "deal_id": "D201",
+    "rank": "5_C",
+    "changed_at": "2025-12-01"
+  },
+  {
+    "deal_id": "D201",
+    "rank": "4_B",
+    "changed_at": "2025-12-23"
+  },
+  {
+    "deal_id": "D201",
+    "rank": "3_A",
+    "changed_at": "2026-01-14"
+  },
+  {
+    "deal_id": "D201",
+    "rank": "2_A+",
+    "changed_at": "2026-02-05"
+  },
+  {
+    "deal_id": "D201",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-27"
+  },
+  {
+    "deal_id": "D202",
+    "rank": "3_A",
+    "changed_at": "2024-05-29"
+  },
+  {
+    "deal_id": "D202",
+    "rank": "2_A+",
+    "changed_at": "2024-06-13"
+  },
+  {
+    "deal_id": "D202",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-28"
+  },
+  {
+    "deal_id": "D203",
+    "rank": "5_C",
+    "changed_at": "2025-01-18"
+  },
+  {
+    "deal_id": "D203",
+    "rank": "4_B",
+    "changed_at": "2025-01-25"
+  },
+  {
+    "deal_id": "D203",
+    "rank": "3_A",
+    "changed_at": "2025-02-01"
+  },
+  {
+    "deal_id": "D203",
+    "rank": "2_A+",
+    "changed_at": "2025-02-09"
+  },
+  {
+    "deal_id": "D203",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-16"
+  },
+  {
+    "deal_id": "D204",
+    "rank": "3_A",
+    "changed_at": "2025-03-18"
+  },
+  {
+    "deal_id": "D204",
+    "rank": "2_A+",
+    "changed_at": "2025-04-26"
+  },
+  {
+    "deal_id": "D204",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-04"
+  },
+  {
+    "deal_id": "D205",
+    "rank": "5_C",
+    "changed_at": "2025-09-06"
+  },
+  {
+    "deal_id": "D205",
+    "rank": "4_B",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D205",
+    "rank": "3_A",
+    "changed_at": "2025-10-01"
+  },
+  {
+    "deal_id": "D205",
+    "rank": "2_A+",
+    "changed_at": "2025-10-13"
+  },
+  {
+    "deal_id": "D205",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-25"
+  },
+  {
+    "deal_id": "D206",
+    "rank": "5_C",
+    "changed_at": "2026-01-04"
+  },
+  {
+    "deal_id": "D206",
+    "rank": "4_B",
+    "changed_at": "2026-01-31"
+  },
+  {
+    "deal_id": "D206",
+    "rank": "3_A",
+    "changed_at": "2026-02-28"
+  },
+  {
+    "deal_id": "D206",
+    "rank": "2_A+",
+    "changed_at": "2026-03-28"
+  },
+  {
+    "deal_id": "D206",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-24"
+  },
+  {
+    "deal_id": "D207",
+    "rank": "4_B",
+    "changed_at": "2025-03-04"
+  },
+  {
+    "deal_id": "D207",
+    "rank": "3_A",
+    "changed_at": "2025-03-20"
+  },
+  {
+    "deal_id": "D207",
+    "rank": "2_A+",
+    "changed_at": "2025-04-06"
+  },
+  {
+    "deal_id": "D207",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-04-22"
+  },
+  {
+    "deal_id": "D208",
+    "rank": "4_B",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D208",
+    "rank": "3_A",
+    "changed_at": "2025-10-22"
+  },
+  {
+    "deal_id": "D208",
+    "rank": "2_A+",
+    "changed_at": "2025-11-26"
+  },
+  {
+    "deal_id": "D208",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-31"
+  },
+  {
+    "deal_id": "D209",
+    "rank": "3_A",
+    "changed_at": "2025-08-08"
+  },
+  {
+    "deal_id": "D209",
+    "rank": "2_A+",
+    "changed_at": "2025-09-13"
+  },
+  {
+    "deal_id": "D209",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-18"
+  },
+  {
+    "deal_id": "D210",
+    "rank": "4_B",
+    "changed_at": "2025-03-20"
+  },
+  {
+    "deal_id": "D210",
+    "rank": "3_A",
+    "changed_at": "2025-04-13"
+  },
+  {
+    "deal_id": "D210",
+    "rank": "2_A+",
+    "changed_at": "2025-05-07"
+  },
+  {
+    "deal_id": "D210",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-31"
+  },
+  {
+    "deal_id": "D211",
+    "rank": "3_A",
+    "changed_at": "2025-11-07"
+  },
+  {
+    "deal_id": "D211",
+    "rank": "2_A+",
+    "changed_at": "2025-12-25"
+  },
+  {
+    "deal_id": "D211",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-11"
+  },
+  {
+    "deal_id": "D212",
+    "rank": "4_B",
+    "changed_at": "2024-11-20"
+  },
+  {
+    "deal_id": "D212",
+    "rank": "3_A",
+    "changed_at": "2024-12-19"
+  },
+  {
+    "deal_id": "D212",
+    "rank": "2_A+",
+    "changed_at": "2025-01-18"
+  },
+  {
+    "deal_id": "D212",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-16"
+  },
+  {
+    "deal_id": "D213",
+    "rank": "3_A",
+    "changed_at": "2025-03-06"
+  },
+  {
+    "deal_id": "D213",
+    "rank": "2_A+",
+    "changed_at": "2025-04-04"
+  },
+  {
+    "deal_id": "D213",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-04"
+  },
+  {
+    "deal_id": "D214",
+    "rank": "4_B",
+    "changed_at": "2025-02-05"
+  },
+  {
+    "deal_id": "D214",
+    "rank": "3_A",
+    "changed_at": "2025-03-04"
+  },
+  {
+    "deal_id": "D214",
+    "rank": "2_A+",
+    "changed_at": "2025-04-01"
+  },
+  {
+    "deal_id": "D214",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-04-28"
+  },
+  {
+    "deal_id": "D215",
+    "rank": "5_C",
+    "changed_at": "2025-08-07"
+  },
+  {
+    "deal_id": "D215",
+    "rank": "4_B",
+    "changed_at": "2025-08-17"
+  },
+  {
+    "deal_id": "D215",
+    "rank": "3_A",
+    "changed_at": "2025-08-26"
+  },
+  {
+    "deal_id": "D215",
+    "rank": "2_A+",
+    "changed_at": "2025-09-05"
+  },
+  {
+    "deal_id": "D215",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-15"
+  },
+  {
+    "deal_id": "D216",
+    "rank": "3_A",
+    "changed_at": "2025-03-28"
+  },
+  {
+    "deal_id": "D216",
+    "rank": "2_A+",
+    "changed_at": "2025-05-24"
+  },
+  {
+    "deal_id": "D216",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-19"
+  },
+  {
+    "deal_id": "D217",
+    "rank": "3_A",
+    "changed_at": "2025-08-08"
+  },
+  {
+    "deal_id": "D217",
+    "rank": "2_A+",
+    "changed_at": "2025-10-07"
+  },
+  {
+    "deal_id": "D217",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-07"
+  },
+  {
+    "deal_id": "D218",
+    "rank": "5_C",
+    "changed_at": "2025-04-08"
+  },
+  {
+    "deal_id": "D218",
+    "rank": "4_B",
+    "changed_at": "2025-04-27"
+  },
+  {
+    "deal_id": "D218",
+    "rank": "3_A",
+    "changed_at": "2025-05-16"
+  },
+  {
+    "deal_id": "D218",
+    "rank": "2_A+",
+    "changed_at": "2025-06-03"
+  },
+  {
+    "deal_id": "D218",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-22"
+  },
+  {
+    "deal_id": "D219",
+    "rank": "4_B",
+    "changed_at": "2024-09-10"
+  },
+  {
+    "deal_id": "D219",
+    "rank": "3_A",
+    "changed_at": "2024-10-17"
+  },
+  {
+    "deal_id": "D219",
+    "rank": "2_A+",
+    "changed_at": "2024-11-22"
+  },
+  {
+    "deal_id": "D219",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-29"
+  },
+  {
+    "deal_id": "D220",
+    "rank": "5_C",
+    "changed_at": "2025-04-13"
+  },
+  {
+    "deal_id": "D220",
+    "rank": "4_B",
+    "changed_at": "2025-05-05"
+  },
+  {
+    "deal_id": "D220",
+    "rank": "3_A",
+    "changed_at": "2025-05-28"
+  },
+  {
+    "deal_id": "D220",
+    "rank": "2_A+",
+    "changed_at": "2025-06-19"
+  },
+  {
+    "deal_id": "D220",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-11"
+  },
+  {
+    "deal_id": "D221",
+    "rank": "3_A",
+    "changed_at": "2024-04-22"
+  },
+  {
+    "deal_id": "D221",
+    "rank": "2_A+",
+    "changed_at": "2024-05-07"
+  },
+  {
+    "deal_id": "D221",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-23"
+  },
+  {
+    "deal_id": "D222",
+    "rank": "5_C",
+    "changed_at": "2024-05-18"
+  },
+  {
+    "deal_id": "D222",
+    "rank": "4_B",
+    "changed_at": "2024-06-15"
+  },
+  {
+    "deal_id": "D222",
+    "rank": "3_A",
+    "changed_at": "2024-07-13"
+  },
+  {
+    "deal_id": "D222",
+    "rank": "2_A+",
+    "changed_at": "2024-08-10"
+  },
+  {
+    "deal_id": "D222",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-07"
+  },
+  {
+    "deal_id": "D223",
+    "rank": "4_B",
+    "changed_at": "2026-02-03"
+  },
+  {
+    "deal_id": "D223",
+    "rank": "3_A",
+    "changed_at": "2026-02-26"
+  },
+  {
+    "deal_id": "D223",
+    "rank": "2_A+",
+    "changed_at": "2026-03-22"
+  },
+  {
+    "deal_id": "D223",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-14"
+  },
+  {
+    "deal_id": "D224",
+    "rank": "4_B",
+    "changed_at": "2024-04-07"
+  },
+  {
+    "deal_id": "D224",
+    "rank": "3_A",
+    "changed_at": "2024-05-05"
+  },
+  {
+    "deal_id": "D224",
+    "rank": "2_A+",
+    "changed_at": "2024-06-03"
+  },
+  {
+    "deal_id": "D224",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-01"
+  },
+  {
+    "deal_id": "D225",
+    "rank": "4_B",
+    "changed_at": "2026-01-18"
+  },
+  {
+    "deal_id": "D225",
+    "rank": "3_A",
+    "changed_at": "2026-02-22"
+  },
+  {
+    "deal_id": "D225",
+    "rank": "2_A+",
+    "changed_at": "2026-03-29"
+  },
+  {
+    "deal_id": "D225",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-03"
+  },
+  {
+    "deal_id": "D226",
+    "rank": "3_A",
+    "changed_at": "2025-09-02"
+  },
+  {
+    "deal_id": "D226",
+    "rank": "2_A+",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D226",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-03"
+  },
+  {
+    "deal_id": "D227",
+    "rank": "4_B",
+    "changed_at": "2024-07-16"
+  },
+  {
+    "deal_id": "D227",
+    "rank": "3_A",
+    "changed_at": "2024-08-19"
+  },
+  {
+    "deal_id": "D227",
+    "rank": "2_A+",
+    "changed_at": "2024-09-23"
+  },
+  {
+    "deal_id": "D227",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-27"
+  },
+  {
+    "deal_id": "D228",
+    "rank": "5_C",
+    "changed_at": "2025-01-12"
+  },
+  {
+    "deal_id": "D228",
+    "rank": "4_B",
+    "changed_at": "2025-02-09"
+  },
+  {
+    "deal_id": "D228",
+    "rank": "3_A",
+    "changed_at": "2025-03-10"
+  },
+  {
+    "deal_id": "D228",
+    "rank": "2_A+",
+    "changed_at": "2025-04-08"
+  },
+  {
+    "deal_id": "D228",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-06"
+  },
+  {
+    "deal_id": "D229",
+    "rank": "4_B",
+    "changed_at": "2025-04-15"
+  },
+  {
+    "deal_id": "D229",
+    "rank": "3_A",
+    "changed_at": "2025-05-21"
+  },
+  {
+    "deal_id": "D229",
+    "rank": "2_A+",
+    "changed_at": "2025-06-26"
+  },
+  {
+    "deal_id": "D229",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-01"
+  },
+  {
+    "deal_id": "D230",
+    "rank": "5_C",
+    "changed_at": "2025-08-03"
+  },
+  {
+    "deal_id": "D230",
+    "rank": "4_B",
+    "changed_at": "2025-08-30"
+  },
+  {
+    "deal_id": "D230",
+    "rank": "3_A",
+    "changed_at": "2025-09-27"
+  },
+  {
+    "deal_id": "D230",
+    "rank": "2_A+",
+    "changed_at": "2025-10-24"
+  },
+  {
+    "deal_id": "D230",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-20"
+  },
+  {
+    "deal_id": "D231",
+    "rank": "4_B",
+    "changed_at": "2024-08-06"
+  },
+  {
+    "deal_id": "D231",
+    "rank": "3_A",
+    "changed_at": "2024-08-31"
+  },
+  {
+    "deal_id": "D231",
+    "rank": "2_A+",
+    "changed_at": "2024-09-25"
+  },
+  {
+    "deal_id": "D231",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-20"
+  },
+  {
+    "deal_id": "D232",
+    "rank": "3_A",
+    "changed_at": "2024-10-05"
+  },
+  {
+    "deal_id": "D232",
+    "rank": "2_A+",
+    "changed_at": "2024-11-15"
+  },
+  {
+    "deal_id": "D232",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-25"
+  },
+  {
+    "deal_id": "D233",
+    "rank": "4_B",
+    "changed_at": "2025-04-17"
+  },
+  {
+    "deal_id": "D233",
+    "rank": "3_A",
+    "changed_at": "2025-05-22"
+  },
+  {
+    "deal_id": "D233",
+    "rank": "2_A+",
+    "changed_at": "2025-06-25"
+  },
+  {
+    "deal_id": "D233",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-30"
+  },
+  {
+    "deal_id": "D234",
+    "rank": "5_C",
+    "changed_at": "2024-06-20"
+  },
+  {
+    "deal_id": "D234",
+    "rank": "4_B",
+    "changed_at": "2024-07-11"
+  },
+  {
+    "deal_id": "D234",
+    "rank": "3_A",
+    "changed_at": "2024-08-01"
+  },
+  {
+    "deal_id": "D234",
+    "rank": "2_A+",
+    "changed_at": "2024-08-23"
+  },
+  {
+    "deal_id": "D234",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-13"
+  },
+  {
+    "deal_id": "D235",
+    "rank": "3_A",
+    "changed_at": "2024-03-05"
+  },
+  {
+    "deal_id": "D235",
+    "rank": "2_A+",
+    "changed_at": "2024-04-17"
+  },
+  {
+    "deal_id": "D235",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-29"
+  },
+  {
+    "deal_id": "D236",
+    "rank": "4_B",
+    "changed_at": "2025-01-04"
+  },
+  {
+    "deal_id": "D236",
+    "rank": "3_A",
+    "changed_at": "2025-01-25"
+  },
+  {
+    "deal_id": "D236",
+    "rank": "2_A+",
+    "changed_at": "2025-02-14"
+  },
+  {
+    "deal_id": "D236",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-07"
+  },
+  {
+    "deal_id": "D237",
+    "rank": "4_B",
+    "changed_at": "2024-10-13"
+  },
+  {
+    "deal_id": "D237",
+    "rank": "3_A",
+    "changed_at": "2024-11-02"
+  },
+  {
+    "deal_id": "D237",
+    "rank": "2_A+",
+    "changed_at": "2024-11-22"
+  },
+  {
+    "deal_id": "D237",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-12"
+  },
+  {
+    "deal_id": "D238",
+    "rank": "5_C",
+    "changed_at": "2024-06-03"
+  },
+  {
+    "deal_id": "D238",
+    "rank": "4_B",
+    "changed_at": "2024-06-13"
+  },
+  {
+    "deal_id": "D238",
+    "rank": "3_A",
+    "changed_at": "2024-06-22"
+  },
+  {
+    "deal_id": "D238",
+    "rank": "2_A+",
+    "changed_at": "2024-07-02"
+  },
+  {
+    "deal_id": "D238",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-12"
+  },
+  {
+    "deal_id": "D239",
+    "rank": "4_B",
+    "changed_at": "2024-01-18"
+  },
+  {
+    "deal_id": "D239",
+    "rank": "3_A",
+    "changed_at": "2024-02-27"
+  },
+  {
+    "deal_id": "D239",
+    "rank": "2_A+",
+    "changed_at": "2024-04-07"
+  },
+  {
+    "deal_id": "D239",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-17"
+  },
+  {
+    "deal_id": "D240",
+    "rank": "5_C",
+    "changed_at": "2025-05-20"
+  },
+  {
+    "deal_id": "D240",
+    "rank": "4_B",
+    "changed_at": "2025-06-09"
+  },
+  {
+    "deal_id": "D240",
+    "rank": "3_A",
+    "changed_at": "2025-06-28"
+  },
+  {
+    "deal_id": "D240",
+    "rank": "2_A+",
+    "changed_at": "2025-07-17"
+  },
+  {
+    "deal_id": "D240",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-06"
+  },
+  {
+    "deal_id": "D241",
+    "rank": "3_A",
+    "changed_at": "2025-01-28"
+  },
+  {
+    "deal_id": "D241",
+    "rank": "2_A+",
+    "changed_at": "2025-03-31"
+  },
+  {
+    "deal_id": "D241",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-31"
+  },
+  {
+    "deal_id": "D242",
+    "rank": "5_C",
+    "changed_at": "2024-04-18"
+  },
+  {
+    "deal_id": "D242",
+    "rank": "4_B",
+    "changed_at": "2024-05-19"
+  },
+  {
+    "deal_id": "D242",
+    "rank": "3_A",
+    "changed_at": "2024-06-18"
+  },
+  {
+    "deal_id": "D242",
+    "rank": "2_A+",
+    "changed_at": "2024-07-19"
+  },
+  {
+    "deal_id": "D242",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-19"
+  },
+  {
+    "deal_id": "D243",
+    "rank": "5_C",
+    "changed_at": "2024-08-30"
+  },
+  {
+    "deal_id": "D243",
+    "rank": "4_B",
+    "changed_at": "2024-09-21"
+  },
+  {
+    "deal_id": "D243",
+    "rank": "3_A",
+    "changed_at": "2024-10-14"
+  },
+  {
+    "deal_id": "D243",
+    "rank": "2_A+",
+    "changed_at": "2024-11-05"
+  },
+  {
+    "deal_id": "D243",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-27"
+  },
+  {
+    "deal_id": "D244",
+    "rank": "3_A",
+    "changed_at": "2024-08-19"
+  },
+  {
+    "deal_id": "D244",
+    "rank": "2_A+",
+    "changed_at": "2024-10-02"
+  },
+  {
+    "deal_id": "D244",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-15"
+  },
+  {
+    "deal_id": "D245",
+    "rank": "4_B",
+    "changed_at": "2024-04-08"
+  },
+  {
+    "deal_id": "D245",
+    "rank": "3_A",
+    "changed_at": "2024-04-22"
+  },
+  {
+    "deal_id": "D245",
+    "rank": "2_A+",
+    "changed_at": "2024-05-06"
+  },
+  {
+    "deal_id": "D245",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-20"
+  },
+  {
+    "deal_id": "D246",
+    "rank": "5_C",
+    "changed_at": "2024-05-17"
+  },
+  {
+    "deal_id": "D246",
+    "rank": "4_B",
+    "changed_at": "2024-06-14"
+  },
+  {
+    "deal_id": "D246",
+    "rank": "3_A",
+    "changed_at": "2024-07-11"
+  },
+  {
+    "deal_id": "D246",
+    "rank": "2_A+",
+    "changed_at": "2024-08-07"
+  },
+  {
+    "deal_id": "D246",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-04"
+  },
+  {
+    "deal_id": "D247",
+    "rank": "5_C",
+    "changed_at": "2025-11-26"
+  },
+  {
+    "deal_id": "D247",
+    "rank": "4_B",
+    "changed_at": "2025-12-22"
+  },
+  {
+    "deal_id": "D247",
+    "rank": "3_A",
+    "changed_at": "2026-01-16"
+  },
+  {
+    "deal_id": "D247",
+    "rank": "2_A+",
+    "changed_at": "2026-02-10"
+  },
+  {
+    "deal_id": "D247",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-08"
+  },
+  {
+    "deal_id": "D248",
+    "rank": "4_B",
+    "changed_at": "2025-12-20"
+  },
+  {
+    "deal_id": "D248",
+    "rank": "3_A",
+    "changed_at": "2026-01-27"
+  },
+  {
+    "deal_id": "D248",
+    "rank": "2_A+",
+    "changed_at": "2026-03-06"
+  },
+  {
+    "deal_id": "D248",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-13"
+  },
+  {
+    "deal_id": "D249",
+    "rank": "3_A",
+    "changed_at": "2025-07-25"
+  },
+  {
+    "deal_id": "D249",
+    "rank": "2_A+",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D249",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-10"
+  },
+  {
+    "deal_id": "D250",
+    "rank": "4_B",
+    "changed_at": "2026-01-04"
+  },
+  {
+    "deal_id": "D250",
+    "rank": "3_A",
+    "changed_at": "2026-02-14"
+  },
+  {
+    "deal_id": "D250",
+    "rank": "2_A+",
+    "changed_at": "2026-03-27"
+  },
+  {
+    "deal_id": "D250",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-07"
+  },
+  {
+    "deal_id": "D251",
+    "rank": "5_C",
+    "changed_at": "2024-12-30"
+  },
+  {
+    "deal_id": "D251",
+    "rank": "4_B",
+    "changed_at": "2025-01-16"
+  },
+  {
+    "deal_id": "D251",
+    "rank": "3_A",
+    "changed_at": "2025-02-03"
+  },
+  {
+    "deal_id": "D251",
+    "rank": "2_A+",
+    "changed_at": "2025-02-20"
+  },
+  {
+    "deal_id": "D251",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-09"
+  },
+  {
+    "deal_id": "D252",
+    "rank": "4_B",
+    "changed_at": "2024-06-24"
+  },
+  {
+    "deal_id": "D252",
+    "rank": "3_A",
+    "changed_at": "2024-08-01"
+  },
+  {
+    "deal_id": "D252",
+    "rank": "2_A+",
+    "changed_at": "2024-09-07"
+  },
+  {
+    "deal_id": "D252",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-15"
+  },
+  {
+    "deal_id": "D253",
+    "rank": "3_A",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D253",
+    "rank": "2_A+",
+    "changed_at": "2025-10-29"
+  },
+  {
+    "deal_id": "D253",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-09"
+  },
+  {
+    "deal_id": "D254",
+    "rank": "4_B",
+    "changed_at": "2024-09-24"
+  },
+  {
+    "deal_id": "D254",
+    "rank": "3_A",
+    "changed_at": "2024-10-31"
+  },
+  {
+    "deal_id": "D254",
+    "rank": "2_A+",
+    "changed_at": "2024-12-06"
+  },
+  {
+    "deal_id": "D254",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-12"
+  },
+  {
+    "deal_id": "D255",
+    "rank": "3_A",
+    "changed_at": "2024-05-10"
+  },
+  {
+    "deal_id": "D255",
+    "rank": "2_A+",
+    "changed_at": "2024-06-17"
+  },
+  {
+    "deal_id": "D255",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-25"
+  },
+  {
+    "deal_id": "D256",
+    "rank": "5_C",
+    "changed_at": "2024-10-20"
+  },
+  {
+    "deal_id": "D256",
+    "rank": "4_B",
+    "changed_at": "2024-11-10"
+  },
+  {
+    "deal_id": "D256",
+    "rank": "3_A",
+    "changed_at": "2024-12-01"
+  },
+  {
+    "deal_id": "D256",
+    "rank": "2_A+",
+    "changed_at": "2024-12-21"
+  },
+  {
+    "deal_id": "D256",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-11"
+  },
+  {
+    "deal_id": "D257",
+    "rank": "3_A",
+    "changed_at": "2024-04-06"
+  },
+  {
+    "deal_id": "D257",
+    "rank": "2_A+",
+    "changed_at": "2024-06-09"
+  },
+  {
+    "deal_id": "D257",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-12"
+  },
+  {
+    "deal_id": "D258",
+    "rank": "5_C",
+    "changed_at": "2025-09-19"
+  },
+  {
+    "deal_id": "D258",
+    "rank": "4_B",
+    "changed_at": "2025-10-04"
+  },
+  {
+    "deal_id": "D258",
+    "rank": "3_A",
+    "changed_at": "2025-10-19"
+  },
+  {
+    "deal_id": "D258",
+    "rank": "2_A+",
+    "changed_at": "2025-11-03"
+  },
+  {
+    "deal_id": "D258",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-18"
+  },
+  {
+    "deal_id": "D259",
+    "rank": "5_C",
+    "changed_at": "2024-05-24"
+  },
+  {
+    "deal_id": "D259",
+    "rank": "4_B",
+    "changed_at": "2024-06-15"
+  },
+  {
+    "deal_id": "D259",
+    "rank": "3_A",
+    "changed_at": "2024-07-06"
+  },
+  {
+    "deal_id": "D259",
+    "rank": "2_A+",
+    "changed_at": "2024-07-28"
+  },
+  {
+    "deal_id": "D259",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-19"
+  },
+  {
+    "deal_id": "D260",
+    "rank": "4_B",
+    "changed_at": "2024-08-25"
+  },
+  {
+    "deal_id": "D260",
+    "rank": "3_A",
+    "changed_at": "2024-09-20"
+  },
+  {
+    "deal_id": "D260",
+    "rank": "2_A+",
+    "changed_at": "2024-10-15"
+  },
+  {
+    "deal_id": "D260",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-10"
+  },
+  {
+    "deal_id": "D261",
+    "rank": "5_C",
+    "changed_at": "2024-06-01"
+  },
+  {
+    "deal_id": "D261",
+    "rank": "4_B",
+    "changed_at": "2024-06-22"
+  },
+  {
+    "deal_id": "D261",
+    "rank": "3_A",
+    "changed_at": "2024-07-14"
+  },
+  {
+    "deal_id": "D261",
+    "rank": "2_A+",
+    "changed_at": "2024-08-04"
+  },
+  {
+    "deal_id": "D261",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-25"
+  },
+  {
+    "deal_id": "D262",
+    "rank": "5_C",
+    "changed_at": "2024-07-11"
+  },
+  {
+    "deal_id": "D262",
+    "rank": "4_B",
+    "changed_at": "2024-07-28"
+  },
+  {
+    "deal_id": "D262",
+    "rank": "3_A",
+    "changed_at": "2024-08-13"
+  },
+  {
+    "deal_id": "D262",
+    "rank": "2_A+",
+    "changed_at": "2024-08-30"
+  },
+  {
+    "deal_id": "D262",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-16"
+  },
+  {
+    "deal_id": "D263",
+    "rank": "3_A",
+    "changed_at": "2024-12-14"
+  },
+  {
+    "deal_id": "D263",
+    "rank": "2_A+",
+    "changed_at": "2025-01-22"
+  },
+  {
+    "deal_id": "D263",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-03"
+  },
+  {
+    "deal_id": "D264",
+    "rank": "4_B",
+    "changed_at": "2025-02-05"
+  },
+  {
+    "deal_id": "D264",
+    "rank": "3_A",
+    "changed_at": "2025-03-09"
+  },
+  {
+    "deal_id": "D264",
+    "rank": "2_A+",
+    "changed_at": "2025-04-11"
+  },
+  {
+    "deal_id": "D264",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-13"
+  },
+  {
+    "deal_id": "D265",
+    "rank": "4_B",
+    "changed_at": "2025-04-10"
+  },
+  {
+    "deal_id": "D265",
+    "rank": "3_A",
+    "changed_at": "2025-05-10"
+  },
+  {
+    "deal_id": "D265",
+    "rank": "2_A+",
+    "changed_at": "2025-06-10"
+  },
+  {
+    "deal_id": "D265",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-10"
+  },
+  {
+    "deal_id": "D266",
+    "rank": "3_A",
+    "changed_at": "2025-10-31"
+  },
+  {
+    "deal_id": "D266",
+    "rank": "2_A+",
+    "changed_at": "2026-01-03"
+  },
+  {
+    "deal_id": "D266",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-07"
+  },
+  {
+    "deal_id": "D267",
+    "rank": "5_C",
+    "changed_at": "2024-08-10"
+  },
+  {
+    "deal_id": "D267",
+    "rank": "4_B",
+    "changed_at": "2024-09-04"
+  },
+  {
+    "deal_id": "D267",
+    "rank": "3_A",
+    "changed_at": "2024-09-29"
+  },
+  {
+    "deal_id": "D267",
+    "rank": "2_A+",
+    "changed_at": "2024-10-24"
+  },
+  {
+    "deal_id": "D267",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-18"
+  },
+  {
+    "deal_id": "D268",
+    "rank": "4_B",
+    "changed_at": "2024-06-05"
+  },
+  {
+    "deal_id": "D268",
+    "rank": "3_A",
+    "changed_at": "2024-07-02"
+  },
+  {
+    "deal_id": "D268",
+    "rank": "2_A+",
+    "changed_at": "2024-07-29"
+  },
+  {
+    "deal_id": "D268",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-25"
+  },
+  {
+    "deal_id": "D269",
+    "rank": "4_B",
+    "changed_at": "2024-07-21"
+  },
+  {
+    "deal_id": "D269",
+    "rank": "3_A",
+    "changed_at": "2024-08-07"
+  },
+  {
+    "deal_id": "D269",
+    "rank": "2_A+",
+    "changed_at": "2024-08-24"
+  },
+  {
+    "deal_id": "D269",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-10"
+  },
+  {
+    "deal_id": "D270",
+    "rank": "5_C",
+    "changed_at": "2024-10-14"
+  },
+  {
+    "deal_id": "D270",
+    "rank": "4_B",
+    "changed_at": "2024-11-14"
+  },
+  {
+    "deal_id": "D270",
+    "rank": "3_A",
+    "changed_at": "2024-12-15"
+  },
+  {
+    "deal_id": "D270",
+    "rank": "2_A+",
+    "changed_at": "2025-01-14"
+  },
+  {
+    "deal_id": "D270",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-14"
+  },
+  {
+    "deal_id": "D271",
+    "rank": "5_C",
+    "changed_at": "2024-09-12"
+  },
+  {
+    "deal_id": "D271",
+    "rank": "4_B",
+    "changed_at": "2024-09-30"
+  },
+  {
+    "deal_id": "D271",
+    "rank": "3_A",
+    "changed_at": "2024-10-18"
+  },
+  {
+    "deal_id": "D271",
+    "rank": "2_A+",
+    "changed_at": "2024-11-05"
+  },
+  {
+    "deal_id": "D271",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D272",
+    "rank": "5_C",
+    "changed_at": "2024-10-31"
+  },
+  {
+    "deal_id": "D272",
+    "rank": "4_B",
+    "changed_at": "2024-11-08"
+  },
+  {
+    "deal_id": "D272",
+    "rank": "3_A",
+    "changed_at": "2024-11-16"
+  },
+  {
+    "deal_id": "D272",
+    "rank": "2_A+",
+    "changed_at": "2024-11-24"
+  },
+  {
+    "deal_id": "D272",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-02"
+  },
+  {
+    "deal_id": "D273",
+    "rank": "3_A",
+    "changed_at": "2025-07-04"
+  },
+  {
+    "deal_id": "D273",
+    "rank": "2_A+",
+    "changed_at": "2025-08-22"
+  },
+  {
+    "deal_id": "D273",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-11"
+  },
+  {
+    "deal_id": "D274",
+    "rank": "5_C",
+    "changed_at": "2024-11-05"
+  },
+  {
+    "deal_id": "D274",
+    "rank": "4_B",
+    "changed_at": "2024-11-15"
+  },
+  {
+    "deal_id": "D274",
+    "rank": "3_A",
+    "changed_at": "2024-11-25"
+  },
+  {
+    "deal_id": "D274",
+    "rank": "2_A+",
+    "changed_at": "2024-12-05"
+  },
+  {
+    "deal_id": "D274",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-15"
+  },
+  {
+    "deal_id": "D275",
+    "rank": "4_B",
+    "changed_at": "2025-02-05"
+  },
+  {
+    "deal_id": "D275",
+    "rank": "3_A",
+    "changed_at": "2025-02-21"
+  },
+  {
+    "deal_id": "D275",
+    "rank": "2_A+",
+    "changed_at": "2025-03-08"
+  },
+  {
+    "deal_id": "D275",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-24"
+  },
+  {
+    "deal_id": "D276",
+    "rank": "4_B",
+    "changed_at": "2024-11-02"
+  },
+  {
+    "deal_id": "D276",
+    "rank": "3_A",
+    "changed_at": "2024-11-30"
+  },
+  {
+    "deal_id": "D276",
+    "rank": "2_A+",
+    "changed_at": "2024-12-28"
+  },
+  {
+    "deal_id": "D276",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-25"
+  },
+  {
+    "deal_id": "D277",
+    "rank": "3_A",
+    "changed_at": "2025-05-17"
+  },
+  {
+    "deal_id": "D277",
+    "rank": "2_A+",
+    "changed_at": "2025-06-19"
+  },
+  {
+    "deal_id": "D277",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-23"
+  },
+  {
+    "deal_id": "D278",
+    "rank": "4_B",
+    "changed_at": "2024-09-12"
+  },
+  {
+    "deal_id": "D278",
+    "rank": "3_A",
+    "changed_at": "2024-10-23"
+  },
+  {
+    "deal_id": "D278",
+    "rank": "2_A+",
+    "changed_at": "2024-12-03"
+  },
+  {
+    "deal_id": "D278",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-13"
+  },
+  {
+    "deal_id": "D279",
+    "rank": "4_B",
+    "changed_at": "2025-06-10"
+  },
+  {
+    "deal_id": "D279",
+    "rank": "3_A",
+    "changed_at": "2025-07-21"
+  },
+  {
+    "deal_id": "D279",
+    "rank": "2_A+",
+    "changed_at": "2025-09-01"
+  },
+  {
+    "deal_id": "D279",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-12"
+  },
+  {
+    "deal_id": "D280",
+    "rank": "4_B",
+    "changed_at": "2025-11-27"
+  },
+  {
+    "deal_id": "D280",
+    "rank": "3_A",
+    "changed_at": "2026-01-06"
+  },
+  {
+    "deal_id": "D280",
+    "rank": "2_A+",
+    "changed_at": "2026-02-16"
+  },
+  {
+    "deal_id": "D280",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-28"
+  },
+  {
+    "deal_id": "D281",
+    "rank": "5_C",
+    "changed_at": "2025-08-13"
+  },
+  {
+    "deal_id": "D281",
+    "rank": "4_B",
+    "changed_at": "2025-09-11"
+  },
+  {
+    "deal_id": "D281",
+    "rank": "3_A",
+    "changed_at": "2025-10-09"
+  },
+  {
+    "deal_id": "D281",
+    "rank": "2_A+",
+    "changed_at": "2025-11-07"
+  },
+  {
+    "deal_id": "D281",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-06"
+  },
+  {
+    "deal_id": "D282",
+    "rank": "5_C",
+    "changed_at": "2024-05-27"
+  },
+  {
+    "deal_id": "D282",
+    "rank": "4_B",
+    "changed_at": "2024-06-28"
+  },
+  {
+    "deal_id": "D282",
+    "rank": "3_A",
+    "changed_at": "2024-07-29"
+  },
+  {
+    "deal_id": "D282",
+    "rank": "2_A+",
+    "changed_at": "2024-08-29"
+  },
+  {
+    "deal_id": "D282",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-30"
+  },
+  {
+    "deal_id": "D283",
+    "rank": "4_B",
+    "changed_at": "2024-11-24"
+  },
+  {
+    "deal_id": "D283",
+    "rank": "3_A",
+    "changed_at": "2025-01-05"
+  },
+  {
+    "deal_id": "D283",
+    "rank": "2_A+",
+    "changed_at": "2025-02-17"
+  },
+  {
+    "deal_id": "D283",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-31"
+  },
+  {
+    "deal_id": "D284",
+    "rank": "4_B",
+    "changed_at": "2025-02-08"
+  },
+  {
+    "deal_id": "D284",
+    "rank": "3_A",
+    "changed_at": "2025-03-23"
+  },
+  {
+    "deal_id": "D284",
+    "rank": "2_A+",
+    "changed_at": "2025-05-04"
+  },
+  {
+    "deal_id": "D284",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-16"
+  },
+  {
+    "deal_id": "D285",
+    "rank": "4_B",
+    "changed_at": "2026-02-19"
+  },
+  {
+    "deal_id": "D285",
+    "rank": "3_A",
+    "changed_at": "2026-03-10"
+  },
+  {
+    "deal_id": "D285",
+    "rank": "2_A+",
+    "changed_at": "2026-03-28"
+  },
+  {
+    "deal_id": "D285",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-16"
+  },
+  {
+    "deal_id": "D286",
+    "rank": "4_B",
+    "changed_at": "2024-04-12"
+  },
+  {
+    "deal_id": "D286",
+    "rank": "3_A",
+    "changed_at": "2024-05-01"
+  },
+  {
+    "deal_id": "D286",
+    "rank": "2_A+",
+    "changed_at": "2024-05-19"
+  },
+  {
+    "deal_id": "D286",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-07"
+  },
+  {
+    "deal_id": "D287",
+    "rank": "4_B",
+    "changed_at": "2025-08-30"
+  },
+  {
+    "deal_id": "D287",
+    "rank": "3_A",
+    "changed_at": "2025-10-10"
+  },
+  {
+    "deal_id": "D287",
+    "rank": "2_A+",
+    "changed_at": "2025-11-20"
+  },
+  {
+    "deal_id": "D287",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-31"
+  },
+  {
+    "deal_id": "D288",
+    "rank": "5_C",
+    "changed_at": "2025-05-04"
+  },
+  {
+    "deal_id": "D288",
+    "rank": "4_B",
+    "changed_at": "2025-05-22"
+  },
+  {
+    "deal_id": "D288",
+    "rank": "3_A",
+    "changed_at": "2025-06-08"
+  },
+  {
+    "deal_id": "D288",
+    "rank": "2_A+",
+    "changed_at": "2025-06-25"
+  },
+  {
+    "deal_id": "D288",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-13"
+  },
+  {
+    "deal_id": "D289",
+    "rank": "4_B",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D289",
+    "rank": "3_A",
+    "changed_at": "2025-10-31"
+  },
+  {
+    "deal_id": "D289",
+    "rank": "2_A+",
+    "changed_at": "2025-12-12"
+  },
+  {
+    "deal_id": "D289",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-24"
+  },
+  {
+    "deal_id": "D290",
+    "rank": "5_C",
+    "changed_at": "2024-10-24"
+  },
+  {
+    "deal_id": "D290",
+    "rank": "4_B",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D290",
+    "rank": "3_A",
+    "changed_at": "2024-12-24"
+  },
+  {
+    "deal_id": "D290",
+    "rank": "2_A+",
+    "changed_at": "2025-01-24"
+  },
+  {
+    "deal_id": "D290",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-23"
+  },
+  {
+    "deal_id": "D291",
+    "rank": "3_A",
+    "changed_at": "2024-03-24"
+  },
+  {
+    "deal_id": "D291",
+    "rank": "2_A+",
+    "changed_at": "2024-04-25"
+  },
+  {
+    "deal_id": "D291",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-28"
+  },
+  {
+    "deal_id": "D292",
+    "rank": "5_C",
+    "changed_at": "2024-11-17"
+  },
+  {
+    "deal_id": "D292",
+    "rank": "4_B",
+    "changed_at": "2024-12-01"
+  },
+  {
+    "deal_id": "D292",
+    "rank": "3_A",
+    "changed_at": "2024-12-15"
+  },
+  {
+    "deal_id": "D292",
+    "rank": "2_A+",
+    "changed_at": "2024-12-30"
+  },
+  {
+    "deal_id": "D292",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-13"
+  },
+  {
+    "deal_id": "D293",
+    "rank": "5_C",
+    "changed_at": "2025-06-06"
+  },
+  {
+    "deal_id": "D293",
+    "rank": "4_B",
+    "changed_at": "2025-06-13"
+  },
+  {
+    "deal_id": "D293",
+    "rank": "3_A",
+    "changed_at": "2025-06-21"
+  },
+  {
+    "deal_id": "D293",
+    "rank": "2_A+",
+    "changed_at": "2025-06-29"
+  },
+  {
+    "deal_id": "D293",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-06"
+  },
+  {
+    "deal_id": "D294",
+    "rank": "3_A",
+    "changed_at": "2026-02-16"
+  },
+  {
+    "deal_id": "D294",
+    "rank": "2_A+",
+    "changed_at": "2026-04-05"
+  },
+  {
+    "deal_id": "D294",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-24"
+  },
+  {
+    "deal_id": "D295",
+    "rank": "5_C",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D295",
+    "rank": "4_B",
+    "changed_at": "2025-10-05"
+  },
+  {
+    "deal_id": "D295",
+    "rank": "3_A",
+    "changed_at": "2025-10-24"
+  },
+  {
+    "deal_id": "D295",
+    "rank": "2_A+",
+    "changed_at": "2025-11-12"
+  },
+  {
+    "deal_id": "D295",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-30"
+  },
+  {
+    "deal_id": "D296",
+    "rank": "4_B",
+    "changed_at": "2025-06-23"
+  },
+  {
+    "deal_id": "D296",
+    "rank": "3_A",
+    "changed_at": "2025-08-01"
+  },
+  {
+    "deal_id": "D296",
+    "rank": "2_A+",
+    "changed_at": "2025-09-08"
+  },
+  {
+    "deal_id": "D296",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-17"
+  },
+  {
+    "deal_id": "D297",
+    "rank": "5_C",
+    "changed_at": "2024-06-07"
+  },
+  {
+    "deal_id": "D297",
+    "rank": "4_B",
+    "changed_at": "2024-06-30"
+  },
+  {
+    "deal_id": "D297",
+    "rank": "3_A",
+    "changed_at": "2024-07-23"
+  },
+  {
+    "deal_id": "D297",
+    "rank": "2_A+",
+    "changed_at": "2024-08-15"
+  },
+  {
+    "deal_id": "D297",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-07"
+  },
+  {
+    "deal_id": "D298",
+    "rank": "3_A",
+    "changed_at": "2025-10-25"
+  },
+  {
+    "deal_id": "D298",
+    "rank": "2_A+",
+    "changed_at": "2025-12-10"
+  },
+  {
+    "deal_id": "D298",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-26"
+  },
+  {
+    "deal_id": "D299",
+    "rank": "5_C",
+    "changed_at": "2025-09-25"
+  },
+  {
+    "deal_id": "D299",
+    "rank": "4_B",
+    "changed_at": "2025-10-13"
+  },
+  {
+    "deal_id": "D299",
+    "rank": "3_A",
+    "changed_at": "2025-10-31"
+  },
+  {
+    "deal_id": "D299",
+    "rank": "2_A+",
+    "changed_at": "2025-11-17"
+  },
+  {
+    "deal_id": "D299",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-05"
+  },
+  {
+    "deal_id": "D300",
+    "rank": "5_C",
+    "changed_at": "2024-03-24"
+  },
+  {
+    "deal_id": "D300",
+    "rank": "4_B",
+    "changed_at": "2024-04-07"
+  },
+  {
+    "deal_id": "D300",
+    "rank": "3_A",
+    "changed_at": "2024-04-22"
+  },
+  {
+    "deal_id": "D300",
+    "rank": "2_A+",
+    "changed_at": "2024-05-07"
+  },
+  {
+    "deal_id": "D300",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-21"
+  },
+  {
+    "deal_id": "D301",
+    "rank": "4_B",
+    "changed_at": "2024-05-01"
+  },
+  {
+    "deal_id": "D301",
+    "rank": "3_A",
+    "changed_at": "2024-05-19"
+  },
+  {
+    "deal_id": "D301",
+    "rank": "2_A+",
+    "changed_at": "2024-06-06"
+  },
+  {
+    "deal_id": "D301",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-24"
+  },
+  {
+    "deal_id": "D302",
+    "rank": "3_A",
+    "changed_at": "2025-08-22"
+  },
+  {
+    "deal_id": "D302",
+    "rank": "2_A+",
+    "changed_at": "2025-09-13"
+  },
+  {
+    "deal_id": "D302",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-06"
+  },
+  {
+    "deal_id": "D303",
+    "rank": "5_C",
+    "changed_at": "2025-11-04"
+  },
+  {
+    "deal_id": "D303",
+    "rank": "4_B",
+    "changed_at": "2025-11-12"
+  },
+  {
+    "deal_id": "D303",
+    "rank": "3_A",
+    "changed_at": "2025-11-19"
+  },
+  {
+    "deal_id": "D303",
+    "rank": "2_A+",
+    "changed_at": "2025-11-26"
+  },
+  {
+    "deal_id": "D303",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-04"
+  },
+  {
+    "deal_id": "D304",
+    "rank": "3_A",
+    "changed_at": "2025-06-30"
+  },
+  {
+    "deal_id": "D304",
+    "rank": "2_A+",
+    "changed_at": "2025-08-14"
+  },
+  {
+    "deal_id": "D304",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-29"
+  },
+  {
+    "deal_id": "D305",
+    "rank": "4_B",
+    "changed_at": "2025-04-12"
+  },
+  {
+    "deal_id": "D305",
+    "rank": "3_A",
+    "changed_at": "2025-05-12"
+  },
+  {
+    "deal_id": "D305",
+    "rank": "2_A+",
+    "changed_at": "2025-06-11"
+  },
+  {
+    "deal_id": "D305",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-11"
+  },
+  {
+    "deal_id": "D306",
+    "rank": "4_B",
+    "changed_at": "2025-11-27"
+  },
+  {
+    "deal_id": "D306",
+    "rank": "3_A",
+    "changed_at": "2026-01-06"
+  },
+  {
+    "deal_id": "D306",
+    "rank": "2_A+",
+    "changed_at": "2026-02-14"
+  },
+  {
+    "deal_id": "D306",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-26"
+  },
+  {
+    "deal_id": "D307",
+    "rank": "5_C",
+    "changed_at": "2026-01-16"
+  },
+  {
+    "deal_id": "D307",
+    "rank": "4_B",
+    "changed_at": "2026-02-11"
+  },
+  {
+    "deal_id": "D307",
+    "rank": "3_A",
+    "changed_at": "2026-03-10"
+  },
+  {
+    "deal_id": "D307",
+    "rank": "2_A+",
+    "changed_at": "2026-04-05"
+  },
+  {
+    "deal_id": "D307",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-01"
+  },
+  {
+    "deal_id": "D308",
+    "rank": "5_C",
+    "changed_at": "2025-01-08"
+  },
+  {
+    "deal_id": "D308",
+    "rank": "4_B",
+    "changed_at": "2025-01-19"
+  },
+  {
+    "deal_id": "D308",
+    "rank": "3_A",
+    "changed_at": "2025-01-30"
+  },
+  {
+    "deal_id": "D308",
+    "rank": "2_A+",
+    "changed_at": "2025-02-11"
+  },
+  {
+    "deal_id": "D308",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-22"
+  },
+  {
+    "deal_id": "D309",
+    "rank": "5_C",
+    "changed_at": "2025-02-15"
+  },
+  {
+    "deal_id": "D309",
+    "rank": "4_B",
+    "changed_at": "2025-03-09"
+  },
+  {
+    "deal_id": "D309",
+    "rank": "3_A",
+    "changed_at": "2025-04-01"
+  },
+  {
+    "deal_id": "D309",
+    "rank": "2_A+",
+    "changed_at": "2025-04-24"
+  },
+  {
+    "deal_id": "D309",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-16"
+  },
+  {
+    "deal_id": "D310",
+    "rank": "4_B",
+    "changed_at": "2025-12-16"
+  },
+  {
+    "deal_id": "D310",
+    "rank": "3_A",
+    "changed_at": "2026-01-21"
+  },
+  {
+    "deal_id": "D310",
+    "rank": "2_A+",
+    "changed_at": "2026-02-25"
+  },
+  {
+    "deal_id": "D310",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-02"
+  },
+  {
+    "deal_id": "D311",
+    "rank": "3_A",
+    "changed_at": "2025-04-07"
+  },
+  {
+    "deal_id": "D311",
+    "rank": "2_A+",
+    "changed_at": "2025-04-24"
+  },
+  {
+    "deal_id": "D311",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-11"
+  },
+  {
+    "deal_id": "D312",
+    "rank": "4_B",
+    "changed_at": "2026-01-21"
+  },
+  {
+    "deal_id": "D312",
+    "rank": "3_A",
+    "changed_at": "2026-02-19"
+  },
+  {
+    "deal_id": "D312",
+    "rank": "2_A+",
+    "changed_at": "2026-03-21"
+  },
+  {
+    "deal_id": "D312",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-19"
+  },
+  {
+    "deal_id": "D313",
+    "rank": "5_C",
+    "changed_at": "2024-08-07"
+  },
+  {
+    "deal_id": "D313",
+    "rank": "4_B",
+    "changed_at": "2024-08-31"
+  },
+  {
+    "deal_id": "D313",
+    "rank": "3_A",
+    "changed_at": "2024-09-23"
+  },
+  {
+    "deal_id": "D313",
+    "rank": "2_A+",
+    "changed_at": "2024-10-16"
+  },
+  {
+    "deal_id": "D313",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-09"
+  },
+  {
+    "deal_id": "D314",
+    "rank": "3_A",
+    "changed_at": "2026-03-27"
+  },
+  {
+    "deal_id": "D314",
+    "rank": "2_A+",
+    "changed_at": "2026-04-25"
+  },
+  {
+    "deal_id": "D314",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-23"
+  },
+  {
+    "deal_id": "D315",
+    "rank": "5_C",
+    "changed_at": "2025-10-16"
+  },
+  {
+    "deal_id": "D315",
+    "rank": "4_B",
+    "changed_at": "2025-10-23"
+  },
+  {
+    "deal_id": "D315",
+    "rank": "3_A",
+    "changed_at": "2025-10-30"
+  },
+  {
+    "deal_id": "D315",
+    "rank": "2_A+",
+    "changed_at": "2025-11-06"
+  },
+  {
+    "deal_id": "D315",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-13"
+  },
+  {
+    "deal_id": "D316",
+    "rank": "5_C",
+    "changed_at": "2024-03-16"
+  },
+  {
+    "deal_id": "D316",
+    "rank": "4_B",
+    "changed_at": "2024-04-06"
+  },
+  {
+    "deal_id": "D316",
+    "rank": "3_A",
+    "changed_at": "2024-04-27"
+  },
+  {
+    "deal_id": "D316",
+    "rank": "2_A+",
+    "changed_at": "2024-05-19"
+  },
+  {
+    "deal_id": "D316",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-09"
+  },
+  {
+    "deal_id": "D317",
+    "rank": "5_C",
+    "changed_at": "2024-12-29"
+  },
+  {
+    "deal_id": "D317",
+    "rank": "4_B",
+    "changed_at": "2025-01-11"
+  },
+  {
+    "deal_id": "D317",
+    "rank": "3_A",
+    "changed_at": "2025-01-24"
+  },
+  {
+    "deal_id": "D317",
+    "rank": "2_A+",
+    "changed_at": "2025-02-06"
+  },
+  {
+    "deal_id": "D317",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-19"
+  },
+  {
+    "deal_id": "D318",
+    "rank": "4_B",
+    "changed_at": "2026-01-19"
+  },
+  {
+    "deal_id": "D318",
+    "rank": "3_A",
+    "changed_at": "2026-02-05"
+  },
+  {
+    "deal_id": "D318",
+    "rank": "2_A+",
+    "changed_at": "2026-02-21"
+  },
+  {
+    "deal_id": "D318",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-10"
+  },
+  {
+    "deal_id": "D319",
+    "rank": "5_C",
+    "changed_at": "2024-03-01"
+  },
+  {
+    "deal_id": "D319",
+    "rank": "4_B",
+    "changed_at": "2024-03-24"
+  },
+  {
+    "deal_id": "D319",
+    "rank": "3_A",
+    "changed_at": "2024-04-16"
+  },
+  {
+    "deal_id": "D319",
+    "rank": "2_A+",
+    "changed_at": "2024-05-09"
+  },
+  {
+    "deal_id": "D319",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-01"
+  },
+  {
+    "deal_id": "D320",
+    "rank": "4_B",
+    "changed_at": "2025-02-19"
+  },
+  {
+    "deal_id": "D320",
+    "rank": "3_A",
+    "changed_at": "2025-03-04"
+  },
+  {
+    "deal_id": "D320",
+    "rank": "2_A+",
+    "changed_at": "2025-03-17"
+  },
+  {
+    "deal_id": "D320",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-30"
+  },
+  {
+    "deal_id": "D321",
+    "rank": "4_B",
+    "changed_at": "2025-12-07"
+  },
+  {
+    "deal_id": "D321",
+    "rank": "3_A",
+    "changed_at": "2026-01-08"
+  },
+  {
+    "deal_id": "D321",
+    "rank": "2_A+",
+    "changed_at": "2026-02-10"
+  },
+  {
+    "deal_id": "D321",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-14"
+  },
+  {
+    "deal_id": "D322",
+    "rank": "4_B",
+    "changed_at": "2024-11-02"
+  },
+  {
+    "deal_id": "D322",
+    "rank": "3_A",
+    "changed_at": "2024-12-02"
+  },
+  {
+    "deal_id": "D322",
+    "rank": "2_A+",
+    "changed_at": "2025-01-01"
+  },
+  {
+    "deal_id": "D322",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-31"
+  },
+  {
+    "deal_id": "D323",
+    "rank": "4_B",
+    "changed_at": "2024-09-02"
+  },
+  {
+    "deal_id": "D323",
+    "rank": "3_A",
+    "changed_at": "2024-09-24"
+  },
+  {
+    "deal_id": "D323",
+    "rank": "2_A+",
+    "changed_at": "2024-10-16"
+  },
+  {
+    "deal_id": "D323",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-07"
+  },
+  {
+    "deal_id": "D324",
+    "rank": "5_C",
+    "changed_at": "2025-02-01"
+  },
+  {
+    "deal_id": "D324",
+    "rank": "4_B",
+    "changed_at": "2025-02-13"
+  },
+  {
+    "deal_id": "D324",
+    "rank": "3_A",
+    "changed_at": "2025-02-26"
+  },
+  {
+    "deal_id": "D324",
+    "rank": "2_A+",
+    "changed_at": "2025-03-11"
+  },
+  {
+    "deal_id": "D324",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-23"
+  },
+  {
+    "deal_id": "D325",
+    "rank": "4_B",
+    "changed_at": "2024-07-09"
+  },
+  {
+    "deal_id": "D325",
+    "rank": "3_A",
+    "changed_at": "2024-07-29"
+  },
+  {
+    "deal_id": "D325",
+    "rank": "2_A+",
+    "changed_at": "2024-08-17"
+  },
+  {
+    "deal_id": "D325",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-06"
+  },
+  {
+    "deal_id": "D326",
+    "rank": "5_C",
+    "changed_at": "2024-04-11"
+  },
+  {
+    "deal_id": "D326",
+    "rank": "4_B",
+    "changed_at": "2024-05-03"
+  },
+  {
+    "deal_id": "D326",
+    "rank": "3_A",
+    "changed_at": "2024-05-25"
+  },
+  {
+    "deal_id": "D326",
+    "rank": "2_A+",
+    "changed_at": "2024-06-15"
+  },
+  {
+    "deal_id": "D326",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-07"
+  },
+  {
+    "deal_id": "D327",
+    "rank": "5_C",
+    "changed_at": "2025-06-15"
+  },
+  {
+    "deal_id": "D327",
+    "rank": "4_B",
+    "changed_at": "2025-07-03"
+  },
+  {
+    "deal_id": "D327",
+    "rank": "3_A",
+    "changed_at": "2025-07-21"
+  },
+  {
+    "deal_id": "D327",
+    "rank": "2_A+",
+    "changed_at": "2025-08-07"
+  },
+  {
+    "deal_id": "D327",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-25"
+  },
+  {
+    "deal_id": "D328",
+    "rank": "5_C",
+    "changed_at": "2025-11-10"
+  },
+  {
+    "deal_id": "D328",
+    "rank": "4_B",
+    "changed_at": "2025-12-06"
+  },
+  {
+    "deal_id": "D328",
+    "rank": "3_A",
+    "changed_at": "2026-01-01"
+  },
+  {
+    "deal_id": "D328",
+    "rank": "2_A+",
+    "changed_at": "2026-01-27"
+  },
+  {
+    "deal_id": "D328",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-22"
+  },
+  {
+    "deal_id": "D329",
+    "rank": "4_B",
+    "changed_at": "2026-03-12"
+  },
+  {
+    "deal_id": "D329",
+    "rank": "3_A",
+    "changed_at": "2026-03-23"
+  },
+  {
+    "deal_id": "D329",
+    "rank": "2_A+",
+    "changed_at": "2026-04-03"
+  },
+  {
+    "deal_id": "D329",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-14"
+  },
+  {
+    "deal_id": "D330",
+    "rank": "5_C",
+    "changed_at": "2025-10-07"
+  },
+  {
+    "deal_id": "D330",
+    "rank": "4_B",
+    "changed_at": "2025-10-27"
+  },
+  {
+    "deal_id": "D330",
+    "rank": "3_A",
+    "changed_at": "2025-11-17"
+  },
+  {
+    "deal_id": "D330",
+    "rank": "2_A+",
+    "changed_at": "2025-12-08"
+  },
+  {
+    "deal_id": "D330",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-28"
+  },
+  {
+    "deal_id": "D331",
+    "rank": "4_B",
+    "changed_at": "2025-07-23"
+  },
+  {
+    "deal_id": "D331",
+    "rank": "3_A",
+    "changed_at": "2025-08-03"
+  },
+  {
+    "deal_id": "D331",
+    "rank": "2_A+",
+    "changed_at": "2025-08-13"
+  },
+  {
+    "deal_id": "D331",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-24"
+  },
+  {
+    "deal_id": "D332",
+    "rank": "4_B",
+    "changed_at": "2025-11-23"
+  },
+  {
+    "deal_id": "D332",
+    "rank": "3_A",
+    "changed_at": "2025-12-09"
+  },
+  {
+    "deal_id": "D332",
+    "rank": "2_A+",
+    "changed_at": "2025-12-26"
+  },
+  {
+    "deal_id": "D332",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-11"
+  },
+  {
+    "deal_id": "D333",
+    "rank": "4_B",
+    "changed_at": "2025-07-27"
+  },
+  {
+    "deal_id": "D333",
+    "rank": "3_A",
+    "changed_at": "2025-08-14"
+  },
+  {
+    "deal_id": "D333",
+    "rank": "2_A+",
+    "changed_at": "2025-08-31"
+  },
+  {
+    "deal_id": "D333",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D334",
+    "rank": "5_C",
+    "changed_at": "2024-10-19"
+  },
+  {
+    "deal_id": "D334",
+    "rank": "4_B",
+    "changed_at": "2024-11-10"
+  },
+  {
+    "deal_id": "D334",
+    "rank": "3_A",
+    "changed_at": "2024-12-01"
+  },
+  {
+    "deal_id": "D334",
+    "rank": "2_A+",
+    "changed_at": "2024-12-23"
+  },
+  {
+    "deal_id": "D334",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-14"
+  },
+  {
+    "deal_id": "D335",
+    "rank": "5_C",
+    "changed_at": "2024-11-01"
+  },
+  {
+    "deal_id": "D335",
+    "rank": "4_B",
+    "changed_at": "2024-11-09"
+  },
+  {
+    "deal_id": "D335",
+    "rank": "3_A",
+    "changed_at": "2024-11-18"
+  },
+  {
+    "deal_id": "D335",
+    "rank": "2_A+",
+    "changed_at": "2024-11-27"
+  },
+  {
+    "deal_id": "D335",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-05"
+  },
+  {
+    "deal_id": "D336",
+    "rank": "4_B",
+    "changed_at": "2025-11-21"
+  },
+  {
+    "deal_id": "D336",
+    "rank": "3_A",
+    "changed_at": "2025-12-01"
+  },
+  {
+    "deal_id": "D336",
+    "rank": "2_A+",
+    "changed_at": "2025-12-10"
+  },
+  {
+    "deal_id": "D336",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-20"
+  },
+  {
+    "deal_id": "D337",
+    "rank": "4_B",
+    "changed_at": "2025-06-29"
+  },
+  {
+    "deal_id": "D337",
+    "rank": "3_A",
+    "changed_at": "2025-07-24"
+  },
+  {
+    "deal_id": "D337",
+    "rank": "2_A+",
+    "changed_at": "2025-08-17"
+  },
+  {
+    "deal_id": "D337",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-11"
+  },
+  {
+    "deal_id": "D338",
+    "rank": "5_C",
+    "changed_at": "2026-01-24"
+  },
+  {
+    "deal_id": "D338",
+    "rank": "4_B",
+    "changed_at": "2026-02-14"
+  },
+  {
+    "deal_id": "D338",
+    "rank": "3_A",
+    "changed_at": "2026-03-06"
+  },
+  {
+    "deal_id": "D338",
+    "rank": "2_A+",
+    "changed_at": "2026-03-27"
+  },
+  {
+    "deal_id": "D338",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-17"
+  },
+  {
+    "deal_id": "D339",
+    "rank": "3_A",
+    "changed_at": "2025-04-04"
+  },
+  {
+    "deal_id": "D339",
+    "rank": "2_A+",
+    "changed_at": "2025-06-05"
+  },
+  {
+    "deal_id": "D339",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-06"
+  },
+  {
+    "deal_id": "D340",
+    "rank": "3_A",
+    "changed_at": "2024-09-03"
+  },
+  {
+    "deal_id": "D340",
+    "rank": "2_A+",
+    "changed_at": "2024-10-15"
+  },
+  {
+    "deal_id": "D340",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-26"
+  },
+  {
+    "deal_id": "D341",
+    "rank": "5_C",
+    "changed_at": "2025-10-06"
+  },
+  {
+    "deal_id": "D341",
+    "rank": "4_B",
+    "changed_at": "2025-10-13"
+  },
+  {
+    "deal_id": "D341",
+    "rank": "3_A",
+    "changed_at": "2025-10-21"
+  },
+  {
+    "deal_id": "D341",
+    "rank": "2_A+",
+    "changed_at": "2025-10-29"
+  },
+  {
+    "deal_id": "D341",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-05"
+  },
+  {
+    "deal_id": "D342",
+    "rank": "3_A",
+    "changed_at": "2025-07-02"
+  },
+  {
+    "deal_id": "D342",
+    "rank": "2_A+",
+    "changed_at": "2025-07-17"
+  },
+  {
+    "deal_id": "D342",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-07-31"
+  },
+  {
+    "deal_id": "D343",
+    "rank": "4_B",
+    "changed_at": "2024-07-12"
+  },
+  {
+    "deal_id": "D343",
+    "rank": "3_A",
+    "changed_at": "2024-08-21"
+  },
+  {
+    "deal_id": "D343",
+    "rank": "2_A+",
+    "changed_at": "2024-10-01"
+  },
+  {
+    "deal_id": "D343",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-10"
+  },
+  {
+    "deal_id": "D344",
+    "rank": "4_B",
+    "changed_at": "2024-06-10"
+  },
+  {
+    "deal_id": "D344",
+    "rank": "3_A",
+    "changed_at": "2024-07-22"
+  },
+  {
+    "deal_id": "D344",
+    "rank": "2_A+",
+    "changed_at": "2024-09-02"
+  },
+  {
+    "deal_id": "D344",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-14"
+  },
+  {
+    "deal_id": "D345",
+    "rank": "3_A",
+    "changed_at": "2025-05-17"
+  },
+  {
+    "deal_id": "D345",
+    "rank": "2_A+",
+    "changed_at": "2025-07-16"
+  },
+  {
+    "deal_id": "D345",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-14"
+  },
+  {
+    "deal_id": "D346",
+    "rank": "4_B",
+    "changed_at": "2025-06-28"
+  },
+  {
+    "deal_id": "D346",
+    "rank": "3_A",
+    "changed_at": "2025-07-14"
+  },
+  {
+    "deal_id": "D346",
+    "rank": "2_A+",
+    "changed_at": "2025-07-29"
+  },
+  {
+    "deal_id": "D346",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-14"
+  },
+  {
+    "deal_id": "D347",
+    "rank": "4_B",
+    "changed_at": "2024-05-14"
+  },
+  {
+    "deal_id": "D347",
+    "rank": "3_A",
+    "changed_at": "2024-05-26"
+  },
+  {
+    "deal_id": "D347",
+    "rank": "2_A+",
+    "changed_at": "2024-06-08"
+  },
+  {
+    "deal_id": "D347",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-20"
+  },
+  {
+    "deal_id": "D348",
+    "rank": "5_C",
+    "changed_at": "2024-07-07"
+  },
+  {
+    "deal_id": "D348",
+    "rank": "4_B",
+    "changed_at": "2024-07-20"
+  },
+  {
+    "deal_id": "D348",
+    "rank": "3_A",
+    "changed_at": "2024-08-01"
+  },
+  {
+    "deal_id": "D348",
+    "rank": "2_A+",
+    "changed_at": "2024-08-13"
+  },
+  {
+    "deal_id": "D348",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-26"
+  },
+  {
+    "deal_id": "D349",
+    "rank": "4_B",
+    "changed_at": "2025-05-10"
+  },
+  {
+    "deal_id": "D349",
+    "rank": "3_A",
+    "changed_at": "2025-06-21"
+  },
+  {
+    "deal_id": "D349",
+    "rank": "2_A+",
+    "changed_at": "2025-08-02"
+  },
+  {
+    "deal_id": "D349",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-13"
+  },
+  {
+    "deal_id": "D350",
+    "rank": "4_B",
+    "changed_at": "2024-04-24"
+  },
+  {
+    "deal_id": "D350",
+    "rank": "3_A",
+    "changed_at": "2024-06-03"
+  },
+  {
+    "deal_id": "D350",
+    "rank": "2_A+",
+    "changed_at": "2024-07-14"
+  },
+  {
+    "deal_id": "D350",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-23"
+  },
+  {
+    "deal_id": "D351",
+    "rank": "3_A",
+    "changed_at": "2024-12-31"
+  },
+  {
+    "deal_id": "D351",
+    "rank": "2_A+",
+    "changed_at": "2025-01-18"
+  },
+  {
+    "deal_id": "D351",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-05"
+  },
+  {
+    "deal_id": "D352",
+    "rank": "4_B",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D352",
+    "rank": "3_A",
+    "changed_at": "2025-10-01"
+  },
+  {
+    "deal_id": "D352",
+    "rank": "2_A+",
+    "changed_at": "2025-10-15"
+  },
+  {
+    "deal_id": "D352",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-29"
+  },
+  {
+    "deal_id": "D353",
+    "rank": "3_A",
+    "changed_at": "2025-11-27"
+  },
+  {
+    "deal_id": "D353",
+    "rank": "2_A+",
+    "changed_at": "2026-01-07"
+  },
+  {
+    "deal_id": "D353",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-02-16"
+  },
+  {
+    "deal_id": "D354",
+    "rank": "3_A",
+    "changed_at": "2025-01-06"
+  },
+  {
+    "deal_id": "D354",
+    "rank": "2_A+",
+    "changed_at": "2025-01-20"
+  },
+  {
+    "deal_id": "D354",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-03"
+  },
+  {
+    "deal_id": "D355",
+    "rank": "5_C",
+    "changed_at": "2024-10-18"
+  },
+  {
+    "deal_id": "D355",
+    "rank": "4_B",
+    "changed_at": "2024-10-30"
+  },
+  {
+    "deal_id": "D355",
+    "rank": "3_A",
+    "changed_at": "2024-11-11"
+  },
+  {
+    "deal_id": "D355",
+    "rank": "2_A+",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D355",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-05"
+  },
+  {
+    "deal_id": "D356",
+    "rank": "4_B",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D356",
+    "rank": "3_A",
+    "changed_at": "2025-01-02"
+  },
+  {
+    "deal_id": "D356",
+    "rank": "2_A+",
+    "changed_at": "2025-02-12"
+  },
+  {
+    "deal_id": "D356",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-24"
+  },
+  {
+    "deal_id": "D357",
+    "rank": "4_B",
+    "changed_at": "2024-05-12"
+  },
+  {
+    "deal_id": "D357",
+    "rank": "3_A",
+    "changed_at": "2024-05-23"
+  },
+  {
+    "deal_id": "D357",
+    "rank": "2_A+",
+    "changed_at": "2024-06-02"
+  },
+  {
+    "deal_id": "D357",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-13"
+  },
+  {
+    "deal_id": "D358",
+    "rank": "3_A",
+    "changed_at": "2024-05-09"
+  },
+  {
+    "deal_id": "D358",
+    "rank": "2_A+",
+    "changed_at": "2024-07-09"
+  },
+  {
+    "deal_id": "D358",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-08"
+  },
+  {
+    "deal_id": "D359",
+    "rank": "4_B",
+    "changed_at": "2025-10-21"
+  },
+  {
+    "deal_id": "D359",
+    "rank": "3_A",
+    "changed_at": "2025-11-21"
+  },
+  {
+    "deal_id": "D359",
+    "rank": "2_A+",
+    "changed_at": "2025-12-21"
+  },
+  {
+    "deal_id": "D359",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-21"
+  },
+  {
+    "deal_id": "D360",
+    "rank": "5_C",
+    "changed_at": "2025-09-30"
+  },
+  {
+    "deal_id": "D360",
+    "rank": "4_B",
+    "changed_at": "2025-10-30"
+  },
+  {
+    "deal_id": "D360",
+    "rank": "3_A",
+    "changed_at": "2025-11-29"
+  },
+  {
+    "deal_id": "D360",
+    "rank": "2_A+",
+    "changed_at": "2025-12-29"
+  },
+  {
+    "deal_id": "D360",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-28"
+  },
+  {
+    "deal_id": "D361",
+    "rank": "4_B",
+    "changed_at": "2024-10-29"
+  },
+  {
+    "deal_id": "D361",
+    "rank": "3_A",
+    "changed_at": "2024-11-24"
+  },
+  {
+    "deal_id": "D361",
+    "rank": "2_A+",
+    "changed_at": "2024-12-21"
+  },
+  {
+    "deal_id": "D361",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-16"
+  },
+  {
+    "deal_id": "D362",
+    "rank": "3_A",
+    "changed_at": "2025-06-04"
+  },
+  {
+    "deal_id": "D362",
+    "rank": "2_A+",
+    "changed_at": "2025-07-05"
+  },
+  {
+    "deal_id": "D362",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-04"
+  },
+  {
+    "deal_id": "D363",
+    "rank": "5_C",
+    "changed_at": "2026-01-28"
+  },
+  {
+    "deal_id": "D363",
+    "rank": "4_B",
+    "changed_at": "2026-02-21"
+  },
+  {
+    "deal_id": "D363",
+    "rank": "3_A",
+    "changed_at": "2026-03-17"
+  },
+  {
+    "deal_id": "D363",
+    "rank": "2_A+",
+    "changed_at": "2026-04-10"
+  },
+  {
+    "deal_id": "D363",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-04"
+  },
+  {
+    "deal_id": "D364",
+    "rank": "3_A",
+    "changed_at": "2025-09-11"
+  },
+  {
+    "deal_id": "D364",
+    "rank": "2_A+",
+    "changed_at": "2025-11-06"
+  },
+  {
+    "deal_id": "D364",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-02"
+  },
+  {
+    "deal_id": "D365",
+    "rank": "4_B",
+    "changed_at": "2025-11-28"
+  },
+  {
+    "deal_id": "D365",
+    "rank": "3_A",
+    "changed_at": "2025-12-17"
+  },
+  {
+    "deal_id": "D365",
+    "rank": "2_A+",
+    "changed_at": "2026-01-05"
+  },
+  {
+    "deal_id": "D365",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-24"
+  },
+  {
+    "deal_id": "D366",
+    "rank": "3_A",
+    "changed_at": "2024-06-03"
+  },
+  {
+    "deal_id": "D366",
+    "rank": "2_A+",
+    "changed_at": "2024-07-03"
+  },
+  {
+    "deal_id": "D366",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-02"
+  },
+  {
+    "deal_id": "D367",
+    "rank": "4_B",
+    "changed_at": "2025-09-09"
+  },
+  {
+    "deal_id": "D367",
+    "rank": "3_A",
+    "changed_at": "2025-10-18"
+  },
+  {
+    "deal_id": "D367",
+    "rank": "2_A+",
+    "changed_at": "2025-11-26"
+  },
+  {
+    "deal_id": "D367",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-04"
+  },
+  {
+    "deal_id": "D368",
+    "rank": "4_B",
+    "changed_at": "2025-12-13"
+  },
+  {
+    "deal_id": "D368",
+    "rank": "3_A",
+    "changed_at": "2026-01-10"
+  },
+  {
+    "deal_id": "D368",
+    "rank": "2_A+",
+    "changed_at": "2026-02-07"
+  },
+  {
+    "deal_id": "D368",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-07"
+  },
+  {
+    "deal_id": "D369",
+    "rank": "4_B",
+    "changed_at": "2025-10-20"
+  },
+  {
+    "deal_id": "D369",
+    "rank": "3_A",
+    "changed_at": "2025-11-14"
+  },
+  {
+    "deal_id": "D369",
+    "rank": "2_A+",
+    "changed_at": "2025-12-09"
+  },
+  {
+    "deal_id": "D369",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-03"
+  },
+  {
+    "deal_id": "D370",
+    "rank": "4_B",
+    "changed_at": "2025-02-06"
+  },
+  {
+    "deal_id": "D370",
+    "rank": "3_A",
+    "changed_at": "2025-02-21"
+  },
+  {
+    "deal_id": "D370",
+    "rank": "2_A+",
+    "changed_at": "2025-03-09"
+  },
+  {
+    "deal_id": "D370",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-24"
+  },
+  {
+    "deal_id": "D371",
+    "rank": "4_B",
+    "changed_at": "2024-06-13"
+  },
+  {
+    "deal_id": "D371",
+    "rank": "3_A",
+    "changed_at": "2024-07-06"
+  },
+  {
+    "deal_id": "D371",
+    "rank": "2_A+",
+    "changed_at": "2024-07-29"
+  },
+  {
+    "deal_id": "D371",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-21"
+  },
+  {
+    "deal_id": "D372",
+    "rank": "4_B",
+    "changed_at": "2024-06-12"
+  },
+  {
+    "deal_id": "D372",
+    "rank": "3_A",
+    "changed_at": "2024-07-12"
+  },
+  {
+    "deal_id": "D372",
+    "rank": "2_A+",
+    "changed_at": "2024-08-11"
+  },
+  {
+    "deal_id": "D372",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-10"
+  },
+  {
+    "deal_id": "D373",
+    "rank": "5_C",
+    "changed_at": "2024-11-13"
+  },
+  {
+    "deal_id": "D373",
+    "rank": "4_B",
+    "changed_at": "2024-12-05"
+  },
+  {
+    "deal_id": "D373",
+    "rank": "3_A",
+    "changed_at": "2024-12-27"
+  },
+  {
+    "deal_id": "D373",
+    "rank": "2_A+",
+    "changed_at": "2025-01-18"
+  },
+  {
+    "deal_id": "D373",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-09"
+  },
+  {
+    "deal_id": "D374",
+    "rank": "4_B",
+    "changed_at": "2025-10-08"
+  },
+  {
+    "deal_id": "D374",
+    "rank": "3_A",
+    "changed_at": "2025-10-28"
+  },
+  {
+    "deal_id": "D374",
+    "rank": "2_A+",
+    "changed_at": "2025-11-17"
+  },
+  {
+    "deal_id": "D374",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-07"
+  },
+  {
+    "deal_id": "D375",
+    "rank": "5_C",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D375",
+    "rank": "4_B",
+    "changed_at": "2025-10-07"
+  },
+  {
+    "deal_id": "D375",
+    "rank": "3_A",
+    "changed_at": "2025-10-26"
+  },
+  {
+    "deal_id": "D375",
+    "rank": "2_A+",
+    "changed_at": "2025-11-14"
+  },
+  {
+    "deal_id": "D375",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-12-03"
+  },
+  {
+    "deal_id": "D376",
+    "rank": "3_A",
+    "changed_at": "2025-08-06"
+  },
+  {
+    "deal_id": "D376",
+    "rank": "2_A+",
+    "changed_at": "2025-09-21"
+  },
+  {
+    "deal_id": "D376",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-11-05"
+  },
+  {
+    "deal_id": "D377",
+    "rank": "4_B",
+    "changed_at": "2025-04-09"
+  },
+  {
+    "deal_id": "D377",
+    "rank": "3_A",
+    "changed_at": "2025-05-20"
+  },
+  {
+    "deal_id": "D377",
+    "rank": "2_A+",
+    "changed_at": "2025-06-30"
+  },
+  {
+    "deal_id": "D377",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-10"
+  },
+  {
+    "deal_id": "D378",
+    "rank": "4_B",
+    "changed_at": "2024-05-12"
+  },
+  {
+    "deal_id": "D378",
+    "rank": "3_A",
+    "changed_at": "2024-06-01"
+  },
+  {
+    "deal_id": "D378",
+    "rank": "2_A+",
+    "changed_at": "2024-06-21"
+  },
+  {
+    "deal_id": "D378",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-11"
+  },
+  {
+    "deal_id": "D379",
+    "rank": "3_A",
+    "changed_at": "2025-02-15"
+  },
+  {
+    "deal_id": "D379",
+    "rank": "2_A+",
+    "changed_at": "2025-03-24"
+  },
+  {
+    "deal_id": "D379",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-04-30"
+  },
+  {
+    "deal_id": "D380",
+    "rank": "5_C",
+    "changed_at": "2024-11-30"
+  },
+  {
+    "deal_id": "D380",
+    "rank": "4_B",
+    "changed_at": "2024-12-17"
+  },
+  {
+    "deal_id": "D380",
+    "rank": "3_A",
+    "changed_at": "2025-01-04"
+  },
+  {
+    "deal_id": "D380",
+    "rank": "2_A+",
+    "changed_at": "2025-01-21"
+  },
+  {
+    "deal_id": "D380",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-07"
+  },
+  {
+    "deal_id": "D381",
+    "rank": "3_A",
+    "changed_at": "2024-07-13"
+  },
+  {
+    "deal_id": "D381",
+    "rank": "2_A+",
+    "changed_at": "2024-09-02"
+  },
+  {
+    "deal_id": "D381",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-24"
+  },
+  {
+    "deal_id": "D382",
+    "rank": "3_A",
+    "changed_at": "2024-11-16"
+  },
+  {
+    "deal_id": "D382",
+    "rank": "2_A+",
+    "changed_at": "2024-12-13"
+  },
+  {
+    "deal_id": "D382",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-08"
+  },
+  {
+    "deal_id": "D383",
+    "rank": "4_B",
+    "changed_at": "2025-12-22"
+  },
+  {
+    "deal_id": "D383",
+    "rank": "3_A",
+    "changed_at": "2026-02-03"
+  },
+  {
+    "deal_id": "D383",
+    "rank": "2_A+",
+    "changed_at": "2026-03-17"
+  },
+  {
+    "deal_id": "D383",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-29"
+  },
+  {
+    "deal_id": "D384",
+    "rank": "3_A",
+    "changed_at": "2025-04-22"
+  },
+  {
+    "deal_id": "D384",
+    "rank": "2_A+",
+    "changed_at": "2025-05-14"
+  },
+  {
+    "deal_id": "D384",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-06-06"
+  },
+  {
+    "deal_id": "D385",
+    "rank": "4_B",
+    "changed_at": "2024-11-25"
+  },
+  {
+    "deal_id": "D385",
+    "rank": "3_A",
+    "changed_at": "2024-12-21"
+  },
+  {
+    "deal_id": "D385",
+    "rank": "2_A+",
+    "changed_at": "2025-01-15"
+  },
+  {
+    "deal_id": "D385",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-10"
+  },
+  {
+    "deal_id": "D386",
+    "rank": "4_B",
+    "changed_at": "2024-06-03"
+  },
+  {
+    "deal_id": "D386",
+    "rank": "3_A",
+    "changed_at": "2024-06-19"
+  },
+  {
+    "deal_id": "D386",
+    "rank": "2_A+",
+    "changed_at": "2024-07-04"
+  },
+  {
+    "deal_id": "D386",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-20"
+  },
+  {
+    "deal_id": "D387",
+    "rank": "4_B",
+    "changed_at": "2025-11-13"
+  },
+  {
+    "deal_id": "D387",
+    "rank": "3_A",
+    "changed_at": "2025-12-26"
+  },
+  {
+    "deal_id": "D387",
+    "rank": "2_A+",
+    "changed_at": "2026-02-06"
+  },
+  {
+    "deal_id": "D387",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-21"
+  },
+  {
+    "deal_id": "D388",
+    "rank": "5_C",
+    "changed_at": "2024-11-29"
+  },
+  {
+    "deal_id": "D388",
+    "rank": "4_B",
+    "changed_at": "2024-12-13"
+  },
+  {
+    "deal_id": "D388",
+    "rank": "3_A",
+    "changed_at": "2024-12-26"
+  },
+  {
+    "deal_id": "D388",
+    "rank": "2_A+",
+    "changed_at": "2025-01-08"
+  },
+  {
+    "deal_id": "D388",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-22"
+  },
+  {
+    "deal_id": "D389",
+    "rank": "3_A",
+    "changed_at": "2025-01-09"
+  },
+  {
+    "deal_id": "D389",
+    "rank": "2_A+",
+    "changed_at": "2025-02-22"
+  },
+  {
+    "deal_id": "D389",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-04-07"
+  },
+  {
+    "deal_id": "D390",
+    "rank": "3_A",
+    "changed_at": "2024-04-12"
+  },
+  {
+    "deal_id": "D390",
+    "rank": "2_A+",
+    "changed_at": "2024-05-01"
+  },
+  {
+    "deal_id": "D390",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-05-20"
+  },
+  {
+    "deal_id": "D391",
+    "rank": "4_B",
+    "changed_at": "2024-12-07"
+  },
+  {
+    "deal_id": "D391",
+    "rank": "3_A",
+    "changed_at": "2025-01-02"
+  },
+  {
+    "deal_id": "D391",
+    "rank": "2_A+",
+    "changed_at": "2025-01-29"
+  },
+  {
+    "deal_id": "D391",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-02-24"
+  },
+  {
+    "deal_id": "D392",
+    "rank": "3_A",
+    "changed_at": "2025-08-13"
+  },
+  {
+    "deal_id": "D392",
+    "rank": "2_A+",
+    "changed_at": "2025-08-28"
+  },
+  {
+    "deal_id": "D392",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-11"
+  },
+  {
+    "deal_id": "D393",
+    "rank": "4_B",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D393",
+    "rank": "3_A",
+    "changed_at": "2025-10-30"
+  },
+  {
+    "deal_id": "D393",
+    "rank": "2_A+",
+    "changed_at": "2025-12-12"
+  },
+  {
+    "deal_id": "D393",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-24"
+  },
+  {
+    "deal_id": "D394",
+    "rank": "4_B",
+    "changed_at": "2024-04-01"
+  },
+  {
+    "deal_id": "D394",
+    "rank": "3_A",
+    "changed_at": "2024-05-08"
+  },
+  {
+    "deal_id": "D394",
+    "rank": "2_A+",
+    "changed_at": "2024-06-13"
+  },
+  {
+    "deal_id": "D394",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-07-20"
+  },
+  {
+    "deal_id": "D395",
+    "rank": "4_B",
+    "changed_at": "2026-02-11"
+  },
+  {
+    "deal_id": "D395",
+    "rank": "3_A",
+    "changed_at": "2026-03-14"
+  },
+  {
+    "deal_id": "D395",
+    "rank": "2_A+",
+    "changed_at": "2026-04-15"
+  },
+  {
+    "deal_id": "D395",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-16"
+  },
+  {
+    "deal_id": "D396",
+    "rank": "5_C",
+    "changed_at": "2025-01-12"
+  },
+  {
+    "deal_id": "D396",
+    "rank": "4_B",
+    "changed_at": "2025-02-06"
+  },
+  {
+    "deal_id": "D396",
+    "rank": "3_A",
+    "changed_at": "2025-03-03"
+  },
+  {
+    "deal_id": "D396",
+    "rank": "2_A+",
+    "changed_at": "2025-03-27"
+  },
+  {
+    "deal_id": "D396",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-04-21"
+  },
+  {
+    "deal_id": "D397",
+    "rank": "5_C",
+    "changed_at": "2025-04-17"
+  },
+  {
+    "deal_id": "D397",
+    "rank": "4_B",
+    "changed_at": "2025-05-14"
+  },
+  {
+    "deal_id": "D397",
+    "rank": "3_A",
+    "changed_at": "2025-06-09"
+  },
+  {
+    "deal_id": "D397",
+    "rank": "2_A+",
+    "changed_at": "2025-07-05"
+  },
+  {
+    "deal_id": "D397",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-08-01"
+  },
+  {
+    "deal_id": "D398",
+    "rank": "3_A",
+    "changed_at": "2024-09-14"
+  },
+  {
+    "deal_id": "D398",
+    "rank": "2_A+",
+    "changed_at": "2024-10-24"
+  },
+  {
+    "deal_id": "D398",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-04"
+  },
+  {
+    "deal_id": "D399",
+    "rank": "4_B",
+    "changed_at": "2024-11-13"
+  },
+  {
+    "deal_id": "D399",
+    "rank": "3_A",
+    "changed_at": "2024-11-25"
+  },
+  {
+    "deal_id": "D399",
+    "rank": "2_A+",
+    "changed_at": "2024-12-08"
+  },
+  {
+    "deal_id": "D399",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-20"
+  },
+  {
+    "deal_id": "D400",
+    "rank": "4_B",
+    "changed_at": "2024-07-21"
+  },
+  {
+    "deal_id": "D400",
+    "rank": "3_A",
+    "changed_at": "2024-07-31"
+  },
+  {
+    "deal_id": "D400",
+    "rank": "2_A+",
+    "changed_at": "2024-08-10"
+  },
+  {
+    "deal_id": "D400",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-08-20"
+  },
+  {
+    "deal_id": "D401",
+    "rank": "4_B",
+    "changed_at": "2025-05-26"
+  },
+  {
+    "deal_id": "D401",
+    "rank": "3_A",
+    "changed_at": "2025-07-03"
+  },
+  {
+    "deal_id": "D401",
+    "rank": "2_A+",
+    "changed_at": "2025-08-10"
+  },
+  {
+    "deal_id": "D401",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-09-17"
+  },
+  {
+    "deal_id": "D402",
+    "rank": "3_A",
+    "changed_at": "2024-08-14"
+  },
+  {
+    "deal_id": "D402",
+    "rank": "2_A+",
+    "changed_at": "2024-09-12"
+  },
+  {
+    "deal_id": "D402",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-10-10"
+  },
+  {
+    "deal_id": "D403",
+    "rank": "3_A",
+    "changed_at": "2025-09-04"
+  },
+  {
+    "deal_id": "D403",
+    "rank": "2_A+",
+    "changed_at": "2025-09-19"
+  },
+  {
+    "deal_id": "D403",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-05"
+  },
+  {
+    "deal_id": "D404",
+    "rank": "3_A",
+    "changed_at": "2024-09-26"
+  },
+  {
+    "deal_id": "D404",
+    "rank": "2_A+",
+    "changed_at": "2024-11-23"
+  },
+  {
+    "deal_id": "D404",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-20"
+  },
+  {
+    "deal_id": "D405",
+    "rank": "5_C",
+    "changed_at": "2024-10-28"
+  },
+  {
+    "deal_id": "D405",
+    "rank": "4_B",
+    "changed_at": "2024-11-05"
+  },
+  {
+    "deal_id": "D405",
+    "rank": "3_A",
+    "changed_at": "2024-11-13"
+  },
+  {
+    "deal_id": "D405",
+    "rank": "2_A+",
+    "changed_at": "2024-11-20"
+  },
+  {
+    "deal_id": "D405",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-11-28"
+  },
+  {
+    "deal_id": "D406",
+    "rank": "4_B",
+    "changed_at": "2024-09-19"
+  },
+  {
+    "deal_id": "D406",
+    "rank": "3_A",
+    "changed_at": "2024-10-26"
+  },
+  {
+    "deal_id": "D406",
+    "rank": "2_A+",
+    "changed_at": "2024-12-03"
+  },
+  {
+    "deal_id": "D406",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-01-09"
+  },
+  {
+    "deal_id": "D407",
+    "rank": "3_A",
+    "changed_at": "2024-11-13"
+  },
+  {
+    "deal_id": "D407",
+    "rank": "2_A+",
+    "changed_at": "2024-11-29"
+  },
+  {
+    "deal_id": "D407",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-16"
+  },
+  {
+    "deal_id": "D408",
+    "rank": "5_C",
+    "changed_at": "2024-03-10"
+  },
+  {
+    "deal_id": "D408",
+    "rank": "4_B",
+    "changed_at": "2024-04-04"
+  },
+  {
+    "deal_id": "D408",
+    "rank": "3_A",
+    "changed_at": "2024-04-29"
+  },
+  {
+    "deal_id": "D408",
+    "rank": "2_A+",
+    "changed_at": "2024-05-25"
+  },
+  {
+    "deal_id": "D408",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-19"
+  },
+  {
+    "deal_id": "D409",
+    "rank": "4_B",
+    "changed_at": "2025-08-18"
+  },
+  {
+    "deal_id": "D409",
+    "rank": "3_A",
+    "changed_at": "2025-09-03"
+  },
+  {
+    "deal_id": "D409",
+    "rank": "2_A+",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D409",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-10-04"
+  },
+  {
+    "deal_id": "D410",
+    "rank": "3_A",
+    "changed_at": "2026-02-16"
+  },
+  {
+    "deal_id": "D410",
+    "rank": "2_A+",
+    "changed_at": "2026-03-30"
+  },
+  {
+    "deal_id": "D410",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-05-10"
+  },
+  {
+    "deal_id": "D411",
+    "rank": "3_A",
+    "changed_at": "2024-08-01"
+  },
+  {
+    "deal_id": "D411",
+    "rank": "2_A+",
+    "changed_at": "2024-08-31"
+  },
+  {
+    "deal_id": "D411",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-09-29"
+  },
+  {
+    "deal_id": "D412",
+    "rank": "5_C",
+    "changed_at": "2025-01-25"
+  },
+  {
+    "deal_id": "D412",
+    "rank": "4_B",
+    "changed_at": "2025-02-06"
+  },
+  {
+    "deal_id": "D412",
+    "rank": "3_A",
+    "changed_at": "2025-02-18"
+  },
+  {
+    "deal_id": "D412",
+    "rank": "2_A+",
+    "changed_at": "2025-03-02"
+  },
+  {
+    "deal_id": "D412",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-14"
+  },
+  {
+    "deal_id": "D413",
+    "rank": "4_B",
+    "changed_at": "2025-10-18"
+  },
+  {
+    "deal_id": "D413",
+    "rank": "3_A",
+    "changed_at": "2025-11-14"
+  },
+  {
+    "deal_id": "D413",
+    "rank": "2_A+",
+    "changed_at": "2025-12-10"
+  },
+  {
+    "deal_id": "D413",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-01-06"
+  },
+  {
+    "deal_id": "D414",
+    "rank": "3_A",
+    "changed_at": "2024-03-29"
+  },
+  {
+    "deal_id": "D414",
+    "rank": "2_A+",
+    "changed_at": "2024-05-02"
+  },
+  {
+    "deal_id": "D414",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-06-05"
+  },
+  {
+    "deal_id": "D415",
+    "rank": "3_A",
+    "changed_at": "2025-12-14"
+  },
+  {
+    "deal_id": "D415",
+    "rank": "2_A+",
+    "changed_at": "2026-02-12"
+  },
+  {
+    "deal_id": "D415",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-04-13"
+  },
+  {
+    "deal_id": "D416",
+    "rank": "4_B",
+    "changed_at": "2026-01-11"
+  },
+  {
+    "deal_id": "D416",
+    "rank": "3_A",
+    "changed_at": "2026-01-28"
+  },
+  {
+    "deal_id": "D416",
+    "rank": "2_A+",
+    "changed_at": "2026-02-15"
+  },
+  {
+    "deal_id": "D416",
+    "rank": "1_Confirmed",
+    "changed_at": "2026-03-04"
+  },
+  {
+    "deal_id": "D417",
+    "rank": "4_B",
+    "changed_at": "2024-12-25"
+  },
+  {
+    "deal_id": "D417",
+    "rank": "3_A",
+    "changed_at": "2025-02-05"
+  },
+  {
+    "deal_id": "D417",
+    "rank": "2_A+",
+    "changed_at": "2025-03-20"
+  },
+  {
+    "deal_id": "D417",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-01"
+  },
+  {
+    "deal_id": "D418",
+    "rank": "3_A",
+    "changed_at": "2024-10-11"
+  },
+  {
+    "deal_id": "D418",
+    "rank": "2_A+",
+    "changed_at": "2024-11-17"
+  },
+  {
+    "deal_id": "D418",
+    "rank": "1_Confirmed",
+    "changed_at": "2024-12-24"
+  },
+  {
+    "deal_id": "D419",
+    "rank": "4_B",
+    "changed_at": "2025-01-03"
+  },
+  {
+    "deal_id": "D419",
+    "rank": "3_A",
+    "changed_at": "2025-01-23"
+  },
+  {
+    "deal_id": "D419",
+    "rank": "2_A+",
+    "changed_at": "2025-02-13"
+  },
+  {
+    "deal_id": "D419",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-03-05"
+  },
+  {
+    "deal_id": "D420",
+    "rank": "4_B",
+    "changed_at": "2025-03-09"
+  },
+  {
+    "deal_id": "D420",
+    "rank": "3_A",
+    "changed_at": "2025-04-03"
+  },
+  {
+    "deal_id": "D420",
+    "rank": "2_A+",
+    "changed_at": "2025-04-27"
+  },
+  {
+    "deal_id": "D420",
+    "rank": "1_Confirmed",
+    "changed_at": "2025-05-22"
+  },
+  {
+    "deal_id": "D421",
+    "rank": "6_P",
+    "changed_at": "2024-09-07"
+  },
+  {
+    "deal_id": "D421",
+    "rank": "7_Lost",
+    "changed_at": "2024-11-03"
+  },
+  {
+    "deal_id": "D422",
+    "rank": "4_B",
+    "changed_at": "2024-07-20"
+  },
+  {
+    "deal_id": "D422",
+    "rank": "7_Lost",
+    "changed_at": "2024-08-14"
+  },
+  {
+    "deal_id": "D423",
+    "rank": "4_B",
+    "changed_at": "2024-04-04"
+  },
+  {
+    "deal_id": "D423",
+    "rank": "8_Cancelled",
+    "changed_at": "2024-05-20"
+  },
+  {
+    "deal_id": "D424",
+    "rank": "3_A",
+    "changed_at": "2025-03-31"
+  },
+  {
+    "deal_id": "D424",
+    "rank": "7_Lost",
+    "changed_at": "2025-05-25"
+  },
+  {
+    "deal_id": "D425",
+    "rank": "3_A",
+    "changed_at": "2024-07-19"
+  },
+  {
+    "deal_id": "D425",
+    "rank": "7_Lost",
+    "changed_at": "2024-11-16"
+  },
+  {
+    "deal_id": "D426",
+    "rank": "4_B",
+    "changed_at": "2024-05-19"
+  },
+  {
+    "deal_id": "D426",
+    "rank": "7_Lost",
+    "changed_at": "2024-08-20"
+  },
+  {
+    "deal_id": "D427",
+    "rank": "6_P",
+    "changed_at": "2025-10-20"
+  },
+  {
+    "deal_id": "D427",
+    "rank": "7_Lost",
+    "changed_at": "2026-01-06"
+  },
+  {
+    "deal_id": "D428",
+    "rank": "3_A",
+    "changed_at": "2025-07-02"
+  },
+  {
+    "deal_id": "D428",
+    "rank": "7_Lost",
+    "changed_at": "2025-10-26"
+  },
+  {
+    "deal_id": "D429",
+    "rank": "3_A",
+    "changed_at": "2025-07-24"
+  },
+  {
+    "deal_id": "D429",
+    "rank": "7_Lost",
+    "changed_at": "2025-09-04"
+  },
+  {
+    "deal_id": "D430",
+    "rank": "4_B",
+    "changed_at": "2024-12-10"
+  },
+  {
+    "deal_id": "D430",
+    "rank": "7_Lost",
+    "changed_at": "2025-04-07"
+  },
+  {
+    "deal_id": "D431",
+    "rank": "5_C",
+    "changed_at": "2024-10-30"
+  },
+  {
+    "deal_id": "D431",
+    "rank": "7_Lost",
+    "changed_at": "2025-03-08"
+  },
+  {
+    "deal_id": "D432",
+    "rank": "6_P",
+    "changed_at": "2024-03-06"
+  },
+  {
+    "deal_id": "D432",
+    "rank": "7_Lost",
+    "changed_at": "2024-07-13"
+  },
+  {
+    "deal_id": "D433",
+    "rank": "5_C",
+    "changed_at": "2025-05-10"
+  },
+  {
+    "deal_id": "D433",
+    "rank": "7_Lost",
+    "changed_at": "2025-07-03"
+  },
+  {
+    "deal_id": "D434",
+    "rank": "4_B",
+    "changed_at": "2024-12-16"
+  },
+  {
+    "deal_id": "D434",
+    "rank": "7_Lost",
+    "changed_at": "2025-02-08"
+  },
+  {
+    "deal_id": "D435",
+    "rank": "4_B",
+    "changed_at": "2024-08-26"
+  },
+  {
+    "deal_id": "D435",
+    "rank": "7_Lost",
+    "changed_at": "2024-10-18"
+  },
+  {
+    "deal_id": "D436",
+    "rank": "4_B",
+    "changed_at": "2024-06-06"
+  },
+  {
+    "deal_id": "D436",
+    "rank": "7_Lost",
+    "changed_at": "2024-08-13"
+  },
+  {
+    "deal_id": "D437",
+    "rank": "5_C",
+    "changed_at": "2025-08-26"
+  },
+  {
+    "deal_id": "D437",
+    "rank": "7_Lost",
+    "changed_at": "2025-11-10"
+  },
+  {
+    "deal_id": "D438",
+    "rank": "6_P",
+    "changed_at": "2026-02-21"
+  },
+  {
+    "deal_id": "D438",
+    "rank": "7_Lost",
+    "changed_at": "2026-04-19"
+  },
+  {
+    "deal_id": "D439",
+    "rank": "3_A",
+    "changed_at": "2024-11-04"
+  },
+  {
+    "deal_id": "D439",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-28"
+  },
+  {
+    "deal_id": "D440",
+    "rank": "6_P",
+    "changed_at": "2024-12-07"
+  },
+  {
+    "deal_id": "D440",
+    "rank": "7_Lost",
+    "changed_at": "2025-01-01"
+  },
+  {
+    "deal_id": "D441",
+    "rank": "5_C",
+    "changed_at": "2024-03-15"
+  },
+  {
+    "deal_id": "D441",
+    "rank": "7_Lost",
+    "changed_at": "2024-05-26"
+  },
+  {
+    "deal_id": "D442",
+    "rank": "5_C",
+    "changed_at": "2025-06-11"
+  },
+  {
+    "deal_id": "D442",
+    "rank": "7_Lost",
+    "changed_at": "2025-08-12"
+  },
+  {
+    "deal_id": "D443",
+    "rank": "5_C",
+    "changed_at": "2024-07-10"
+  },
+  {
+    "deal_id": "D443",
+    "rank": "7_Lost",
+    "changed_at": "2024-09-30"
+  },
+  {
+    "deal_id": "D444",
+    "rank": "3_A",
+    "changed_at": "2025-06-15"
+  },
+  {
+    "deal_id": "D444",
+    "rank": "7_Lost",
+    "changed_at": "2025-10-11"
+  },
+  {
+    "deal_id": "D445",
+    "rank": "4_B",
+    "changed_at": "2024-05-28"
+  },
+  {
+    "deal_id": "D445",
+    "rank": "7_Lost",
+    "changed_at": "2024-07-05"
+  },
+  {
+    "deal_id": "D446",
+    "rank": "6_P",
+    "changed_at": "2025-08-20"
+  },
+  {
+    "deal_id": "D446",
+    "rank": "7_Lost",
+    "changed_at": "2025-12-02"
+  },
+  {
+    "deal_id": "D447",
+    "rank": "6_P",
+    "changed_at": "2025-04-27"
+  },
+  {
+    "deal_id": "D447",
+    "rank": "7_Lost",
+    "changed_at": "2025-08-25"
+  },
+  {
+    "deal_id": "D448",
+    "rank": "5_C",
+    "changed_at": "2024-04-03"
+  },
+  {
+    "deal_id": "D448",
+    "rank": "7_Lost",
+    "changed_at": "2024-07-25"
+  },
+  {
+    "deal_id": "D449",
+    "rank": "3_A",
+    "changed_at": "2024-02-28"
+  },
+  {
+    "deal_id": "D449",
+    "rank": "8_Cancelled",
+    "changed_at": "2024-06-02"
+  },
+  {
+    "deal_id": "D450",
+    "rank": "4_B",
+    "changed_at": "2025-09-18"
+  },
+  {
+    "deal_id": "D450",
+    "rank": "7_Lost",
+    "changed_at": "2025-11-02"
+  },
+  {
+    "deal_id": "D451",
+    "rank": "4_B",
+    "changed_at": "2025-04-11"
+  },
+  {
+    "deal_id": "D451",
+    "rank": "7_Lost",
+    "changed_at": "2025-05-15"
+  },
+  {
+    "deal_id": "D452",
+    "rank": "6_P",
+    "changed_at": "2024-04-29"
+  },
+  {
+    "deal_id": "D452",
+    "rank": "7_Lost",
+    "changed_at": "2024-07-15"
+  },
+  {
+    "deal_id": "D453",
+    "rank": "6_P",
+    "changed_at": "2026-03-22"
+  },
+  {
+    "deal_id": "D453",
+    "rank": "7_Lost",
+    "changed_at": "2026-04-29"
+  },
+  {
+    "deal_id": "D454",
+    "rank": "4_B",
+    "changed_at": "2025-10-02"
+  },
+  {
+    "deal_id": "D454",
+    "rank": "7_Lost",
+    "changed_at": "2025-11-05"
+  },
+  {
+    "deal_id": "D455",
+    "rank": "4_B",
+    "changed_at": "2024-08-25"
+  },
+  {
+    "deal_id": "D455",
+    "rank": "7_Lost",
+    "changed_at": "2024-11-01"
+  },
+  {
+    "deal_id": "D456",
+    "rank": "4_B",
+    "changed_at": "2025-08-20"
+  },
+  {
+    "deal_id": "D456",
+    "rank": "7_Lost",
+    "changed_at": "2025-10-11"
+  },
+  {
+    "deal_id": "D457",
+    "rank": "4_B",
+    "changed_at": "2024-08-18"
+  },
+  {
+    "deal_id": "D457",
+    "rank": "8_Cancelled",
+    "changed_at": "2024-11-12"
+  },
+  {
+    "deal_id": "D458",
+    "rank": "4_B",
+    "changed_at": "2025-03-15"
+  },
+  {
+    "deal_id": "D458",
+    "rank": "7_Lost",
+    "changed_at": "2025-06-26"
+  },
+  {
+    "deal_id": "D459",
+    "rank": "6_P",
+    "changed_at": "2024-05-07"
+  },
+  {
+    "deal_id": "D459",
+    "rank": "7_Lost",
+    "changed_at": "2024-08-13"
+  },
+  {
+    "deal_id": "D460",
+    "rank": "5_C",
+    "changed_at": "2025-03-04"
+  },
+  {
+    "deal_id": "D460",
+    "rank": "7_Lost",
+    "changed_at": "2025-03-30"
+  },
+  {
+    "deal_id": "D461",
+    "rank": "3_A",
+    "changed_at": "2024-05-03"
+  },
+  {
+    "deal_id": "D461",
+    "rank": "7_Lost",
+    "changed_at": "2024-08-12"
+  },
+  {
+    "deal_id": "D462",
+    "rank": "4_B",
+    "changed_at": "2024-08-09"
+  },
+  {
+    "deal_id": "D462",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-09"
+  },
+  {
+    "deal_id": "D463",
+    "rank": "5_C",
+    "changed_at": "2025-06-04"
+  },
+  {
+    "deal_id": "D463",
+    "rank": "7_Lost",
+    "changed_at": "2025-07-03"
+  },
+  {
+    "deal_id": "D464",
+    "rank": "6_P",
+    "changed_at": "2024-11-18"
+  },
+  {
+    "deal_id": "D464",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-23"
+  },
+  {
+    "deal_id": "D465",
+    "rank": "5_C",
+    "changed_at": "2025-11-20"
+  },
+  {
+    "deal_id": "D465",
+    "rank": "7_Lost",
+    "changed_at": "2026-02-10"
+  },
+  {
+    "deal_id": "D466",
+    "rank": "6_P",
+    "changed_at": "2024-12-03"
+  },
+  {
+    "deal_id": "D466",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-01-22"
+  },
+  {
+    "deal_id": "D467",
+    "rank": "6_P",
+    "changed_at": "2025-12-29"
+  },
+  {
+    "deal_id": "D467",
+    "rank": "7_Lost",
+    "changed_at": "2026-03-04"
+  },
+  {
+    "deal_id": "D468",
+    "rank": "5_C",
+    "changed_at": "2025-12-02"
+  },
+  {
+    "deal_id": "D468",
+    "rank": "7_Lost",
+    "changed_at": "2026-03-15"
+  },
+  {
+    "deal_id": "D469",
+    "rank": "5_C",
+    "changed_at": "2024-12-14"
+  },
+  {
+    "deal_id": "D469",
+    "rank": "7_Lost",
+    "changed_at": "2025-04-23"
+  },
+  {
+    "deal_id": "D470",
+    "rank": "4_B",
+    "changed_at": "2024-06-25"
+  },
+  {
+    "deal_id": "D470",
+    "rank": "7_Lost",
+    "changed_at": "2024-07-23"
+  },
+  {
+    "deal_id": "D471",
+    "rank": "3_A",
+    "changed_at": "2025-03-02"
+  },
+  {
+    "deal_id": "D471",
+    "rank": "7_Lost",
+    "changed_at": "2025-03-29"
+  },
+  {
+    "deal_id": "D472",
+    "rank": "4_B",
+    "changed_at": "2025-01-27"
+  },
+  {
+    "deal_id": "D472",
+    "rank": "7_Lost",
+    "changed_at": "2025-05-21"
+  },
+  {
+    "deal_id": "D473",
+    "rank": "3_A",
+    "changed_at": "2025-08-24"
+  },
+  {
+    "deal_id": "D473",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-11-26"
+  },
+  {
+    "deal_id": "D474",
+    "rank": "5_C",
+    "changed_at": "2025-09-06"
+  },
+  {
+    "deal_id": "D474",
+    "rank": "7_Lost",
+    "changed_at": "2025-10-03"
+  },
+  {
+    "deal_id": "D475",
+    "rank": "5_C",
+    "changed_at": "2024-11-30"
+  },
+  {
+    "deal_id": "D475",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-01-28"
+  },
+  {
+    "deal_id": "D476",
+    "rank": "6_P",
+    "changed_at": "2025-10-19"
+  },
+  {
+    "deal_id": "D476",
+    "rank": "7_Lost",
+    "changed_at": "2025-11-18"
+  },
+  {
+    "deal_id": "D477",
+    "rank": "6_P",
+    "changed_at": "2024-12-19"
+  },
+  {
+    "deal_id": "D477",
+    "rank": "7_Lost",
+    "changed_at": "2025-01-16"
+  },
+  {
+    "deal_id": "D478",
+    "rank": "3_A",
+    "changed_at": "2025-03-14"
+  },
+  {
+    "deal_id": "D478",
+    "rank": "7_Lost",
+    "changed_at": "2025-05-03"
+  },
+  {
+    "deal_id": "D479",
+    "rank": "3_A",
+    "changed_at": "2024-12-06"
+  },
+  {
+    "deal_id": "D479",
+    "rank": "7_Lost",
+    "changed_at": "2025-01-09"
+  },
+  {
+    "deal_id": "D480",
+    "rank": "4_B",
+    "changed_at": "2024-02-29"
+  },
+  {
+    "deal_id": "D480",
+    "rank": "7_Lost",
+    "changed_at": "2024-06-26"
+  },
+  {
+    "deal_id": "D481",
+    "rank": "5_C",
+    "changed_at": "2024-11-18"
+  },
+  {
+    "deal_id": "D481",
+    "rank": "7_Lost",
+    "changed_at": "2025-03-19"
+  },
+  {
+    "deal_id": "D482",
+    "rank": "5_C",
+    "changed_at": "2024-08-28"
+  },
+  {
+    "deal_id": "D482",
+    "rank": "7_Lost",
+    "changed_at": "2024-11-13"
+  },
+  {
+    "deal_id": "D483",
+    "rank": "3_A",
+    "changed_at": "2025-11-20"
+  },
+  {
+    "deal_id": "D483",
+    "rank": "7_Lost",
+    "changed_at": "2026-02-02"
+  },
+  {
+    "deal_id": "D484",
+    "rank": "5_C",
+    "changed_at": "2025-06-09"
+  },
+  {
+    "deal_id": "D484",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-08-30"
+  },
+  {
+    "deal_id": "D485",
+    "rank": "5_C",
+    "changed_at": "2024-12-28"
+  },
+  {
+    "deal_id": "D485",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-02-09"
+  },
+  {
+    "deal_id": "D486",
+    "rank": "5_C",
+    "changed_at": "2024-12-31"
+  },
+  {
+    "deal_id": "D486",
+    "rank": "7_Lost",
+    "changed_at": "2025-01-27"
+  },
+  {
+    "deal_id": "D487",
+    "rank": "4_B",
+    "changed_at": "2025-09-20"
+  },
+  {
+    "deal_id": "D487",
+    "rank": "7_Lost",
+    "changed_at": "2025-11-09"
+  },
+  {
+    "deal_id": "D488",
+    "rank": "6_P",
+    "changed_at": "2025-09-26"
+  },
+  {
+    "deal_id": "D488",
+    "rank": "7_Lost",
+    "changed_at": "2026-01-24"
+  },
+  {
+    "deal_id": "D489",
+    "rank": "4_B",
+    "changed_at": "2024-09-29"
+  },
+  {
+    "deal_id": "D489",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-01"
+  },
+  {
+    "deal_id": "D490",
+    "rank": "3_A",
+    "changed_at": "2024-07-22"
+  },
+  {
+    "deal_id": "D490",
+    "rank": "7_Lost",
+    "changed_at": "2024-10-25"
+  },
+  {
+    "deal_id": "D491",
+    "rank": "6_P",
+    "changed_at": "2024-09-23"
+  },
+  {
+    "deal_id": "D491",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-06"
+  },
+  {
+    "deal_id": "D492",
+    "rank": "3_A",
+    "changed_at": "2025-11-19"
+  },
+  {
+    "deal_id": "D492",
+    "rank": "7_Lost",
+    "changed_at": "2026-03-16"
+  },
+  {
+    "deal_id": "D493",
+    "rank": "3_A",
+    "changed_at": "2024-05-29"
+  },
+  {
+    "deal_id": "D493",
+    "rank": "7_Lost",
+    "changed_at": "2024-09-12"
+  },
+  {
+    "deal_id": "D494",
+    "rank": "6_P",
+    "changed_at": "2025-01-05"
+  },
+  {
+    "deal_id": "D494",
+    "rank": "7_Lost",
+    "changed_at": "2025-04-29"
+  },
+  {
+    "deal_id": "D495",
+    "rank": "3_A",
+    "changed_at": "2024-11-05"
+  },
+  {
+    "deal_id": "D495",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-08"
+  },
+  {
+    "deal_id": "D496",
+    "rank": "4_B",
+    "changed_at": "2025-10-29"
+  },
+  {
+    "deal_id": "D496",
+    "rank": "7_Lost",
+    "changed_at": "2026-01-02"
+  },
+  {
+    "deal_id": "D497",
+    "rank": "3_A",
+    "changed_at": "2024-12-09"
+  },
+  {
+    "deal_id": "D497",
+    "rank": "7_Lost",
+    "changed_at": "2025-01-18"
+  },
+  {
+    "deal_id": "D498",
+    "rank": "5_C",
+    "changed_at": "2024-04-26"
+  },
+  {
+    "deal_id": "D498",
+    "rank": "7_Lost",
+    "changed_at": "2024-07-08"
+  },
+  {
+    "deal_id": "D499",
+    "rank": "6_P",
+    "changed_at": "2025-07-13"
+  },
+  {
+    "deal_id": "D499",
+    "rank": "7_Lost",
+    "changed_at": "2025-09-09"
+  },
+  {
+    "deal_id": "D500",
+    "rank": "6_P",
+    "changed_at": "2025-03-17"
+  },
+  {
+    "deal_id": "D500",
+    "rank": "7_Lost",
+    "changed_at": "2025-05-25"
+  },
+  {
+    "deal_id": "D501",
+    "rank": "3_A",
+    "changed_at": "2024-11-12"
+  },
+  {
+    "deal_id": "D501",
+    "rank": "7_Lost",
+    "changed_at": "2024-12-20"
+  },
+  {
+    "deal_id": "D502",
+    "rank": "3_A",
+    "changed_at": "2025-11-30"
+  },
+  {
+    "deal_id": "D502",
+    "rank": "7_Lost",
+    "changed_at": "2026-02-14"
+  },
+  {
+    "deal_id": "D503",
+    "rank": "3_A",
+    "changed_at": "2025-04-12"
+  },
+  {
+    "deal_id": "D503",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-06-09"
+  },
+  {
+    "deal_id": "D504",
+    "rank": "5_C",
+    "changed_at": "2025-02-24"
+  },
+  {
+    "deal_id": "D504",
+    "rank": "7_Lost",
+    "changed_at": "2025-07-03"
+  },
+  {
+    "deal_id": "D505",
+    "rank": "4_B",
+    "changed_at": "2024-12-10"
+  },
+  {
+    "deal_id": "D505",
+    "rank": "7_Lost",
+    "changed_at": "2025-03-19"
+  },
+  {
+    "deal_id": "D506",
+    "rank": "3_A",
+    "changed_at": "2024-11-19"
+  },
+  {
+    "deal_id": "D506",
+    "rank": "7_Lost",
+    "changed_at": "2025-01-22"
+  },
+  {
+    "deal_id": "D507",
+    "rank": "6_P",
+    "changed_at": "2025-01-17"
+  },
+  {
+    "deal_id": "D507",
+    "rank": "7_Lost",
+    "changed_at": "2025-02-26"
+  },
+  {
+    "deal_id": "D508",
+    "rank": "6_P",
+    "changed_at": "2025-10-18"
+  },
+  {
+    "deal_id": "D508",
+    "rank": "7_Lost",
+    "changed_at": "2025-12-29"
+  },
+  {
+    "deal_id": "D509",
+    "rank": "6_P",
+    "changed_at": "2024-07-25"
+  },
+  {
+    "deal_id": "D509",
+    "rank": "7_Lost",
+    "changed_at": "2024-10-13"
+  },
+  {
+    "deal_id": "D510",
+    "rank": "5_C",
+    "changed_at": "2025-05-08"
+  },
+  {
+    "deal_id": "D510",
+    "rank": "7_Lost",
+    "changed_at": "2025-06-29"
+  },
+  {
+    "deal_id": "D511",
+    "rank": "6_P",
+    "changed_at": "2025-02-28"
+  },
+  {
+    "deal_id": "D511",
+    "rank": "7_Lost",
+    "changed_at": "2025-03-25"
+  },
+  {
+    "deal_id": "D512",
+    "rank": "4_B",
+    "changed_at": "2025-07-11"
+  },
+  {
+    "deal_id": "D512",
+    "rank": "7_Lost",
+    "changed_at": "2025-09-22"
+  },
+  {
+    "deal_id": "D513",
+    "rank": "6_P",
+    "changed_at": "2024-05-09"
+  },
+  {
+    "deal_id": "D513",
+    "rank": "7_Lost",
+    "changed_at": "2024-06-17"
+  },
+  {
+    "deal_id": "D514",
+    "rank": "4_B",
+    "changed_at": "2024-08-19"
+  },
+  {
+    "deal_id": "D514",
+    "rank": "7_Lost",
+    "changed_at": "2024-10-11"
+  },
+  {
+    "deal_id": "D515",
+    "rank": "3_A",
+    "changed_at": "2025-06-20"
+  },
+  {
+    "deal_id": "D515",
+    "rank": "7_Lost",
+    "changed_at": "2025-08-06"
+  },
+  {
+    "deal_id": "D516",
+    "rank": "6_P",
+    "changed_at": "2024-04-21"
+  },
+  {
+    "deal_id": "D516",
+    "rank": "7_Lost",
+    "changed_at": "2024-05-27"
+  },
+  {
+    "deal_id": "D517",
+    "rank": "6_P",
+    "changed_at": "2025-05-20"
+  },
+  {
+    "deal_id": "D517",
+    "rank": "7_Lost",
+    "changed_at": "2025-08-07"
+  },
+  {
+    "deal_id": "D518",
+    "rank": "5_C",
+    "changed_at": "2024-02-02"
+  },
+  {
+    "deal_id": "D518",
+    "rank": "7_Lost",
+    "changed_at": "2024-06-10"
+  },
+  {
+    "deal_id": "D519",
+    "rank": "4_B",
+    "changed_at": "2025-11-13"
+  },
+  {
+    "deal_id": "D519",
+    "rank": "7_Lost",
+    "changed_at": "2026-02-04"
+  },
+  {
+    "deal_id": "D520",
+    "rank": "4_B",
+    "changed_at": "2025-04-23"
+  },
+  {
+    "deal_id": "D520",
+    "rank": "8_Cancelled",
+    "changed_at": "2025-08-29"
+  }
+]

@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Senpai design language — enterprise SaaS (Linear / Notion / Stripe / Vercel).
+  White surfaces, light-gray canvas, deep-navy ink, indigo accent.
+  Traffic-light colour is RESERVED for deal health. Provenance & confidence are
+  kept first-class but rendered subtly (neutral chips, a quiet indigo accent).
+  Clean sans throughout (Inter + Noto Sans JP) — no serif, no "dossier" texture.
+*/
+@layer base {
+  :root {
+    --background: 220 24% 98%;       /* light-gray canvas */
+    --foreground: 222 47% 11%;       /* deep navy ink */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --muted: 220 16% 95%;
+    --muted-foreground: 220 9% 46%;
+
+    --navy: 222 47% 16%;             /* brand / solid dark surfaces */
+    --navy-foreground: 210 40% 98%;
+
+    --primary: 235 84% 60%;          /* indigo accent / CTA */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 16% 96%;
+    --secondary-foreground: 222 40% 18%;
+
+    --accent: 235 84% 96%;           /* indigo tint */
+    --accent-foreground: 235 60% 40%;
+
+    --border: 220 16% 90%;
+    --input: 220 16% 87%;
+    --ring: 235 84% 62%;
+
+    --band-red: 0 72% 51%;
+    --band-yellow: 35 92% 48%;
+    --band-green: 152 56% 39%;
+
+    --conf-high: 152 52% 38%;
+    --conf-medium: 35 82% 44%;
+    --conf-low: 220 12% 48%;
+    --conf-unverified: 220 9% 60%;
+
+    --radius: 0.625rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "palt";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.16);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+    border: 3px solid hsl(var(--background));
+  }
+}
+
+@layer components {
+  /* small uppercase label */
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  /* verbatim quote — subtle neutral rule, not a loud accent */
+  .quote-jp {
+    @apply font-jp text-[14px] leading-relaxed text-foreground/85 border-l-2 border-primary/40 pl-3.5;
+  }
+
+  .card-surface {
+    @apply rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(16,24,40,0.04)];
+  }
+
+  /* soft radial wash for hero/landing — enterprise, not engineering-paper */
+  .hero-wash {
+    background:
+      radial-gradient(60% 50% at 50% 0%, hsl(var(--primary) / 0.07), transparent 70%),
+      radial-gradient(40% 40% at 85% 10%, hsl(var(--primary) / 0.05), transparent 70%);
+  }
+}

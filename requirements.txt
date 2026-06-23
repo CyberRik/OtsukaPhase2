@@ -15,3 +15,25 @@ openai==2.37.0
 google-api-python-client==2.197.0
 google-auth==2.53.0
 google-auth-oauthlib==1.4.0
+
+# --- Senpai (Phase 2) ---
+# Manager dashboard (senpai/apps/manager_dashboard.py) + dataframe handling.
+streamlit==1.40.2
+pandas==2.2.3
+
+# Unit tests for the deal-health engine (senpai/tests/).
+pytest==8.3.4
+
+# --- Retrieval: hybrid semantic search + knowledge graph (senpai/retrieval, senpai/graph) ---
+# All CPU / GPU-free. fastembed runs the dense model via ONNX on CPU; corpus vectors
+# are precomputed & committed (senpai/data/index/) so runtime only embeds the query.
+# Everything degrades to BM25 (then keyword) when these are absent — see semantic.py.
+fastembed==0.8.0          # ONNX/CPU dense embeddings (paraphrase-multilingual-MiniLM)
+rank-bm25==0.2.2          # lexical BM25 over Japanese-tokenized text
+janome==0.5.0             # pure-Python Japanese tokenizer (no MeCab/system dep)
+networkx==3.6.1           # knowledge graph (customer→deal→activity→rep→product)
+
+# NOTE: the Next.js frontend's HTTP bridge (fastapi/uvicorn) is intentionally NOT
+# pinned here — gradio 6.17 requires starlette>=1.0, which conflicts with
+# fastapi's starlette cap, so the two can't co-resolve in one pass. Install the
+# bridge separately:  pip install -r senpai/api/requirements.txt

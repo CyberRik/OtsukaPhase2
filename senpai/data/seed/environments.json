@@ -1,0 +1,1052 @@
+[
+  {
+    "customer_id": "C01",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C02",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C03",
+    "pc": "ノートPC8台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C04",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C05",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C06",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C07",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C08",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C09",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C10",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C11",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C12",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C13",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C14",
+    "pc": "ノートPC20台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C15",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C16",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C17",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C18",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C19",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C20",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C21",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C22",
+    "pc": "ノートPC20台",
+    "os": "Windows 11",
+    "network": "光回線/無線LAN",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C23",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C24",
+    "pc": "ノートPC20台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C25",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C26",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C27",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C28",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C29",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C30",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C31",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C32",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C33",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C34",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C35",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C36",
+    "pc": "ノートPC8台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C37",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C38",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C39",
+    "pc": "ノートPC20台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C40",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C41",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/VPN有",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C42",
+    "pc": "ノートPC8台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C43",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C44",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C45",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C46",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C47",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C48",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C49",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/無線LAN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C50",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C51",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C52",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C53",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C54",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C55",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C56",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/VPN有",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C57",
+    "pc": "ノートPC8台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C58",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C59",
+    "pc": "ノートPC8台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C60",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C61",
+    "pc": "ノートPC20台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C62",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C63",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/VPN有",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C64",
+    "pc": "ノートPC20台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C65",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C66",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C67",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C68",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C69",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C70",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C71",
+    "pc": "ノートPC8台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C72",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C73",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C74",
+    "pc": "ノートPC8台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C75",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C76",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C77",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C78",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C79",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C80",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C81",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C82",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C83",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C84",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C85",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C86",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C87",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C88",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C89",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C90",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C91",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C92",
+    "pc": "ノートPC20台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C93",
+    "pc": "ノートPC20台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C94",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C95",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C96",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C97",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C98",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C99",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/VPN有",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C100",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C101",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "バックアップは外付けHDDのみ。"
+  },
+  {
+    "customer_id": "C102",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C103",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C104",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C105",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C106",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C107",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C108",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C109",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C110",
+    "pc": "ノートPC8台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C111",
+    "pc": "ノートPC8台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C112",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C113",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C114",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C115",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C116",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C117",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C118",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C119",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C120",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C121",
+    "pc": "ノートPC8台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C122",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "ADSL(更改検討中)",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C123",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C124",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C125",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10",
+    "network": "光回線/VPN有",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C126",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C127",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C128",
+    "pc": "ノートPC20台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C129",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C130",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C131",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C132",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C133",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C134",
+    "pc": "ノートPC8台",
+    "os": "Windows 11",
+    "network": "光回線/VPN有",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C135",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 11",
+    "network": "ADSL(更改検討中)",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C136",
+    "pc": "デスクトップ30台",
+    "os": "Windows 11",
+    "network": "光回線/無線LAN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C137",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C138",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C139",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "有線LANのみ",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C140",
+    "pc": "デスクトップ12台",
+    "os": "Windows 11",
+    "network": "有線LANのみ",
+    "notes": "プリンタは共有設定済み。"
+  },
+  {
+    "customer_id": "C141",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C142",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C143",
+    "pc": "デスクトップ12台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C144",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "有線LANのみ",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C145",
+    "pc": "ノートPC20台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "サーバー室の空調に余裕なし。"
+  },
+  {
+    "customer_id": "C146",
+    "pc": "ノートPC8台",
+    "os": "Windows 10/11混在",
+    "network": "ADSL(更改検討中)",
+    "notes": "現地調査は未実施。"
+  },
+  {
+    "customer_id": "C147",
+    "pc": "ノートPC15台/タブレット5台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/無線LAN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C148",
+    "pc": "デスクトップ5台/ノート3台",
+    "os": "Windows 11",
+    "network": "光回線/拠点間VPN",
+    "notes": "無線が一部届きにくいエリアあり。"
+  },
+  {
+    "customer_id": "C149",
+    "pc": "デスクトップ30台",
+    "os": "Windows 10/11混在",
+    "network": "光回線/拠点間VPN",
+    "notes": "前任者からの引継ぎ情報。"
+  },
+  {
+    "customer_id": "C150",
+    "pc": "ノートPC20台",
+    "os": "Windows 10",
+    "network": "光回線/無線LAN",
+    "notes": "バックアップは外付けHDDのみ。"
+  }
+]

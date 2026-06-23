@@ -1,0 +1,287 @@
+[
+  {
+    "employee_id": "R01",
+    "name": "田中健太",
+    "role": "senior",
+    "department": "第一営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "複合機",
+      "提案",
+      "クロージング"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R02",
+    "name": "佐藤美咲",
+    "role": "expert",
+    "department": "第一営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "ネットワーク",
+      "セキュリティ"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R03",
+    "name": "鈴木大輔",
+    "role": "expert",
+    "department": "第二営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "サーバー",
+      "クラウド"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R04",
+    "name": "高橋由美",
+    "role": "senior",
+    "department": "第二営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "ソフトウェア",
+      "保守"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R05",
+    "name": "伊藤翔",
+    "role": "junior",
+    "department": "第一営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "複合機"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R06",
+    "name": "渡辺さくら",
+    "role": "junior",
+    "department": "第二営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "ソフトウェア"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R07",
+    "name": "山本健一",
+    "role": "junior",
+    "department": "第一営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "ネットワーク"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R08",
+    "name": "中村優子",
+    "role": "senior",
+    "department": "第二営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "クラウド",
+      "提案"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R09",
+    "name": "小林直樹",
+    "role": "expert",
+    "department": "第三営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "ストレージ",
+      "サーバー"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R10",
+    "name": "加藤美穂",
+    "role": "senior",
+    "department": "第三営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "セキュリティ",
+      "提案",
+      "クロージング"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R11",
+    "name": "吉田亮",
+    "role": "junior",
+    "department": "第三営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "複合機",
+      "ソフトウェア"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R12",
+    "name": "山田彩",
+    "role": "junior",
+    "department": "第三営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "ネットワーク"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R13",
+    "name": "佐々木拓海",
+    "role": "expert",
+    "department": "第一営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "クラウド",
+      "バックアップ"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R14",
+    "name": "松本千尋",
+    "role": "senior",
+    "department": "第一営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "保守",
+      "役務",
+      "提案"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R15",
+    "name": "井上海斗",
+    "role": "junior",
+    "department": "第二営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "サーバー"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R16",
+    "name": "木村奈々",
+    "role": "junior",
+    "department": "第二営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "RPA",
+      "ソフトウェア"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R17",
+    "name": "林大地",
+    "role": "expert",
+    "department": "第三営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "ネットワーク",
+      "セキュリティ"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R18",
+    "name": "清水あかね",
+    "role": "junior",
+    "department": "第三営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "複合機"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R19",
+    "name": "斎藤陽介",
+    "role": "senior",
+    "department": "第二営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "ストレージ",
+      "保守"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R20",
+    "name": "山口美月",
+    "role": "junior",
+    "department": "第一営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "ソフトウェア",
+      "クラウド"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R21",
+    "name": "森田圭吾",
+    "role": "expert",
+    "department": "第一営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "サーバー",
+      "ストレージ"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R22",
+    "name": "池田結衣",
+    "role": "junior",
+    "department": "第三営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "役務",
+      "保守"
+    ],
+    "is_top_performer": false
+  },
+  {
+    "employee_id": "R23",
+    "name": "橋本悠真",
+    "role": "senior",
+    "department": "第二営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "提案",
+      "クロージング",
+      "複合機"
+    ],
+    "is_top_performer": true
+  },
+  {
+    "employee_id": "R24",
+    "name": "石川さやか",
+    "role": "junior",
+    "department": "第三営業部",
+    "division": "法人1課",
+    "specialty_tags": [
+      "セキュリティ"
+    ],
+    "is_top_performer": false
+  }
+]

@@ -1,0 +1,1802 @@
+[
+  {
+    "customer_id": "C01",
+    "name": "富士商事",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C02",
+    "name": "豊田工業",
+    "industry": "IT",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C03",
+    "name": "株式会社旭商事",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "士業",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C04",
+    "name": "有限会社関東運輸",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C05",
+    "name": "株式会社光クリニック",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C06",
+    "name": "株式会社あおぞらサービス",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "中規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C07",
+    "name": "株式会社大和商事",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C08",
+    "name": "協和サービス",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C09",
+    "name": "株式会社ヤマト食品",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "既存",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C10",
+    "name": "有限会社誠和サービス",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C11",
+    "name": "村田建設",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C12",
+    "name": "有限会社遠藤製作所",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "建設",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C13",
+    "name": "有限会社村田印刷",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C14",
+    "name": "丸三食品",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C15",
+    "name": "豊田運輸",
+    "industry": "IT",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "中規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C16",
+    "name": "株式会社明光興業",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C17",
+    "name": "株式会社和田産業",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "中規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C18",
+    "name": "有限会社ヤマト物産",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C19",
+    "name": "近藤運輸",
+    "industry": "物流",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "物流"
+    ]
+  },
+  {
+    "customer_id": "C20",
+    "name": "株式会社中島運輸",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C21",
+    "name": "有限会社緑川サービス",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C22",
+    "name": "有限会社丸三商事",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C23",
+    "name": "株式会社村田工業",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C24",
+    "name": "平和建設",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C25",
+    "name": "有限会社松田事務所",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C26",
+    "name": "有限会社あけぼの印刷",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C27",
+    "name": "株式会社丸越クリニック",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C28",
+    "name": "株式会社松田サービス",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "士業",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C29",
+    "name": "有限会社森本サービス",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C30",
+    "name": "有限会社昭和製作所",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C31",
+    "name": "株式会社北斗サービス",
+    "industry": "士業",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C32",
+    "name": "有限会社村田工業",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C33",
+    "name": "株式会社第一産業",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C34",
+    "name": "株式会社宝商事",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "教育",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C35",
+    "name": "有限会社藤本興業",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C36",
+    "name": "豊田製作所",
+    "industry": "物流",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "物流",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C37",
+    "name": "第一製作所",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C38",
+    "name": "株式会社和田印刷",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C39",
+    "name": "丸越工業",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C40",
+    "name": "三幸印刷",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C41",
+    "name": "有限会社近藤工業",
+    "industry": "製造",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "既存",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C42",
+    "name": "光運輸",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C43",
+    "name": "有限会社第一精工",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C44",
+    "name": "あおぞらシステム",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C45",
+    "name": "サンライズ運輸",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C46",
+    "name": "小林興業",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "新規",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C47",
+    "name": "株式会社山田クリニック",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "医療",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C48",
+    "name": "青木商事",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C49",
+    "name": "株式会社協和物産",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C50",
+    "name": "有限会社光印刷",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C51",
+    "name": "サンライズ印刷",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C52",
+    "name": "ニュー産業",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C53",
+    "name": "株式会社平和印刷",
+    "industry": "建設",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C54",
+    "name": "株式会社今井サービス",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C55",
+    "name": "有限会社黒田食品",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C56",
+    "name": "株式会社関東運輸",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C57",
+    "name": "有限会社青木システム",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "教育",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C58",
+    "name": "豊田サービス",
+    "industry": "物流",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "物流",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C59",
+    "name": "有限会社今井システム",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C60",
+    "name": "ひかり物産",
+    "industry": "建設",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "建設",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C61",
+    "name": "中央電機",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C62",
+    "name": "小島クリニック",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C63",
+    "name": "有限会社西村建設",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C64",
+    "name": "株式会社和田電機",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C65",
+    "name": "有限会社白井工業",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C66",
+    "name": "宝興業",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C67",
+    "name": "有限会社新栄建設",
+    "industry": "士業",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C68",
+    "name": "有限会社明光精工",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "士業",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C69",
+    "name": "旭産業",
+    "industry": "士業",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "士業",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C70",
+    "name": "有限会社近藤印刷",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C71",
+    "name": "株式会社岡本電機",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C72",
+    "name": "株式会社新栄食品",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "医療",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C73",
+    "name": "昭和産業",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "紹介",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C74",
+    "name": "あけぼの食品",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C75",
+    "name": "有限会社豊田印刷",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C76",
+    "name": "有限会社ニュー食品",
+    "industry": "医療",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C77",
+    "name": "江口商事",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C78",
+    "name": "株式会社小林食品",
+    "industry": "物流",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "物流"
+    ]
+  },
+  {
+    "customer_id": "C79",
+    "name": "有限会社近藤産業",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C80",
+    "name": "株式会社黒田工業",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "既存",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C81",
+    "name": "株式会社平和システム",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C82",
+    "name": "株式会社小島システム",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C83",
+    "name": "和田食品",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C84",
+    "name": "遠藤電機",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C85",
+    "name": "青木事務所",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C86",
+    "name": "株式会社青木事務所",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C87",
+    "name": "遠藤興業",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C88",
+    "name": "株式会社東和運輸",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C89",
+    "name": "株式会社丸三クリニック",
+    "industry": "医療",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C90",
+    "name": "有限会社小島運輸",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C91",
+    "name": "株式会社中島産業",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C92",
+    "name": "株式会社東和電機",
+    "industry": "建設",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C93",
+    "name": "協和興業",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C94",
+    "name": "昭和運輸",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C95",
+    "name": "株式会社西村建設",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C96",
+    "name": "近藤電機",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C97",
+    "name": "有限会社山田物産",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C98",
+    "name": "株式会社緑川興業",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C99",
+    "name": "有限会社ニュー建設",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "既存",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C100",
+    "name": "株式会社松田興業",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C101",
+    "name": "株式会社富士産業",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "中規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C102",
+    "name": "有限会社あおぞら産業",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "既存",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C103",
+    "name": "東和建設",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C104",
+    "name": "有限会社大東興業",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C105",
+    "name": "有限会社みどり印刷",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C106",
+    "name": "株式会社石川物産",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C107",
+    "name": "江口電機",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C108",
+    "name": "有限会社石川興業",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C109",
+    "name": "株式会社東和印刷",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C110",
+    "name": "株式会社近藤建設",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C111",
+    "name": "有限会社緑川興業",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C112",
+    "name": "ヤマト建設",
+    "industry": "物流",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "物流",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C113",
+    "name": "有限会社近藤製作所",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C114",
+    "name": "有限会社旭商事",
+    "industry": "士業",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C115",
+    "name": "有限会社白井興業",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C116",
+    "name": "株式会社あけぼの印刷",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "医療",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C117",
+    "name": "株式会社富士精工",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C118",
+    "name": "石川産業",
+    "industry": "不動産",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "不動産",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C119",
+    "name": "株式会社小島物産",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C120",
+    "name": "石川商事",
+    "industry": "飲食",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "既存",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C121",
+    "name": "有限会社豊田興業",
+    "industry": "物流",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "新規",
+      "物流"
+    ]
+  },
+  {
+    "customer_id": "C122",
+    "name": "有限会社北斗印刷",
+    "industry": "IT",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "IT",
+      "中規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C123",
+    "name": "有限会社西村興業",
+    "industry": "教育",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C124",
+    "name": "株式会社明光クリニック",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C125",
+    "name": "サンライズ産業",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C126",
+    "name": "藤本食品",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "小売",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C127",
+    "name": "岡本興業",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C128",
+    "name": "ひかり印刷",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C129",
+    "name": "株式会社藤本電機",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "新規",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C130",
+    "name": "有限会社協和産業",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C131",
+    "name": "株式会社東和食品",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C132",
+    "name": "有限会社緑川運輸",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C133",
+    "name": "豊田建設",
+    "industry": "小売",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C134",
+    "name": "有限会社藤本運輸",
+    "industry": "不動産",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "不動産",
+      "中規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C135",
+    "name": "株式会社村田食品",
+    "industry": "IT",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C136",
+    "name": "松田運輸",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "新規",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C137",
+    "name": "株式会社小島事務所",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C138",
+    "name": "株式会社緑川製作所",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C139",
+    "name": "有限会社西村産業",
+    "industry": "医療",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "医療",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C140",
+    "name": "石川建設",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C141",
+    "name": "有限会社富士精工",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "紹介"
+    ]
+  },
+  {
+    "customer_id": "C142",
+    "name": "協和工業",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "教育",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C143",
+    "name": "有限会社和田運輸",
+    "industry": "IT",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "IT",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C144",
+    "name": "新栄興業",
+    "industry": "製造",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "紹介",
+      "製造"
+    ]
+  },
+  {
+    "customer_id": "C145",
+    "name": "株式会社緑川精工",
+    "industry": "飲食",
+    "size": "中規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "既存",
+      "飲食"
+    ]
+  },
+  {
+    "customer_id": "C146",
+    "name": "有限会社丸三システム",
+    "industry": "小売",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小売",
+      "小規模",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C147",
+    "name": "西村物産",
+    "industry": "教育",
+    "size": "小規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "中規模",
+      "教育",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C148",
+    "name": "株式会社藤本事務所",
+    "industry": "建設",
+    "size": "中規模",
+    "has_web_presence": false,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "新規"
+    ]
+  },
+  {
+    "customer_id": "C149",
+    "name": "株式会社和田事務所",
+    "industry": "士業",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "士業",
+      "小規模",
+      "既存"
+    ]
+  },
+  {
+    "customer_id": "C150",
+    "name": "株式会社昭和工業",
+    "industry": "建設",
+    "size": "小規模",
+    "has_web_presence": true,
+    "profile_tags": [
+      "小規模",
+      "建設",
+      "既存"
+    ]
+  }
+]

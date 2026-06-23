@@ -1,0 +1,312 @@
+[
+  {
+    "entry_id": "PB01",
+    "situation_tags": [
+      "決定先延ばし",
+      "クロージング"
+    ],
+    "text": "先延ばしには『次の一歩』を具体化する。次回訪問日とその場で決める事項を明確に提案する。",
+    "source_deal_id": "D146",
+    "author_rep_id": "R21"
+  },
+  {
+    "entry_id": "PB02",
+    "situation_tags": [
+      "予算",
+      "価格"
+    ],
+    "text": "予算が理由の停滞は、年度末(3月)の予算消化タイミングを狙って再提案するのが有効。",
+    "source_deal_id": "D096",
+    "author_rep_id": "R19"
+  },
+  {
+    "entry_id": "PB03",
+    "situation_tags": [
+      "決裁者未特定",
+      "提案"
+    ],
+    "text": "決裁者が見えない案件は、現場担当に『最終決定はどなたと進めますか』と早めに確認する。",
+    "source_deal_id": "D002",
+    "author_rep_id": "R09"
+  },
+  {
+    "entry_id": "PB04",
+    "situation_tags": [
+      "競合",
+      "差別化"
+    ],
+    "text": "競合比較では保守体制と導入後のサポートを前面に。価格だけの勝負を避ける。",
+    "source_deal_id": "D460",
+    "author_rep_id": "R04"
+  },
+  {
+    "entry_id": "PB05",
+    "situation_tags": [
+      "複合機",
+      "提案"
+    ],
+    "text": "複合機はランニングコスト(トナー・保守)込みの総額で比較表を作ると刺さる。",
+    "source_deal_id": "D048",
+    "author_rep_id": "R23"
+  },
+  {
+    "entry_id": "PB06",
+    "situation_tags": [
+      "ネットワーク",
+      "導入"
+    ],
+    "text": "ネットワーク更改は現地調査を先に。既存配線とVLAN要件を押さえてから提案する。",
+    "source_deal_id": "D488",
+    "author_rep_id": "R02"
+  },
+  {
+    "entry_id": "PB07",
+    "situation_tags": [
+      "セキュリティ",
+      "提案"
+    ],
+    "text": "セキュリティは『万一の事故コスト』を数字で示すと決裁が通りやすい。",
+    "source_deal_id": "D160",
+    "author_rep_id": "R01"
+  },
+  {
+    "entry_id": "PB08",
+    "situation_tags": [
+      "サーバー",
+      "導入"
+    ],
+    "text": "サーバー導入は設置環境(ラック・空調・電源)の確認を提案前に済ませる。",
+    "source_deal_id": "D306",
+    "author_rep_id": "R10"
+  },
+  {
+    "entry_id": "PB09",
+    "situation_tags": [
+      "クラウド",
+      "移行"
+    ],
+    "text": "クラウド移行は段階移行案を用意し、初期の不安を下げる。",
+    "source_deal_id": "D457",
+    "author_rep_id": "R01"
+  },
+  {
+    "entry_id": "PB10",
+    "situation_tags": [
+      "新規開拓",
+      "アプローチ"
+    ],
+    "text": "Web情報の乏しいSMBは、近隣の同業導入事例を切り口にすると話が早い。",
+    "source_deal_id": "D209",
+    "author_rep_id": "R01"
+  },
+  {
+    "entry_id": "PB11",
+    "situation_tags": [
+      "保守",
+      "更新"
+    ],
+    "text": "保守更新は満了3ヶ月前に接触。切替の手間より継続の安心を訴求。",
+    "source_deal_id": "D033",
+    "author_rep_id": "R01"
+  },
+  {
+    "entry_id": "PB12",
+    "situation_tags": [
+      "値引き",
+      "交渉"
+    ],
+    "text": "値引き要求には台数増やオプション追加とセットで条件を返す。",
+    "source_deal_id": "D068",
+    "author_rep_id": "R14"
+  },
+  {
+    "entry_id": "PB13",
+    "situation_tags": [
+      "導入後",
+      "フォロー"
+    ],
+    "text": "納品後2週間以内にフォロー訪問を入れると追加案件につながりやすい。",
+    "source_deal_id": "D164",
+    "author_rep_id": "R13"
+  },
+  {
+    "entry_id": "PB14",
+    "situation_tags": [
+      "決裁先送り",
+      "稟議"
+    ],
+    "text": "稟議が止まる時は、決裁者向けの1枚要約(費用対効果)を担当者に渡す。",
+    "source_deal_id": "D154",
+    "author_rep_id": "R10"
+  },
+  {
+    "entry_id": "PB15",
+    "situation_tags": [
+      "飲食",
+      "提案"
+    ],
+    "text": "飲食業はピーク時間を避けて訪問。短時間で要点を伝える資料を用意。",
+    "source_deal_id": "D170",
+    "author_rep_id": "R14"
+  },
+  {
+    "entry_id": "PB16",
+    "situation_tags": [
+      "医療",
+      "提案"
+    ],
+    "text": "医療機関は個人情報保護の観点を最優先に説明すると信頼を得やすい。",
+    "source_deal_id": "D425",
+    "author_rep_id": "R17"
+  },
+  {
+    "entry_id": "PB17",
+    "situation_tags": [
+      "建設",
+      "提案"
+    ],
+    "text": "建設業は現場とのネットワーク・モバイル環境の課題から入ると刺さる。",
+    "source_deal_id": "D179",
+    "author_rep_id": "R14"
+  },
+  {
+    "entry_id": "PB18",
+    "situation_tags": [
+      "小売",
+      "提案"
+    ],
+    "text": "小売はPOS連携と複数店舗の一括管理を切り口にする。",
+    "source_deal_id": "D304",
+    "author_rep_id": "R19"
+  },
+  {
+    "entry_id": "PB19",
+    "situation_tags": [
+      "紹介",
+      "拡大"
+    ],
+    "text": "満足度の高い顧客には同業他社の紹介を依頼。紹介は決裁が早い。",
+    "source_deal_id": "D335",
+    "author_rep_id": "R08"
+  },
+  {
+    "entry_id": "PB20",
+    "situation_tags": [
+      "失注",
+      "再アプローチ"
+    ],
+    "text": "失注案件も半年後に状況が変わることが多い。定期的に軽く接触を続ける。",
+    "source_deal_id": "D031",
+    "author_rep_id": "R23"
+  },
+  {
+    "entry_id": "PB21",
+    "situation_tags": [
+      "初回訪問",
+      "準備"
+    ],
+    "text": "初回は売り込まない。課題ヒアリングに徹し、次回の宿題をもらう。",
+    "source_deal_id": "D020",
+    "author_rep_id": "R19"
+  },
+  {
+    "entry_id": "PB22",
+    "situation_tags": [
+      "決裁者同席",
+      "クロージング"
+    ],
+    "text": "最終局面は上長同席を打診し、その場で意思決定を促す。",
+    "source_deal_id": "D151",
+    "author_rep_id": "R13"
+  },
+  {
+    "entry_id": "PB23",
+    "situation_tags": [
+      "リプレース",
+      "提案"
+    ],
+    "text": "更新案件は現行機の不満点を起点に、改善を具体的に見せる。",
+    "source_deal_id": "D520",
+    "author_rep_id": "R14"
+  },
+  {
+    "entry_id": "PB24",
+    "situation_tags": [
+      "コスト削減",
+      "提案"
+    ],
+    "text": "コスト削減提案は年間総額の比較表を1枚にまとめる。",
+    "source_deal_id": "D348",
+    "author_rep_id": "R19"
+  },
+  {
+    "entry_id": "PB25",
+    "situation_tags": [
+      "スピード",
+      "対応"
+    ],
+    "text": "SMBは即レス・即対応そのものが差別化になる。",
+    "source_deal_id": "D189",
+    "author_rep_id": "R17"
+  },
+  {
+    "entry_id": "PB26",
+    "situation_tags": [
+      "ストレージ",
+      "提案"
+    ],
+    "text": "ストレージ提案はデータ増加量の実測から。3年後の容量を見込んで設計する。",
+    "source_deal_id": "D479",
+    "author_rep_id": "R19"
+  },
+  {
+    "entry_id": "PB27",
+    "situation_tags": [
+      "バックアップ",
+      "提案"
+    ],
+    "text": "バックアップは『復旧できること』を訴求。リストア手順の実演が決め手になる。",
+    "source_deal_id": "D283",
+    "author_rep_id": "R19"
+  },
+  {
+    "entry_id": "PB28",
+    "situation_tags": [
+      "RPA",
+      "業務効率化"
+    ],
+    "text": "RPAは小さな定型業務から着手。最初の1業務で効果を可視化すると横展開しやすい。",
+    "source_deal_id": "D078",
+    "author_rep_id": "R02"
+  },
+  {
+    "entry_id": "PB29",
+    "situation_tags": [
+      "役務",
+      "保守"
+    ],
+    "text": "役務・保守はSLA(対応時間)を明確に。安さより『止まらない安心』を売る。",
+    "source_deal_id": "D003",
+    "author_rep_id": "R10"
+  },
+  {
+    "entry_id": "PB30",
+    "situation_tags": [
+      "テレワーク",
+      "セキュリティ"
+    ],
+    "text": "テレワークは利便性と統制の両立を。多要素認証込みで提案すると決裁が通りやすい。",
+    "source_deal_id": "D116",
+    "author_rep_id": "R10"
+  },
+  {
+    "entry_id": "PB31",
+    "situation_tags": [
+      "UPS",
+      "サーバー"
+    ],
+    "text": "サーバー・NASの提案には停電対策(UPS)を必ずセットで。事故時の損失で訴求する。",
+    "source_deal_id": "D395",
+    "author_rep_id": "R21"
+  }
+]

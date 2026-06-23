@@ -1,0 +1,747 @@
+{
+  "_comment": "English / romaji aliases per customer_id, auto-derived from the name parts in gen_seed.py. Maps how a rep might type a customer name in non-Japanese forms to the canonical JA record. Bare forms only (no 株式会社/有限会社). Short stem forms (e.g. 'Yamato', 'Hikari') are intentionally shared across customers — the resolver treats a name that matches >1 customer as ambiguous and refuses to guess, so only specific forms ('Yamato Trading') resolve.",
+  "C01": [
+    "Fuji",
+    "Fuji Shoji",
+    "Fuji Trading"
+  ],
+  "C02": [
+    "Toyoda",
+    "Toyoda Industries",
+    "Toyoda Kogyo"
+  ],
+  "C03": [
+    "Asahi",
+    "Asahi Shoji",
+    "Asahi Trading"
+  ],
+  "C04": [
+    "Kanto",
+    "Kanto Transport",
+    "Kanto Unyu"
+  ],
+  "C05": [
+    "Hikari",
+    "Hikari Clinic"
+  ],
+  "C06": [
+    "Aozora",
+    "Aozora Service",
+    "Aozora Services"
+  ],
+  "C07": [
+    "Yamato",
+    "Yamato Shoji",
+    "Yamato Trading"
+  ],
+  "C08": [
+    "Kyowa",
+    "Kyowa Service",
+    "Kyowa Services"
+  ],
+  "C09": [
+    "Yamato",
+    "Yamato Foods",
+    "Yamato Shokuhin"
+  ],
+  "C10": [
+    "Seiwa",
+    "Seiwa Service",
+    "Seiwa Services"
+  ],
+  "C11": [
+    "Murata",
+    "Murata Construction",
+    "Murata Kensetsu"
+  ],
+  "C12": [
+    "Endo",
+    "Endo Seisakusho",
+    "Endo Works"
+  ],
+  "C13": [
+    "Murata",
+    "Murata Insatsu",
+    "Murata Printing"
+  ],
+  "C14": [
+    "Marusan",
+    "Marusan Foods",
+    "Marusan Shokuhin"
+  ],
+  "C15": [
+    "Toyoda",
+    "Toyoda Transport",
+    "Toyoda Unyu"
+  ],
+  "C16": [
+    "Meiko",
+    "Meiko Enterprise",
+    "Meiko Kogyo"
+  ],
+  "C17": [
+    "Wada",
+    "Wada Industries",
+    "Wada Sangyo"
+  ],
+  "C18": [
+    "Yamato",
+    "Yamato Bussan",
+    "Yamato Trading"
+  ],
+  "C19": [
+    "Kondo",
+    "Kondo Transport",
+    "Kondo Unyu"
+  ],
+  "C20": [
+    "Nakajima",
+    "Nakajima Transport",
+    "Nakajima Unyu"
+  ],
+  "C21": [
+    "Midorikawa",
+    "Midorikawa Service",
+    "Midorikawa Services"
+  ],
+  "C22": [
+    "Marusan",
+    "Marusan Shoji",
+    "Marusan Trading"
+  ],
+  "C23": [
+    "Murata",
+    "Murata Industries",
+    "Murata Kogyo"
+  ],
+  "C24": [
+    "Heiwa",
+    "Heiwa Construction",
+    "Heiwa Kensetsu"
+  ],
+  "C25": [
+    "Matsuda",
+    "Matsuda Jimusho",
+    "Matsuda Office"
+  ],
+  "C26": [
+    "Akebono",
+    "Akebono Insatsu",
+    "Akebono Printing"
+  ],
+  "C27": [
+    "Marukoshi",
+    "Marukoshi Clinic"
+  ],
+  "C28": [
+    "Matsuda",
+    "Matsuda Service",
+    "Matsuda Services"
+  ],
+  "C29": [
+    "Morimoto",
+    "Morimoto Service",
+    "Morimoto Services"
+  ],
+  "C30": [
+    "Showa",
+    "Showa Seisakusho",
+    "Showa Works"
+  ],
+  "C31": [
+    "Hokuto",
+    "Hokuto Service",
+    "Hokuto Services"
+  ],
+  "C32": [
+    "Murata",
+    "Murata Industries",
+    "Murata Kogyo"
+  ],
+  "C33": [
+    "Daiichi",
+    "Daiichi Industries",
+    "Daiichi Sangyo"
+  ],
+  "C34": [
+    "Takara",
+    "Takara Shoji",
+    "Takara Trading"
+  ],
+  "C35": [
+    "Fujimoto",
+    "Fujimoto Enterprise",
+    "Fujimoto Kogyo"
+  ],
+  "C36": [
+    "Toyoda",
+    "Toyoda Seisakusho",
+    "Toyoda Works"
+  ],
+  "C37": [
+    "Daiichi",
+    "Daiichi Seisakusho",
+    "Daiichi Works"
+  ],
+  "C38": [
+    "Wada",
+    "Wada Insatsu",
+    "Wada Printing"
+  ],
+  "C39": [
+    "Marukoshi",
+    "Marukoshi Industries",
+    "Marukoshi Kogyo"
+  ],
+  "C40": [
+    "Sanko",
+    "Sanko Insatsu",
+    "Sanko Printing"
+  ],
+  "C41": [
+    "Kondo",
+    "Kondo Industries",
+    "Kondo Kogyo"
+  ],
+  "C42": [
+    "Hikari",
+    "Hikari Transport",
+    "Hikari Unyu"
+  ],
+  "C43": [
+    "Daiichi",
+    "Daiichi Precision",
+    "Daiichi Seiko"
+  ],
+  "C44": [
+    "Aozora",
+    "Aozora System",
+    "Aozora Systems"
+  ],
+  "C45": [
+    "Sunrise",
+    "Sunrise Transport",
+    "Sunrise Unyu"
+  ],
+  "C46": [
+    "Kobayashi",
+    "Kobayashi Enterprise",
+    "Kobayashi Kogyo"
+  ],
+  "C47": [
+    "Yamada",
+    "Yamada Clinic"
+  ],
+  "C48": [
+    "Aoki",
+    "Aoki Shoji",
+    "Aoki Trading"
+  ],
+  "C49": [
+    "Kyowa",
+    "Kyowa Bussan",
+    "Kyowa Trading"
+  ],
+  "C50": [
+    "Hikari",
+    "Hikari Insatsu",
+    "Hikari Printing"
+  ],
+  "C51": [
+    "Sunrise",
+    "Sunrise Insatsu",
+    "Sunrise Printing"
+  ],
+  "C52": [
+    "New",
+    "New Industries",
+    "New Sangyo"
+  ],
+  "C53": [
+    "Heiwa",
+    "Heiwa Insatsu",
+    "Heiwa Printing"
+  ],
+  "C54": [
+    "Imai",
+    "Imai Service",
+    "Imai Services"
+  ],
+  "C55": [
+    "Kuroda",
+    "Kuroda Foods",
+    "Kuroda Shokuhin"
+  ],
+  "C56": [
+    "Kanto",
+    "Kanto Transport",
+    "Kanto Unyu"
+  ],
+  "C57": [
+    "Aoki",
+    "Aoki System",
+    "Aoki Systems"
+  ],
+  "C58": [
+    "Toyoda",
+    "Toyoda Service",
+    "Toyoda Services"
+  ],
+  "C59": [
+    "Imai",
+    "Imai System",
+    "Imai Systems"
+  ],
+  "C60": [
+    "Hikari",
+    "Hikari Bussan",
+    "Hikari Trading"
+  ],
+  "C61": [
+    "Chuo",
+    "Chuo Denki",
+    "Chuo Electric"
+  ],
+  "C62": [
+    "Kojima",
+    "Kojima Clinic"
+  ],
+  "C63": [
+    "Nishimura",
+    "Nishimura Construction",
+    "Nishimura Kensetsu"
+  ],
+  "C64": [
+    "Wada",
+    "Wada Denki",
+    "Wada Electric"
+  ],
+  "C65": [
+    "Shirai",
+    "Shirai Industries",
+    "Shirai Kogyo"
+  ],
+  "C66": [
+    "Takara",
+    "Takara Enterprise",
+    "Takara Kogyo"
+  ],
+  "C67": [
+    "Shinei",
+    "Shinei Construction",
+    "Shinei Kensetsu"
+  ],
+  "C68": [
+    "Meiko",
+    "Meiko Precision",
+    "Meiko Seiko"
+  ],
+  "C69": [
+    "Asahi",
+    "Asahi Industries",
+    "Asahi Sangyo"
+  ],
+  "C70": [
+    "Kondo",
+    "Kondo Insatsu",
+    "Kondo Printing"
+  ],
+  "C71": [
+    "Okamoto",
+    "Okamoto Denki",
+    "Okamoto Electric"
+  ],
+  "C72": [
+    "Shinei",
+    "Shinei Foods",
+    "Shinei Shokuhin"
+  ],
+  "C73": [
+    "Showa",
+    "Showa Industries",
+    "Showa Sangyo"
+  ],
+  "C74": [
+    "Akebono",
+    "Akebono Foods",
+    "Akebono Shokuhin"
+  ],
+  "C75": [
+    "Toyoda",
+    "Toyoda Insatsu",
+    "Toyoda Printing"
+  ],
+  "C76": [
+    "New",
+    "New Foods",
+    "New Shokuhin"
+  ],
+  "C77": [
+    "Eguchi",
+    "Eguchi Shoji",
+    "Eguchi Trading"
+  ],
+  "C78": [
+    "Kobayashi",
+    "Kobayashi Foods",
+    "Kobayashi Shokuhin"
+  ],
+  "C79": [
+    "Kondo",
+    "Kondo Industries",
+    "Kondo Sangyo"
+  ],
+  "C80": [
+    "Kuroda",
+    "Kuroda Industries",
+    "Kuroda Kogyo"
+  ],
+  "C81": [
+    "Heiwa",
+    "Heiwa System",
+    "Heiwa Systems"
+  ],
+  "C82": [
+    "Kojima",
+    "Kojima System",
+    "Kojima Systems"
+  ],
+  "C83": [
+    "Wada",
+    "Wada Foods",
+    "Wada Shokuhin"
+  ],
+  "C84": [
+    "Endo",
+    "Endo Denki",
+    "Endo Electric"
+  ],
+  "C85": [
+    "Aoki",
+    "Aoki Jimusho",
+    "Aoki Office"
+  ],
+  "C86": [
+    "Aoki",
+    "Aoki Jimusho",
+    "Aoki Office"
+  ],
+  "C87": [
+    "Endo",
+    "Endo Enterprise",
+    "Endo Kogyo"
+  ],
+  "C88": [
+    "Towa",
+    "Towa Transport",
+    "Towa Unyu"
+  ],
+  "C89": [
+    "Marusan",
+    "Marusan Clinic"
+  ],
+  "C90": [
+    "Kojima",
+    "Kojima Transport",
+    "Kojima Unyu"
+  ],
+  "C91": [
+    "Nakajima",
+    "Nakajima Industries",
+    "Nakajima Sangyo"
+  ],
+  "C92": [
+    "Towa",
+    "Towa Denki",
+    "Towa Electric"
+  ],
+  "C93": [
+    "Kyowa",
+    "Kyowa Enterprise",
+    "Kyowa Kogyo"
+  ],
+  "C94": [
+    "Showa",
+    "Showa Transport",
+    "Showa Unyu"
+  ],
+  "C95": [
+    "Nishimura",
+    "Nishimura Construction",
+    "Nishimura Kensetsu"
+  ],
+  "C96": [
+    "Kondo",
+    "Kondo Denki",
+    "Kondo Electric"
+  ],
+  "C97": [
+    "Yamada",
+    "Yamada Bussan",
+    "Yamada Trading"
+  ],
+  "C98": [
+    "Midorikawa",
+    "Midorikawa Enterprise",
+    "Midorikawa Kogyo"
+  ],
+  "C99": [
+    "New",
+    "New Construction",
+    "New Kensetsu"
+  ],
+  "C100": [
+    "Matsuda",
+    "Matsuda Enterprise",
+    "Matsuda Kogyo"
+  ],
+  "C101": [
+    "Fuji",
+    "Fuji Industries",
+    "Fuji Sangyo"
+  ],
+  "C102": [
+    "Aozora",
+    "Aozora Industries",
+    "Aozora Sangyo"
+  ],
+  "C103": [
+    "Towa",
+    "Towa Construction",
+    "Towa Kensetsu"
+  ],
+  "C104": [
+    "Daito",
+    "Daito Enterprise",
+    "Daito Kogyo"
+  ],
+  "C105": [
+    "Midori",
+    "Midori Insatsu",
+    "Midori Printing"
+  ],
+  "C106": [
+    "Ishikawa",
+    "Ishikawa Bussan",
+    "Ishikawa Trading"
+  ],
+  "C107": [
+    "Eguchi",
+    "Eguchi Denki",
+    "Eguchi Electric"
+  ],
+  "C108": [
+    "Ishikawa",
+    "Ishikawa Enterprise",
+    "Ishikawa Kogyo"
+  ],
+  "C109": [
+    "Towa",
+    "Towa Insatsu",
+    "Towa Printing"
+  ],
+  "C110": [
+    "Kondo",
+    "Kondo Construction",
+    "Kondo Kensetsu"
+  ],
+  "C111": [
+    "Midorikawa",
+    "Midorikawa Enterprise",
+    "Midorikawa Kogyo"
+  ],
+  "C112": [
+    "Yamato",
+    "Yamato Construction",
+    "Yamato Kensetsu"
+  ],
+  "C113": [
+    "Kondo",
+    "Kondo Seisakusho",
+    "Kondo Works"
+  ],
+  "C114": [
+    "Asahi",
+    "Asahi Shoji",
+    "Asahi Trading"
+  ],
+  "C115": [
+    "Shirai",
+    "Shirai Enterprise",
+    "Shirai Kogyo"
+  ],
+  "C116": [
+    "Akebono",
+    "Akebono Insatsu",
+    "Akebono Printing"
+  ],
+  "C117": [
+    "Fuji",
+    "Fuji Precision",
+    "Fuji Seiko"
+  ],
+  "C118": [
+    "Ishikawa",
+    "Ishikawa Industries",
+    "Ishikawa Sangyo"
+  ],
+  "C119": [
+    "Kojima",
+    "Kojima Bussan",
+    "Kojima Trading"
+  ],
+  "C120": [
+    "Ishikawa",
+    "Ishikawa Shoji",
+    "Ishikawa Trading"
+  ],
+  "C121": [
+    "Toyoda",
+    "Toyoda Enterprise",
+    "Toyoda Kogyo"
+  ],
+  "C122": [
+    "Hokuto",
+    "Hokuto Insatsu",
+    "Hokuto Printing"
+  ],
+  "C123": [
+    "Nishimura",
+    "Nishimura Enterprise",
+    "Nishimura Kogyo"
+  ],
+  "C124": [
+    "Meiko",
+    "Meiko Clinic"
+  ],
+  "C125": [
+    "Sunrise",
+    "Sunrise Industries",
+    "Sunrise Sangyo"
+  ],
+  "C126": [
+    "Fujimoto",
+    "Fujimoto Foods",
+    "Fujimoto Shokuhin"
+  ],
+  "C127": [
+    "Okamoto",
+    "Okamoto Enterprise",
+    "Okamoto Kogyo"
+  ],
+  "C128": [
+    "Hikari",
+    "Hikari Insatsu",
+    "Hikari Printing"
+  ],
+  "C129": [
+    "Fujimoto",
+    "Fujimoto Denki",
+    "Fujimoto Electric"
+  ],
+  "C130": [
+    "Kyowa",
+    "Kyowa Industries",
+    "Kyowa Sangyo"
+  ],
+  "C131": [
+    "Towa",
+    "Towa Foods",
+    "Towa Shokuhin"
+  ],
+  "C132": [
+    "Midorikawa",
+    "Midorikawa Transport",
+    "Midorikawa Unyu"
+  ],
+  "C133": [
+    "Toyoda",
+    "Toyoda Construction",
+    "Toyoda Kensetsu"
+  ],
+  "C134": [
+    "Fujimoto",
+    "Fujimoto Transport",
+    "Fujimoto Unyu"
+  ],
+  "C135": [
+    "Murata",
+    "Murata Foods",
+    "Murata Shokuhin"
+  ],
+  "C136": [
+    "Matsuda",
+    "Matsuda Transport",
+    "Matsuda Unyu"
+  ],
+  "C137": [
+    "Kojima",
+    "Kojima Jimusho",
+    "Kojima Office"
+  ],
+  "C138": [
+    "Midorikawa",
+    "Midorikawa Seisakusho",
+    "Midorikawa Works"
+  ],
+  "C139": [
+    "Nishimura",
+    "Nishimura Industries",
+    "Nishimura Sangyo"
+  ],
+  "C140": [
+    "Ishikawa",
+    "Ishikawa Construction",
+    "Ishikawa Kensetsu"
+  ],
+  "C141": [
+    "Fuji",
+    "Fuji Precision",
+    "Fuji Seiko"
+  ],
+  "C142": [
+    "Kyowa",
+    "Kyowa Industries",
+    "Kyowa Kogyo"
+  ],
+  "C143": [
+    "Wada",
+    "Wada Transport",
+    "Wada Unyu"
+  ],
+  "C144": [
+    "Shinei",
+    "Shinei Enterprise",
+    "Shinei Kogyo"
+  ],
+  "C145": [
+    "Midorikawa",
+    "Midorikawa Precision",
+    "Midorikawa Seiko"
+  ],
+  "C146": [
+    "Marusan",
+    "Marusan System",
+    "Marusan Systems"
+  ],
+  "C147": [
+    "Nishimura",
+    "Nishimura Bussan",
+    "Nishimura Trading"
+  ],
+  "C148": [
+    "Fujimoto",
+    "Fujimoto Jimusho",
+    "Fujimoto Office"
+  ],
+  "C149": [
+    "Wada",
+    "Wada Jimusho",
+    "Wada Office"
+  ],
+  "C150": [
+    "Showa",
+    "Showa Industries",
+    "Showa Kogyo"
+  ]
+}
