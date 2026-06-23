@@ -182,6 +182,18 @@ def _resolve_customer_cascade(
     return None, "none", "none"
 
 
+def _ambiguous_candidates(note: str) -> list[dict]:
+    """Candidate customers when the note names an ambiguous stem (e.g. 'marusan'
+    → 4 丸三 companies). Each carries a representative deal_id so the UI/text can
+    say '丸三クリニック (D036)'. Empty when the match is unique or absent."""
+    out: list[dict] = []
+    for c in store.ambiguous_match_in_text(note):
+        d = _pick_deal(c["customer_id"])
+        out.append({"customer_id": c["customer_id"], "name": c.get("name", ""),
+                    "deal_id": d["deal_id"] if d else None})
+    return out
+
+
 def _pick_deal(customer_id: str) -> dict | None:
     """The deal a note about this customer most likely concerns: prefer an open
     deal, most recently updated; else the most recent deal of any status."""
@@ -271,15 +283,38 @@ def build_commentary_context(note: str, deal_id: str | None = None,
         if customer:
             deal = _pick_deal(customer["customer_id"])
 
+    # When nothing resolved, the note may still name an AMBIGUOUS stem (one that
+    # maps to several customers). Surface those candidates rather than guess one.
+    candidates = _ambiguous_candidates(note) if deal is None else []
+
     meta = {
         "has_customer_context": bool(deal),
         "customer": customer.get("name") if customer else None,
         "deal_id": deal["deal_id"] if deal else None,
         "confidence": confidence,
         "match_method": match_method,
+        "ambiguous_candidates": candidates,
     }
 
     if deal is None:
+        if candidates:
+            def _label(c: dict, en: bool) -> str:
+                did = f" ({c['deal_id']})" if c.get("deal_id") else ""
+                return f"{c['name']}{did}"
+            listing = "、".join(_label(c, lang == "en") for c in candidates)
+            no_match_note = (
+                f"メモ内の社名が複数の顧客に一致し、特定できませんでした（候補: {listing}）。"
+                "どの顧客か確定できないため、顧客固有の事実・履歴・数字・案件状況は一切"
+                "述べないでください。メモのテキストとコーチの所見のみに基づいて読み、"
+                "どの顧客の件か確認するよう促してください。"
+                if lang != "en" else
+                f"AMBIGUOUS CUSTOMER — the name in the note matches several customers "
+                f"(candidates: {listing}). It cannot be resolved to one, so do NOT state "
+                "any customer-specific facts, history, numbers, or deal status. Read from "
+                "the note and coach findings only, and prompt the rep to confirm which "
+                "customer (or attach the deal)."
+            )
+            return no_match_note, meta
         no_match_note = (
             "顧客情報が見つかりませんでした。メモのテキストとコーチの所見のみに"
             "基づいて読んでください。顧客に関する事実・履歴・数字・案件状況を"

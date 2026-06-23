@@ -82,6 +82,22 @@ LLM_NARRATE_MAX_TOKENS = _env_int("LLM_NARRATE_MAX_TOKENS", 600)
 # LLM_NARRATE_MAX_TOKENS) for offline/pre-warmed generation where quality wins.
 NARRATE_THINK = os.environ.get("SENPAI_NARRATE_THINK", "0").lower() not in ("0", "false", "no", "")
 LLM_STREAM = os.environ.get("LLM_STREAM", "1").lower() not in ("0", "false", "no", "")
+# Assistant tool-loop reasoning. Both the tool-selection rounds and the final
+# synthesis run the reasoning distill's <think> phase, which dominates Assistant
+# latency on the shared ~11 tok/s box. ON skips it (empty-think prefill) across
+# the whole loop — same lever the narrate path uses. Measured ~1.9x faster
+# overall (up to ~3x on tool + short-answer turns), with tool selection and
+# provenance preserved; the only cost seen was an occasional numeric paraphrase
+# slip in long answers. Default ON; set SENPAI_TOOLLOOP_NOTHINK=0 to restore the
+# slower, fully-reasoned loop.
+TOOLLOOP_NO_THINK = os.environ.get("SENPAI_TOOLLOOP_NOTHINK", "1").lower() not in ("0", "false", "no", "")
+# Dynamic reasoning router for the Assistant synthesis round (senpai/llm/routing.py).
+# "deterministic" (default) routes FAST vs REASONING by the tools used + query
+# intent — reasoning is added back only where it helps (numeric/synthesis), while
+# retrieval stays fast. "off" reverts to the static TOOLLOOP_NO_THINK behaviour.
+# Later: "atlas" / "classifier" / "llm" — swap in get_reasoning_router(), no
+# change to the execution loop. Tool-selection rounds are always fast regardless.
+REASONING_ROUTER = os.environ.get("SENPAI_REASONING_ROUTER", "deterministic").strip().lower()
 
 # --- Review Coach grounding controls ----------------------------------------
 # Grounding-audit P0: similar past cases are CROSS-CUSTOMER by construction

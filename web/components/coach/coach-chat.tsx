@@ -30,7 +30,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { api, narrateStream, chatStream, type ChatEvent } from "@/lib/api";
+import { api, narrateStream, chatStream, type ChatEvent, type ResolveCandidate } from "@/lib/api";
 import type {
   CoachExample,
   CoachResponse,
@@ -46,6 +46,7 @@ import {
   PRINCIPLE_KEYWORDS, buildTipMap, pickText,
   customerText, productCategoryText, principleText, tagText, coachLineText, coachExampleText,
 } from "@/lib/content-i18n";
+import { useCachedState, useCachedConversationId } from "@/lib/chat-store";
 import { JpOriginalBadge } from "@/components/jp-original-badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -363,19 +364,27 @@ function SimilarCases({ note, principles }: { note: string; principles: Principl
 
 // --- the structured coaching response --------------------------------------
 function CoachingCard({
-  resp, note, live, dealId, principles, items,
+  resp, note, live, dealId, principles, items, cacheKey,
 }: {
   resp: CoachResponse; note: string; live: boolean; dealId?: string;
-  principles: Principle[]; items: KnowledgeItem[];
+  principles: Principle[]; items: KnowledgeItem[]; cacheKey: string;
 }) {
   const { t, lang } = useT();
   const [showSimilar, setShowSimilar] = useState(false);
   const [showJa, setShowJa] = useState(false);
-  const [narr, setNarr] = useState<string | null>(null);
-  const [narrModel, setNarrModel] = useState<string | null>(null);
-  const [narrGrounded, setNarrGrounded] = useState<string | null>(null);
+  // The streamed senior commentary is cached per card (`cacheKey` = transcript
+  // message id), so switching tabs and coming back restores it instead of
+  // re-streaming from the model. `narrating`/`thinking` stay transient.
+  const [narr, setNarr] = useCachedState<string | null>(`coach:card:${cacheKey}:narr`, null);
+  const [narrModel, setNarrModel] = useCachedState<string | null>(`coach:card:${cacheKey}:model`, null);
+  const [narrGrounded, setNarrGrounded] = useCachedState<string | null>(`coach:card:${cacheKey}:grounded`, null);
+  // Ambiguous customer candidates surfaced by the narrate context event.
+  const [narrCandidates, setNarrCandidates] = useCachedState<ResolveCandidate[]>(`coach:card:${cacheKey}:cands`, []);
   const [narrating, setNarrating] = useState(false);
-  const [narrTried, setNarrTried] = useState(false);
+  const [narrTried, setNarrTried] = useCachedState<boolean>(`coach:card:${cacheKey}:tried`, false);
+  // Cached "has narration been kicked off" flag: the stream survives tab switches
+  // via the external store, so we must auto-start it exactly once per card.
+  const [narrStarted, setNarrStarted] = useCachedState<boolean>(`coach:card:${cacheKey}:started`, false);
   const [thinking, setThinking] = useState(false);
   // The senior commentary is dynamic model output, so in English mode we
   // generate it in English and lazily fetch the JA original on demand.
@@ -385,12 +394,11 @@ function CoachingCard({
   // AI-first: the deterministic six lenses are demoted to a collapsible
   // "supporting evidence" panel, hidden by default.
   const [showEvidence, setShowEvidence] = useState(false);
-  
+
   // One conversation id per coaching card, so re-narrating (e.g. fetching the JA
   // original) reuses the already-built deterministic context instead of rebuilding.
-  const convIdRef = useRef<string>(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID() : `coach-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+  // Persisted with the card so it stays stable across tab switches.
+  const convIdRef = useCachedConversationId(`coach:card:${cacheKey}:convId`);
 
   const rel = relevantPrinciples(note, principles);
   const tipMap = buildTipMap(items);
@@ -404,6 +412,7 @@ function CoachingCard({
 
   async function explain() {
     if (narrating) return;
+    setNarrStarted(true);
     setNarrating(true);
     setThinking(true);
     let acc = "";
@@ -416,6 +425,7 @@ function CoachingCard({
           break;
         case "context":
           setNarrGrounded(e.grounded ? (e.customer ?? null) : null);
+          if (e.candidates?.length) setNarrCandidates(e.candidates);
           break;
         case "thinking":
           setThinking(true);
@@ -454,7 +464,13 @@ function CoachingCard({
 
   // AI-first: stream the senior's read as soon as the coaching card mounts,
   // so the grounded interpretation — not the deterministic checklist — leads.
+  // Auto-start exactly once. `narrStarted` (cached) guards across navigation; the
+  // ref guards the SAME mount against React 18 StrictMode's double-invoked effect
+  // — without it, two narrate streams race and the view flickers between them.
+  const explainStartedRef = useRef(false);
   useEffect(() => {
+    if (explainStartedRef.current || narrStarted) return;
+    explainStartedRef.current = true;
     explain();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -500,10 +516,38 @@ function CoachingCard({
         </div>
       )}
 
+      {/* Ambiguous customer — the note's name matched several accounts. Surface
+          them so the rep picks one (re-runs the read grounded on that deal),
+          rather than the system guessing one company's facts. */}
+      {narrCandidates.length > 0 && (
+        <div className="rounded-xl border border-band-yellow/40 bg-band-yellow/[0.06] p-4">
+          <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-band-yellow">
+            <UserRound className="h-3.5 w-3.5" />
+            {lang === "ja"
+              ? "メモの社名が複数の顧客に一致しました。どの顧客ですか？"
+              : "The name in the note matches several customers — which one?"}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {narrCandidates.map((c) => (
+              <button
+                key={c.customer_id}
+                onClick={() => window.dispatchEvent(new CustomEvent("senpai:coach-pick",
+                  { detail: { note, deal_id: c.deal_id ?? "", name: c.name } }))}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                {customerText(lang, c.name).text}
+                {c.deal_id && <span className="font-mono text-[10px] text-muted-foreground">{c.deal_id}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 3. Senior's read (AI) — primary, grounded in the corpus + deal record,
           streamed as soon as the card mounts. */}
       <div>
-        {!narrTried && !narrating && (
+        {!narrStarted && (
           <button
             onClick={explain}
             className="flex w-full items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.03] px-4 py-3 text-left transition-colors hover:bg-primary/[0.06]"
@@ -522,7 +566,7 @@ function CoachingCard({
           </button>
         )}
 
-        {(narrating || narr) && (
+        {(narr || (narrStarted && !narrTried)) && (
           <div className="animate-fade-up rounded-xl border border-primary/25 bg-primary/[0.02] p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-primary">
@@ -1067,11 +1111,18 @@ export function CoachChat({
   examples: CoachExample[]; deals: DealRow[]; principles: Principle[]; items: KnowledgeItem[];
 }) {
   const { t, lang } = useT();
-  const [messages, setMessages] = useState<Msg[]>([{ id: 0, role: "senpai", kind: "intro" }]);
+  // Transcript is cached so switching tabs (e.g. to the Assistant) and back
+  // restores the conversation instead of resetting to the intro.
+  const [messages, setMessages] = useCachedState<Msg[]>(
+    "coach:transcript", () => [{ id: 0, role: "senpai", kind: "intro" }]);
   const [note, setNote] = useState("");
   const [dealId, setDealId] = useState("");
   const [busy, setBusy] = useState(false);
-  const idRef = useRef(1);
+  // Resume the id counter above any restored transcript so new ids never collide.
+  const idRef = useRef<number>(-1);
+  if (idRef.current < 0) {
+    idRef.current = messages.reduce((mx, m) => Math.max(mx, m.id), 0) + 1;
+  }
   const bottomRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
@@ -1089,6 +1140,19 @@ export function CoachChat({
     window.addEventListener("senpai:review-another", onAnother);
     return () => window.removeEventListener("senpai:review-another", onAnother);
   }, [t]);
+
+  // Picking an ambiguous-customer candidate re-runs the coaching grounded on that
+  // deal (or, if it has no open deal, with the full name so it resolves uniquely).
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const { note: n, deal_id, name } = (e as CustomEvent).detail as { note: string; deal_id: string; name: string };
+      if (deal_id) submit(n, deal_id);
+      else submit(`${name} ${n}`, "");
+    };
+    window.addEventListener("senpai:coach-pick", onPick);
+    return () => window.removeEventListener("senpai:coach-pick", onPick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // `engineText` always drives the keyword-based coach (Japanese for seed
   // examples); `opts.display` is what the user sees in the bubble. They differ
@@ -1211,7 +1275,7 @@ export function CoachChat({
           }
           return (
             <Row key={m.id} who="senpai" name={t("chat.senpai")}>
-              <CoachingCard resp={m.resp} note={m.note} live={m.live} dealId={m.dealId} principles={principles} items={items} />
+              <CoachingCard resp={m.resp} note={m.note} live={m.live} dealId={m.dealId} principles={principles} items={items} cacheKey={String(m.id)} />
             </Row>
           );
         })}

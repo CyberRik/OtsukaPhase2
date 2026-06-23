@@ -219,34 +219,62 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
     yield tool_log, answer
 
 
-def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
+def _route_final_answer(convo, tools, tool_log, role):
+    """Decide FAST vs REASONING for the synthesis round via the ReasoningRouter,
+    emit a `routing` event (observability), then stream the answer. Tool-selection
+    stays fast regardless; only this round is dynamically routed. When the router
+    is "off" we fall back to the static TOOLLOOP_NO_THINK behaviour."""
+    no_think = config.TOOLLOOP_NO_THINK
+    if config.REASONING_ROUTER and config.REASONING_ROUTER != "off":
+        try:
+            from senpai.llm.routing import get_reasoning_router, RoutingRequest
+            user_msg = next((m.get("content") for m in reversed(convo)
+                             if m.get("role") == "user" and m.get("content")), "")
+            decision = get_reasoning_router().route(RoutingRequest(
+                message=user_msg or "", role=role or "junior",
+                tools_used=[name for name, _a, _r in tool_log], rounds=len(tool_log)))
+            yield {"type": "routing", "think": decision.think,
+                   "reason": decision.reason, "confidence": round(decision.confidence, 2),
+                   "mode": "reasoning" if decision.think else "fast"}
+            no_think = not decision.think
+        except Exception:  # noqa: BLE001 — a router fault must never break the turn
+            pass  # fall back to the static TOOLLOOP_NO_THINK default
+    yield from _stream_final_answer(convo, tools, no_think=no_think)
+
+
+def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
+                     role: str | None = None):
     """Web-facing tool loop that *streams the final answer* token-by-token.
 
     Same loop as `stream_turn` (kept intact for the Gradio apps), but instead of
     a single blocking final completion it streams the answering round so the web
     Assistant feels as live as Review Coach. Yields typed event dicts:
       {"type": "tool", "name", "args", "result"}   — one per executed tool
+      {"type": "routing", "think", "reason", "confidence", "mode"}  — synthesis mode
       {"type": "delta", "text"}                     — answer tokens as they arrive
       {"type": "answer", "text"}                    — the full answer (terminal)
     `convo` is mutated in place (demo semantics). Reasoning (`<think>…</think>`)
-    is stripped so only the user-facing answer streams."""
+    is stripped so only the user-facing answer streams. `role` feeds the router."""
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
     from senpai.retrieval import trace as _trace
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
 
+    # Tool-selection rounds also skip the <think> phase when enabled — this is
+    # where the bulk of the latency lives (the synthesis round alone is not enough).
+    sel_msgs = lambda: _prep(convo, config.TOOLLOOP_NO_THINK)
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
         try:
             resp = client.chat.completions.create(
-                model=config.MODEL, messages=convo, tools=tools,
+                model=config.MODEL, messages=sel_msgs(), tools=tools,
                 tool_choice="auto", temperature=0.0,
             )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
-                    model=config.FALLBACK_MODEL, messages=convo, tools=tools,
+                    model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=tools,
                     tool_choice="auto", temperature=0.0,
                 )
             except Exception as fe:  # noqa: BLE001
@@ -265,7 +293,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
         # No tool calls → this is the answering round. Re-run it as a stream so
         # the answer flows token-by-token instead of arriving all at once.
         if not calls:
-            yield from _stream_final_answer(convo, tools)
+            yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
         convo.append({"role": "assistant", "content": None, "tool_calls": [
@@ -284,23 +312,26 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.
-            yield from _stream_final_answer(convo, tools)
+            yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
 
-def _stream_final_answer(convo: list[dict], tools: list[dict] | None):
+def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_think: bool = False):
     """Stream one tool-free completion as the answer, stripping any reasoning.
-    Emits `delta` events live and a terminal `answer` with the full text."""
+    Emits `delta` events live and a terminal `answer` with the full text.
+    `no_think` prefills an empty think block so the reasoning distill skips its
+    <think> phase and answers immediately (the dominant latency win)."""
     full, emitted = "", 0
+    msgs = _prep(convo, no_think)
     try:
         stream = client.chat.completions.create(
-            model=config.MODEL, messages=convo, temperature=0.0,
+            model=config.MODEL, messages=msgs, temperature=0.0,
             max_tokens=config.LLM_MAX_TOKENS, stream=True,
         )
     except Exception:  # noqa: BLE001 — fall back to a single blocking answer
         try:
             resp = fallback_client.chat.completions.create(
-                model=config.FALLBACK_MODEL, messages=convo, temperature=0.0,
+                model=config.FALLBACK_MODEL, messages=msgs, temperature=0.0,
                 max_tokens=config.LLM_MAX_TOKENS,
             )
             text = re.sub(r"<think>.*?</think>", "",
