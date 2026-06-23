@@ -16,7 +16,6 @@ import {
   type LucideIcon,
   MessagesSquare,
   ShieldAlert,
-  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
@@ -32,7 +31,6 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/junior/assistant", key: "nav.assistant", icon: MessagesSquare },
     { href: "/junior/coach", key: "nav.coach", icon: GraduationCap },
     { href: "/junior/accounts", key: "nav.accounts", icon: Building2 },
-    { href: "/junior/prepare", key: "nav.prepare", icon: Target },
     { href: "/junior/knowledge", key: "nav.knowledge", icon: Library },
     { href: "/junior/reports", key: "nav.reports", icon: FileText },
   ],

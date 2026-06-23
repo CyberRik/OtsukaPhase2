@@ -123,7 +123,7 @@ def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
         "score": res.score,
         "days_stale": stale_days,
         "close_date": d.get("expected_order_date"),
-        "slips": 1 if regressed else 0,
+        "slips": slips,
         "n_flags": len(flags),
         "decision_maker_identified": d.get("decision_maker_identified", False),
         "rep_close_likelihood": d.get("rep_close_likelihood"),
@@ -564,6 +564,11 @@ def _junior_system() -> str:
         "絶対に人名や提供者名を推測・生成しないでください。"
         "自信が持てない時は route_to_expert で適切な先輩に橋渡し"
         "してください。外部情報が必要な時は web_search を使ってください。"
+        "顧客・会社・製品・案件に関する質問には、回答する前に必ず query_spr / "
+        "search_knowledge / search_products のいずれかを呼び出して確認すること。"
+        "ツールを呼ばずに『社内データに無い』と述べてはいけません。"
+        "回答は読みやすいMarkdownで整える: 区切りには短い**太字の見出しラベル**"
+        "（例: **状況:** …）や見出しを使い、列挙は箇条書きにし、簡潔にまとめる。"
         "日本語で、簡潔かつ実務的に答えます。"
         f"本日は {_today().isoformat()} です。"
     )
@@ -580,7 +585,10 @@ def _manager_system() -> str:
         "製品の確認や見積例には search_products / create_quote、"
         "調整や連絡文の準備には schedule_meeting / send_email を使えます"
         "(いずれも下書きで、送信・確定はしません)。外部情報が必要な時は "
-        "web_search を使ってください。日本語で簡潔に答えます。"
+        "web_search を使ってください。"
+        "回答は読みやすいMarkdownで整える: 区切りには短い**太字の見出しラベル**"
+        "（例: **要点:** …）や見出しを使い、列挙は箇条書きにし、簡潔にまとめる。"
+        "日本語で簡潔に答えます。"
         f"本日は {_today().isoformat()} です。"
     )
 
