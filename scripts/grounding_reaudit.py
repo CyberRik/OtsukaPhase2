@@ -15,7 +15,7 @@ quality (= clean outputs / total). Run when :8765 is back:
   SENPAI_USE_LLM=1 PYTHONUTF8=1 PYTHONPATH=. python scripts/grounding_reaudit.py
 """
 from __future__ import annotations
-import re
+import os, re
 from senpai import config
 from senpai.data import store
 from senpai.coach.review import review_note, commentary_prompt
@@ -23,7 +23,7 @@ from senpai.coach.context import build_commentary_context
 from senpai.llm import client
 from senpai.health.scoring import score_deal
 
-N = 15
+N = int(os.environ.get("REAUDIT_N", "15"))
 SPEC = ["likely","probably","おそらく","可能性","かもしれ","と思われ","推測","はず","だろう",
         "must be","may be","might"]
 PRIN = re.compile(r"P\d{3}")
