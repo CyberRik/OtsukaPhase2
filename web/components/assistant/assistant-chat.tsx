@@ -10,6 +10,7 @@ import { chatStream, type ChatEvent, type ChatRole, type ChatTurn, type Retrieva
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
+import { useCachedState, useCachedConversationId } from "@/lib/chat-store";
 
 type ToolCall = { name: string; args: string; result: string };
 type SourceState = {
@@ -86,15 +87,11 @@ const EXAMPLES: Record<"junior" | "manager", Record<"ja" | "en", string[]>> = {
   },
 };
 
-// Stable per-session id for conversation caching (crypto.randomUUID when available).
-function makeConversationId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
-  return `conv-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
 export function AssistantChat({ role }: { role: "junior" | "manager" }) {
   const { t, lang } = useT();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  // Transcript is cached per role so it survives switching tabs (e.g. to Review
+  // Coach) and back, instead of being thrown away when the route unmounts.
+  const [messages, setMessages] = useCachedState<Msg[]>(`assistant:${role}:messages`, []);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [model, setModel] = useState<string | null>(null);
@@ -102,11 +99,17 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
   const abortRef = useRef<AbortController | null>(null);
   // One conversation id per chat session, so the backend can keep the account in
   // focus across turns ("what should I do next?" stays scoped to this customer).
-  const convIdRef = useRef<string>(makeConversationId());
+  // Persisted alongside the transcript so the account stays in focus across tabs.
+  const convId = useCachedConversationId(`assistant:${role}:convId`);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // A stream started before a tab switch keeps writing to the external store, so
+  // on remount the trailing message may still be "running" — and will finish on
+  // its own. Treat that as busy so we don't start a second turn over it.
+  const streaming = messages.length > 0 && messages[messages.length - 1].status === "running";
 
   function stop() {
     abortRef.current?.abort();
@@ -114,7 +117,7 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
 
   async function send(text: string) {
     const msg = text.trim();
-    if (!msg || busy) return;
+    if (!msg || busy || streaming) return;
     setInput("");
     setBusy(true);
 
@@ -188,7 +191,7 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
           patch((m) => ({ ...m, status: "error" }));
           break;
       }
-    }, { signal: ctrl.signal, conversationId: convIdRef.current });
+    }, { signal: ctrl.signal, conversationId: convId.current });
 
     // Stream ended without an answer → surface a clear error.
     patch((m) => (m.status === "running" || (!answered && !m.content)
@@ -234,7 +237,7 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
           <button
             key={ex}
             onClick={() => send(ex)}
-            disabled={busy}
+            disabled={busy || streaming}
             className="rounded-full border border-border bg-card px-3 py-1 text-[12px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-50"
           >
             {ex}
@@ -268,7 +271,7 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
         ) : (
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() || streaming}
             className="inline-flex h-[44px] items-center gap-1.5 rounded-lg bg-primary px-4 text-[13px] font-medium text-primary-foreground transition-opacity disabled:opacity-50"
           >
             <Send className="h-4 w-4" /> {t("assistant.send")}
@@ -277,8 +280,8 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
         {messages.length > 0 && (
           <button
             type="button"
-            onClick={() => { setMessages([]); setInput(""); convIdRef.current = makeConversationId(); }}
-            disabled={busy}
+            onClick={() => { setMessages([]); setInput(""); convId.reset(); }}
+            disabled={busy || streaming}
             className="h-[44px] rounded-lg border border-border bg-card px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
           >
             {t("assistant.clear")}

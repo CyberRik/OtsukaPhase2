@@ -235,18 +235,21 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
     from senpai.retrieval import trace as _trace
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
 
+    # Tool-selection rounds also skip the <think> phase when enabled — this is
+    # where the bulk of the latency lives (the synthesis round alone is not enough).
+    sel_msgs = lambda: _prep(convo, config.TOOLLOOP_NO_THINK)
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
         try:
             resp = client.chat.completions.create(
-                model=config.MODEL, messages=convo, tools=tools,
+                model=config.MODEL, messages=sel_msgs(), tools=tools,
                 tool_choice="auto", temperature=0.0,
             )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
-                    model=config.FALLBACK_MODEL, messages=convo, tools=tools,
+                    model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=tools,
                     tool_choice="auto", temperature=0.0,
                 )
             except Exception as fe:  # noqa: BLE001
@@ -265,7 +268,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
         # No tool calls → this is the answering round. Re-run it as a stream so
         # the answer flows token-by-token instead of arriving all at once.
         if not calls:
-            yield from _stream_final_answer(convo, tools)
+            yield from _stream_final_answer(convo, tools, no_think=config.TOOLLOOP_NO_THINK)
             return
 
         convo.append({"role": "assistant", "content": None, "tool_calls": [
@@ -284,23 +287,26 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.
-            yield from _stream_final_answer(convo, tools)
+            yield from _stream_final_answer(convo, tools, no_think=config.TOOLLOOP_NO_THINK)
             return
 
 
-def _stream_final_answer(convo: list[dict], tools: list[dict] | None):
+def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_think: bool = False):
     """Stream one tool-free completion as the answer, stripping any reasoning.
-    Emits `delta` events live and a terminal `answer` with the full text."""
+    Emits `delta` events live and a terminal `answer` with the full text.
+    `no_think` prefills an empty think block so the reasoning distill skips its
+    <think> phase and answers immediately (the dominant latency win)."""
     full, emitted = "", 0
+    msgs = _prep(convo, no_think)
     try:
         stream = client.chat.completions.create(
-            model=config.MODEL, messages=convo, temperature=0.0,
+            model=config.MODEL, messages=msgs, temperature=0.0,
             max_tokens=config.LLM_MAX_TOKENS, stream=True,
         )
     except Exception:  # noqa: BLE001 — fall back to a single blocking answer
         try:
             resp = fallback_client.chat.completions.create(
-                model=config.FALLBACK_MODEL, messages=convo, temperature=0.0,
+                model=config.FALLBACK_MODEL, messages=msgs, temperature=0.0,
                 max_tokens=config.LLM_MAX_TOKENS,
             )
             text = re.sub(r"<think>.*?</think>", "",

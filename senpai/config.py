@@ -80,6 +80,12 @@ LLM_NARRATE_MAX_TOKENS = _env_int("LLM_NARRATE_MAX_TOKENS", 600)
 # LLM_NARRATE_MAX_TOKENS) for offline/pre-warmed generation where quality wins.
 NARRATE_THINK = os.environ.get("SENPAI_NARRATE_THINK", "0").lower() not in ("0", "false", "no", "")
 LLM_STREAM = os.environ.get("LLM_STREAM", "1").lower() not in ("0", "false", "no", "")
+# Assistant tool-loop final-answer reasoning. The synthesis round runs the
+# reasoning distill's <think> phase, which dominates Assistant latency on the
+# shared ~11 tok/s box. ON skips it (empty-think prefill) for a much faster
+# answer — same lever the narrate path uses. (Intermediate tool-selection rounds
+# are unchanged.) Toggle with SENPAI_TOOLLOOP_NOTHINK.
+TOOLLOOP_NO_THINK = os.environ.get("SENPAI_TOOLLOOP_NOTHINK", "0").lower() not in ("0", "false", "no", "")
 
 # --- Review Coach grounding controls ----------------------------------------
 # Grounding-audit P0: similar past cases are CROSS-CUSTOMER by construction
