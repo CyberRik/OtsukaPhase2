@@ -30,7 +30,7 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { api, narrateStream, chatStream, type ChatEvent } from "@/lib/api";
+import { api, narrateStream, chatStream, type ChatEvent, type ResolveCandidate } from "@/lib/api";
 import type {
   CoachExample,
   CoachResponse,
@@ -378,6 +378,8 @@ function CoachingCard({
   const [narr, setNarr] = useCachedState<string | null>(`coach:card:${cacheKey}:narr`, null);
   const [narrModel, setNarrModel] = useCachedState<string | null>(`coach:card:${cacheKey}:model`, null);
   const [narrGrounded, setNarrGrounded] = useCachedState<string | null>(`coach:card:${cacheKey}:grounded`, null);
+  // Ambiguous customer candidates surfaced by the narrate context event.
+  const [narrCandidates, setNarrCandidates] = useCachedState<ResolveCandidate[]>(`coach:card:${cacheKey}:cands`, []);
   const [narrating, setNarrating] = useState(false);
   const [narrTried, setNarrTried] = useCachedState<boolean>(`coach:card:${cacheKey}:tried`, false);
   // Cached "has narration been kicked off" flag: the stream survives tab switches
@@ -423,6 +425,7 @@ function CoachingCard({
           break;
         case "context":
           setNarrGrounded(e.grounded ? (e.customer ?? null) : null);
+          if (e.candidates?.length) setNarrCandidates(e.candidates);
           break;
         case "thinking":
           setThinking(true);
@@ -461,10 +464,14 @@ function CoachingCard({
 
   // AI-first: stream the senior's read as soon as the coaching card mounts,
   // so the grounded interpretation — not the deterministic checklist — leads.
-  // Auto-start exactly once per card; a previous mount may already have kicked it
-  // off (its stream keeps running through the external store).
+  // Auto-start exactly once. `narrStarted` (cached) guards across navigation; the
+  // ref guards the SAME mount against React 18 StrictMode's double-invoked effect
+  // — without it, two narrate streams race and the view flickers between them.
+  const explainStartedRef = useRef(false);
   useEffect(() => {
-    if (!narrStarted) explain();
+    if (explainStartedRef.current || narrStarted) return;
+    explainStartedRef.current = true;
+    explain();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -506,6 +513,34 @@ function CoachingCard({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Ambiguous customer — the note's name matched several accounts. Surface
+          them so the rep picks one (re-runs the read grounded on that deal),
+          rather than the system guessing one company's facts. */}
+      {narrCandidates.length > 0 && (
+        <div className="rounded-xl border border-band-yellow/40 bg-band-yellow/[0.06] p-4">
+          <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-band-yellow">
+            <UserRound className="h-3.5 w-3.5" />
+            {lang === "ja"
+              ? "メモの社名が複数の顧客に一致しました。どの顧客ですか？"
+              : "The name in the note matches several customers — which one?"}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {narrCandidates.map((c) => (
+              <button
+                key={c.customer_id}
+                onClick={() => window.dispatchEvent(new CustomEvent("senpai:coach-pick",
+                  { detail: { note, deal_id: c.deal_id ?? "", name: c.name } }))}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                {customerText(lang, c.name).text}
+                {c.deal_id && <span className="font-mono text-[10px] text-muted-foreground">{c.deal_id}</span>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -1105,6 +1140,19 @@ export function CoachChat({
     window.addEventListener("senpai:review-another", onAnother);
     return () => window.removeEventListener("senpai:review-another", onAnother);
   }, [t]);
+
+  // Picking an ambiguous-customer candidate re-runs the coaching grounded on that
+  // deal (or, if it has no open deal, with the full name so it resolves uniquely).
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const { note: n, deal_id, name } = (e as CustomEvent).detail as { note: string; deal_id: string; name: string };
+      if (deal_id) submit(n, deal_id);
+      else submit(`${name} ${n}`, "");
+    };
+    window.addEventListener("senpai:coach-pick", onPick);
+    return () => window.removeEventListener("senpai:coach-pick", onPick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // `engineText` always drives the keyword-based coach (Japanese for seed
   // examples); `opts.display` is what the user sees in the bubble. They differ

@@ -351,6 +351,22 @@ def match_customer_in_text(text: str) -> dict | None:
     return None
 
 
+def ambiguous_match_in_text(text: str) -> list[dict]:
+    """When the longest customer name/alias found in `text` maps to MORE THAN ONE
+    customer (e.g. 'marusan' → 丸三クリニック / 丸三食品 / 丸三商事 / 丸三システム),
+    return those candidate records so callers can disambiguate instead of silently
+    failing. Empty when the match is unique (use match_customer_in_text) or absent.
+    This is the surface-the-ambiguity counterpart to the never-guess resolvers."""
+    low = (text or "").lower()
+    best: tuple[int, set[str]] | None = None
+    for key, ids in _alias_index().items():
+        if key in low and (best is None or len(key) > best[0]):
+            best = (len(key), ids)
+    if best and len(best[1]) > 1:
+        return [c for cid in sorted(best[1]) if (c := get_customer(cid))]
+    return []
+
+
 # --- fallback resolution: fuzzy matching + company-name extraction ----------
 
 _COMPANY_SUFFIXES = (

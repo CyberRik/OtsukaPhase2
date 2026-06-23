@@ -486,6 +486,7 @@ def coach_narrate(req: CoachRequest):
                     "customer": ctx_meta["customer"], "deal_id": ctx_meta["deal_id"],
                     "confidence": ctx_meta.get("confidence", "none"),
                     "match_method": ctx_meta.get("match_method", "none"),
+                    "candidates": ctx_meta.get("ambiguous_candidates", []),
                     "cached": cached_flag})
         full, emitted, last_think = "", 0, 0
         try:
@@ -1154,12 +1155,29 @@ def chat(req: ChatRequest):
     if active and active.get("customer_id"):
         _CHAT_CONTEXTS[conversation_id] = active
 
+    # Ambiguous customer stem (e.g. "marusan" → 4 丸三 companies) and nothing else
+    # pinned it down → surface the candidates instead of guessing one's facts.
+    amb_candidates: list[dict] = []
+    if not active:
+        for c in store.ambiguous_match_in_text(req.message):
+            d = next((x for x in store.deals_for_customer(c["customer_id"])
+                      if config.is_open_rank(x.get("order_rank"))), None)
+            amb_candidates.append({"customer_id": c["customer_id"],
+                                   "name": c.get("name", ""),
+                                   "deal_id": d["deal_id"] if d else None})
+
     system = system_fn()
     if active and active.get("customer"):
         focus = active["customer"] + (f"（案件 {active['deal_id']}）" if active.get("deal_id") else "")
         system += (f"\n\n【現在の対象顧客】{focus}。アカウント固有の質問では、"
                    f"search_notes に customer='{active['customer']}' を渡し、この顧客の"
                    f"記録に限定して回答すること。")
+    elif amb_candidates:
+        listing = "、".join(f"{c['name']}" + (f"（{c['deal_id']}）" if c.get("deal_id") else "")
+                            for c in amb_candidates)
+        system += (f"\n\n【顧客の曖昧性】メモ内の社名が複数の顧客に一致します（候補: {listing}）。"
+                   "どの顧客か特定できないため、1社に決め打ちして固有の事実を述べないでください。"
+                   "まずどの顧客（または案件ID）か利用者に確認してください。")
 
     convo: list[dict] = [{"role": "system", "content": system}]
     for m in req.history:
@@ -1177,8 +1195,11 @@ def chat(req: ChatRequest):
                         "conversation_id": conversation_id,
                         "customer": active.get("customer"),
                         "deal_id": active.get("deal_id"), "cached": cached_flag})
+        elif amb_candidates:
+            yield _sse({"type": "resolve", "status": "ambiguous",
+                        "query": req.message, "candidates": amb_candidates})
         try:
-            for ev in stream_chat_turn(convo, tools=tools):
+            for ev in stream_chat_turn(convo, tools=tools, role=req.role):
                 yield _sse(ev)
             yield _sse({"type": "done", "model": config.MODEL})
         except Exception as e:  # noqa: BLE001 — never crash the stream

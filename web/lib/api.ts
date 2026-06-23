@@ -95,7 +95,7 @@ export const api = {
 export type NarrateEvent =
   | { type: "start"; model?: string; endpoint?: string }
   | { type: "thinking"; chars: number }
-  | { type: "context"; grounded: boolean; customer?: string | null; deal_id?: string | null; cached?: boolean }
+  | { type: "context"; grounded: boolean; customer?: string | null; deal_id?: string | null; cached?: boolean; candidates?: ResolveCandidate[] }
   | { type: "delta"; text: string }
   | { type: "done"; model?: string }
   | { type: "fallback" }
@@ -143,6 +143,14 @@ export async function narrateStream(
 // `tool` event before the final `answer`.
 export type ChatRole = "junior" | "manager" | "research";
 
+// A customer the system could not disambiguate from the text — surfaced so the
+// user can pick instead of the system guessing (provenance stays deterministic).
+export interface ResolveCandidate {
+  customer_id: string;
+  name: string;
+  deal_id?: string | null;
+}
+
 // One retrieval event surfaced by a tool — the Retrieval Explorer's data.
 export interface RetrievalItem {
   id: string;
@@ -164,7 +172,8 @@ export interface RetrievalTrace {
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[] }
-  | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: unknown[] }
+  | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
+  | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }
   | { type: "deal_choices"; status: "ambiguous"; deals: unknown[] }
   | { type: "source"; key: string; label: string; status: "found" | "not_found" | "ambiguous" | "skipped" | "error"; count?: number; detail?: string }

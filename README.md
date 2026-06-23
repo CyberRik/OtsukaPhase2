@@ -91,18 +91,29 @@ automatically by `senpai/config.py`):
 
 ```bash
 # E:\my_stuff\OtsukaPhase2\.env
-BASE_URL="http://100.101.186.29:8765/v1"                    # direct over Tailscale (no tunnel)
+BASE_URL="http://127.0.0.1:8765/v1"                          # via SSH tunnel (see below)
 MODEL="Qwen3.6-27B-Claude-Opus-Reasoning-Distilled"          # llama-server ignores this field; label only
 ```
 
-Reach it directly over Tailscale (as above), or via an SSH tunnel and point `BASE_URL` at
-`http://127.0.0.1:8765/v1`:
+**Connectivity (from this Windows box):** the direct Tailscale URL
+`http://100.101.186.29:8765/v1` is **firewalled** — the host pings but the port refuses. Reach
+the server through an SSH tunnel instead, then point `BASE_URL` at `127.0.0.1:8765` (as above):
 
 ```bash
-ssh -N -L 8765:127.0.0.1:8765 team-a@100.101.186.29
+ssh -N -L 8765:127.0.0.1:8765 team-a@100.101.186.29     # leave running in its own terminal
 ```
 
-Sanity check it's up: `curl http://127.0.0.1:8765/v1/models` (or the Tailscale IP).
+**Starting / restarting the model** (the 27B GGUF is periodically **OOM-killed** on the shared
+GB10 — when the Assistant shows "Couldn't reach the server", relaunch it):
+
+```bash
+# from anywhere — launches detached on the GPU box
+ssh team-a@100.101.186.29 'cd ~/Desktop/toolcallLM/qwen3 && \
+  setsid bash -c "./serve_gguf.sh > llama-server.log 2>&1" </dev/null &'
+```
+
+Sanity check it's up (needs the tunnel): `curl http://127.0.0.1:8765/v1/models`.
+Check it's alive on the box: `ssh team-a@100.101.186.29 'pgrep -af llama-server'`.
 > A `couldn't bind … 0.0.0.0:8765` line in the llama-server log just means a **second** launch
 > hit an already-running instance — the first one is fine.
 
@@ -111,7 +122,7 @@ Sanity check it's up: `curl http://127.0.0.1:8765/v1/models` (or the Tailscale I
 ```bash
 # PowerShell (Windows)
 $env:SENPAI_USE_LLM = '1'        # ← switches live commentary ON (default '0' = deterministic only)
-$env:SENPAI_TODAY   = '2026-06-16'   # pin scoring's "today" to the seed anchor
+$env:SENPAI_TODAY   = '2026-06-23'   # pin scoring's "today" to the seed anchor
 python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
 ```
 

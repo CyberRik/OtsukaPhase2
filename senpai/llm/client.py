@@ -219,17 +219,42 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
     yield tool_log, answer
 
 
-def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
+def _route_final_answer(convo, tools, tool_log, role):
+    """Decide FAST vs REASONING for the synthesis round via the ReasoningRouter,
+    emit a `routing` event (observability), then stream the answer. Tool-selection
+    stays fast regardless; only this round is dynamically routed. When the router
+    is "off" we fall back to the static TOOLLOOP_NO_THINK behaviour."""
+    no_think = config.TOOLLOOP_NO_THINK
+    if config.REASONING_ROUTER and config.REASONING_ROUTER != "off":
+        try:
+            from senpai.llm.routing import get_reasoning_router, RoutingRequest
+            user_msg = next((m.get("content") for m in reversed(convo)
+                             if m.get("role") == "user" and m.get("content")), "")
+            decision = get_reasoning_router().route(RoutingRequest(
+                message=user_msg or "", role=role or "junior",
+                tools_used=[name for name, _a, _r in tool_log], rounds=len(tool_log)))
+            yield {"type": "routing", "think": decision.think,
+                   "reason": decision.reason, "confidence": round(decision.confidence, 2),
+                   "mode": "reasoning" if decision.think else "fast"}
+            no_think = not decision.think
+        except Exception:  # noqa: BLE001 — a router fault must never break the turn
+            pass  # fall back to the static TOOLLOOP_NO_THINK default
+    yield from _stream_final_answer(convo, tools, no_think=no_think)
+
+
+def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
+                     role: str | None = None):
     """Web-facing tool loop that *streams the final answer* token-by-token.
 
     Same loop as `stream_turn` (kept intact for the Gradio apps), but instead of
     a single blocking final completion it streams the answering round so the web
     Assistant feels as live as Review Coach. Yields typed event dicts:
       {"type": "tool", "name", "args", "result"}   — one per executed tool
+      {"type": "routing", "think", "reason", "confidence", "mode"}  — synthesis mode
       {"type": "delta", "text"}                     — answer tokens as they arrive
       {"type": "answer", "text"}                    — the full answer (terminal)
     `convo` is mutated in place (demo semantics). Reasoning (`<think>…</think>`)
-    is stripped so only the user-facing answer streams."""
+    is stripped so only the user-facing answer streams. `role` feeds the router."""
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
     from senpai.retrieval import trace as _trace
@@ -268,7 +293,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
         # No tool calls → this is the answering round. Re-run it as a stream so
         # the answer flows token-by-token instead of arriving all at once.
         if not calls:
-            yield from _stream_final_answer(convo, tools, no_think=config.TOOLLOOP_NO_THINK)
+            yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
         convo.append({"role": "assistant", "content": None, "tool_calls": [
@@ -287,7 +312,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None):
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.
-            yield from _stream_final_answer(convo, tools, no_think=config.TOOLLOOP_NO_THINK)
+            yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
 

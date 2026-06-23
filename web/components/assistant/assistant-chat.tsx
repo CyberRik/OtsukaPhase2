@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertTriangle, BookMarked, Building2, Calendar, Database, ExternalLink,
+  AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, ExternalLink,
   FileText, Globe, Layers, Loader2, Mail, Receipt, Route, Search, Send,
-  ShieldCheck, Sparkles, UserSearch, Wrench, type LucideIcon,
+  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, type LucideIcon,
 } from "lucide-react";
-import { chatStream, type ChatEvent, type ChatRole, type ChatTurn, type RetrievalTrace } from "@/lib/api";
+import { chatStream, type ChatEvent, type ChatRole, type ChatTurn, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
@@ -28,6 +28,9 @@ type Msg = {
   sources?: SourceState[];    // research source ledger
   webUrls?: WebCitation[];    // external citations
   retrieval?: RetrievalTrace[]; // retrieval explorer trace (per-chunk provenance)
+  routing?: { think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" };
+  candidates?: ResolveCandidate[]; // ambiguous customer — surfaced for the user to pick
+  query?: string;                  // the original message, so a pick can re-ask scoped
 };
 
 // Human labels + icons for each tool, so the grounding ledger reads like
@@ -174,6 +177,14 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
               .map((r) => ({ title: r.title, url: r.url })),
           }));
           break;
+        case "routing":
+          patch((m) => ({ ...m, routing: { think: e.think, reason: e.reason, confidence: e.confidence, mode: e.mode } }));
+          break;
+        case "resolve":
+          if (e.status === "ambiguous" && e.candidates?.length) {
+            patch((m) => ({ ...m, candidates: e.candidates, query: e.query }));
+          }
+          break;
         case "delta":
           answered = true;
           patch((m) => ({ ...m, content: m.content + e.text, status: "running" }));
@@ -224,7 +235,12 @@ export function AssistantChat({ role }: { role: "junior" | "manager" }) {
         {messages.length === 0 ? (
           <p className="py-10 text-center text-[13px] text-muted-foreground">{t("assistant.empty")}</p>
         ) : (
-          messages.map((m, i) => <MessageBubble key={i} m={m} t={t} lang={lang} />)
+          messages.map((m, i) => (
+            <MessageBubble
+              key={i} m={m} t={t} lang={lang}
+              onPick={(c) => send(`${c.name}：${m.query ?? input}`)}
+            />
+          ))
         )}
       </div>
 
@@ -324,7 +340,9 @@ function groundingBadge(m: Msg, lang: "ja" | "en") {
   };
 }
 
-function MessageBubble({ m, t, lang }: { m: Msg; t: (k: string) => string; lang: "ja" | "en" }) {
+function MessageBubble({ m, t, lang, onPick }: {
+  m: Msg; t: (k: string) => string; lang: "ja" | "en"; onPick: (c: ResolveCandidate) => void;
+}) {
   if (m.role === "user") {
     return (
       <div className="flex justify-end">
@@ -378,6 +396,32 @@ function MessageBubble({ m, t, lang }: { m: Msg; t: (k: string) => string; lang:
         <RetrievalExplorer traces={m.retrieval} open={running} lang={lang} />
       )}
 
+      {/* Ambiguous customer — the name matched several accounts; let the user
+          pick rather than the system guessing (provenance stays deterministic). */}
+      {m.candidates && m.candidates.length > 0 && (
+        <div className="w-full max-w-[88%] rounded-lg border border-band-yellow/40 bg-band-yellow/[0.06] p-3">
+          <div className="mb-1.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-band-yellow">
+            <UserSearch className="h-3.5 w-3.5" />
+            {lang === "ja"
+              ? `「${m.query ?? ""}」は複数の顧客に一致します。どの顧客ですか？`
+              : `"${m.query ?? ""}" matches several customers — which one?`}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {m.candidates.map((c) => (
+              <button
+                key={c.customer_id}
+                onClick={() => onPick(c)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-[12px] text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              >
+                <Building2 className="h-3 w-3 text-muted-foreground" />
+                {c.name}
+                {c.deal_id && <span className="font-mono text-[10px] text-muted-foreground">{c.deal_id}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Answer */}
       {error ? (
         <div className="rounded-2xl rounded-bl-sm bg-destructive/10 px-3.5 py-2 text-[13px] text-destructive">
@@ -387,11 +431,26 @@ function MessageBubble({ m, t, lang }: { m: Msg; t: (k: string) => string; lang:
         <div className="w-full max-w-[88%] rounded-2xl rounded-bl-sm bg-muted px-3.5 py-2.5">
           <AnswerMd text={m.content} />
           {running && <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-foreground/40 align-middle" />}
-          {badge && !running && (
-            <div className="mt-2 flex items-center gap-1.5 border-t border-border/60 pt-1.5">
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold", badge.cls)}>
-                <badge.icon className="h-3 w-3" /> {badge.text}
-              </span>
+          {(badge || m.routing) && !running && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-1.5">
+              {badge && (
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold", badge.cls)}>
+                  <badge.icon className="h-3 w-3" /> {badge.text}
+                </span>
+              )}
+              {m.routing && (
+                <span
+                  title={`${m.routing.reason} (${Math.round(m.routing.confidence * 100)}%)`}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
+                    m.routing.think ? "bg-navy/10 text-navy" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {m.routing.think
+                    ? <><Brain className="h-3 w-3" /> {lang === "ja" ? "推論モード" : "Reasoning"}</>
+                    : <><Zap className="h-3 w-3" /> {lang === "ja" ? "高速モード" : "Fast"}</>}
+                </span>
+              )}
             </div>
           )}
         </div>
