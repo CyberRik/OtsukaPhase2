@@ -23,15 +23,18 @@ from typing import Literal
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
-# We use the local client for data structuring, and a separate standard OpenAI
-# client for multimodal features (Whisper/Vision) since the local `exp3` model
-# is text-only.
+from senpai import config
+# Local exp3 is text-only, so multimodal (Whisper/Vision) AND — when exp3 isn't
+# served — the structuring step run through a separate OpenAI-compatible endpoint
+# (OPENAI_BASE_URL/OPENAI_API_KEY, e.g. Groq's free tier). simple_complete is the
+# local fallback for structuring.
 from senpai.llm.client import simple_complete
 
-# Initialize the multimodal client (requires OPENAI_API_KEY)
-# If no key is present, we'll gracefully fall back to mock returns so the
-# pipeline doesn't crash during offline testing.
-multimodal_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "dummy"))
+# Initialize the multimodal client from config (base_url+key resolved from .env /
+# senpai/.env). With no real key, the modality steps return mock data so the
+# pipeline still runs offline.
+multimodal_client = OpenAI(base_url=config.INGEST_BASE_URL or None,
+                           api_key=config.INGEST_API_KEY or "dummy")
 
 
 # ---------------------------------------------------------------------------
@@ -67,17 +70,17 @@ class ActivityExtraction(BaseModel):
 # ---------------------------------------------------------------------------
 def transcribe_audio(file_path: str) -> str:
     """Uses Whisper to transcribe an audio file into Japanese text."""
-    print(f"🎙️ [Audio] Transcribing {file_path} via Whisper API...")
-    if os.environ.get("OPENAI_API_KEY") is None:
-        print("⚠️ No OPENAI_API_KEY found. Returning mock transcription.")
+    print(f"🎙️ [Audio] Transcribing {file_path} via {config.INGEST_AUDIO_MODEL}...")
+    if not config.have_multimodal():
+        print("⚠️ No multimodal API key. Returning mock transcription.")
         return "えー、今日アクメ商事の鈴木部長と面談しました。モバイル端末導入によるテレワークのセキュリティ強化が課題とのこと。予算次第で来月検討したいそうです。"
 
     try:
         with open(file_path, "rb") as audio_file:
             transcript = multimodal_client.audio.transcriptions.create(
-                model="whisper-1", 
+                model=config.INGEST_AUDIO_MODEL,
                 file=audio_file,
-                language="ja" # optimize for Japanese B2B sales
+                language="ja"  # optimize for Japanese B2B sales
             )
         return transcript.text
     except Exception as e:
@@ -86,19 +89,19 @@ def transcribe_audio(file_path: str) -> str:
 
 
 def extract_text_from_image(file_path: str) -> str:
-    """Uses Vision (GPT-4o) to extract text/context from an image."""
-    print(f"📸 [Vision] Extracting text from {file_path} via Vision API...")
-    if os.environ.get("OPENAI_API_KEY") is None:
-        print("⚠️ No OPENAI_API_KEY found. Returning mock OCR data.")
+    """Uses a vision model to extract text/context from an image."""
+    print(f"📸 [Vision] Extracting text from {file_path} via {config.INGEST_VISION_MODEL}...")
+    if not config.have_multimodal():
+        print("⚠️ No multimodal API key. Returning mock OCR data.")
         return "名刺抽出: アクメ商事株式会社 情報システム部 部長 鈴木一郎\nメモ: テレワーク、セキュリティ強化"
 
     try:
         with open(file_path, "rb") as image_file:
             b64 = base64.b64encode(image_file.read()).decode('utf-8')
-        
+
         mime_type, _ = mimetypes.guess_type(file_path)
         mime_type = mime_type or "image/jpeg"
-        
+
         prompt = (
             "This is an image related to a B2B sales activity (e.g., a business card, "
             "a whiteboard, or a physical document). Extract all text exactly as written. "
@@ -107,7 +110,7 @@ def extract_text_from_image(file_path: str) -> str:
         )
 
         response = multimodal_client.chat.completions.create(
-            model="gpt-4o",
+            model=config.INGEST_VISION_MODEL,
             messages=[
                 {"role": "user", "content": [
                     {"type": "text", "text": prompt},
@@ -139,18 +142,16 @@ def extract_structured_activity(raw_text: str) -> dict:
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": f"Extract JSON from this raw text:\n\n{raw_text}\n\nOutput ONLY a JSON object that satisfies this schema:\n{schema_json}"}
     ]
-    
+
     try:
-        # Use local exp3/qwen model defined in Senpai config
-        raw_response = simple_complete(messages, temperature=0.1, no_think=True)
-        
+        raw_response = _structure_complete(messages)
         # Clean markdown code blocks if the model wrapped the JSON
         json_str = raw_response
         if "```json" in json_str:
             json_str = json_str.split("```json")[1].split("```")[0]
         elif "```" in json_str:
             json_str = json_str.split("```")[1].split("```")[0]
-            
+
         data = json.loads(json_str.strip())
         validated = ActivityExtraction(**data)
         return validated.model_dump()
@@ -158,6 +159,22 @@ def extract_structured_activity(raw_text: str) -> dict:
         print(f"⚠️ Extraction failed: {e}")
         # Fallback dictionary if parsing fails
         return {"activity_type": "002_Daily Report", "daily_report": raw_text}
+
+
+def _structure_complete(messages: list[dict]) -> str:
+    """Run the structuring LLM. Prefers the multimodal endpoint (e.g. Groq) with a
+    JSON response format; falls back to the local exp3 model when that endpoint
+    isn't configured or errors. Returns the raw model text (JSON expected)."""
+    if config.have_multimodal():
+        try:
+            resp = multimodal_client.chat.completions.create(
+                model=config.INGEST_STRUCT_MODEL, messages=messages,
+                temperature=0.1, response_format={"type": "json_object"},
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:  # noqa: BLE001 — fall back to the local model
+            print(f"⚠️ Remote structuring failed ({e}); trying local exp3…")
+    return simple_complete(messages, temperature=0.1, no_think=True)
 
 
 # ---------------------------------------------------------------------------
@@ -180,7 +197,7 @@ def main():
 
     # 1. Process Modalities
     if args.audio:
-        if os.path.exists(args.audio) or not os.environ.get("OPENAI_API_KEY"):
+        if os.path.exists(args.audio) or not config.have_multimodal():
             transcription = transcribe_audio(args.audio)
             if transcription:
                 raw_content.append(f"[音声文字起こし]: {transcription}")
@@ -188,7 +205,7 @@ def main():
             print(f"❌ File not found: {args.audio}")
 
     if args.image:
-        if os.path.exists(args.image) or not os.environ.get("OPENAI_API_KEY"):
+        if os.path.exists(args.image) or not config.have_multimodal():
             ocr_text = extract_text_from_image(args.image)
             if ocr_text:
                 raw_content.append(f"[画像OCR抽出]: {ocr_text}")

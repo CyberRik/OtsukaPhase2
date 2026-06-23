@@ -23,20 +23,22 @@ from datetime import date
 from pathlib import Path
 
 def _load_dotenv() -> None:
-    """Load repo-root .env into os.environ (stdlib only; never overrides an
-    already-set var). config is the first senpai import in every entrypoint, so
-    doing this here means BASE_URL/MODEL/etc. from .env take effect everywhere —
-    including the FastAPI bridge, which otherwise read only process env and
-    silently fell back to the defaults below."""
-    env = Path(__file__).resolve().parent.parent / ".env"
-    if not env.exists():
-        return
-    for raw in env.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    """Load .env files into os.environ (stdlib only; never overrides an already-set
+    var). config is the first senpai import in every entrypoint, so doing this here
+    means BASE_URL/MODEL/etc. take effect everywhere — including the FastAPI bridge.
+    Loads the repo-root `.env` first, then `senpai/.env` (handy for keeping
+    ingestion keys like OPENAI_BASE_URL/OPENAI_API_KEY next to the package);
+    repo-root wins on conflicts because setdefault keeps the first value seen."""
+    here = Path(__file__).resolve().parent
+    for env in (here.parent / ".env", here / ".env"):
+        if not env.exists():
             continue
-        key, _, val = line.partition("=")
-        os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+        for raw in env.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
 
 
 _load_dotenv()
@@ -105,6 +107,23 @@ RRF_K = _env_int("SENPAI_RRF_K", 60)                     # Reciprocal Rank Fusio
 # short Japanese notes, the embedding model is the stronger signal for paraphrases.
 BM25_WEIGHT = _env_float("SENPAI_BM25_WEIGHT", 1.0)
 DENSE_WEIGHT = _env_float("SENPAI_DENSE_WEIGHT", 3.0)
+
+# --- Multimodal ingestion (senpai/ingestion) --------------------------------
+# Audio (STT) and image (vision/OCR) run via an OpenAI-compatible *multimodal*
+# endpoint — OPENAI_BASE_URL + OPENAI_API_KEY (e.g. Groq's free tier; the local
+# exp3 is text-only). Model ids default to Groq's free models; override per env.
+INGEST_BASE_URL = os.environ.get("OPENAI_BASE_URL")            # None → api.openai.com
+INGEST_API_KEY = os.environ.get("OPENAI_API_KEY")
+INGEST_AUDIO_MODEL = os.environ.get("INGEST_AUDIO_MODEL", "whisper-large-v3")
+INGEST_VISION_MODEL = os.environ.get(
+    "INGEST_VISION_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+INGEST_STRUCT_MODEL = os.environ.get(
+    "INGEST_STRUCT_MODEL", "meta-llama/llama-4-scout-17b-16e-instruct")
+
+
+def have_multimodal() -> bool:
+    """True when a usable multimodal key is configured (not missing/placeholder)."""
+    return bool(INGEST_API_KEY) and INGEST_API_KEY not in ("dummy", "")
 
 # Fixed anchor used by data/gen_seed.py so the committed seed JSON is byte-stable
 # no matter what day it is regenerated. Scoring uses today() (below), which on the
