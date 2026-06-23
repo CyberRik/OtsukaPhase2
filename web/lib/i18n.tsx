@@ -69,7 +69,6 @@ const ja: Dict = {
   "nav.accounts": "アカウント",
   "nav.knowledge": "ナレッジ・ライブラリ",
   "nav.reports": "マイ成長",
-  "nav.prepare": "商談準備",
   // manager nav
   "nav.dashboard": "ダッシュボード",
   "nav.pipeline": "パイプライン",
@@ -99,8 +98,6 @@ const ja: Dict = {
   "jhome.quick": "クイックアクション",
   "jhome.qa.coach": "メモをコーチに見せる",
   "jhome.qa.coach.desc": "6つの視点で先輩の思考を可視化",
-  "jhome.qa.prepare": "次の商談に備える",
-  "jhome.qa.prepare.desc": "案件の状況を確認し論点を整理",
   "jhome.qa.knowledge": "ナレッジを学ぶ",
   "jhome.qa.knowledge.desc": "出典と確度のある先輩の原則",
   "jhome.qa.reports": "日報を書く",
@@ -259,15 +256,6 @@ const ja: Dict = {
   "skill.closing_discipline": "クロージングの規律",
   "skill.proposal_pricing": "提案・価格設計",
 
-  // prepare
-  "prepare.title": "商談準備",
-  "prepare.lead": "次に訪問する案件を選ぶと、現在の健全度・リスク信号・確認すべき論点をまとめます。準備のための先輩の視点です。",
-  "prepare.pick": "案件を選ぶ",
-  "prepare.brief": "プレコール・ブリーフ",
-  "prepare.health": "案件の健全度",
-  "prepare.signals": "気をつける信号",
-  "prepare.focus": "この商談で確認したい論点",
-  "prepare.empty": "案件を選ぶと準備ブリーフが表示されます。",
 
   // dashboard / manager
   "dash.title": "どの案件が本物で、どれが健全に「見える」だけか。",
@@ -450,7 +438,6 @@ const en: Dict = {
   "nav.accounts": "Accounts",
   "nav.knowledge": "Knowledge Library",
   "nav.reports": "My Growth",
-  "nav.prepare": "Meeting Prep",
   "nav.dashboard": "Dashboard",
   "nav.pipeline": "Pipeline",
   "nav.coaching": "Coaching",
@@ -477,8 +464,6 @@ const en: Dict = {
   "jhome.quick": "Quick actions",
   "jhome.qa.coach": "Show a note to the Coach",
   "jhome.qa.coach.desc": "Six lenses that make senior reasoning visible",
-  "jhome.qa.prepare": "Prepare for your next meeting",
-  "jhome.qa.prepare.desc": "Review the deal and frame the key questions",
   "jhome.qa.knowledge": "Study the knowledge",
   "jhome.qa.knowledge.desc": "Senior principles with provenance and confidence",
   "jhome.qa.reports": "Write your report",
@@ -632,15 +617,6 @@ const en: Dict = {
   "skill.customer_discovery": "Customer discovery",
   "skill.closing_discipline": "Closing discipline",
   "skill.proposal_pricing": "Proposal & pricing",
-
-  "prepare.title": "Meeting Preparation",
-  "prepare.lead": "Pick the deal you're visiting next and Senpai summarises its current health, risk signals, and the questions worth confirming — a senior's lens for your prep.",
-  "prepare.pick": "Pick a deal",
-  "prepare.brief": "Pre-call brief",
-  "prepare.health": "Deal health",
-  "prepare.signals": "Signals to watch",
-  "prepare.focus": "Questions to confirm in this meeting",
-  "prepare.empty": "Pick a deal to see the preparation brief.",
 
   "dash.title": "Which deals are real — and which just look healthy?",
   "dash.lead": "Deterministic deal-health, scored the same way for every rep. Red/yellow/green with a signal-by-signal reason, plus flags where a report's optimism quietly contradicts its data. No GPU, no black box.",

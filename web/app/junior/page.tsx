@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText, Flame, GraduationCap, Library, MessagesSquare, type LucideIcon, Target, Users } from "lucide-react";
+import { ArrowRight, FileText, Flame, GraduationCap, Library, MessagesSquare, type LucideIcon, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { principleText, repText, departmentText, tagText } from "@/lib/content-i18n";
@@ -34,7 +34,6 @@ export default function JuniorHome() {
 
   const actions: { href: string; icon: LucideIcon; title: string; desc: string }[] = [
     { href: "/junior/coach", icon: GraduationCap, title: t("jhome.qa.coach"), desc: t("jhome.qa.coach.desc") },
-    { href: "/junior/prepare", icon: Target, title: t("jhome.qa.prepare"), desc: t("jhome.qa.prepare.desc") },
     { href: "/junior/knowledge", icon: Library, title: t("jhome.qa.knowledge"), desc: t("jhome.qa.knowledge.desc") },
     { href: "/junior/reports", icon: FileText, title: t("jhome.qa.reports"), desc: t("jhome.qa.reports.desc") },
   ];
