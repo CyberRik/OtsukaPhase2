@@ -84,6 +84,45 @@ def query_spr(customer: str = "", rep_id: str = "", deal_id: str = "") -> str:
     return "customer / rep_id / deal_id のいずれかを指定してください。"
 
 
+def find_deals(product_category: str = "", industry: str = "", size: str = "",
+               outcome: str = "", order_rank: str = "", min_amount=None,
+               max_amount=None, product_code: str = "", limit: int = 10) -> str:
+    """Grounded faceted search over real past/current deals. Filters the actual SPR
+    fields (deal product_category / order_rank / amount / product code, customer
+    industry / size) and reports the win/lost/open breakdown of the matches, so the
+    model answers 'show me past <category> deals at <size>/<industry> companies and
+    how they went' from data — never from invention."""
+    from senpai.retrieval.deals import deal_facets, find_deals as _find, outcome_breakdown
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 10
+    all_hits = _find(product_category=product_category, industry=industry, size=size,
+                     outcome=outcome, order_rank=order_rank, min_amount=min_amount,
+                     max_amount=max_amount, product_code=product_code, limit=0)
+    cond = "／".join(str(x) for x in [product_category, industry, size, outcome,
+                                      order_rank, product_code] if x) or "全条件"
+    if not all_hits:
+        f = deal_facets()
+        return ("条件に合う案件は見つかりませんでした。指定可能な値:\n"
+                f"- 商品カテゴリ: {'、'.join(f['product_category'])}\n"
+                f"- 業種: {'、'.join(f['industry'])}\n"
+                f"- 規模: {'、'.join(f['size'])}\n"
+                f"- 受注ランク: {'、'.join(f['order_rank'])}\n"
+                "- 結果(outcome): won / lost / open")
+    bd = outcome_breakdown(all_hits)
+    head = (f"該当案件【{cond}】{len(all_hits)}件 "
+            f"(受注{bd['won']}／失注{bd['lost']}／進行中{bd['open']}):")
+    lines = []
+    for d in all_hits[:limit]:
+        cust = store.get_customer(d["customer_id"]) or {}
+        lines.append(f"{d['deal_id']} {store.customer_name(d['customer_id'])}"
+                     f"（{cust.get('industry', '-')}/{cust.get('size', '-')}）"
+                     f" {d.get('product_category', '-')} / {d.get('order_rank', '-')}"
+                     f" / ¥{d.get('total_order_amount', 0):,}")
+    return head + "\n- " + "\n- ".join(lines)
+
+
 def find_similar_deals_tool(customer: str = "", industry: str = "") -> str:
     cid = ""
     if customer:
@@ -218,6 +257,19 @@ def summarize_reports(rep_id: str = "") -> str:
 # Manager-facing analytics tools (all grounded in the deterministic engine)
 # ---------------------------------------------------------------------------
 _BAND_EMOJI = {"red": "🔴", "yellow": "🟡", "green": "🟢"}
+
+
+def morning_briefing(rep_id: str = "", limit: int = 10) -> str:
+    """The rep's prioritized next-best-action worklist for today (or the whole
+    team if no rep). Thin wrapper over senpai.briefing."""
+    from senpai.briefing import format_briefing
+    from senpai.briefing import morning_briefing as _briefing
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 10
+    items = _briefing(rep_id=rep_id, limit=limit)
+    return format_briefing(items, rep_id=rep_id)
 
 
 def list_at_risk_deals(rep_id: str = "", band: str = "", limit: int = 10) -> str:
@@ -622,6 +674,7 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
 # ---------------------------------------------------------------------------
 _DISPATCH = {
     "query_spr": query_spr,
+    "find_deals": find_deals,
     "find_similar_deals": find_similar_deals_tool,
     "retrieve_playbook": retrieve_playbook_tool,
     "lookup_customer_environment": lookup_customer_environment,
@@ -633,6 +686,7 @@ _DISPATCH = {
     "summarize_reports": summarize_reports,
     "get_seasonal_context": get_seasonal_context,
     # Manager + shared tools
+    "morning_briefing": morning_briefing,
     "list_at_risk_deals": list_at_risk_deals,
     "team_pipeline_overview": team_pipeline_overview,
     "team_report_digest": team_report_digest,
@@ -677,6 +731,7 @@ if __name__ == "__main__":
     for n, a in [
         ("query_spr", {"deal_id": "D001"}),
         ("query_spr", {"rep_id": "R05"}),
+        ("find_deals", {"product_category": "サーバー", "size": "中規模", "outcome": "won", "limit": 5}),
         ("find_similar_deals", {"customer": "C01"}),
         ("retrieve_playbook", {"query": "お客様が決定を先延ばし", "tags": ["決定先延ばし"]}),
         ("search_notes", {"query": "予算が厳しく決裁が止まっている", "limit": 3}),
@@ -688,6 +743,7 @@ if __name__ == "__main__":
         ("route_to_expert", {"question": "ネットワーク更改の構成相談", "tags": ["ネットワーク"]}),
         ("summarize_reports", {"rep_id": "R05"}),
         ("get_seasonal_context", {"month": 2}),
+        ("morning_briefing", {"rep_id": "R12", "limit": 5}),
         ("list_at_risk_deals", {"limit": 5}),
         ("query_graph", {"intent": "reps_who_win", "category": "サーバー"}),
         ("query_graph", {"intent": "account", "customer": "C28"}),

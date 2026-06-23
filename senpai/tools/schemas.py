@@ -27,6 +27,35 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "find_deals",
+            "description": "Grounded faceted search over real past/current deals. Filters by any "
+                           "combination of: product_category, customer industry, customer size, "
+                           "outcome (won/lost/open), order_rank, amount band, or a product code — "
+                           "and reports the win/lost/open breakdown of the matches. Use this to "
+                           "answer 'show me past <category> deals at <size>/<industry> companies "
+                           "and how they went' BEFORE giving advice, so the answer is from data. "
+                           "Filter values must be real values present in the data; if a filter "
+                           "matches nothing, the tool lists the valid values to use.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product_category": {"type": "string", "description": "Deal product category, e.g. 'サーバー', 'ソフトウェア', 'ネットワーク機器' (substring ok)"},
+                    "industry": {"type": "string", "description": "Customer industry, e.g. '製造', '医療' (substring ok)"},
+                    "size": {"type": "string", "description": "Customer size band, e.g. '中規模', '小規模'"},
+                    "outcome": {"type": "string", "description": "'won', 'lost', or 'open' (derived from order_rank)"},
+                    "order_rank": {"type": "string", "description": "Exact/substring order_rank, e.g. '3_A'"},
+                    "min_amount": {"type": "number", "description": "Minimum total_order_amount (¥)"},
+                    "max_amount": {"type": "number", "description": "Maximum total_order_amount (¥)"},
+                    "product_code": {"type": "string", "description": "A specific product code the deal includes, e.g. 'MON27'"},
+                    "limit": {"type": "integer", "description": "Max deals to list (default 10)"},
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "find_similar_deals",
             "description": "Find comparable past deals for a new or thin customer, matched on "
                            "industry, size and profile tags. Useful when the customer has little history.",
@@ -208,6 +237,26 @@ TOOLS = [
         },
     },
     # --- Manager + shared tools ---------------------------------------------
+    {
+        "type": "function",
+        "function": {
+            "name": "morning_briefing",
+            "description": "The rep's prioritized to-do for today: their open deals ranked by "
+                           "urgency × value, each with ONE concrete next action (e.g. follow up, "
+                           "identify the decision-maker, re-confirm the close date). Includes a "
+                           "predictive nudge for deals about to breach their contact cadence. "
+                           "Omit rep_id for a whole-team view. Use this to answer 'what should I "
+                           "do today?' / '今日やるべきことは?'.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "rep_id": {"type": "string", "description": "Rep ID to brief, e.g. 'R12'. Omit for the whole team."},
+                    "limit": {"type": "integer", "description": "Max actions to return (default 10)"},
+                },
+                "required": [],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -459,16 +508,16 @@ def _pick(*names: str) -> list[dict]:
 # (review_sales_note is intentionally excluded — it bridges to the friend-owned
 #  coach experiment and is kept out of our chat surface for isolation.)
 JUNIOR_TOOLS = _pick(
-    "query_spr", "find_similar_deals", "retrieve_playbook", "search_knowledge",
+    "query_spr", "find_deals", "find_similar_deals", "retrieve_playbook", "search_knowledge",
     "search_notes", "lookup_customer_environment", "get_product_info", "search_products",
     "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
-    "send_email", "get_calendar", "route_to_expert",
+    "send_email", "get_calendar", "route_to_expert", "morning_briefing",
     "get_seasonal_context", "web_search",
 )
 
 # Manager: team analytics + drill-down + drafting + semantic/graph search + web.
 MANAGER_TOOLS = _pick(
-    "query_spr", "score_deal_health", "list_at_risk_deals",
+    "query_spr", "find_deals", "score_deal_health", "morning_briefing", "list_at_risk_deals",
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
     "search_knowledge", "search_notes", "query_graph", "search_products",
     "create_quote", "schedule_meeting",
@@ -480,7 +529,7 @@ MANAGER_TOOLS = _pick(
 # is a grounded research surface, not a generic chat. Order mirrors the intended
 # source priority (internal records → deal signals → web).
 RESEARCH_TOOLS = _pick(
-    "query_spr", "find_similar_deals", "score_deal_health", "search_notes",
+    "query_spr", "find_deals", "find_similar_deals", "score_deal_health", "search_notes",
     "lookup_customer_environment", "get_product_info",
     "get_seasonal_context", "web_search",
 )
