@@ -62,6 +62,22 @@
       values (from `deal_facets()`) instead of inventing data. Exposed as the `find_deals` tool
       (junior + manager + research role sets); tests in `tests/test_deals_search.py`.
 
+### Robustness / testing
+- [x] **Pipeline stress harness** (`scripts/stress_pipeline.py`, 31 checks) — hammers tool
+      dispatch (27 tools × hostile args), the scoring engine + flags (junk fields/dates/types),
+      `morning_briefing`, `find_deals` (facets + fuzz), store referential integrity, and
+      whole-pipeline determinism. Complements `scripts/stress_retrieval.py` (19 checks).
+- [x] Fixed 2 engine robustness bugs the harness caught: `score_deal`/`deal_flags` crashed on a
+      non-int `days_until_order` and a non-str `daily_report`/`business_card_info`. Added `_int()`
+      coercion + str-coercion so malformed rows (e.g. LLM-ingested) degrade instead of raising.
+- [x] **De-correlated scoring double-count** — `staleness` and `low_activity` both fired on the
+      same silence (e.g. +40 pts from one cold streak). `low_activity` now only fires when
+      `staleness` didn't (i.e. no logged activity at all). Tests updated.
+- [x] **Health backtest / calibration harness** (`scripts/backtest_health.py`) — scores closed
+      deals, reports won-vs-lost separation, AUC, and loss-rate calibration by band/score-bucket.
+      Runs on synthetic data now (internal-consistency check, with leakage caveat); ready to point
+      at real snapshot-before-close history to calibrate weights/cutoffs for production.
+
 ### Docs
 - [x] `docs/retrieval.md`, `docs/synthetic_dataset.md`, updated `senpai/README.md`.
 

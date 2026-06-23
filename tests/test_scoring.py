@@ -55,8 +55,19 @@ def test_dead_deal_is_red():
     assert res.band == "red"
     assert res.score >= config.RED_THRESHOLD
     fired = {s.name for s in res.signals}
-    assert {"staleness", "order_date_past", "missing_dm",
-            "stall_language", "low_activity"} <= fired
+    assert {"staleness", "order_date_past", "missing_dm", "stall_language"} <= fired
+    # low_activity is de-correlated: it must NOT double-count the same silence that
+    # already triggered staleness (it only fires when there's no logged activity).
+    assert "low_activity" not in fired
+
+
+def test_low_activity_fires_only_when_no_logged_activity():
+    """low_activity uniquely covers the deal with no activity at all (where
+    staleness can't fire); it should NOT also fire alongside staleness."""
+    res = score_deal(_deal(order_rank="2_A+"), [], today=TODAY)
+    fired = {s.name for s in res.signals}
+    assert "low_activity" in fired
+    assert "staleness" not in fired   # no activity → staleness has nothing to measure
 
 
 def test_order_date_past_signal_fires():

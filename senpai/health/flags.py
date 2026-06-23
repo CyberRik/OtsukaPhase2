@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from senpai import config
-from senpai.health.scoring import _d, _has_decision_maker
+from senpai.health.scoring import _d, _has_decision_maker, _int
 
 
 @dataclass
@@ -46,7 +46,7 @@ def deal_flags(deal: dict, activities: list[dict] | None = None,
     last = act_dates[0] if act_dates else None
 
     # close_date_passed — expected order date in the past, deal still open.
-    until = deal.get("days_until_order")
+    until = _int(deal.get("days_until_order"))
     expected = _d(deal.get("expected_order_date"))
     past = (until is not None and until < 0) or (expected is not None and expected < today)
     if is_open and past:
