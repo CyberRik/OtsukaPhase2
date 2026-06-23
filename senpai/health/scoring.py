@@ -44,10 +44,19 @@ def _d(value: str | None) -> date | None:
         return None
 
 
+def _int(value) -> int | None:
+    """Coerce a possibly-dirty numeric field to int; junk/None → None. Keeps the
+    engine robust against malformed rows (e.g. LLM-ingested activities)."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _has_decision_maker(activities: list[dict]) -> bool:
     """Any activity whose business_card_info carries a decision-maker title."""
     for a in activities:
-        card = a.get("business_card_info") or ""
+        card = str(a.get("business_card_info") or "")
         if any(title in card for title in config.DECISION_MAKER_TITLES):
             return True
     return False
@@ -69,12 +78,15 @@ def score_deal(deal: dict, activities: list[dict] | None = None,
     last = act_dates[0] if act_dates else None
 
     # 1. Staleness — days since last activity vs the rank's expected cadence.
+    staleness_fired = False
     if last is not None:
         stale = (today - last).days
         if stale > 2 * cadence:
+            staleness_fired = True
             signals.append(Signal("staleness", 30,
                                   f"{stale}日間接触なし(目安{cadence}日の2倍超)"))
         elif stale > cadence:
+            staleness_fired = True
             signals.append(Signal("staleness", 15,
                                   f"{stale}日間接触なし(目安{cadence}日超)"))
 
@@ -89,7 +101,7 @@ def score_deal(deal: dict, activities: list[dict] | None = None,
                                       f"{rank}に{in_rank}日滞留(目安{max_days}日)"))
 
     # 3. Expected order date already past while still open.
-    until = deal.get("days_until_order")
+    until = _int(deal.get("days_until_order"))
     expected = _d(deal.get("expected_order_date"))
     past = (until is not None and until < 0) or (expected is not None and expected < today)
     if past and config.is_open_rank(rank):
@@ -110,16 +122,20 @@ def score_deal(deal: dict, activities: list[dict] | None = None,
 
     # 6. Stall language in the latest daily_report.
     if activities:
-        latest_text = activities[0].get("daily_report", "")
+        latest_text = str(activities[0].get("daily_report", "") or "")
         hit = next((w for w in config.STALL_LEXICON if w in latest_text), None)
         if hit:
             signals.append(Signal("stall_language", 10,
                                   f"直近の日報に停滞サイン「{hit}」"))
 
-    # 7. Low activity — nothing logged in the last 30 days.
+    # 7. Low activity — nothing logged in the last 30 days. Only counts when the
+    # staleness signal did NOT already fire on the same silence, so a single cold
+    # streak isn't penalised twice (de-correlated). This still uniquely catches the
+    # deal with no logged activity at all, where staleness can't fire.
     recent = [d for d in act_dates if (today - d).days <= 30]
-    if not recent:
-        signals.append(Signal("low_activity", 10, "直近30日の活動が0件"))
+    if not recent and not staleness_fired:
+        reason = "活動履歴がない" if last is None else "直近30日の活動が0件"
+        signals.append(Signal("low_activity", 10, reason))
 
     score = min(100, sum(s.points for s in signals))
     return HealthResult(score=score, band=config.band_for_score(score), signals=signals)
