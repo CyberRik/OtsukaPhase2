@@ -55,6 +55,12 @@
       prioritized worklist: open deals ranked by urgency × value, one concrete next action each,
       plus a predictive cadence nudge before a deal goes yellow. Exposed as the `morning_briefing`
       tool (junior + manager role sets); tests in `tests/test_briefing.py`.
+- [x] **Faceted deal search** (`senpai/retrieval/deals.py`) — grounded structured search over the
+      real SPR fields (deal product_category / order_rank / amount / product code, customer
+      industry / size / profile_tags); outcome (won/lost/open) derived from the config rank model.
+      Reports the win/lost/open breakdown of matches; no-match returns the actual valid facet
+      values (from `deal_facets()`) instead of inventing data. Exposed as the `find_deals` tool
+      (junior + manager + research role sets); tests in `tests/test_deals_search.py`.
 
 ### Docs
 - [x] `docs/retrieval.md`, `docs/synthetic_dataset.md`, updated `senpai/README.md`.
@@ -102,6 +108,16 @@
       *Reuses:* `query_graph`, `retrieve_playbook`, `coach/cases.py`.
 - [ ] Surface the morning briefing in the UI (a Streamlit "Today" page / Home widget), not just
       the chat tool.
+
+### Tooling / grounding follow-ups (from the tools audit)
+- [ ] Upgrade `search_knowledge` principles/approved-items scoring from keyword to hybrid
+      (its playbook slice already is) so knowledge RAG matches by meaning.
+- [ ] Data-model richness (optional, schema-permitting): customer `size` is categorical
+      (小規模/中規模) with no revenue figure, and the product taxonomy has fixed categories.
+      If finer faceting is wanted (e.g. numeric revenue bands, sub-categories), extend the seed
+      generator + Schema — `find_deals` will pick up any new facet automatically via `deal_facets()`.
+- [ ] Consider surfacing `find_deals` results into the chat answer as cited evidence (deal IDs)
+      so advice is visibly grounded.
 
 ### Retrieval / graph polish
 - [ ] Phase 2b: GraphRAG community summaries (Louvain/greedy-modularity → per-cluster LLM summary

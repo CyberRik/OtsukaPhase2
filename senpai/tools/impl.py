@@ -84,6 +84,45 @@ def query_spr(customer: str = "", rep_id: str = "", deal_id: str = "") -> str:
     return "customer / rep_id / deal_id のいずれかを指定してください。"
 
 
+def find_deals(product_category: str = "", industry: str = "", size: str = "",
+               outcome: str = "", order_rank: str = "", min_amount=None,
+               max_amount=None, product_code: str = "", limit: int = 10) -> str:
+    """Grounded faceted search over real past/current deals. Filters the actual SPR
+    fields (deal product_category / order_rank / amount / product code, customer
+    industry / size) and reports the win/lost/open breakdown of the matches, so the
+    model answers 'show me past <category> deals at <size>/<industry> companies and
+    how they went' from data — never from invention."""
+    from senpai.retrieval.deals import deal_facets, find_deals as _find, outcome_breakdown
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 10
+    all_hits = _find(product_category=product_category, industry=industry, size=size,
+                     outcome=outcome, order_rank=order_rank, min_amount=min_amount,
+                     max_amount=max_amount, product_code=product_code, limit=0)
+    cond = "／".join(str(x) for x in [product_category, industry, size, outcome,
+                                      order_rank, product_code] if x) or "全条件"
+    if not all_hits:
+        f = deal_facets()
+        return ("条件に合う案件は見つかりませんでした。指定可能な値:\n"
+                f"- 商品カテゴリ: {'、'.join(f['product_category'])}\n"
+                f"- 業種: {'、'.join(f['industry'])}\n"
+                f"- 規模: {'、'.join(f['size'])}\n"
+                f"- 受注ランク: {'、'.join(f['order_rank'])}\n"
+                "- 結果(outcome): won / lost / open")
+    bd = outcome_breakdown(all_hits)
+    head = (f"該当案件【{cond}】{len(all_hits)}件 "
+            f"(受注{bd['won']}／失注{bd['lost']}／進行中{bd['open']}):")
+    lines = []
+    for d in all_hits[:limit]:
+        cust = store.get_customer(d["customer_id"]) or {}
+        lines.append(f"{d['deal_id']} {store.customer_name(d['customer_id'])}"
+                     f"（{cust.get('industry', '-')}/{cust.get('size', '-')}）"
+                     f" {d.get('product_category', '-')} / {d.get('order_rank', '-')}"
+                     f" / ¥{d.get('total_order_amount', 0):,}")
+    return head + "\n- " + "\n- ".join(lines)
+
+
 def find_similar_deals_tool(customer: str = "", industry: str = "") -> str:
     cid = ""
     if customer:
@@ -635,6 +674,7 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
 # ---------------------------------------------------------------------------
 _DISPATCH = {
     "query_spr": query_spr,
+    "find_deals": find_deals,
     "find_similar_deals": find_similar_deals_tool,
     "retrieve_playbook": retrieve_playbook_tool,
     "lookup_customer_environment": lookup_customer_environment,
@@ -691,6 +731,7 @@ if __name__ == "__main__":
     for n, a in [
         ("query_spr", {"deal_id": "D001"}),
         ("query_spr", {"rep_id": "R05"}),
+        ("find_deals", {"product_category": "サーバー", "size": "中規模", "outcome": "won", "limit": 5}),
         ("find_similar_deals", {"customer": "C01"}),
         ("retrieve_playbook", {"query": "お客様が決定を先延ばし", "tags": ["決定先延ばし"]}),
         ("search_notes", {"query": "予算が厳しく決裁が止まっている", "limit": 3}),
