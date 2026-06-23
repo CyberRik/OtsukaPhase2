@@ -60,6 +60,12 @@ def _confidence(rank: str | None) -> str:
     return "low"
 
 
+def compute_issues(deal: dict, acts: list[dict], res, flags, today: date) -> list[dict]:
+    """All coaching issues that fire for a deal (deterministic rules). Public entry
+    point reused by the rep-coaching profile (senpai.coach.profile)."""
+    return _issues(deal, acts, res, flags, today)
+
+
 def _issues(deal: dict, acts: list[dict], res, flags, today: date) -> list[dict]:
     """All coaching issues that fire for a deal (deterministic rules)."""
     rank = deal.get("order_rank")

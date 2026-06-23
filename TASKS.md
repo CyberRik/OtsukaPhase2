@@ -50,6 +50,21 @@
 - [x] Integration brief `docs/ingestion_integration_prompt.md` for wiring ingestion into the
       main pipeline later.
 
+### Coaching (manager + salesperson)
+- [x] **Enriched coaching data** (`data/gen_seed.py`) — a deterministic per-rep **skill model**
+      drives varied-quality daily reports (realistic 0–5 lens spread, was always 2–5), varied
+      `customer_challenge` fill, and recovery-over-fiscal-years for "improving" reps. Only 3
+      activity text fields change via a local RNG → SPR tables stay byte-identical; anchors intact.
+- [x] **Coaching threads** (`data/seed/coaching_threads.json`) — deterministic manager↔rep chat on
+      flagged deals (issue/status/dated messages); `store.coaching_threads_for_rep/_for_deal`.
+- [x] **Rep coaching profile** (`senpai/coach/profile.py`) — recurring weaknesses across a rep's
+      book, ranked by severity, each grounded in real deals + a validated principle + a real case +
+      an action; strengths, development focus, 1:1 talking points, thread status. Team rollup.
+- [x] **Rep progress** (`senpai/coach/progress.py`) — per-fiscal-year weakness trend (improving
+      reps visibly trend down) + coaching-acted-on rate from threads.
+- [x] API: `/api/coach/rep-profile/{id}`, `/rep-profiles`, `/rep-progress/{id}`, `/threads`.
+- [x] Tests: `test_coaching_data.py`, `test_rep_profile.py`, `test_progress.py`; docs `docs/coaching.md`.
+
 ### Sales-assist features
 - [x] **Morning briefing / next-best-action** (`senpai/briefing.py`) — per-rep (or team)
       prioritized worklist: open deals ranked by urgency × value, one concrete next action each,

@@ -17,7 +17,7 @@ from typing import Literal
 from senpai import config
 
 _FILES = ["reps", "customers", "products", "environments", "playbook",
-          "deals", "sales_activities", "quotes", "orders"]
+          "deals", "sales_activities", "quotes", "orders", "coaching_threads"]
 
 
 @lru_cache(maxsize=1)
@@ -140,6 +140,23 @@ def daily_reports_for_rep(employee_id: str) -> list[dict]:
     return [a for a in all_activities()
             if (a.get("sales_info") or {}).get("employee_id") == employee_id
             and a.get("activity_type") == "002_Daily Report"]
+
+
+def all_coaching_threads() -> list[dict]:
+    """Manager↔rep coaching threads (coaching_threads.json; [] if absent)."""
+    return _load().get("coaching_threads", [])
+
+
+def coaching_threads_for_rep(employee_id: str) -> list[dict]:
+    """Coaching threads owned by a rep, newest first."""
+    rows = [t for t in all_coaching_threads() if t.get("employee_id") == employee_id]
+    return sorted(rows, key=lambda t: t.get("created_at", ""), reverse=True)
+
+
+def coaching_threads_for_deal(deal_id: str) -> list[dict]:
+    """Coaching threads raised on a specific deal, newest first."""
+    rows = [t for t in all_coaching_threads() if t.get("deal_id") == deal_id]
+    return sorted(rows, key=lambda t: t.get("created_at", ""), reverse=True)
 
 
 def quote_for_deal(deal_id: str) -> dict | None:

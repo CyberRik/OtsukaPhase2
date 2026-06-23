@@ -42,7 +42,7 @@ from __future__ import annotations
 
 import json
 import random
-from datetime import timedelta
+from datetime import date, timedelta
 
 from senpai import config
 
@@ -145,6 +145,37 @@ REPS = [
      "department": "第三営業部", "division": "法人1課",
      "specialty_tags": ["セキュリティ"], "is_top_performer": False},
 ]
+
+# --- Rep skill model --------------------------------------------------------
+# A single deterministic "skill profile" per rep DRIVES the realism of the daily
+# reports/cards/challenges below, so the coaching engine can later *rediscover*
+# each rep's recurring weakness from the data (the demo is a closed loop, not a
+# gimmick). Derived only from role + a per-rep stable seed — independent of the
+# main generation RNG, so enriching reports never disturbs amounts/ranks/dates.
+#   weaknesses : themes the rep tends to leave out of their notes / not chase
+#   improving  : a junior whose weaknesses fade over fiscal years (the longitudinal
+#                signal Phase-2 progress tracking reads).
+# Themes map to the Review Coach's absence lenses + discovery (customer_challenge).
+_WEAKNESS_POOL = ["decision_maker", "timeline", "budget", "criteria",
+                  "next_step", "discovery", "stall"]
+
+
+def _build_rep_skill() -> dict[str, dict]:
+    skills: dict[str, dict] = {}
+    for r in REPS:
+        h = random.Random(f"skill|{r['employee_id']}")
+        role = r["role"]
+        n_weak = {"junior": 2, "senior": 1, "expert": 0}.get(role, 1)
+        if role == "expert" and h.random() < 0.3:
+            n_weak = 1                                  # a few experts still have one gap
+        weaknesses = set(h.sample(_WEAKNESS_POOL, n_weak)) if n_weak else set()
+        improving = role == "junior" and h.random() < 0.5
+        skills[r["employee_id"]] = {"weaknesses": weaknesses,
+                                    "improving": improving, "role": role}
+    return skills
+
+
+REP_SKILL = _build_rep_skill()
 
 # Product master. major/mid/minor mirror the orders/quotes category columns.
 # Codes MFP30/MFP15/LP14/SRV20/NSW24/OFFICE/AV365 are the original seven (kept
@@ -413,6 +444,62 @@ _CARD_DM = ["情報システム部 部長", "総務部 課長", "代表取締役
             "管理部 責任者", "取締役 管理本部長", "情シス長"]
 _CARD_NONDM = ["情報システム部 担当", "総務部 担当者", "営業部 主任", "経理部 担当", ""]
 
+# --- Skill-driven daily-report builder --------------------------------------
+# Each fragment deliberately CARRIES the cue words of one Review Coach absence
+# lens (see coach/review.py LENSES). A report includes a lens's sentence when the
+# rep is strong on that dimension (and increasingly, over fiscal years, for
+# "improving" reps) — and omits it when it's the rep's weakness. So a skilled rep
+# produces a thorough note (few lenses fire) and a weak/early-career rep a thin one
+# (many fire): the realistic spread the coach needs to not look gimmicky.
+_BASE_SENT = ["担当者と仕様を確認。反応は前向き。",
+              "現場の状況をヒアリングし、論点を整理した。",
+              "製品の概要を説明し、関心を得た。",
+              "既存環境を確認し、課題の当たりをつけた。"]
+_LENS_SENT = {
+    "decision_maker": ["決裁者は情報システム部の部長と確認できた。",
+                       "稟議は部長決裁で進むと伺った。",
+                       "意思決定は役員会で行うとのこと。"],
+    "timeline": ["次回は来月初旬に再訪予定で日程を仮押さえした。",
+                 "導入時期は月末までに決めたい意向。",
+                 "社内検討は来週中にまとまる見込みと伺った。"],
+    "criteria": ["判断基準は価格と保守体制を重視とのこと。",
+                 "評価のポイントは運用負荷の軽さと実績。",
+                 "比較の決め手はサポート品質との由。"],
+    "next_step": ["次回はデモ資料を持参する宿題を設定した。",
+                  "見積を提出し、次回打ち合わせを設定。",
+                  "提案書を送付し再訪のアポを取得した。"],
+    "budget": ["予算は確保済みで規模感も伺えた。",
+               "費用感をすり合わせ、概算費用を提示した。",
+               "今期予算で対応可能か金額を確認した。"],
+}
+_COMP_SENT = ["他社と価格を比較中とのこと。保守体制で差別化を説明した。",
+              "競合製品と比較検討中。実績面の優位を訴求した。"]
+
+
+def _build_report(lr, skill: dict, fy_off: int, dm_present: bool,
+                  stall_latest: bool, comp: bool) -> str:
+    """Compose a multi-sentence daily report whose lens-cue coverage reflects the
+    rep's skill. `lr` is a LOCAL rng (keyed on the activity) so this never touches
+    the main generation stream. `dm_present` ties the decision-maker sentence to
+    the (already-resolved) business card. `fy_off` lets improving reps recover."""
+    if stall_latest:
+        return lr.choice(_REPORT_STALL)
+    sents = [lr.choice(_BASE_SENT)]
+    if dm_present:
+        sents.append(lr.choice(_LENS_SENT["decision_maker"]))
+    for theme in ("timeline", "criteria", "next_step", "budget"):
+        if theme in skill["weaknesses"]:
+            p = 0.12 + (0.20 * fy_off if skill["improving"] else 0.0)
+        else:
+            p = 0.85
+        if lr.random() < min(p, 0.95):
+            sents.append(lr.choice(_LENS_SENT[theme]))
+    if comp:
+        sents.append(lr.choice(_COMP_SENT))
+    if "stall" in skill["weaknesses"] and lr.random() < 0.25:
+        sents.append(lr.choice(_REPORT_STALL))
+    return "".join(sents)
+
 PLAYBOOK_SITUATIONS = [
     (["決定先延ばし", "クロージング"], "先延ばしには『次の一歩』を具体化する。次回訪問日とその場で決める事項を明確に提案する。"),
     (["予算", "価格"], "予算が理由の停滞は、年度末(3月)の予算消化タイミングを狙って再提案するのが有効。"),
@@ -447,6 +534,36 @@ PLAYBOOK_SITUATIONS = [
     (["テレワーク", "セキュリティ"], "テレワークは利便性と統制の両立を。多要素認証込みで提案すると決裁が通りやすい。"),
     (["UPS", "サーバー"], "サーバー・NASの提案には停電対策(UPS)を必ずセットで。事故時の損失で訴求する。"),
 ]
+
+
+# --- Coaching threads (manager↔rep chat data) -------------------------------
+# Short, templated manager↔rep exchanges raised on a flagged deal. They are the
+# conversational/"chat" layer of the coaching product, and the resolved/open
+# status (correlated with the rep's `improving` skill flag) gives the Phase-2
+# progress tracker its "was the coaching acted on?" signal. Generated from a LOCAL
+# rng so they never disturb the SPR tables.
+_THREAD_TEXT = {
+    "missing_decision_maker": {
+        "manager": "{deal}、ランクの割に決裁者がまだ見えていないね。キーマンは誰か確認できてる?",
+        "rep": "ご指摘ありがとうございます。現状は担当者どまりでした。次回、決裁ルートを確認します。",
+        "resolved": "先方の情シス部長につないでいただけました。次回から同席いただけます。",
+    },
+    "long_inactivity": {
+        "manager": "{deal}、しばらく動きが止まっているね。最後の接触から日が空いているけど状況は?",
+        "rep": "失礼しました。先方の繁忙で間が空いていました。今週中にフォロー連絡を入れます。",
+        "resolved": "再訪のアポを取得しました。来週打ち合わせを再開します。",
+    },
+    "weak_customer_discovery": {
+        "manager": "{deal}、提案は出ているけど顧客の課題が日報に残っていないね。背景は掴めている?",
+        "rep": "おっしゃる通り、課題のヒアリングが浅かったです。次回しっかり深掘りします。",
+        "resolved": "現場の運用課題を整理できました。提案の軸を課題ベースに作り直します。",
+    },
+    "premature_discount": {
+        "manager": "{deal}、価値が固まる前に値引きが先行していないか? 条件の出し方を相談しよう。",
+        "rep": "確かに早めに値引きを提示していました。次回は台数増とセットで条件を組み直します。",
+        "resolved": "値引きは保留し、保守込みの総額メリットで再提案して合意いただけました。",
+    },
+}
 
 
 # Legacy-field maps: only used to populate backward-compat aliases on each deal so
@@ -679,32 +796,56 @@ def generate():
         # --- sales_activities for this deal (the activity log / daily reports)
         oppid = "OPP" + did[1:]                            # 1:1 with deal here
         n_acts = rnd.randint(3, 6)
+        emp_skill = REP_SKILL.get(emp, {"weaknesses": set(), "improving": False, "role": "junior"})
         for j in range(n_acts):
             latest = j == n_acts - 1
             adays = last_activity + (n_acts - 1 - j) * rnd.randint(6, 12)
-            if (cohort == "dead_anchor" or stall) and latest:
-                text = rnd.choice(_REPORT_STALL)
+            stall_latest = (cohort == "dead_anchor" or stall) and latest
+            # Keep the ORIGINAL main-RNG draws (results discarded) so every amount/
+            # rank/date downstream stays byte-identical; the skill-driven builder
+            # below replaces only the text fields via a LOCAL rng.
+            if stall_latest:
+                _ = rnd.choice(_REPORT_STALL)
             elif rnd.random() < 0.3:
-                text = rnd.choice(_REPORT_BY_MAJOR.get(prod["major"], _REPORT_NORMAL))
+                _ = rnd.choice(_REPORT_BY_MAJOR.get(prod["major"], _REPORT_NORMAL))
             else:
-                text = rnd.choice(_REPORT_NORMAL)
-            card = rnd.choice(_CARD_DM) if has_dm else rnd.choice(_CARD_NONDM)
+                _ = rnd.choice(_REPORT_NORMAL)
+            _ = rnd.choice(_CARD_DM) if has_dm else rnd.choice(_CARD_NONDM)
             atype = rnd.choice(["002_Daily Report", "002_Daily Report",
                                 "001_Scheduled", "003_Deal", "004_Quote"])
             adate = _iso(adays)
             fy, fq = _fy(adate)
+            # Keep the ORIGINAL draw ORDER (days_since, total_order_count, challenge)
+            # so the main stream stays byte-identical — reordering changes values and
+            # cascades into count-variable paths (n_acts, report branch length).
+            dsl = rnd.randint(10, 400)
+            toc = rnd.randint(0, 30)
+            ch_main = rnd.choice(_CHALLENGES)
+            # --- skill-driven enrichment (LOCAL rng → main stream untouched) ------
+            lr = random.Random(f"act|{did}|{j}")
+            fy_off = max(0, min(3, fy - 2023))
+            recover = (0.20 * fy_off) if emp_skill["improving"] else 0.0
+            dm_present = has_dm and not (
+                "decision_maker" in emp_skill["weaknesses"] and lr.random() > recover)
+            card = lr.choice(_CARD_DM) if dm_present else lr.choice(_CARD_NONDM)
+            comp = lr.random() < 0.12
+            text = _build_report(lr, emp_skill, fy_off, dm_present, stall_latest, comp)
+            # discovery-weak reps leave the customer challenge blank more often;
+            # improving reps recover this over fiscal years (the Phase-2 trend signal).
+            blank_p = (0.6 - recover) if "discovery" in emp_skill["weaknesses"] else 0.0
+            ch = "" if lr.random() < blank_p else ch_main
             activities.append({
                 "customer_id": cid, "opportunity_id": oppid,
                 "fiscal_year": fy, "fiscal_quarter": fq,
                 "started_at": _iso(rank_first), "activity_date": adate,
                 "closed_flag": status != "open",
                 "activity_type": atype,
-                "days_since_last_order": rnd.randint(10, 400),
-                "total_order_count": rnd.randint(0, 30),
+                "days_since_last_order": dsl,
+                "total_order_count": toc,
                 "sales_info": sales_info,
                 "business_card_info": card,
                 "product_major_category": prod["major"],
-                "customer_challenge": rnd.choice(_CHALLENGES),
+                "customer_challenge": ch,
                 "daily_report": text,
                 "quote_id": None, "order_id": None, "deal_id": did,
             })
@@ -833,15 +974,104 @@ def generate():
             "author_rep_id": author["employee_id"],
         })
 
+    coaching_threads = _make_coaching_threads(deals, activities, quotes, orders)
+
     return {
         # supplementary reference data
         "reps": REPS, "customers": customers, "products": PRODUCTS,
         "environments": environments, "playbook": playbook,
         "customer_aliases": customer_aliases, "rank_history": rank_history,
+        "coaching_threads": coaching_threads,
         # production SPR schema tables
         "deals": deals, "sales_activities": activities,
         "quotes": quotes, "orders": orders,
     }
+
+
+def _make_coaching_threads(deals, activities, quotes, orders) -> list[dict]:
+    """Deterministic manager↔rep coaching threads raised on flagged OPEN deals.
+
+    Uses a LOCAL rng so the SPR tables stay byte-identical. The thread's resolved/
+    open status is correlated with the owning rep's `improving` flag, giving the
+    Phase-2 progress tracker a real 'was the coaching acted on?' signal."""
+    lr = random.Random("coaching_threads_v1")
+    by_deal: dict[str, list[dict]] = {}
+    for a in activities:
+        by_deal.setdefault(a["deal_id"], []).append(a)
+    q_disc = {q["quote_id"]: (q.get("discount_rate") or 0) for q in quotes}
+    o_disc = {o["order_id"]: (o.get("discount_rate") or 0) for o in orders}
+    mgrs_by_dept: dict[str, list[str]] = {}
+    for r in REPS:
+        if r["role"] in ("senior", "expert"):
+            mgrs_by_dept.setdefault(r["department"], []).append(r["employee_id"])
+
+    def _has_dm(acts):
+        return any(any(t in (a.get("business_card_info") or "")
+                       for t in config.DECISION_MAKER_TITLES) for a in acts)
+
+    threads: list[dict] = []
+    tid = 1
+    for d in sorted(deals, key=lambda x: x["deal_id"]):
+        rank = d.get("order_rank")
+        if rank not in config.OPEN_RANKS:
+            continue
+        acts = by_deal.get(d["deal_id"], [])
+        if not acts:
+            continue
+        emp = d["sales_info"]["employee_id"]
+        skill = REP_SKILL.get(emp, {"improving": False})
+        has_dm = _has_dm(acts)
+        last = max(a["activity_date"] for a in acts)
+        days_inactive = (REF - date.fromisoformat(last)).days
+        filled = sum(1 for a in acts if a.get("customer_challenge"))
+        disc = 0
+        for a in acts:
+            if a.get("quote_id"):
+                disc = max(disc, q_disc.get(a["quote_id"], 0))
+            if a.get("order_id"):
+                disc = max(disc, o_disc.get(a["order_id"], 0))
+        # collect ALL applicable issues, then pick one (variety across the team)
+        applicable = []
+        if rank in config.DECISION_MAKER_RANKS and not has_dm:
+            applicable.append("missing_decision_maker")
+        if days_inactive > 30:
+            applicable.append("long_inactivity")
+        if len(acts) >= 3 and filled / len(acts) < 0.34:
+            applicable.append("weak_customer_discovery")
+        if disc > 10 and (not has_dm or config.rank_num(rank) >= 4):
+            applicable.append("premature_discount")
+        if not applicable:
+            continue
+        if lr.random() > 0.7:            # thread a subset of flagged deals
+            continue
+        issue = lr.choice(applicable)
+
+        mgrs = [m for m in mgrs_by_dept.get(d["sales_info"]["department"], []) if m != emp]
+        manager_id = lr.choice(mgrs) if mgrs else "R01"
+        tpl = _THREAD_TEXT[issue]
+        created = min(max(days_inactive + lr.randint(2, 10), 1), 360)
+        if skill.get("improving") and lr.random() < 0.7:
+            status = "resolved"
+        elif lr.random() < 0.5:
+            status = "acknowledged"
+        else:
+            status = "open"
+        messages = [
+            {"role": "manager", "author_id": manager_id, "date": _iso(created),
+             "text": tpl["manager"].format(deal=d["deal_id"])},
+            {"role": "rep", "author_id": emp, "date": _iso(created - 1),
+             "text": tpl["rep"]},
+        ]
+        if status == "resolved":
+            messages.append({"role": "rep", "author_id": emp, "date": _iso(max(created - 4, 1)),
+                             "text": tpl["resolved"]})
+        threads.append({
+            "thread_id": f"CT{tid:04d}", "deal_id": d["deal_id"],
+            "employee_id": emp, "manager_id": manager_id, "issue_key": issue,
+            "created_at": _iso(created), "status": status, "messages": messages,
+        })
+        tid += 1
+    return threads
 
 
 def write():

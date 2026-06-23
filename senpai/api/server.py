@@ -37,6 +37,8 @@ from senpai import config
 from senpai.coach.cases import find_similar_cases
 from senpai.coach.context import build_commentary_context
 from senpai.coaching import coaching_workspace
+from senpai.coach.profile import rep_coaching_profile, team_coaching_profiles
+from senpai.coach.progress import rep_progress
 from senpai.growth import junior_reps, rep_growth
 from senpai.coach.review import (
     commentary_prompt,
@@ -1346,6 +1348,39 @@ def coaching():
     vs Reality, and a weekly digest. Read-only aggregation over the existing
     deal-health + flags engines; see senpai.coaching."""
     return coaching_workspace(today=_today())
+
+
+@app.get("/api/coach/rep-profile/{employee_id}")
+def coach_rep_profile(employee_id: str):
+    """Per-rep coaching profile (the 1:1 page): recurring weaknesses grounded in
+    real deals + a validated principle + a real case + an action, plus strengths,
+    talking points and coaching-thread status. See senpai.coach.profile."""
+    return rep_coaching_profile(employee_id, today=_today())
+
+
+@app.get("/api/coach/rep-profiles")
+def coach_rep_profiles():
+    """Team rollup: one compact profile per rep, worst-needing-coaching first."""
+    return {"reps": team_coaching_profiles(today=_today())}
+
+
+@app.get("/api/coach/rep-progress/{employee_id}")
+def coach_rep_progress(employee_id: str, windows: int = 4):
+    """Longitudinal coaching progress for a rep — per-fiscal-year weakness rates,
+    per-issue trend, and whether past coaching was acted on. See coach.progress."""
+    return rep_progress(employee_id, today=_today(), windows=windows)
+
+
+@app.get("/api/coach/threads")
+def coach_threads(rep_id: str | None = None, deal_id: str | None = None):
+    """Manager↔rep coaching threads, filtered by rep or deal (newest first)."""
+    if deal_id:
+        rows = store.coaching_threads_for_deal(deal_id)
+    elif rep_id:
+        rows = store.coaching_threads_for_rep(rep_id)
+    else:
+        rows = store.all_coaching_threads()
+    return {"threads": rows}
 
 
 # ---------------------------------------------------------------------------
