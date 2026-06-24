@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BookOpen, CheckCircle2, FileText, Search, Users } from "lucide-react";
-import type { KnowledgeItem, Principle, Source } from "@/lib/types";
+import { BookOpen, Check, CheckCircle2, FileText, Loader2, Pencil, Search, Sparkles, Users, X } from "lucide-react";
+import type { ItemStatus, KnowledgeItem, Principle, Source } from "@/lib/types";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { PRINCIPLE_EN, TAG_EN, ITEM_EN, sourceNoteText, principleText, tagText, pickText, pickList } from "@/lib/content-i18n";
@@ -41,8 +42,37 @@ function SourceStrip({ sources }: { sources: Source[] }) {
   );
 }
 
-function ItemCard({ item }: { item: KnowledgeItem }) {
+const STATUS_TONE: Record<ItemStatus, string> = {
+  approved: "border-conf-high/30 bg-conf-high/10 text-conf-high",
+  draft: "border-border bg-muted text-muted-foreground",
+  needs_edit: "border-band-yellow/30 bg-band-yellow/10 text-band-yellow",
+  rejected: "border-band-red/30 bg-band-red/10 text-band-red",
+};
+
+function ItemCard({
+  item,
+  canManage = false,
+  onReview,
+}: {
+  item: KnowledgeItem;
+  canManage?: boolean;
+  onReview?: (itemId: string, action: "approve" | "request_edit" | "reject") => Promise<boolean>;
+}) {
   const { t, lang } = useT();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState(false);
+  const status = item.review.status;
+  const pending = status === "draft" || status === "needs_edit";
+
+  async function act(action: "approve" | "request_edit" | "reject") {
+    if (!onReview) return;
+    setBusy(action);
+    setErr(false);
+    const ok = await onReview(item.item_id, action);
+    if (!ok) setErr(true);
+    setBusy(null);
+  }
+
   const enItem = ITEM_EN[item.item_id];
   const sc = pickText(lang, item.scenario, enItem?.scenario);
   const facets = [
@@ -61,6 +91,14 @@ function ItemCard({ item }: { item: KnowledgeItem }) {
             <CheckCircle2 className="h-3.5 w-3.5" /> {t("knowledge.groundingPassed")}
           </span>
         )}
+        <span
+          className={cn(
+            "ml-auto rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            STATUS_TONE[status],
+          )}
+        >
+          {t(`knowledge.status.${status}`)}
+        </span>
       </div>
       <span className="mt-3 text-[14px] leading-relaxed text-foreground/90 block">
         {sc.text}
@@ -85,14 +123,45 @@ function ItemCard({ item }: { item: KnowledgeItem }) {
           );
         })}
       </div>
+
+      {canManage && pending && onReview && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          <button
+            onClick={() => act("approve")}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1 rounded-lg border border-conf-high/30 bg-conf-high/10 px-2.5 py-1 text-[12px] font-medium text-conf-high transition-colors hover:bg-conf-high/20 disabled:opacity-50"
+          >
+            {busy === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            {t("knowledge.review.approve")}
+          </button>
+          <button
+            onClick={() => act("request_edit")}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1 rounded-lg border border-band-yellow/30 bg-band-yellow/10 px-2.5 py-1 text-[12px] font-medium text-band-yellow transition-colors hover:bg-band-yellow/20 disabled:opacity-50"
+          >
+            {busy === "request_edit" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+            {t("knowledge.review.requestEdit")}
+          </button>
+          <button
+            onClick={() => act("reject")}
+            disabled={busy !== null}
+            className="inline-flex items-center gap-1 rounded-lg border border-band-red/30 bg-band-red/10 px-2.5 py-1 text-[12px] font-medium text-band-red transition-colors hover:bg-band-red/20 disabled:opacity-50"
+          >
+            {busy === "reject" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+            {t("knowledge.review.reject")}
+          </button>
+          {err && <span className="text-[11px] text-band-red">{t("knowledge.offlineMutation")}</span>}
+        </div>
+      )}
     </div>
   );
 }
 
 export function KnowledgeExplorer({
-  principles, items, sources, live,
+  principles, items, sources, live, canManage = false,
 }: {
   principles: Principle[]; items: KnowledgeItem[]; sources: Source[]; live: boolean;
+  canManage?: boolean;
 }) {
   const { t, lang } = useT();
   const [filter, setFilter] = useState<"all" | "approved" | "two">("all");
@@ -100,6 +169,36 @@ export function KnowledgeExplorer({
   const [selectedId, setSelectedId] = useState<string>(
     principles.find((p) => p.n_interviews >= 2)?.principle_id ?? principles[0]?.principle_id ?? "",
   );
+  // Items are mutable here (generate appends a draft; review updates status),
+  // so they live in state rather than being read straight from props.
+  const [allItems, setAllItems] = useState<KnowledgeItem[]>(items);
+  const [generating, setGenerating] = useState(false);
+  const [genErr, setGenErr] = useState(false);
+
+  async function handleGenerate(principleId: string) {
+    setGenerating(true);
+    setGenErr(false);
+    const { data, live: isLive } = await api.knowledgeGenerate(principleId);
+    if (isLive && data.item) {
+      setAllItems((prev) => [data.item as KnowledgeItem, ...prev]);
+    } else {
+      setGenErr(true);
+    }
+    setGenerating(false);
+  }
+
+  async function handleReview(
+    itemId: string,
+    action: "approve" | "request_edit" | "reject",
+  ): Promise<boolean> {
+    const { data, live: isLive } = await api.knowledgeReview(itemId, action);
+    if (isLive && data.item) {
+      const updated = data.item as KnowledgeItem;
+      setAllItems((prev) => prev.map((it) => (it.item_id === itemId ? updated : it)));
+      return true;
+    }
+    return false;
+  }
 
   const filtered = useMemo(() => principles.filter((p) => {
     if (filter === "approved" && p.status !== "approved") return false;
@@ -113,7 +212,7 @@ export function KnowledgeExplorer({
   }), [principles, filter, query]);
 
   const selected = principles.find((p) => p.principle_id === selectedId) ?? filtered[0];
-  const derived = items.filter((it) => it.provenance.principle_id === selected?.principle_id);
+  const derived = allItems.filter((it) => it.provenance.principle_id === selected?.principle_id);
 
   return (
     <div className="space-y-8">
@@ -224,12 +323,30 @@ export function KnowledgeExplorer({
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="eyebrow">{t("knowledge.derived")}</div>
-                  <span className="text-[11px] text-muted-foreground">{t("knowledge.approvedCount", { n: derived.length })}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground">{t("knowledge.approvedCount", { n: derived.length })}</span>
+                    {canManage && (
+                      <button
+                        onClick={() => handleGenerate(selected.principle_id)}
+                        disabled={generating || selected.status !== "approved"}
+                        title={selected.status !== "approved" ? t("knowledge.generateApprovedOnly") : undefined}
+                        className="inline-flex items-center gap-1 rounded-lg border border-navy/30 bg-navy/10 px-2.5 py-1 text-[12px] font-medium text-navy transition-colors hover:bg-navy/20 disabled:opacity-40"
+                      >
+                        {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        {generating ? t("knowledge.generating") : t("knowledge.generate")}
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {canManage && genErr && (
+                  <p className="text-[11px] text-band-red">{t("knowledge.offlineMutation")}</p>
+                )}
                 {derived.length ? (
-                  derived.map((it) => <ItemCard key={it.item_id} item={it} />)
+                  derived.map((it) => (
+                    <ItemCard key={it.item_id} item={it} canManage={canManage} onReview={handleReview} />
+                  ))
                 ) : (
                   <div className="rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center">
                     <p className="font-jp text-[13px] text-muted-foreground">{t("knowledge.noItems")}</p>

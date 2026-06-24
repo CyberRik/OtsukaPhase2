@@ -23,6 +23,7 @@ export default async function ManagerKnowledgePage() {
         items={it.items}
         sources={src.sources}
         live={live}
+        canManage
       />
     </div>
   );

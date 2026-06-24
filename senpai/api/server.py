@@ -28,7 +28,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -1629,3 +1629,50 @@ def knowledge_item_review(item_id: str, req: ReviewRequest):
     except KeyError:
         raise HTTPException(404, f"item {item_id} not found")
     return {"item": _item_payload(item)}
+
+
+# --- Multimodal ingestion ---------------------------------------------------
+@app.post("/api/ingest")
+async def ingest(
+    audio: UploadFile | None = File(default=None),
+    image: UploadFile | None = File(default=None),
+    text: str | None = Form(default=None),
+):
+    """Capture → structured sales-activity draft.
+
+    Accepts a voice note (audio), a business-card/whiteboard photo (image),
+    and/or raw text — any combination — and returns an editable draft matching
+    the `sales_activities` schema (activity_type, daily_report, business_card_info,
+    customer_challenge, product_major_category). Wraps senpai.ingestion.multimodal
+    unchanged; falls back to deterministic mock extraction offline (no multimodal
+    API key). The draft is NOT persisted — the caller reviews/edits it first.
+    """
+    import os
+    import tempfile
+
+    from senpai.ingestion import multimodal as mm
+
+    parts: list[str] = []
+    for upload, extract in ((audio, mm.transcribe_audio), (image, mm.extract_text_from_image)):
+        if upload is None:
+            continue
+        suffix = os.path.splitext(upload.filename or "")[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            tmp.write(await upload.read())
+            tmp_path = tmp.name
+        try:
+            out = extract(tmp_path)
+            if out:
+                parts.append(out)
+        finally:
+            os.unlink(tmp_path)
+
+    if text and text.strip():
+        parts.append(text.strip())
+
+    if not parts:
+        raise HTTPException(400, "provide at least one of: audio, image, text")
+
+    raw = "\n\n".join(parts)
+    draft = mm.extract_structured_activity(raw)
+    return {"raw_text": raw, "draft": draft, "multimodal": config.have_multimodal()}

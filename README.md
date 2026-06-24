@@ -81,6 +81,9 @@ turn streams the optional **Senior Commentary** from a GPU-served, OpenAI-compat
 LLM only *rephrases* the same findings. Live commentary is **gated OFF by default** — you turn
 it on with one backend env var.
 
+> The web↔engine boundary, the "endpoint first, then types/api/fixture" rule, and the drift
+> check (`scripts/check_contract.py`) are documented in [`docs/web-integration.md`](docs/web-integration.md).
+
 Start three things, in order:
 
 ### 1. Model server (GPU box) — `:8765`

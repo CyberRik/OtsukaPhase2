@@ -10,6 +10,7 @@ import type {
   GrowthResponse,
   KnowledgeItem,
   Principle,
+  RepProfileRow,
   Source,
 } from "./types";
 
@@ -39,6 +40,16 @@ export const COACHING_FALLBACK: CoachingWorkspace = {
   ],
   summary: { reps_need_coaching: 7, opportunities_flagged: 20, top_issue: "incomplete_reports", improving: 0 },
 };
+
+// Team rollup fallback for the 1:1 Rep Profiles section (worst-needing-coaching
+// first). Per-rep profile/progress/threads fall back to null/[] when offline.
+export const REP_PROFILES_FALLBACK: RepProfileRow[] = [
+  { employee_id: "R05", name: "伊藤翔", role: "新人営業", open_deals: 9, at_risk: 5, avg_risk: 48, development_focus: "missing_decision_maker", n_weaknesses: 4, acted_on_rate: 0.33 },
+  { employee_id: "R06", name: "渡辺さくら", role: "新人営業", open_deals: 8, at_risk: 4, avg_risk: 42, development_focus: "weak_customer_discovery", n_weaknesses: 3, acted_on_rate: 0.5 },
+  { employee_id: "R02", name: "佐藤美咲", role: "営業", open_deals: 11, at_risk: 4, avg_risk: 39, development_focus: "confidence_mismatch", n_weaknesses: 3, acted_on_rate: 0.6 },
+  { employee_id: "R08", name: "中村優子", role: "新人営業", open_deals: 7, at_risk: 3, avg_risk: 35, development_focus: "premature_discount", n_weaknesses: 2, acted_on_rate: null },
+  { employee_id: "R07", name: "山本健一", role: "営業", open_deals: 10, at_risk: 3, avg_risk: 33, development_focus: "long_inactivity", n_weaknesses: 2, acted_on_rate: 0.5 },
+];
 
 export const GROWTH_FALLBACK: GrowthResponse = {
   growth: {

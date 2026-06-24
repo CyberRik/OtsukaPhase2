@@ -10,6 +10,7 @@ import {
   GROWTH_FALLBACK,
   ITEMS_FALLBACK,
   PRINCIPLES_FALLBACK,
+  REP_PROFILES_FALLBACK,
   SOURCES_FALLBACK,
 } from "./fixtures";
 import type {
@@ -22,6 +23,11 @@ import type {
   GrowthResponse,
   KnowledgeItem,
   Principle,
+  RepProfile,
+  RepProfileRow,
+  RepProgress,
+  CoachingThread,
+  IngestResult,
   SimilarCase,
   Source,
 } from "./types";
@@ -85,9 +91,45 @@ export const api = {
     ),
   sources: () =>
     get<{ sources: Source[] }>("/api/knowledge/sources", { sources: SOURCES_FALLBACK }),
+  // Knowledge authoring (manager). Mutations: when offline, `live` is false and
+  // `item` is null — the UI surfaces that rather than pretending it succeeded.
+  knowledgeGenerate: (principleId: string, useLlm = false) =>
+    post<{ item: KnowledgeItem | null }>(
+      "/api/knowledge/generate",
+      { principle_id: principleId, use_llm: useLlm },
+      { item: null },
+    ),
+  knowledgeReview: (
+    itemId: string,
+    action: "approve" | "request_edit" | "reject",
+    notes = "",
+  ) =>
+    post<{ item: KnowledgeItem | null }>(
+      `/api/knowledge/items/${encodeURIComponent(itemId)}/review`,
+      { action, notes },
+      { item: null },
+    ),
   growth: (rep?: string) =>
     get<GrowthResponse>(`/api/growth${rep ? `?rep=${encodeURIComponent(rep)}` : ""}`, GROWTH_FALLBACK),
   coaching: () => get<CoachingWorkspace>("/api/coaching", COACHING_FALLBACK),
+  // Per-rep 1:1 coaching. Rollup has a fixture fallback; the drill-downs return
+  // null/[] offline (the UI hides those panels when data is absent).
+  repProfiles: () =>
+    get<{ reps: RepProfileRow[] }>("/api/coach/rep-profiles", { reps: REP_PROFILES_FALLBACK }),
+  repProfile: (employeeId: string) =>
+    get<RepProfile | null>(`/api/coach/rep-profile/${encodeURIComponent(employeeId)}`, null),
+  repProgress: (employeeId: string, windows = 4) =>
+    get<RepProgress | null>(
+      `/api/coach/rep-progress/${encodeURIComponent(employeeId)}?windows=${windows}`,
+      null
+    ),
+  coachThreads: (opts: { repId?: string; dealId?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (opts.repId) qs.set("rep_id", opts.repId);
+    if (opts.dealId) qs.set("deal_id", opts.dealId);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return get<{ threads: CoachingThread[] }>(`/api/coach/threads${suffix}`, { threads: [] });
+  },
   account: (customerId: string) =>
     get<AccountSummary | null>(`/api/account/${encodeURIComponent(customerId)}`, null),
   resolveCustomer: (q: string) =>
@@ -107,6 +149,23 @@ export const api = {
       { query, lang },
       { status: "not_found", query, customer: null, candidates: [] }
     ),
+  // Multimodal capture → structured draft. Multipart upload, so it bypasses the
+  // JSON `post` helper. Returns { data:null, live:false } when the API is down.
+  ingest: async (
+    input: { audio?: File; image?: File; text?: string },
+  ): Promise<{ data: IngestResult | null; live: boolean }> => {
+    const fd = new FormData();
+    if (input.audio) fd.append("audio", input.audio);
+    if (input.image) fd.append("image", input.image);
+    if (input.text) fd.append("text", input.text);
+    try {
+      const res = await fetch(`${BASE}/api/ingest`, { method: "POST", body: fd });
+      if (!res.ok) return { data: null, live: false };
+      return { data: (await res.json()) as IngestResult, live: true };
+    } catch {
+      return { data: null, live: false };
+    }
+  },
 };
 
 // --- Streaming senior commentary (SSE from the vLLM-backed bridge) ----------

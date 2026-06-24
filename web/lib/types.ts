@@ -320,6 +320,115 @@ export interface CoachingWorkspace {
   summary: CoachingSummary;
 }
 
+// --- Per-rep 1:1 coaching (rep-profiles / rep-profile / rep-progress / threads)
+// Mirrors senpai/api/server.py:/api/coach/rep-profile{,s}, /rep-progress, /threads
+// and the dicts in senpai/coach/profile.py + progress.py.
+
+/** One compact row in the team rollup (`/api/coach/rep-profiles` → `reps[]`). */
+export interface RepProfileRow {
+  employee_id: string;
+  name: string;
+  role: string;
+  open_deals: number;
+  at_risk: number;
+  avg_risk: number;
+  development_focus: string | null; // issue key (translate via coaching.issue.*)
+  n_weaknesses: number;
+  acted_on_rate: number | null;
+}
+
+export interface RepWeakness {
+  issue: string;
+  label: string; // backend-provided Japanese label
+  count: number;
+  share: number;
+  example_deals: string[];
+  principle: { id: string; statement: string; approved: boolean } | null;
+  case:
+    | { deal_id: string; customer: string; outcome: string; product_category?: string; principle_ids?: string[] }
+    | null;
+  action: string; // backend-provided Japanese coaching action
+}
+
+export interface RepThreadSummary {
+  total: number;
+  open: number;
+  acknowledged: number;
+  resolved: number;
+  acted_on_rate: number | null;
+}
+
+/** Full 1:1 profile (`/api/coach/rep-profile/{id}`). */
+export interface RepProfile {
+  employee_id: string;
+  name: string;
+  role: string;
+  open_deals: number;
+  at_risk: number;
+  avg_risk: number;
+  band_mix: { red: number; yellow: number; green: number };
+  development_focus: string | null;
+  focus_explanation: Explanation | null;
+  weaknesses: RepWeakness[];
+  strengths: string[];
+  talking_points: string[];
+  threads: RepThreadSummary;
+}
+
+export interface RepProgressWindow {
+  window: string; // e.g. "FY2025"
+  active_deals: number;
+  weaknesses_per_deal: number;
+  by_issue: Record<string, number>;
+}
+
+/** Longitudinal progress (`/api/coach/rep-progress/{id}`). */
+export interface RepProgress {
+  employee_id: string;
+  name: string;
+  windows: string[];
+  series: RepProgressWindow[];
+  trends: Record<string, "improving" | "worsening" | "flat">;
+  headline: string; // backend-provided Japanese headline
+  coaching_acted_on: { total: number; resolved: number; rate: number | null };
+}
+
+export interface CoachingThreadMessage {
+  role: "manager" | "rep";
+  author_id: string;
+  date: string;
+  text: string;
+}
+
+/** Manager↔rep coaching thread (`/api/coach/threads`). */
+export interface CoachingThread {
+  thread_id: string;
+  deal_id: string;
+  employee_id: string;
+  manager_id: string;
+  issue_key: string;
+  created_at: string;
+  status: "open" | "acknowledged" | "resolved";
+  messages: CoachingThreadMessage[];
+}
+
+// --- Multimodal ingestion (`POST /api/ingest`) -----------------------------
+// Editable draft matching the sales_activities schema. See
+// senpai/ingestion/multimodal.py:ActivityExtraction.
+export interface ActivityDraft {
+  activity_type: string;
+  business_card_info: string;
+  product_major_category: string;
+  customer_challenge: string;
+  daily_report: string;
+}
+
+export interface IngestResult {
+  raw_text: string;
+  draft: ActivityDraft;
+  multimodal: boolean; // false → server used deterministic mock extraction (offline)
+}
+
 export interface GrowthSkill {
   key: string;
   stars: number;
