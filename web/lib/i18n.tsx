@@ -394,6 +394,22 @@ const ja: Dict = {
   "repcoach.status.acknowledged": "確認済み",
   "repcoach.status.resolved": "解決済み",
 
+  // capture (multimodal ingestion → editable draft)
+  "capture.uploaded": "アップロード",
+  "capture.attach": "音声メモ・名刺写真をアップロードして日報ドラフトを作成",
+  "capture.attachShort": "添付",
+  "capture.title": "取り込みドラフト",
+  "capture.failed": "取り込みに失敗しました。APIに接続できません。",
+  "capture.mock": "モック抽出",
+  "capture.copy": "コピー",
+  "capture.copied": "コピーしました",
+  "capture.hint": "保存前に内容を確認・修正してください。これはSPRの活動記録の下書きです。",
+  "capture.field.type": "活動種別",
+  "capture.field.report": "日報",
+  "capture.field.contact": "名刺情報",
+  "capture.field.challenge": "顧客課題",
+  "capture.field.category": "製品カテゴリ",
+
   // coaching explainability
   "expl.why": "なぜこの推奨が出たか",
   "expl.triggers": "トリガー条件",
@@ -797,6 +813,22 @@ const en: Dict = {
   "repcoach.status.open": "Open",
   "repcoach.status.acknowledged": "Acknowledged",
   "repcoach.status.resolved": "Resolved",
+
+  // capture (multimodal ingestion → editable draft)
+  "capture.uploaded": "Uploaded",
+  "capture.attach": "Upload a voice note or business-card photo → daily-report draft",
+  "capture.attachShort": "Attach",
+  "capture.title": "Capture draft",
+  "capture.failed": "Capture failed — couldn't reach the API.",
+  "capture.mock": "Mock extraction",
+  "capture.copy": "Copy",
+  "capture.copied": "Copied",
+  "capture.hint": "Review and edit before saving. This is a draft SPR activity record.",
+  "capture.field.type": "Activity type",
+  "capture.field.report": "Daily report",
+  "capture.field.contact": "Contact",
+  "capture.field.challenge": "Customer challenge",
+  "capture.field.category": "Product category",
 
   // coaching explainability
   "expl.why": "Why this recommendation?",
