@@ -1136,7 +1136,10 @@ def research_stream(req: ChatRequest):
         yield _source_event("environment", "Environment", "skipped")
         yield _source_event("web_search", "Web Search", "skipped",
                             detail="ambiguous_customer")
-        yield _sse({"type": "answer", "text": _ambiguity_answer(res_obj["candidates"])})
+        # No textual "which one?" answer: the `resolve` candidates above drive a
+        # deterministic picker in the UI (both the /research card and the chat
+        # bubble). Emitting an answer too would duplicate the picker as a redundant
+        # markdown table — and would pre-empt the picker before the rep has chosen.
         yield _sse({"type": "done", "model": config.MODEL})
         return
 
@@ -1272,12 +1275,8 @@ def chat(req: ChatRequest):
         system += (f"\n\n【現在の対象顧客】{focus}。アカウント固有の質問では、"
                    f"search_notes に customer='{active['customer']}' を渡し、この顧客の"
                    f"記録に限定して回答すること。")
-    elif amb_candidates:
-        listing = "、".join(f"{c['name']}" + (f"（{c['deal_id']}）" if c.get("deal_id") else "")
-                            for c in amb_candidates)
-        system += (f"\n\n【顧客の曖昧性】メモ内の社名が複数の顧客に一致します（候補: {listing}）。"
-                   "どの顧客か特定できないため、1社に決め打ちして固有の事実を述べないでください。"
-                   "まずどの顧客（または案件ID）か利用者に確認してください。")
+    # An ambiguous customer (amb_candidates) short-circuits to the picker below
+    # before the LLM runs, so no ambiguity clause is added to the system prompt.
 
     convo: list[dict] = [{"role": "system", "content": system}]
     for m in req.history:
@@ -1296,8 +1295,15 @@ def chat(req: ChatRequest):
                         "customer": active.get("customer"),
                         "deal_id": active.get("deal_id"), "cached": cached_flag})
         elif amb_candidates:
+            # Ambiguous customer and nothing else pinned it down → surface the
+            # candidates and STOP. The deterministic picker is the whole response;
+            # running the LLM here only produces a redundant "which one?" message
+            # that duplicates the picker and pre-empts the rep's choice. The pick
+            # re-runs this turn in place, grounded on the chosen customer.
             yield _sse({"type": "resolve", "status": "ambiguous",
                         "query": req.message, "candidates": amb_candidates})
+            yield _sse({"type": "done", "model": config.MODEL})
+            return
         try:
             for ev in stream_chat_turn(convo, tools=tools, role=req.role):
                 yield _sse(ev)

@@ -16,12 +16,13 @@
 import { useState } from "react";
 import {
   AlertTriangle, Bot, Building2, ChevronDown, Database, Eye,
-  Layers, Lightbulb, MessagesSquare, Route, Scale, Search, Sparkles, type LucideIcon,
+  FileSpreadsheet, Layers, Lightbulb, MessagesSquare, Route, Scale, Search, Sparkles, type LucideIcon,
 } from "lucide-react";
 import type { Artifact, ArtifactKind, EvidenceRef } from "@/lib/artifacts";
 import type { Confidence } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
+import { downloadArtifact } from "@/lib/artifact-export";
 import { SourceChips } from "@/components/source-chip";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 
@@ -269,11 +270,23 @@ export function ArtifactBody({ artifact }: { artifact: Artifact }) {
             </span>
           )}
         </span>
-        {artifact.band && (
-          <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase", BAND_CHIP[artifact.band])}>
-            {artifact.band}
-          </span>
-        )}
+        <span className="flex items-center gap-2">
+          {artifact.band && (
+            <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase", BAND_CHIP[artifact.band])}>
+              {artifact.band}
+            </span>
+          )}
+          {artifact.status === "ready" && (
+            <button
+              onClick={() => { void downloadArtifact(artifact, lang); }}
+              title={lang === "ja" ? "Excel (.xlsx) で書き出す" : "Export to Excel (.xlsx)"}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              {lang === "ja" ? "書き出し" : "Export"}
+            </button>
+          )}
+        </span>
       </div>
 
       {/* alert intercept (review reality_check / account risk) */}

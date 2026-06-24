@@ -51,7 +51,7 @@ type AccountPickCandidate = { customer_id: string; name: string };
 type WMsg =
   | { id: number; role: "user"; text: string; dealLabel?: string }
   | { id: number; role: "system"; text: string }
-  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string }
+  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number }
   | { id: number; role: "loading" }
   | { id: number; role: "account_pick"; query: string; candidates: AccountPickCandidate[]; suggestedId?: string | null }
   | { id: number; role: "skill"; kind: "review"; note: string; dealId?: string; artifact: Artifact }
@@ -356,12 +356,18 @@ function AccountTurn({ artifact, customerId }: { artifact: Artifact; customerId:
   return <ArtifactCard artifact={merged} />;
 }
 
-function ResearchTurn({ artifact, query, entity }: { artifact: Artifact; query: string; entity?: EntityRef }) {
+function ResearchTurn({
+  turnId, artifact, query, entity, onPick,
+}: {
+  turnId: number; artifact: Artifact; query: string; entity?: EntityRef;
+  onPick: (turnId: number, c: ResolveCandidate) => void;
+}) {
   const { lang } = useT();
   const key = artifact.id;
   const [commentary, setCommentary] = useCachedState<string | null>(`ws:art:${key}:ans`, null);
   const [sources, setSources] = useCachedState<ResearchSourceLine[]>(`ws:art:${key}:src`, []);
   const [webUrls, setWebUrls] = useCachedState<string[]>(`ws:art:${key}:web`, []);
+  const [candidates, setCandidates] = useCachedState<ResolveCandidate[]>(`ws:art:${key}:cands`, []);
   const [done, setDone] = useCachedState<boolean>(`ws:art:${key}:done`, false);
   const [started, setStarted] = useCachedState<boolean>(`ws:art:${key}:started`, false);
   const startedRef = useRef(false);
@@ -373,9 +379,14 @@ function ResearchTurn({ artifact, query, entity }: { artifact: Artifact; query: 
     let acc = "";
     let curSources: ResearchSourceLine[] = [];
     let curWebUrls: string[] = [];
-    
+
     chatStream(query, [], "research", (e) => {
       switch (e.type) {
+        case "resolve":
+          // Ambiguous customer → surface candidates; the rep picks BEFORE we
+          // research, so we never summarize the wrong company's records.
+          if (e.status === "ambiguous" && e.candidates?.length) setCandidates(e.candidates);
+          break;
         case "source":
           curSources = [...curSources, { label: e.label, status: e.status, count: e.count }];
           setSources(curSources);
@@ -390,6 +401,19 @@ function ResearchTurn({ artifact, query, entity }: { artifact: Artifact; query: 
           acc += e.text;
           setCommentary(acc);
           break;
+        case "answer":
+          // The research pipeline emits its synthesis as ONE answer event (not a
+          // delta stream). Without this the card showed sources but no read.
+          acc = e.text || acc;
+          setCommentary(acc);
+          break;
+        case "unavailable":
+        case "error":
+          // Don't leave the card silent when the synthesis can't run — say so.
+          if (!acc) setCommentary(lang === "ja"
+            ? "（要約を生成できませんでした。ソースは上記のとおりです。）"
+            : "(Couldn't generate the summary — sources are listed above.)");
+          break;
       }
     }, { conversationId: artifact.threadId }).then(() => {
       setDone(true);
@@ -397,13 +421,49 @@ function ResearchTurn({ artifact, query, entity }: { artifact: Artifact; query: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Still ambiguous and nothing summarized yet → show ONLY the picker. Picking
+  // resolves THIS turn in place (re-runs research grounded on the choice), so the
+  // conversation stays in the same turn — same as the /review and /account picks.
+  if (candidates.length > 0 && !commentary) {
+    return (
+      <div className="rounded-xl border border-band-yellow/40 bg-band-yellow/[0.06] p-4">
+        <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-band-yellow">
+          <Building2 className="h-3.5 w-3.5" />
+          {candidates.length === 1
+            ? (lang === "ja" ? "この顧客で合っていますか？" : "Did you mean this customer?")
+            : (lang === "ja"
+                ? "複数の顧客に一致しました。どの顧客を調べますか？"
+                : "Several customers match — which one should I research?")}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {candidates.map((c) => (
+            <button
+              key={c.customer_id}
+              onClick={() => onPick(turnId, c)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              {customerText(lang, c.name).text}
+              <span className="font-mono text-[10px] text-muted-foreground">{c.customer_id}</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-2.5 text-[11px] text-muted-foreground">
+          {lang === "ja"
+            ? "選択するとこのリサーチがその顧客で読み込まれます。"
+            : "Pick one and this same research fills in for that customer."}
+        </p>
+      </div>
+    );
+  }
+
   const status: ArtifactStatus = done ? "ready" : "building";
   const merged = assembleResearchArtifact({
     threadId: artifact.threadId, turnId: artifact.turnId, live: artifact.live, lang,
     answer: commentary ?? "", sources, webUrls, entity
   });
   merged.status = status;
-  merged.id = artifact.id; 
+  merged.id = artifact.id;
 
   return <ArtifactCard artifact={merged} />;
 }
@@ -421,9 +481,9 @@ function ResearchTurn({ artifact, query, entity }: { artifact: Artifact; query: 
 const EMPTY_MSG: Msg = { role: "assistant", content: "", tools: [], status: "running" };
 
 function ChatTurn({
-  turnId, message, history, role, conversationId, onDone, onPick,
+  turnId, runId, message, history, role, conversationId, onDone, onPick,
 }: {
-  turnId: number; message: string; history: ChatHistoryTurn[];
+  turnId: number; runId: number; message: string; history: ChatHistoryTurn[];
   role: "junior" | "manager"; conversationId: string;
   onDone: (text: string) => void;
   onPick: (c: ResolveCandidate, query: string) => void;
@@ -434,8 +494,10 @@ function ChatTurn({
   // transcript empties, so turn ids restart from 1 — without the conversation
   // prefix a new turn id=1 would read the PREVIOUS thread's cached msg (with its
   // `started=true` flag) and render a stale answer instead of streaming a new one.
-  const [msg, setMsg] = useCachedState<Msg>(`ws:chat:${conversationId}:${turnId}:msg`, EMPTY_MSG);
-  const [started, setStarted] = useCachedState<boolean>(`ws:chat:${conversationId}:${turnId}:started`, false);
+  // `runId` is bumped when an ambiguous turn is resolved by a pick, so the SAME
+  // turn re-streams (grounded on the chosen customer) with a fresh cache slot.
+  const [msg, setMsg] = useCachedState<Msg>(`ws:chat:${conversationId}:${turnId}:${runId}:msg`, EMPTY_MSG);
+  const [started, setStarted] = useCachedState<boolean>(`ws:chat:${conversationId}:${turnId}:${runId}:started`, false);
   const startedRef = useRef(false);
   const ctrlRef = useRef<AbortController | null>(null);
   const abortedRef = useRef(false);
@@ -483,20 +545,24 @@ function ChatTurn({
           patch((m) => ({ ...m, content: e.text || m.content, status: "done" }));
           break;
         case "done":
-          patch((m) => (m.status === "running" && m.content ? { ...m, status: "done" } : m));
+          // A turn that surfaced ambiguity candidates is a valid terminal state
+          // even with no answer text — the picker IS the response, so it must not
+          // be treated as an empty/failed turn.
+          patch((m) => (m.status === "running" && (m.content || m.candidates?.length) ? { ...m, status: "done" } : m));
           break;
         case "unavailable":
         case "error":
           // An intentional stop ends the stream as an error too — keep whatever
-          // streamed so far and mark it done, not failed.
-          patch((m) => ({ ...m, status: abortedRef.current ? (m.content ? "done" : "error") : "error" }));
+          // streamed so far and mark it done, not failed. Candidates also count as
+          // a successful end (the rep just needs to pick).
+          patch((m) => ({ ...m, status: m.candidates?.length ? "done" : (abortedRef.current ? (m.content ? "done" : "error") : "error") }));
           break;
       }
     }, { conversationId, signal: ctrl.signal }).then(() => {
       ctrlRef.current = null;
       setMsg((prev) => {
         const final: Msg = prev.status === "running"
-          ? { ...prev, status: prev.content ? "done" : "error" } : prev;
+          ? { ...prev, status: (prev.content || prev.candidates?.length) ? "done" : "error" } : prev;
         onDone(final.content);
         return final;
       });
@@ -998,6 +1064,47 @@ export function Workspace({
     setBusy(false);
   }
 
+  // Picking an ambiguous candidate on a CHAT turn resolves in place: re-run the
+  // same assistant turn grounded on the chosen customer (name prefixed so it
+  // resolves uniquely) by bumping `runId` — ChatTurn is keyed on it, so it
+  // remounts with a fresh cache slot and streams the grounded answer into the
+  // same turn. No new user bubble; mirrors the /review, /account, /research picks.
+  function onPickChat(turnId: number, c: ResolveCandidate, query: string) {
+    setMessages((m) =>
+      m.map((msg) =>
+        msg.id === turnId && msg.role === "assistant"
+          ? { ...msg, text: `${c.name} ${query}`.trim(), answer: undefined, runId: (msg.runId ?? 0) + 1 }
+          : msg,
+      ),
+    );
+  }
+
+  // Picking a research candidate resolves the SAME research turn in place: re-run
+  // grounded on the chosen customer (name prefixed so it resolves uniquely) and
+  // swap in a fresh artifact. The artifact id changes, so ResearchTurn (keyed on
+  // it) remounts and re-streams — no new user bubble, same thread/turn. Mirrors
+  // the /review and /account in-place picks.
+  function onPickResearch(turnId: number, c: ResolveCandidate) {
+    const target = messages.find(
+      (m): m is Extract<WMsg, { role: "skill"; kind: "research" }> =>
+        m.id === turnId && m.role === "skill" && m.kind === "research",
+    );
+    const baseQuery = target?.query ?? "";
+    const groundQuery = `${c.name} ${baseQuery}`.trim();
+    const entity: EntityRef = { type: "account", id: c.customer_id, name: c.name };
+    const artifact = assembleResearchArtifact({
+      threadId: thread.current, turnId: String(turnId), live: true, lang,
+      answer: "", sources: [], webUrls: [], entity,
+    });
+    setMessages((m) =>
+      m.map((msg) =>
+        msg.id === turnId && msg.role === "skill" && msg.kind === "research"
+          ? { id: turnId, role: "skill", kind: "research", query: groundQuery, entity, artifact }
+          : msg,
+      ),
+    );
+  }
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col">
       <div className="flex-1 space-y-8 pb-6">
@@ -1113,7 +1220,9 @@ export function Workspace({
             return (
               <Row key={m.id} who="senpai" name={assistantName}>
                 <ChatTurn
+                  key={`${m.id}:${m.runId ?? 0}`}
                   turnId={m.id}
+                  runId={m.runId ?? 0}
                   message={m.text}
                   history={m.history}
                   role={role}
@@ -1121,7 +1230,7 @@ export function Workspace({
                   onDone={(text) =>
                     setMessages((prev) => prev.map((msg) => (msg.id === m.id ? { ...msg, answer: text } : msg)))
                   }
-                  onPick={(c, q) => runChat(`${c.name}：${q}`)}
+                  onPick={(c, q) => onPickChat(m.id, c, q)}
                 />
               </Row>
             );
@@ -1135,14 +1244,14 @@ export function Workspace({
                   lang={lang}
                   onPick={(customerId) => {
                     if (busy) return;
-                    const loadingId = nextId();
-                    setMessages((prev) => [
-                      ...prev,
-                      { id: nextId(), role: "user", text: `/account ${customerId}` },
-                      { id: loadingId, role: "loading" },
-                    ]);
                     setBusy(true);
-                    _loadAccountById(customerId, loadingId);
+                    // Resolve in place: turn THIS picker turn into the loading →
+                    // account brief, with no new "/account <id>" user bubble and
+                    // no extra turn — mirrors the in-place /review candidate pick
+                    // so the conversation stays in the same turn for both skills.
+                    setMessages((prev) => prev.map((msg) =>
+                      msg.id === m.id ? { id: m.id, role: "loading" as const } : msg));
+                    _loadAccountById(customerId, m.id);
                   }}
                 />
               </Row>
@@ -1153,7 +1262,7 @@ export function Workspace({
               <Row key={m.id} who="senpai" name={assistantName}>
                 {m.kind === "review" && <ReviewTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} note={m.note} dealId={m.dealId} principles={principles} onPick={onPick} />}
                 {m.kind === "account_brief" && <AccountTurn artifact={m.artifact} customerId={m.customerId} />}
-                {m.kind === "research" && <ResearchTurn artifact={m.artifact} query={m.query} entity={m.entity} />}
+                {m.kind === "research" && <ResearchTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} query={m.query} entity={m.entity} onPick={onPickResearch} />}
               </Row>
             );
           }
@@ -1273,7 +1382,7 @@ export function Workspace({
                   </button>
                 )}
                 <Button variant="seal" size="sm" disabled={busy || !input.trim()} onClick={() => submit(input, dealId)} className="gap-1.5">
-                  {t("chat.send")} <CornerDownLeft className="h-3.5 w-3.5" />
+                  {t(role === "manager" ? "chat.send.manager" : "chat.send")} <CornerDownLeft className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

@@ -93,6 +93,36 @@ dispatcher. Shared sub-components: `Markdown`, `SectionBlock`, `CommentaryBlock`
 
 ---
 
+## Export to Excel (`web/lib/artifact-export.ts`)
+
+Every **ready** artifact carries an **Export** button (header, beside the band
+chip in `ArtifactBody`) that downloads a real multi-sheet `.xlsx`.
+
+The key design property: export is a **serializer, not a generator**. It only
+reformats an already-grounded, immutable artifact — it adds no facts and the LLM
+touches nothing on this path. The same trust model as the rest of the Workspace:
+
+- **Two sheets.** *Brief* (heading + meta + each section + the senior's-read
+  commentary) and *Sources* (the evidence table: deal / SPR / principle /
+  playbook / web IDs + URLs). Provenance travels **into** the file, so the
+  workbook stays auditable after it leaves Senpai.
+- **Grounded cells only.** Values come straight off `artifact.sections` /
+  `commentary` / `evidence`; a footnote states that cells with no source are
+  left blank — fabrication can't enter via export.
+- **Fully client-side.** `write-excel-file/browser` is dynamically imported
+  inside `downloadArtifact` (kept out of the SSR bundle) and the download runs
+  via `.toFile()`. No bridge round-trip — the artifact is already a typed object
+  in the page.
+- **Generic over the artifact shape.** Free for `/review`, `/account`,
+  `/research` today and for any future skill (the `/prep`, `/recover`, `/expand`
+  workflow agents) the moment it emits an artifact.
+
+The `contentSheet` / `sourcesSheet` builders are the only Excel-aware seam. The
+serializer first shipped as CSV; it was upgraded to a true multi-sheet `.xlsx`
+(dependency: `write-excel-file`, which pulls `fflate` for the zip).
+
+---
+
 ## Shared conversation memory
 
 The headline fix of this session. Previously each card keyed its own
@@ -131,10 +161,38 @@ Two pick-flow bugs were fixed:
    and runs **no LLM read**.
 2. **Picking a candidate used to continue in a different chat.** Resolution now
    happens **in place**: `onPick(turnId, deal, name)` re-runs the grounded
-   skill and **replaces the same message's artifact** (the `ReviewTurn` is keyed
+   skill and **replaces the same message's artifact** (the turn is keyed
    `key={m.artifact.id}` so it remounts and streams the grounded read into the
-   same card). When candidates are present, `ReviewTurn` renders **only** the
-   picker — no card, no read — until a choice is made.
+   same card). When candidates are present, the turn renders **only** the
+   picker — no card, no read — until a choice is made. This in-place flow now
+   covers **all three skills** (`/review`, `/account`, `/research`) **and plain
+   chat**; `/account` and `/research` were brought to parity with `/review` (the
+   latter also gained a picker it previously lacked entirely). The chat pick
+   re-runs the same assistant turn grounded on the choice by bumping a `runId`
+   (`ChatTurn` is keyed on it, so it remounts with a fresh cache slot and streams
+   the grounded answer into the same turn — no new user bubble).
+
+Follow-on fixes:
+
+3. **Card showed sources but no read.** The research pipeline emits its
+   synthesis as a single `answer` event (not a `delta` stream like chat).
+   `ResearchTurn` only handled `delta`, so the senior's read was silently
+   dropped — sources + evidence rendered, commentary was empty. It now handles
+   `answer` (and surfaces `unavailable`/`error` with a short note, so a dead LLM
+   bridge is never a silent empty card).
+4. **Ambiguity produced redundant "which one?" text next to the picker.** This
+   happened on **both** ambiguity paths and was fixed in both:
+   - `research_stream` emitted the `resolve` candidates *and* an
+     `_ambiguity_answer` markdown table.
+   - the **chat tool-loop** emitted the candidates *and* let the LLM generate a
+     "Clarification Needed — which customer?" message (driven by a now-removed
+     `【顧客の曖昧性】` system clause).
+
+   Both now emit **only** the candidates and `done` (the chat path `return`s
+   before the LLM runs). The deterministic picker is the whole response. The chat
+   turn treats "has candidates" as a valid terminal state so the now-empty answer
+   isn't flagged as an error. *(The `/research` deal-choices answer is kept — that
+   path has no picker.)*
 
 ---
 
@@ -267,6 +325,7 @@ JA source still grounds the answer server-side). Neither blocks removal.
 |---|---|
 | `web/components/workspace/workspace.tsx` | The shell — thread model (`WMsg`), `runChat`, `buildChatHistory`, in-place `onPick`, stop/clear, composer |
 | `web/lib/artifacts.ts` | Artifact types + the three pure assemblers |
+| `web/lib/artifact-export.ts` | Artifact → multi-sheet `.xlsx` serializer (`downloadArtifact`) |
 | `web/components/workspace/slash.ts` | Explicit slash-command parsing |
 | `web/components/workspace/artifact-card.tsx` | One-line dispatcher → `ArtifactBody` |
 | `web/components/workspace/cards/artifact-body.tsx` | Unified renderer (`KIND_META`) |
