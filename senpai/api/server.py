@@ -483,6 +483,13 @@ def coach_narrate(req: CoachRequest):
         from senpai.llm import client
         yield _sse({"type": "start", "model": config.MODEL,
                     "endpoint": config.BASE_URL, "conversation_id": conversation_id})
+        # Workspace: this stream produces a `review` artifact. Entity is the
+        # resolved deal when one was grounded (deterministic; never a name guess).
+        _meta = {"type": "artifact_meta", "kind": "review"}
+        if ctx_meta.get("deal_id"):
+            _meta["entity_ref"] = {"type": "deal", "id": ctx_meta["deal_id"],
+                                   "name": ctx_meta.get("customer")}
+        yield _sse(_meta)
         # Tell the UI what real records the read is grounded in (or that none matched).
         yield _sse({"type": "context", "grounded": ctx_meta["has_customer_context"],
                     "customer": ctx_meta["customer"], "deal_id": ctx_meta["deal_id"],
@@ -1001,6 +1008,9 @@ def research_stream(req: ChatRequest):
     yield _sse({"type": "start", "model": config.MODEL,
                 "endpoint": config.BASE_URL, "role": "research",
                 "conversation_id": conversation_id})
+    # Workspace: this stream produces a `research` artifact. Entity (if any) is
+    # surfaced later via the resolve/context events as the customer is grounded.
+    yield _sse({"type": "artifact_meta", "kind": "research"})
 
     if use_cached and cached_bundle:
         cached_bundle.query = req.message
@@ -1276,6 +1286,146 @@ def coach_examples():
 # ---------------------------------------------------------------------------
 # account intelligence — account-level (not deal-level) reasoning
 # ---------------------------------------------------------------------------
+@app.get("/api/customers/resolve")
+def resolve_customer(q: str):
+    """Deterministic name→customer resolution (alias-aware, never a name guess).
+    Used by the Workspace /account skill to turn a typed name into a customer_id.
+    Returns {status: resolved|ambiguous|not_found, query, customer, candidates}."""
+    return store.resolve_customer_detailed((q or "").strip()).to_dict()
+
+
+class SmartResolveRequest(BaseModel):
+    query: str
+    lang: str = "ja"
+
+
+@app.post("/api/customers/smart-resolve")
+def smart_resolve_customer(body: SmartResolveRequest):
+    """Intelligent customer resolution: deterministic first, fuzzy near-miss second,
+    LLM ranking third.
+
+    Returns:
+      { status: "resolved"|"ambiguous"|"not_found",
+        query, customer, candidates, suggested_id? }
+
+    - `suggested_id`: the candidate the model considers most likely (may differ from
+      candidates[0] after sorting). Only present when the LLM is available.
+    - `candidates`: always sorted by LLM confidence when LLM available, else
+      deterministic order.
+    """
+    q = (body.query or "").strip()
+    lang = body.lang or "ja"
+    if not q:
+        return {"status": "not_found", "query": q, "customer": None, "candidates": []}
+
+    # 1. Deterministic resolve — exact / alias
+    res = store.resolve_customer_detailed(q)
+    if res.status == "resolved":
+        return {**res.to_dict(), "suggested_id": res.customer["customer_id"]}
+
+    candidates = []
+    if res.status == "ambiguous":
+        candidates = res.candidates  # already found via alias index
+
+    # 2. Fuzzy near-miss — enrich "not_found" with difflib candidates
+    if not candidates:
+        # Build candidates by scoring each alias key the same way fuzzy_match_customer_in_text
+        # does: slide a window the length of the key over the query and take the best ratio.
+        # Threshold 0.68 and top-5 cap keeps noise out of the LLM prompt.
+        import difflib
+        FUZZY_THRESHOLD = 0.68
+        MAX_CANDIDATES = 5
+        scored: list[tuple[float, str]] = []  # (score, customer_id)
+        low = q.lower()
+        seen_cids: set[str] = set()
+        for key, ids in store._alias_index().items():
+            if len(key) < 4 or len(ids) != 1:
+                continue
+            cid = next(iter(ids))
+            if cid in seen_cids:
+                continue
+            klen = len(key)
+            best = 0.0
+            if klen > len(low):
+                best = difflib.SequenceMatcher(None, key, low, autojunk=False).ratio()
+            else:
+                for start in range(len(low) - klen + 1):
+                    r = difflib.SequenceMatcher(None, key, low[start:start + klen], autojunk=False).ratio()
+                    if r > best:
+                        best = r
+            if best >= FUZZY_THRESHOLD:
+                seen_cids.add(cid)
+                scored.append((best, cid))
+
+        scored.sort(key=lambda x: (-x[0], x[1]))
+        from senpai.data.store import CustomerCandidate, get_customer
+        candidates = [
+            CustomerCandidate(
+                customer_id=cid,
+                name=(get_customer(cid) or {}).get("name", cid),
+                matched_aliases=[],
+            )
+            for _, cid in scored[:MAX_CANDIDATES]
+            if get_customer(cid)
+        ]
+        if not candidates:
+            return {"status": "not_found", "query": q, "customer": None,
+                    "candidates": [], "suggested_id": None}
+
+
+    # 3. LLM ranking — ask the model which candidate best matches the user's query
+    suggested_id: str | None = None
+    sorted_candidates = candidates  # default: original order
+
+    if USE_LLM and len(candidates) > 1:
+        try:
+            from senpai.llm import client as llm_client
+            names_block = "\n".join(
+                f"  {i+1}. {c.customer_id}: {c.name}"
+                for i, c in enumerate(candidates)
+            )
+            if lang == "ja":
+                prompt = (
+                    f"ユーザーが入力したキーワードは「{q}」です。\n"
+                    f"以下の顧客候補の中から、最も可能性が高い顧客を1つ選んでください。\n"
+                    f"顧客リスト:\n{names_block}\n\n"
+                    "回答形式: 顧客IDのみを返してください（例: C06）。説明不要。"
+                )
+            else:
+                prompt = (
+                    f"The user typed: \"{q}\"\n"
+                    f"From the following customers, pick the single best match:\n"
+                    f"{names_block}\n\n"
+                    "Reply with only the customer_id (e.g. C06). No explanation."
+                )
+            answer = llm_client.simple_complete(
+                [{"role": "user", "content": prompt}],
+                temperature=0.0, max_tokens=16, no_think=True,
+            ).strip()
+            # Extract the first Cxx token from the answer
+            import re as _re
+            m = _re.search(r"C\d+", answer)
+            if m:
+                suggested_id = m.group(0)
+                # Re-sort: put the suggested candidate first
+                sorted_candidates = sorted(
+                    candidates,
+                    key=lambda c: (0 if c.customer_id == suggested_id else 1, c.customer_id),
+                )
+        except Exception:  # noqa: BLE001 — LLM failure must never break the picker
+            pass
+
+    return {
+        "status": "ambiguous" if len(candidates) > 1 else "resolved",
+        "query": q,
+        "customer": sorted_candidates[0].__dict__ if len(candidates) == 1 else None,
+        "candidates": [{"customer_id": c.customer_id, "name": c.name}
+                       for c in sorted_candidates],
+        "suggested_id": suggested_id or (sorted_candidates[0].customer_id if sorted_candidates else None),
+    }
+
+
+
 @app.get("/api/account/{customer_id}")
 def account(customer_id: str):
     """One grounded roll-up of a whole customer relationship: headline aggregates,
@@ -1313,6 +1463,10 @@ def account_commentary(customer_id: str, lang: str = "ja"):
     def gen():
         from senpai.llm import client
         yield _sse({"type": "start", "model": config.MODEL, "endpoint": config.BASE_URL})
+        # Workspace: this stream produces an `account_brief` artifact.
+        yield _sse({"type": "artifact_meta", "kind": "account_brief",
+                    "entity_ref": {"type": "account", "id": customer_id,
+                                   "name": ctx_meta.get("customer")}})
         yield _sse({"type": "context", "customer": ctx_meta["customer"],
                     "customer_id": customer_id, "score": ctx_meta["score"],
                     "band": ctx_meta["band"]})

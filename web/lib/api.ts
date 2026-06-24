@@ -25,6 +25,7 @@ import type {
   SimilarCase,
   Source,
 } from "./types";
+import type { ArtifactKind, EntityRef } from "./artifacts";
 
 const BASE =
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "http://localhost:8000";
@@ -89,11 +90,29 @@ export const api = {
   coaching: () => get<CoachingWorkspace>("/api/coaching", COACHING_FALLBACK),
   account: (customerId: string) =>
     get<AccountSummary | null>(`/api/account/${encodeURIComponent(customerId)}`, null),
+  resolveCustomer: (q: string) =>
+    get<{ status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: any; candidates?: ResolveCandidate[] }>(
+      `/api/customers/resolve?q=${encodeURIComponent(q)}`,
+      { status: "not_found", query: q }
+    ),
+  smartResolveCustomer: (query: string, lang = "ja") =>
+    post<{
+      status: "resolved" | "ambiguous" | "not_found";
+      query: string;
+      customer?: any;
+      candidates?: { customer_id: string; name: string }[];
+      suggested_id?: string | null;
+    }>(
+      "/api/customers/smart-resolve",
+      { query, lang },
+      { status: "not_found", query, customer: null, candidates: [] }
+    ),
 };
 
 // --- Streaming senior commentary (SSE from the vLLM-backed bridge) ----------
 export type NarrateEvent =
   | { type: "start"; model?: string; endpoint?: string }
+  | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
   | { type: "thinking"; chars: number }
   | { type: "context"; grounded: boolean; customer?: string | null; deal_id?: string | null; cached?: boolean; candidates?: ResolveCandidate[] }
   | { type: "delta"; text: string }
@@ -171,6 +190,7 @@ export interface RetrievalTrace {
 
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
+  | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
   | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[] }
   | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
@@ -227,6 +247,7 @@ export async function chatStream(
 // narrateStream; any transport failure surfaces as an `unavailable` event.
 export type AccountCommentaryEvent =
   | { type: "start"; model?: string; endpoint?: string }
+  | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
   | { type: "context"; customer?: string; customer_id?: string; score?: number; band?: string }
   | { type: "delta"; text: string }
   | { type: "done"; model?: string }
