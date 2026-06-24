@@ -429,8 +429,13 @@ function ChatTurn({
   onPick: (c: ResolveCandidate, query: string) => void;
 }) {
   const { t, lang } = useT();
-  const [msg, setMsg] = useCachedState<Msg>(`ws:chat:${turnId}:msg`, EMPTY_MSG);
-  const [started, setStarted] = useCachedState<boolean>(`ws:chat:${turnId}:started`, false);
+  // Cache keys are namespaced by the CONVERSATION id, not just the integer
+  // turnId. After Clear, thread.reset() mints a fresh conversation id and the
+  // transcript empties, so turn ids restart from 1 — without the conversation
+  // prefix a new turn id=1 would read the PREVIOUS thread's cached msg (with its
+  // `started=true` flag) and render a stale answer instead of streaming a new one.
+  const [msg, setMsg] = useCachedState<Msg>(`ws:chat:${conversationId}:${turnId}:msg`, EMPTY_MSG);
+  const [started, setStarted] = useCachedState<boolean>(`ws:chat:${conversationId}:${turnId}:started`, false);
   const startedRef = useRef(false);
   const ctrlRef = useRef<AbortController | null>(null);
   const abortedRef = useRef(false);
@@ -506,7 +511,7 @@ function ChatTurn({
     return (
       <div className="flex items-center gap-2">
         <div className="inline-flex items-center gap-2 rounded-xl rounded-tl-sm border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <Dots /> {t("chat.thinking")}
+          <Dots /> {t(role === "manager" ? "chat.thinking.manager" : "chat.thinking")}
         </div>
         {ctrlRef.current && (
           <button onClick={stop} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground">
@@ -727,6 +732,10 @@ export function Workspace({
   examples: CoachExample[]; deals: DealRow[]; principles?: Principle[]; role?: "junior" | "manager";
 }) {
   const { t, lang } = useT();
+  // The assistant's name differs by role: a junior gets a seasoned mentor
+  // ("Senpai Coach"); a manager gets a peer staff voice ("Sales Analyst") — a
+  // "senior coach" would talk down to someone who is already senior.
+  const assistantName = t(role === "manager" ? "chat.assistant.manager" : "chat.assistant.junior");
   const [messages, setMessages] = useCachedState<WMsg[]>(`workspace:${role}:thread`, () => []);
   const [input, setInput] = useState("");
   const [dealId, setDealId] = useState("");
@@ -993,7 +1002,7 @@ export function Workspace({
     <div className="mx-auto flex min-h-[calc(100vh-9rem)] max-w-3xl flex-col">
       <div className="flex-1 space-y-8 pb-6">
         {messages.length === 0 && (
-          <Row who="senpai" name={t("chat.senpai")}>
+          <Row who="senpai" name={assistantName}>
             <div className="rounded-xl rounded-tl-sm border border-border bg-card p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <h2 className="flex items-center gap-2 text-[16px] font-semibold tracking-tight">
                 <Bot className="h-4 w-4 text-primary" />
@@ -1084,7 +1093,7 @@ export function Workspace({
           }
           if (m.role === "system") {
             return (
-              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+              <Row key={m.id} who="senpai" name={assistantName}>
                 <div className="rounded-xl rounded-tl-sm border border-dashed border-border bg-muted/30 p-4 text-[13px] leading-relaxed text-muted-foreground">
                   {m.text}
                 </div>
@@ -1093,16 +1102,16 @@ export function Workspace({
           }
           if (m.role === "loading") {
             return (
-              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+              <Row key={m.id} who="senpai" name={assistantName}>
                 <div className="inline-flex items-center gap-2 rounded-xl rounded-tl-sm border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-                  <Dots /> {t("chat.thinking")}
+                  <Dots /> {t(role === "manager" ? "chat.thinking.manager" : "chat.thinking")}
                 </div>
               </Row>
             );
           }
           if (m.role === "assistant") {
             return (
-              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+              <Row key={m.id} who="senpai" name={assistantName}>
                 <ChatTurn
                   turnId={m.id}
                   message={m.text}
@@ -1119,7 +1128,7 @@ export function Workspace({
           }
           if (m.role === "account_pick") {
             return (
-              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+              <Row key={m.id} who="senpai" name={assistantName}>
                 <AccountPickTurn
                   candidates={m.candidates}
                   suggestedId={m.suggestedId}
@@ -1141,7 +1150,7 @@ export function Workspace({
           }
           if (m.role === "skill") {
             return (
-              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+              <Row key={m.id} who="senpai" name={assistantName}>
                 {m.kind === "review" && <ReviewTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} note={m.note} dealId={m.dealId} principles={principles} onPick={onPick} />}
                 {m.kind === "account_brief" && <AccountTurn artifact={m.artifact} customerId={m.customerId} />}
                 {m.kind === "research" && <ResearchTurn artifact={m.artifact} query={m.query} entity={m.entity} />}
@@ -1150,7 +1159,7 @@ export function Workspace({
           }
           if (m.role === "capture") {
             return (
-              <Row key={m.id} who="senpai" name={t("chat.senpai")}>
+              <Row key={m.id} who="senpai" name={assistantName}>
                 <CaptureTurn fileName={m.fileName} result={m.result} live={m.live} />
               </Row>
             );

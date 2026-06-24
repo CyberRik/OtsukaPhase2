@@ -1,21 +1,25 @@
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 
-// Enterprise mark: Using the newly generated Senpai logo image
-export function Brand({ compact = false, tagline }: { compact?: boolean; tagline?: string }) {
+export function Brand({ compact = false, fullMark = false, tagline }: { compact?: boolean; fullMark?: boolean; tagline?: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-[8px] shadow-sm">
-        <Image src="/logo.png" alt="Senpai Logo" width={32} height={32} className="object-cover" />
+    <div className="flex items-center gap-3">
+      {/* Logo Mark */}
+      <div className="flex h-[28px] items-center justify-center overflow-hidden rounded-[6px] bg-foreground px-3 text-background shadow-sm transition-transform hover:scale-[1.02]">
+        <span className="whitespace-nowrap text-[14px] font-bold tracking-widest translate-y-[0.5px] ml-[2px]">先輩</span>
+        {fullMark && (
+          <>
+            <div className="ml-2 h-3 w-[1px] bg-background/30" />
+            <span className="ml-2 text-[11px] font-bold uppercase tracking-[0.2em] translate-y-[0.5px]">Senpai</span>
+          </>
+        )}
       </div>
-      {!compact && (
-        <div className="leading-tight">
-          <div className="text-[15px] font-semibold tracking-tight text-foreground">Senpai</div>
-          {tagline && (
-            <div className={cn("text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground")}>
-              {tagline}
-            </div>
-          )}
+
+      {/* Tagline */}
+      {!compact && tagline && (
+        <div className="hidden sm:block border-l border-border/60 pl-3">
+          <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {tagline}
+          </div>
         </div>
       )}
     </div>

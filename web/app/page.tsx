@@ -35,7 +35,7 @@ export default function Landing() {
   return (
     <div className="hero-wash min-h-screen">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-        <Brand tagline={t("app.tagline")} />
+        <Brand fullMark tagline={t("app.tagline")} />
         <LangToggle />
       </header>
 
