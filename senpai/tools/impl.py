@@ -500,18 +500,39 @@ def create_quote(items, discount_pct: float = 0, customer: str = "",
 
 def schedule_meeting(title: str = "", date: str = "", start_time: str = "",
                      duration_hours: float = 1, attendees=None,
-                     description: str = "") -> str:
-    """Draft a calendar booking. Simulated (no live calendar in the demo) — the
-    rep confirms before anything is actually scheduled."""
+                     description: str = "", confirm: bool = False) -> str:
+    """Two-step booking so the rep stays in the loop. With confirm=false (default)
+    it only returns a draft — nothing is scheduled. With confirm=true it books a
+    real event via the Google Calendar API; if calendar auth/creds are missing it
+    degrades to a simulated confirmation so the workspace never breaks."""
     if not (title and date and start_time):
         return "[error] title / date / start_time を指定してください。"
     if isinstance(attendees, str):
         attendees = [a.strip() for a in attendees.split(",") if a.strip()]
     attendees = attendees or []
     who = f" / 参加者{len(attendees)}名" if attendees else ""
-    return (f"【予定ドラフト（未確定）】「{title}」{date} {start_time} JST "
-            f"／{float(duration_hours or 1):g}時間{who}"
-            + (f"\n議題: {description}" if description else ""))
+    dur = float(duration_hours or 1)
+    agenda = f"\n議題: {description}" if description else ""
+
+    if not confirm:
+        return (f"【予定ドラフト（未確定）】「{title}」{date} {start_time} JST "
+                f"／{dur:g}時間{who}{agenda}"
+                "\n確定する場合は confirm=true で再度依頼してください。")
+
+    try:
+        from senpai.tools import gcal  # lazy: a missing google lib must not break import
+        ok, link = gcal.create_event(
+            title=title, date=date, start_time=start_time, duration_hours=dur,
+            attendees=attendees, description=description,
+        )
+        if ok:
+            tail = f"\n{link}" if link else ""
+            return (f"【予定を登録しました】「{title}」{date} {start_time} JST "
+                    f"／{dur:g}時間{who}{agenda}{tail}")
+    except Exception:  # noqa: BLE001 — fall back to a simulated confirmation
+        pass
+    return (f"【予定を登録しました（シミュレーション）】「{title}」{date} {start_time} JST "
+            f"／{dur:g}時間{who}{agenda}")
 
 
 def send_email(to: str = "", subject: str = "", body: str = "") -> str:

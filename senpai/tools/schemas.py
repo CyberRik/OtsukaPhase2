@@ -413,8 +413,11 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "schedule_meeting",
-            "description": "Draft a calendar booking (simulated — the rep confirms before it is "
-                           "actually scheduled). Resolve relative dates to YYYY-MM-DD first.",
+            "description": "Book a meeting on the calendar in two steps so the rep stays in the "
+                           "loop. First call with confirm=false (default) to return a draft for the "
+                           "rep to review; only after the rep explicitly says to book it, call again "
+                           "with confirm=true to create a real Google Calendar event. Resolve "
+                           "relative dates to YYYY-MM-DD first.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -425,6 +428,9 @@ TOOLS = [
                     "attendees": {"type": "array", "items": {"type": "string"},
                                   "description": "Attendee names or emails"},
                     "description": {"type": "string", "description": "Optional agenda/notes"},
+                    "confirm": {"type": "boolean",
+                                "description": "Set true ONLY when the rep has explicitly confirmed; "
+                                               "actually books the event. Default false returns a draft."},
                 },
                 "required": ["title", "date", "start_time"],
             },

@@ -213,6 +213,9 @@ demo/credentials.json
 demo/token.json
 # Files written at runtime by the create_file tool.
 demo/output/
+# Root-level Google OAuth secret + live token used by senpai's schedule_meeting.
+/credentials.json
+/token.json
 
 # Ruff stuff:
 .ruff_cache/
