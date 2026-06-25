@@ -691,6 +691,164 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
 
 
 # ---------------------------------------------------------------------------
+# Document generation — the chatbot's "do stuff" tools (PPTX / DOCX)
+# ---------------------------------------------------------------------------
+# All four are two-step-confirm gated like schedule_meeting: confirm=false returns a
+# preview (no file written); confirm=true builds the file under config.GENERATED_DIR,
+# registers it for download, and returns a short confirmation. senpai.documents is
+# imported lazily so a missing python-pptx/docx can never break tool import.
+import hashlib as _hashlib
+
+# Authored specs for the general tools, cached between the preview and confirm calls
+# (keyed by request) so confirm=true reuses the same content the rep just reviewed.
+_GEN_SPEC_CACHE: dict[str, dict] = {}
+
+
+def _yen(n) -> str:
+    try:
+        return f"¥{int(n):,}"
+    except (TypeError, ValueError):
+        return "¥0"
+
+
+def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False) -> str:
+    """4-slide PPTX sales proposal grounded in a deal's SPR data. Two-step confirm."""
+    from senpai.documents import proposal, registry
+    from senpai.documents.context import build_document_context
+    if not deal_id:
+        return "[error] deal_id を指定してください。"
+    ctx = build_document_context(deal_id)
+    if ctx is None:
+        return f"案件 {deal_id} は見つかりません。"
+    if not confirm:
+        pv = ctx.to_preview()
+        pains = "、".join(pv["pain_points"]) or "（SPRに課題記録なし）"
+        return (f"【プレビュー】{ctx.customer}様向け 提案書(PPTX・4スライド)\n"
+                f"- 課題: {pains}\n"
+                f"- 投資額: {_yen(pv['investment'])}\n"
+                f"- 対象製品: {pv['n_products']}件 / 参考事例: {pv['n_comparables']}件\n"
+                "【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
+    res = proposal.generate(deal_id, lang=lang)
+    if res is None:
+        return f"案件 {deal_id} は見つかりません。"
+    path, _ctx = res
+    rec = registry.register("proposal", path, deal_id=deal_id)
+    return f"提案書(PPTX・4スライド)を生成しました: {rec['filename']}（{ctx.customer}様）。"
+
+
+def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
+    """Formal 稟議書 DOCX (customer IT-manager -> CEO) grounded in deal data. Two-step."""
+    from senpai.documents import registry, ringisho
+    from senpai.documents.context import build_document_context
+    if not deal_id:
+        return "[error] deal_id を指定してください。"
+    ctx = build_document_context(deal_id)
+    if ctx is None:
+        return f"案件 {deal_id} は見つかりません。"
+    if not confirm:
+        pv = ctx.to_preview()
+        pains = "、".join(pv["pain_points"]) or "（SPRに課題記録なし）"
+        return (f"【プレビュー】{ctx.customer}様 情報システム部の稟議書(DOCX)\n"
+                f"- 背景・課題: {pains}\n"
+                f"- 投資額: {_yen(pv['investment'])}\n"
+                "- 構成: 背景・課題 / 提案内容 / 投資額と効果 / 結論・承認依頼\n"
+                "【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
+    res = ringisho.generate(deal_id)
+    if res is None:
+        return f"案件 {deal_id} は見つかりません。"
+    path, _ctx = res
+    rec = registry.register("ringisho", path, deal_id=deal_id)
+    return f"稟議書(DOCX)を生成しました: {rec['filename']}（{ctx.customer}様）。"
+
+
+def _gather_grounding(prompt: str, customer: str, use_web: bool) -> str:
+    """Best-effort context for the general doc tools: internal records for a named
+    customer, and/or a web_search. Empty string is fine (model uses general knowledge)."""
+    parts: list[str] = []
+    cust = _resolve_customer(customer) if customer else store.match_customer_in_text(prompt)
+    if cust:
+        parts.append(f"【社内データ】\n{query_spr(customer=cust['customer_id'])}")
+    if use_web:
+        try:
+            parts.append(f"【Web検索】\n{web_search(query=prompt)}")
+        except Exception:  # noqa: BLE001 — grounding is best-effort
+            pass
+    return "\n\n".join(p for p in parts if p)
+
+
+def _gen_key(kind: str, prompt: str, customer: str, use_web: bool) -> str:
+    return _hashlib.md5(f"{kind}|{prompt}|{customer}|{use_web}".encode()).hexdigest()
+
+
+def _author_spec(kind: str, prompt: str, customer: str, use_web: bool, lang: str):
+    """Author (or reuse cached) a deck/doc spec for the general tools. None if the
+    model is unavailable."""
+    key = _gen_key(kind, prompt, customer, use_web)
+    spec = _GEN_SPEC_CACHE.get(key)
+    if spec is not None:
+        return spec
+    from senpai.documents import author
+    grounding = _gather_grounding(prompt, customer, use_web)
+    spec = (author.author_deck if kind == "pptx" else author.author_doc)(
+        prompt, grounding=grounding, lang=lang)
+    if spec is not None:
+        _GEN_SPEC_CACHE[key] = spec
+    return spec
+
+
+def generate_pptx(prompt: str = "", title: str = "", use_web: bool = False,
+                  customer: str = "", lang: str = "ja", confirm: bool = False) -> str:
+    """General-purpose PPTX from a free prompt (LLM-authored, optionally grounded by
+    internal records / web_search). No fixed slide count. Two-step confirm. Needs the model."""
+    from senpai.documents import author, registry
+    from senpai.documents.render import output_path, render_pptx
+    if not (prompt or "").strip():
+        return "[error] プレゼンの主題(prompt)を指定してください。"
+    if not author._use_llm():
+        return "本機能はモデル(LLM)が必要です（SENPAI_USE_LLM=1 とモデルサーバ）。"
+    spec = _author_spec("pptx", prompt, customer, bool(use_web), lang)
+    if spec is None:
+        return "本機能はモデル(LLM)が必要です。現在モデルに接続できません。"
+    slides = spec.get("slides", [])
+    if not confirm:
+        outline = "\n".join(f"  {i + 1}. {s.get('title', '')}" for i, s in enumerate(slides))
+        return (f"【プレビュー】PPTX「{title or spec.get('_title') or prompt}」{len(slides)}スライド:\n"
+                f"{outline}\n【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
+    if title and slides:
+        slides[0]["title"] = title
+    path = output_path("pptx", title or spec.get("_title") or prompt[:30], "pptx")
+    render_pptx(spec, path)
+    rec = registry.register("pptx", path)
+    return f"プレゼン(PPTX)を生成しました: {rec['filename']}（{len(slides)}スライド）。"
+
+
+def generate_docx(prompt: str = "", title: str = "", use_web: bool = False,
+                  customer: str = "", lang: str = "ja", confirm: bool = False) -> str:
+    """General-purpose DOCX from a free prompt (LLM-authored, optionally grounded).
+    Two-step confirm. Needs the model."""
+    from senpai.documents import author, registry
+    from senpai.documents.render import output_path, render_docx
+    if not (prompt or "").strip():
+        return "[error] 文書の主題(prompt)を指定してください。"
+    if not author._use_llm():
+        return "本機能はモデル(LLM)が必要です（SENPAI_USE_LLM=1 とモデルサーバ）。"
+    spec = _author_spec("docx", prompt, customer, bool(use_web), lang)
+    if spec is None:
+        return "本機能はモデル(LLM)が必要です。現在モデルに接続できません。"
+    sections = spec.get("sections", [])
+    if not confirm:
+        outline = "\n".join(f"  - {s.get('heading', '')}" for s in sections)
+        return (f"【プレビュー】DOCX「{title or spec.get('_title') or prompt}」{len(sections)}セクション:\n"
+                f"{outline}\n【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
+    if title:
+        spec["title"] = title
+    path = output_path("docx", title or spec.get("_title") or prompt[:30], "docx")
+    render_docx(spec, path)
+    rec = registry.register("docx", path)
+    return f"文書(DOCX)を生成しました: {rec['filename']}（{len(sections)}セクション）。"
+
+
+# ---------------------------------------------------------------------------
 # Dispatch (mirrors demo/tools.py)
 # ---------------------------------------------------------------------------
 _DISPATCH = {
@@ -723,6 +881,11 @@ _DISPATCH = {
     "search_knowledge": search_knowledge,
     "search_notes": search_notes,
     "query_graph": query_graph,
+    # Document generation (the chatbot's "do stuff" tools)
+    "generate_proposal": generate_proposal,
+    "generate_ringisho": generate_ringisho,
+    "generate_pptx": generate_pptx,
+    "generate_docx": generate_docx,
 }
 
 
@@ -773,5 +936,12 @@ if __name__ == "__main__":
         ("rep_coaching_focus", {}),
         ("draft_message", {"to": "伊藤さん", "about": "D003の進捗", "deal_id": "D003"}),
         ("web_search", {"query": "製造業 IT投資 動向"}),
+        # Document tools: preview (no file) is deterministic; the grounded build is
+        # GPU-free, the general tools need a model so they print their guard message.
+        ("generate_proposal", {"deal_id": "D001"}),
+        ("generate_proposal", {"deal_id": "D001", "confirm": True}),
+        ("generate_ringisho", {"deal_id": "D001", "confirm": True}),
+        ("generate_pptx", {"prompt": "GTA 6 の発売展望", "use_web": False}),
+        ("generate_docx", {"prompt": "社内向けセキュリティ研修の概要"}),
     ]:
         print(f"\n### {n}({a})\n{dispatch(n, a)}")

@@ -29,6 +29,7 @@ import type {
   AddPrincipleRequest,
   CoachingThread,
   ExtractResult,
+  GeneratedDocument,
   IngestResult,
   SaveActivityRequest,
   SaveActivityResult,
@@ -43,6 +44,11 @@ const BASE =
 export interface Fetched<T> {
   data: T;
   live: boolean;
+}
+
+// Absolute URL for a generated document's download (bridge-relative path -> BASE).
+export function documentUrl(downloadUrl: string): string {
+  return downloadUrl.startsWith("http") ? downloadUrl : `${BASE}${downloadUrl}`;
 }
 
 async function get<T>(path: string, fallback: T): Promise<Fetched<T>> {
@@ -282,7 +288,7 @@ export interface RetrievalTrace {
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
-  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[] }
+  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument }
   | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }

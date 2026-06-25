@@ -8,3 +8,9 @@
 
 fastapi==0.115.14
 uvicorn==0.34.0
+
+# Document generation tools (generate_proposal/ringisho/pptx/docx). Pure-Python,
+# no system deps; imported lazily in senpai/documents so a missing lib can't break
+# tool import.
+python-pptx==1.0.2
+python-docx==1.1.2

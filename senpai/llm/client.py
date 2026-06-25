@@ -257,8 +257,10 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     is stripped so only the user-facing answer streams. `role` feeds the router."""
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
+    from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
+    _docs.start()   # begin the per-turn generated-document buffer (download chips)
 
     # Tool-selection rounds also skip the <think> phase when enabled — this is
     # where the bulk of the latency lives (the synthesis round alone is not enough).
@@ -308,6 +310,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             retrieval = _trace.drain()  # any chunks this tool retrieved (Explorer)
             if retrieval:
                 ev["retrieval"] = retrieval
+            generated = _docs.drain()   # any file this tool generated (download chip)
+            if generated:
+                doc = generated[-1]
+                ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
+                                  "filename": doc["filename"], "download_url": doc["download_url"]}
             yield ev
 
         if last_round:

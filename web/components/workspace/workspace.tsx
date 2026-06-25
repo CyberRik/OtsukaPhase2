@@ -512,7 +512,7 @@ function ChatTurn({
         case "tool":
           patch((m) => ({
             ...m,
-            tools: [...m.tools, { name: e.name, args: e.args, result: e.result }],
+            tools: [...m.tools, { name: e.name, args: e.args, result: e.result, document: e.document }],
             retrieval: e.retrieval ? [...(m.retrieval ?? []), ...e.retrieval] : m.retrieval,
           }));
           break;

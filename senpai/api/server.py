@@ -30,7 +30,7 @@ from typing import Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 from senpai import config
@@ -227,6 +227,28 @@ def _item_payload(it) -> dict:
 def health():
     return {"status": "ok", "today": _today().isoformat(),
             "pinned": bool(os.environ.get("SENPAI_TODAY"))}
+
+
+# ---------------------------------------------------------------------------
+# documents — download a file the chatbot generated (PPTX/DOCX)
+# ---------------------------------------------------------------------------
+_DOC_MEDIA = {
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+
+
+@app.get("/api/documents/{doc_id}")
+def download_document(doc_id: str):
+    """Serve a generated document by id. Only files in the registry are reachable —
+    the endpoint never accepts a raw path. The chat tool event carries the doc_id."""
+    from senpai.documents import registry
+    rec = registry.get(doc_id)
+    if rec is None or not os.path.exists(rec["path"]):
+        raise HTTPException(404, f"document {doc_id} not found")
+    ext = os.path.splitext(rec["filename"])[1].lower()
+    return FileResponse(rec["path"], filename=rec["filename"],
+                        media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
 
 
 # ---------------------------------------------------------------------------
@@ -592,6 +614,12 @@ def _junior_system() -> str:
         "連絡文の準備には send_email を使えます(いずれも下書きで、送信・確定はしません)。"
         "社内案件で自信が持てない時は route_to_expert で先輩に橋渡ししてください。\n"
 
+        "【文書作成（PPTX / DOCX）】\n"
+        "提案書、稟議書、または一般的なスライド(PPTX)や文書(DOCX)の作成を依頼された場合、"
+        "Pythonコードやテキストを出力するのではなく、必ず対応するツールを呼び出してください。"
+        "案件固有の提案書には generate_proposal、稟議書には generate_ringisho を使用します。"
+        "案件に紐づかない任意のテーマのプレゼンには generate_pptx、文書には generate_docx を使用してください。\n"
+
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
         "市場価格・在庫・為替レート・ニュース・最新の製品仕様や型番など、時間とともに変わる"
@@ -628,6 +656,12 @@ def _manager_system() -> str:
         "製品の確認や見積例には search_products / create_quote、"
         "調整や連絡文の準備には schedule_meeting / send_email を使えます"
         "(いずれも下書きで、送信・確定はしません)。\n"
+
+        "【文書作成（PPTX / DOCX）】\n"
+        "提案書、稟議書、または一般的なスライド(PPTX)や文書(DOCX)の作成を依頼された場合、"
+        "Pythonコードやテキストを出力するのではなく、必ず対応するツールを呼び出してください。"
+        "案件固有の提案書には generate_proposal、稟議書には generate_ringisho を使用します。"
+        "案件に紐づかない任意のテーマのプレゼンには generate_pptx、文書には generate_docx を使用してください。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
