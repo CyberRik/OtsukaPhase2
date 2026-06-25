@@ -5,6 +5,16 @@ export type Band = "red" | "yellow" | "green";
 export type Confidence = "high" | "medium" | "low" | "unverified";
 export type ItemStatus = "draft" | "approved" | "needs_edit" | "rejected";
 
+// A file the chatbot generated (PPTX/DOCX), surfaced on a chat `tool` event so the
+// UI can offer a download. `download_url` is a bridge-relative path served by
+// GET /api/documents/{doc_id}.
+export interface GeneratedDocument {
+  doc_id: string;
+  kind: string;       // "proposal" | "ringisho" | "pptx" | "docx"
+  filename: string;
+  download_url: string;
+}
+
 export interface DealRow {
   deal_id: string;
   customer: string;

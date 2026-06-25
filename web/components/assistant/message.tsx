@@ -9,15 +9,16 @@
 // chat appears.
 
 import {
-  AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, ExternalLink,
-  FileText, Globe, Layers, Loader2, Mail, Receipt, Route, Search,
+  AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
+  FileText, Globe, Layers, Loader2, Mail, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, type LucideIcon,
 } from "lucide-react";
-import type { ResolveCandidate, RetrievalTrace } from "@/lib/api";
+import { documentUrl, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
+import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 
-export type ToolCall = { name: string; args: string; result: string };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -62,6 +63,10 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   team_report_digest: { ja: "日報ダイジェスト", en: "Report digest", icon: FileText, internal: true },
   rep_coaching_focus: { ja: "コーチング対象", en: "Coaching focus", icon: UserSearch, internal: true },
   draft_message: { ja: "メッセージ下書き", en: "Message draft", icon: Mail, internal: true },
+  generate_proposal: { ja: "提案書(PPTX)生成", en: "Proposal (PPTX)", icon: Presentation, internal: true },
+  generate_ringisho: { ja: "稟議書(DOCX)生成", en: "Ringi-sho (DOCX)", icon: FileText, internal: true },
+  generate_pptx: { ja: "プレゼン(PPTX)生成", en: "Slides (PPTX)", icon: Presentation, internal: true },
+  generate_docx: { ja: "文書(DOCX)生成", en: "Document (DOCX)", icon: FileText, internal: true },
   web_search: { ja: "Web検索", en: "Web search", icon: Globe, internal: false },
 };
 
@@ -141,6 +146,17 @@ export function MessageBubble({ m, t, lang, onPick }: {
                     <span className="font-mono text-[10.5px] text-muted-foreground">{tool.args}</span>
                   </div>
                   <div className="mt-1 whitespace-pre-wrap text-[11.5px] text-muted-foreground">{tool.result}</div>
+                  {tool.document && (
+                    <a
+                      href={documentUrl(tool.document.download_url)}
+                      download={tool.document.filename}
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11.5px] font-medium text-primary transition-colors hover:bg-primary/10"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {lang === "ja" ? "ダウンロード" : "Download"}
+                      <span className="font-mono text-[10.5px] text-muted-foreground">{tool.document.filename}</span>
+                    </a>
+                  )}
                 </div>
               );
             })}

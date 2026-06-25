@@ -30,7 +30,7 @@ from typing import Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 from senpai import config
@@ -102,7 +102,7 @@ def _last_activity_date(acts: list[dict]) -> str | None:
 def _scored_row(d: dict, today: date) -> tuple[dict, list[dict]]:
     acts = store.activities_for_deal(d["deal_id"])
     res = score_deal(d, acts, today=today)
-    flags = deal_flags(d, acts, res.band, today=today)
+    flags = deal_flags(d, acts, health_band=res.band, today=today)
     rep = store.rep_name(store.deal_rep_id(d))
     customer = store.customer_name(d["customer_id"])
     last = _last_activity_date(acts)
@@ -230,6 +230,28 @@ def health():
 
 
 # ---------------------------------------------------------------------------
+# documents — download a file the chatbot generated (PPTX/DOCX)
+# ---------------------------------------------------------------------------
+_DOC_MEDIA = {
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+}
+
+
+@app.get("/api/documents/{doc_id}")
+def download_document(doc_id: str):
+    """Serve a generated document by id. Only files in the registry are reachable —
+    the endpoint never accepts a raw path. The chat tool event carries the doc_id."""
+    from senpai.documents import registry
+    rec = registry.get(doc_id)
+    if rec is None or not os.path.exists(rec["path"]):
+        raise HTTPException(404, f"document {doc_id} not found")
+    ext = os.path.splitext(rec["filename"])[1].lower()
+    return FileResponse(rec["path"], filename=rec["filename"],
+                        media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
+
+
+# ---------------------------------------------------------------------------
 # dashboard
 # ---------------------------------------------------------------------------
 @app.get("/api/dashboard")
@@ -267,7 +289,7 @@ def deal_detail(deal_id: str):
     today = _today()
     acts = store.activities_for_deal(deal_id)
     res = score_deal(d, acts, today=today)
-    flags = deal_flags(d, acts, res.band, today=today)
+    flags = deal_flags(d, acts, health_band=res.band, today=today)
     return {
         "deal": {
             "deal_id": d["deal_id"],
@@ -342,7 +364,7 @@ def coach_review(req: CoachRequest):
     if deal and acts is not None:
         today = _today()
         res = score_deal(deal, acts, today=today)
-        flags = deal_flags(deal, acts, res.band, today=today)
+        flags = deal_flags(deal, acts, health_band=res.band, today=today)
         
         has_optimism_mismatch = any(f.name == "optimism_mismatch" for f in flags)
         rep_likelihood = deal.get("rep_close_likelihood")
@@ -601,6 +623,12 @@ def _junior_system() -> str:
         "独立した複数の情報が必要なときは、ツールを1つずつ順番に呼ばず、"
         "1ターンでまとめて並行呼び出しして往復回数を減らすこと。\n"
 
+        "【文書作成（PPTX / DOCX）】\n"
+        "提案書、稟議書、または一般的なスライド(PPTX)や文書(DOCX)の作成を依頼された場合、"
+        "Pythonコードやテキストを出力するのではなく、必ず対応するツールを呼び出してください。"
+        "案件固有の提案書には generate_proposal、稟議書には generate_ringisho を使用します。"
+        "案件に紐づかない任意のテーマのプレゼンには generate_pptx、文書には generate_docx を使用してください。\n"
+
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
         "市場価格・在庫・為替レート・ニュース・最新の製品仕様や型番など、時間とともに変わる"
@@ -641,6 +669,12 @@ def _manager_system() -> str:
         "書き出したりせず、直接ツールを呼び出すこと。ツール結果が返ってから簡潔に回答する。"
         "独立した複数の情報が必要なときは、ツールを1つずつ順番に呼ばず、1ターンでまとめて"
         "並行呼び出しして往復回数を減らすこと。\n"
+
+        "【文書作成（PPTX / DOCX）】\n"
+        "提案書、稟議書、または一般的なスライド(PPTX)や文書(DOCX)の作成を依頼された場合、"
+        "Pythonコードやテキストを出力するのではなく、必ず対応するツールを呼び出してください。"
+        "案件固有の提案書には generate_proposal、稟議書には generate_ringisho を使用します。"
+        "案件に紐づかない任意のテーマのプレゼンには generate_pptx、文書には generate_docx を使用してください。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"

@@ -237,3 +237,6 @@ __marimo__/
 # Runtime-ingested overlay data (demo-only; committed seed stays canonical)
 senpai/data/ingested/
 senpai/knowledge/seed/*.ingested.json
+
+# Documents the chatbot generates (PPTX/DOCX); demo-only output, not committed
+senpai/data/generated/

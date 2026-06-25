@@ -116,6 +116,10 @@ INDEX_DIR = PKG_DIR / "data" / "index"   # committed dense-embedding vectors (bu
 # loaded as an OVERLAY on top of SEED_DIR by senpai.data.store — the committed
 # seed stays canonical/byte-stable; ingested data is demo-only and never merged.
 INGESTED_DIR = PKG_DIR / "data" / "ingested"
+# Output dir for documents the chatbot generates (PPTX proposals, DOCX 稟議書, and
+# the general-purpose pptx/docx tools). Gitignored and demo-only, like INGESTED_DIR;
+# created on first write. The committed seed is never touched by document generation.
+GENERATED_DIR = PKG_DIR / "data" / "generated"
 
 
 def fiscal_year_quarter(d_iso: str) -> tuple[int, int]:

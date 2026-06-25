@@ -71,7 +71,7 @@ def rep_progress(employee_id: str, today: date | None = None,
             eval_iso = max(a["activity_date"] for a in acts)
             eval_date = date.fromisoformat(eval_iso)
             res = score_deal(d, acts, today=eval_date)
-            flags = deal_flags(d, acts, res.band, today=eval_date)
+            flags = deal_flags(d, acts, health_band=res.band, today=eval_date)
             for it in compute_issues(d, acts, res, flags, eval_date):
                 if it["issue"] in _TRACK:
                     weak[it["issue"]] += 1

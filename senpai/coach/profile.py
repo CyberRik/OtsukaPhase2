@@ -110,7 +110,7 @@ def rep_coaching_profile(employee_id: str, today: date | None = None) -> dict:
     for d in deals:
         acts = store.activities_for_deal(d["deal_id"])
         res = score_deal(d, acts, today=today)
-        flags = deal_flags(d, acts, res.band, today=today)
+        flags = deal_flags(d, acts, health_band=res.band, today=today)
         bands[res.band] += 1
         risk_sum += res.score
         for it in compute_issues(d, acts, res, flags, today):

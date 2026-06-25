@@ -140,7 +140,7 @@ def coaching_workspace(today: date | None = None) -> dict:
     for deal in store.open_deals():
         acts = store.activities_for_deal(deal["deal_id"])
         res = score_deal(deal, acts, today=today)
-        flags = deal_flags(deal, acts, res.band, today=today)
+        flags = deal_flags(deal, acts, health_band=res.band, today=today)
         rep = store.rep_name(store.deal_rep_id(deal))
         customer = store.customer_name(deal["customer_id"])
 
