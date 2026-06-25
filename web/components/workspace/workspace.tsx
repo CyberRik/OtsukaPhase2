@@ -1017,7 +1017,7 @@ export function Workspace({
                       <button
                         key={ex.title}
                         disabled={busy}
-                        onClick={() => runReview(loc.engineNote, ex.deal_id ?? "")}
+                        onClick={() => runChat(loc.engineNote)}
                         className="rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary/[0.03] disabled:opacity-50"
                       >
                         <div className="flex items-center gap-1.5">
