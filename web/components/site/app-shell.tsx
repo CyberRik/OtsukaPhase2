@@ -15,6 +15,7 @@ import {
   LogOut,
   type LucideIcon,
   ShieldAlert,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
@@ -28,6 +29,7 @@ const NAV: Record<Role, NavItem[]> = {
   junior: [
     { href: "/junior", key: "nav.home", icon: Home },
     { href: "/junior/workspace", key: "nav.workspace", icon: LayoutPanelLeft },
+    { href: "/junior/ingestion", key: "nav.ingestion", icon: Upload },
     { href: "/junior/accounts", key: "nav.accounts", icon: Building2 },
     { href: "/junior/knowledge", key: "nav.knowledge", icon: Library },
     { href: "/junior/reports", key: "nav.reports", icon: FileText },
@@ -35,6 +37,7 @@ const NAV: Record<Role, NavItem[]> = {
   manager: [
     { href: "/manager", key: "nav.dashboard", icon: LayoutDashboard },
     { href: "/manager/workspace", key: "nav.workspace", icon: LayoutPanelLeft },
+    { href: "/manager/ingestion", key: "nav.mingestion", icon: Upload },
     { href: "/manager/pipeline", key: "nav.pipeline", icon: ListTree },
     { href: "/manager/accounts", key: "nav.accounts", icon: Building2 },
     { href: "/manager/coaching", key: "nav.coaching", icon: Lightbulb },

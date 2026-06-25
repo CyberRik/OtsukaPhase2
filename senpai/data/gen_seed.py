@@ -55,12 +55,11 @@ def _iso(days_ago: int) -> str:
 
 
 def _fy(d_iso: str) -> tuple[int, int]:
-    """Japanese fiscal year/quarter for a YYYY-MM-DD date (FY starts in April)."""
-    y, m, _ = (int(x) for x in d_iso.split("-"))
-    fy = y if m >= 4 else y - 1
-    q = {4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 3, 11: 3, 12: 3,
-         1: 4, 2: 4, 3: 4}[m]
-    return fy, q
+    """Japanese fiscal year/quarter for a YYYY-MM-DD date (FY starts in April).
+    Thin alias over config.fiscal_year_quarter — one fiscal calendar shared with
+    runtime ingestion. Output is identical to the previous inline logic, so the
+    generated seed stays byte-stable."""
+    return config.fiscal_year_quarter(d_iso)
 
 
 # ---------------------------------------------------------------------------

@@ -236,6 +236,14 @@ export interface Principle {
   added_at: string;
 }
 
+// --- Manager knowledge ingestion (`POST /api/knowledge/principles`) --------
+export interface AddPrincipleRequest {
+  statement: string;
+  situation?: string;
+  tags?: string[];
+  added_by?: string;
+}
+
 export interface Provenance {
   principle_id: string;
   interview_ids: string[];
@@ -427,6 +435,26 @@ export interface IngestResult {
   raw_text: string;
   draft: ActivityDraft;
   multimodal: boolean; // false → server used deterministic mock extraction (offline)
+}
+
+// --- Attachment → chat context (`POST /api/extract`) -----------------------
+// Plain text only — no structured extraction. The workspace chat attaches this
+// as context and asks the assistant about it.
+export interface ExtractResult {
+  raw_text: string;
+}
+
+// --- Persist a reviewed daily report (`POST /api/ingest/save`) -------------
+export interface SaveActivityRequest {
+  draft: ActivityDraft;
+  customer_id: string;
+  deal_id: string;
+  employee_id: string;
+}
+
+export interface SaveActivityResult {
+  saved: boolean;
+  activity: Record<string, unknown> | null;
 }
 
 export interface GrowthSkill {

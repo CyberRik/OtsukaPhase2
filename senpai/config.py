@@ -112,6 +112,21 @@ COACH_USE_CORPUS = os.environ.get("SENPAI_COACH_CORPUS", "1").lower() not in ("0
 PKG_DIR = Path(__file__).resolve().parent
 SEED_DIR = PKG_DIR / "data" / "seed"
 INDEX_DIR = PKG_DIR / "data" / "index"   # committed dense-embedding vectors (build_index.py)
+# Sidecar dir for runtime-ingested rows (daily reports, etc.). Gitignored and
+# loaded as an OVERLAY on top of SEED_DIR by senpai.data.store — the committed
+# seed stays canonical/byte-stable; ingested data is demo-only and never merged.
+INGESTED_DIR = PKG_DIR / "data" / "ingested"
+
+
+def fiscal_year_quarter(d_iso: str) -> tuple[int, int]:
+    """Japanese fiscal year/quarter for a YYYY-MM-DD date (FY starts in April).
+    Single source of truth shared by gen_seed (seed authoring) and ingestion
+    (runtime activity records) so both stay in the same fiscal calendar."""
+    y, m, _ = (int(x) for x in d_iso.split("-"))
+    fy = y if m >= 4 else y - 1
+    q = {4: 1, 5: 1, 6: 1, 7: 2, 8: 2, 9: 2, 10: 3, 11: 3, 12: 3,
+         1: 4, 2: 4, 3: 4}[m]
+    return fy, q
 
 
 def _env_bool(name: str, default: bool) -> bool:

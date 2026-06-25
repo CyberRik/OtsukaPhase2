@@ -230,3 +230,7 @@ __marimo__/
 
 # Large training/raw datasets — exceed GitHub's 100 MB limit, not needed at runtime
 *.jsonl
+
+# Runtime-ingested overlay data (demo-only; committed seed stays canonical)
+senpai/data/ingested/
+senpai/knowledge/seed/*.ingested.json

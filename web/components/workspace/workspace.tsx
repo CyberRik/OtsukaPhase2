@@ -17,23 +17,22 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Bot,
   Building2,
-  Check,
   ChevronRight,
-  Copy,
   CornerDownLeft,
-  FileUp,
   GraduationCap,
+  Loader2,
   Paperclip,
   Sparkles,
   Square,
   TerminalSquare,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api, narrateStream, chatStream, accountCommentaryStream, type ResolveCandidate, type ChatTurn as ChatHistoryTurn } from "@/lib/api";
 import { assembleReviewArtifact, assembleAccountArtifact, assembleResearchArtifact, type Artifact, type ArtifactStatus, type EntityRef, type ResearchSourceLine } from "@/lib/artifacts";
-import type { ActivityDraft, CoachExample, DealRow, IngestResult, Principle } from "@/lib/types";
+import type { CoachExample, DealRow, Principle } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { customerText, coachExampleText } from "@/lib/content-i18n";
 import { useCachedState, useCachedConversationId, getCached } from "@/lib/chat-store";
@@ -51,16 +50,12 @@ type AccountPickCandidate = { customer_id: string; name: string };
 type WMsg =
   | { id: number; role: "user"; text: string; dealLabel?: string }
   | { id: number; role: "system"; text: string }
-  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number }
+  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number; context?: string }
   | { id: number; role: "loading" }
   | { id: number; role: "account_pick"; query: string; candidates: AccountPickCandidate[]; suggestedId?: string | null }
   | { id: number; role: "skill"; kind: "review"; note: string; dealId?: string; artifact: Artifact }
   | { id: number; role: "skill"; kind: "account_brief"; customerId: string; artifact: Artifact }
-  | { id: number; role: "skill"; kind: "research"; query: string; entity?: EntityRef; artifact: Artifact }
-  // Capture is a deliberately MUTABLE draft (the user edits the extracted
-  // sales-activity before it would become an SPR record), so unlike the
-  // immutable skill artifacts it carries the raw IngestResult, not an Artifact.
-  | { id: number; role: "capture"; fileName: string; result: IngestResult | null; live: boolean };
+  | { id: number; role: "skill"; kind: "research"; query: string; entity?: EntityRef; artifact: Artifact };
 
 function Avatar({ who }: { who: "senpai" | "user" }) {
   return who === "senpai" ? (
@@ -481,10 +476,10 @@ function ResearchTurn({
 const EMPTY_MSG: Msg = { role: "assistant", content: "", tools: [], status: "running" };
 
 function ChatTurn({
-  turnId, runId, message, history, role, conversationId, onDone, onPick,
+  turnId, runId, message, history, role, conversationId, context, onDone, onPick,
 }: {
   turnId: number; runId: number; message: string; history: ChatHistoryTurn[];
-  role: "junior" | "manager"; conversationId: string;
+  role: "junior" | "manager"; conversationId: string; context?: string;
   onDone: (text: string) => void;
   onPick: (c: ResolveCandidate, query: string) => void;
 }) {
@@ -558,7 +553,7 @@ function ChatTurn({
           patch((m) => ({ ...m, status: m.candidates?.length ? "done" : (abortedRef.current ? (m.content ? "done" : "error") : "error") }));
           break;
       }
-    }, { conversationId, signal: ctrl.signal }).then(() => {
+    }, { conversationId, signal: ctrl.signal, context }).then(() => {
       ctrlRef.current = null;
       setMsg((prev) => {
         const final: Msg = prev.status === "running"
@@ -682,116 +677,6 @@ function AccountPickTurn({
   );
 }
 
-// --- capture turn: editable structured draft from POST /api/ingest ---------
-// Unlike the immutable skill artifacts, a capture draft is meant to be edited
-// (it would become an SPR sales_activity), so edits live in local state here.
-const CAPTURE_ACTIVITY_TYPES = [
-  "001_Scheduled", "002_Daily Report", "003_Deal", "004_Quote",
-  "005_Order", "006_Maintenance Quote", "007_Maintenance Contract",
-  "008_Contract Billing", "901_Auto-Scheduled",
-] as const;
-
-function CaptureField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function CaptureTurn({ fileName, result, live }: { fileName: string; result: IngestResult | null; live: boolean }) {
-  const { t } = useT();
-  const [draft, setDraft] = useState<ActivityDraft | null>(result?.draft ?? null);
-  const [copied, setCopied] = useState(false);
-
-  if (!result || !draft) {
-    return (
-      <div className="rounded-xl border border-band-red/30 bg-band-red/5 px-4 py-3 text-[13px] text-band-red">
-        {t("capture.failed")}
-      </div>
-    );
-  }
-
-  const set = (k: keyof ActivityDraft, v: string) => setDraft((d) => (d ? { ...d, [k]: v } : d));
-  const inputCls = "w-full rounded-lg border border-border bg-background px-2.5 py-1.5 font-jp text-[13px]";
-
-  function copyDraft() {
-    if (!draft) return;
-    const block = [
-      `${t("capture.field.type")}: ${draft.activity_type}`,
-      `${t("capture.field.report")}: ${draft.daily_report}`,
-      `${t("capture.field.contact")}: ${draft.business_card_info}`,
-      `${t("capture.field.challenge")}: ${draft.customer_challenge}`,
-      `${t("capture.field.category")}: ${draft.product_major_category}`,
-    ].join("\n");
-    navigator.clipboard?.writeText(block).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }
-
-  return (
-    <div className="rounded-xl border border-border bg-card">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5">
-        <FileUp className="h-4 w-4 text-navy" />
-        <span className="text-[13px] font-semibold text-foreground">{t("capture.title")}</span>
-        <span className="font-mono text-[10px] text-muted-foreground">{fileName}</span>
-        {!live && (
-          <span className="rounded-full border border-band-red/30 bg-band-red/10 px-2 py-0.5 text-[10px] font-medium text-band-red">
-            {t("common.snapshot")}
-          </span>
-        )}
-        {live && !result.multimodal && (
-          <span className="rounded-full border border-band-yellow/30 bg-band-yellow/10 px-2 py-0.5 text-[10px] font-medium text-band-yellow">
-            {t("capture.mock")}
-          </span>
-        )}
-        <button
-          onClick={copyDraft}
-          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[12px] text-muted-foreground transition-colors hover:bg-muted"
-        >
-          {copied ? <Check className="h-3.5 w-3.5 text-conf-high" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? t("capture.copied") : t("capture.copy")}
-        </button>
-      </div>
-      <div className="space-y-3 px-4 py-3">
-        <CaptureField label={t("capture.field.type")}>
-          <select
-            value={draft.activity_type}
-            onChange={(e) => set("activity_type", e.target.value)}
-            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-[13px]"
-          >
-            {CAPTURE_ACTIVITY_TYPES.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
-        </CaptureField>
-        <CaptureField label={t("capture.field.report")}>
-          <textarea
-            value={draft.daily_report}
-            onChange={(e) => set("daily_report", e.target.value)}
-            rows={4}
-            className={cn(inputCls, "leading-relaxed")}
-          />
-        </CaptureField>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <CaptureField label={t("capture.field.contact")}>
-            <input value={draft.business_card_info} onChange={(e) => set("business_card_info", e.target.value)} className={inputCls} />
-          </CaptureField>
-          <CaptureField label={t("capture.field.category")}>
-            <input value={draft.product_major_category} onChange={(e) => set("product_major_category", e.target.value)} className={inputCls} />
-          </CaptureField>
-        </div>
-        <CaptureField label={t("capture.field.challenge")}>
-          <input value={draft.customer_challenge} onChange={(e) => set("customer_challenge", e.target.value)} className={inputCls} />
-        </CaptureField>
-        <p className="text-[11px] text-muted-foreground">{t("capture.hint")}</p>
-      </div>
-    </div>
-  );
-}
-
 export function Workspace({
   examples, deals, principles = [], role = "junior",
 }: {
@@ -807,6 +692,11 @@ export function Workspace({
   const [dealId, setDealId] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  // An attached file's extracted text, pending until the next message is sent.
+  // The chat is NOT a data-ingestion surface — the attachment is just context
+  // the assistant answers over (structured ingestion lives on the Ingestion tab).
+  const [attached, setAttached] = useState<{ fileName: string; text: string } | null>(null);
+  const [attaching, setAttaching] = useState(false);
   const thread = useCachedConversationId(`workspace:${role}:thread:id`);
 
   const idRef = useRef<number>(-1);
@@ -821,32 +711,25 @@ export function Workspace({
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
-  // Capture — a voice note / business-card photo is uploaded via the clip button
-  // and ingested into an editable sales-activity draft (POST /api/ingest). Any
-  // text already in the composer rides along as extra context for extraction.
-  async function runCapture(file: File) {
-    if (busy) return;
-    const note = input.trim();
-    const kind: "audio" | "image" = file.type.startsWith("audio") ? "audio" : "image";
-    const loadingId = nextId();
-    setMessages((m) => [
-      ...m,
-      { id: nextId(), role: "user", text: note ? `${t("capture.uploaded")}: ${file.name} — ${note}` : `${t("capture.uploaded")}: ${file.name}` },
-      { id: loadingId, role: "loading" },
-    ]);
-    setInput("");
-    setBusy(true);
-    const payload: { audio?: File; image?: File; text?: string } = { [kind]: file };
-    if (note) payload.text = note;
-    const { data, live } = await api.ingest(payload);
-    setMessages((m) =>
-      m.map((msg) =>
-        msg.id === loadingId
-          ? { id: loadingId, role: "capture", fileName: file.name, result: data, live }
-          : msg,
-      ),
-    );
-    setBusy(false);
+  // Attach a file as chat context — extract its text (voice→transcript,
+  // image→OCR, or a plain-text file read client-side) and hold it as a pending
+  // chip. On the next send, the text rides along as context the assistant
+  // answers over. No structured ingestion here — that's the Ingestion tab.
+  async function attachFile(file: File) {
+    if (attaching || busy) return;
+    setAttaching(true);
+    let payload: { audio?: File; image?: File; text?: string };
+    if (file.type.startsWith("audio")) payload = { audio: file };
+    else if (file.type.startsWith("image")) payload = { image: file };
+    else payload = { text: await file.text() };  // .txt/.md/.csv etc.
+    const { data } = await api.extract(payload);
+    setAttaching(false);
+    if (data?.raw_text) {
+      setAttached({ fileName: file.name, text: data.raw_text });
+      composerRef.current?.focus();
+    } else {
+      setAttached({ fileName: file.name, text: "" });
+    }
   }
 
   async function runReview(note: string, deal: string) {
@@ -987,12 +870,17 @@ export function Workspace({
      // server, keyed by thread.current).
      const history = buildChatHistory(messages);
      const replyId = nextId();
+     // An attached file's text rides along as context for THIS turn only, then
+     // the chip clears (it is not persisted into thread history).
+     const ctx = attached?.text || undefined;
+     const userText = attached ? `📎 ${attached.fileName} — ${clean}` : clean;
      setMessages((m) => [
        ...m,
-       { id: nextId(), role: "user", text: clean },
-       { id: replyId, role: "assistant", text: clean, history },
+       { id: nextId(), role: "user", text: userText },
+       { id: replyId, role: "assistant", text: clean, history, context: ctx },
      ]);
      setInput("");
+     setAttached(null);
   }
 
   // Clear the conversation: empty the transcript and mint a fresh thread id so
@@ -1227,6 +1115,7 @@ export function Workspace({
                   history={m.history}
                   role={role}
                   conversationId={thread.current}
+                  context={m.context}
                   onDone={(text) =>
                     setMessages((prev) => prev.map((msg) => (msg.id === m.id ? { ...msg, answer: text } : msg)))
                   }
@@ -1266,13 +1155,6 @@ export function Workspace({
               </Row>
             );
           }
-          if (m.role === "capture") {
-            return (
-              <Row key={m.id} who="senpai" name={assistantName}>
-                <CaptureTurn fileName={m.fileName} result={m.result} live={m.live} />
-              </Row>
-            );
-          }
           return null;
         })}
 
@@ -1296,6 +1178,22 @@ export function Workspace({
             />
           )}
           <div className="rounded-2xl border border-border bg-card p-2.5 shadow-[0_8px_30px_-22px_rgba(16,24,40,0.45)] focus-within:border-primary/40">
+            {attached && (
+              <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5">
+                <Paperclip className="h-3.5 w-3.5 shrink-0 text-navy" />
+                <span className="truncate font-mono text-[11px] text-foreground">{attached.fileName}</span>
+                {attached.text
+                  ? <span className="shrink-0 text-[10.5px] text-muted-foreground">{t("attach.chars", { n: String(attached.text.length) })}</span>
+                  : <span className="shrink-0 text-[10.5px] text-band-red">{t("attach.empty")}</span>}
+                <button
+                  onClick={() => setAttached(null)}
+                  title={t("attach.remove")}
+                  className="ml-auto inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
             <Textarea
               ref={composerRef}
               value={input}
@@ -1348,27 +1246,28 @@ export function Workspace({
                 </select>
               </label>
               <div className="flex items-center gap-2">
-                {/* Capture: upload a voice note / business-card photo → editable
-                    sales-activity draft (POST /api/ingest). */}
+                {/* Attach a file as context — its text is extracted (POST
+                    /api/extract) and the assistant answers over it. Structured
+                    data ingestion is a separate flow (Data Ingestion tab). */}
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="audio/*,image/*"
+                  accept="audio/*,image/*,text/*,.txt,.md,.csv"
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) runCapture(f);
+                    if (f) attachFile(f);
                     e.target.value = "";
                   }}
                 />
                 <button
                   onClick={() => fileRef.current?.click()}
-                  disabled={busy}
-                  title={t("capture.attach")}
+                  disabled={busy || attaching}
+                  title={t("attach.title")}
                   className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                 >
-                  <Paperclip className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t("capture.attachShort")}</span>
+                  {attaching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                  <span className="hidden sm:inline">{t("attach.short")}</span>
                 </button>
                 {messages.length > 0 && (
                   <button

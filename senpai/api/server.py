@@ -1210,6 +1210,7 @@ class ChatRequest(BaseModel):
     history: list[ChatMessage] = []          # prior user/assistant turns (no system)
     role: str = "junior"                     # "junior" | "manager"
     conversation_id: str | None = None
+    context: str = ""                        # attached-file text (chat-over-attachment)
 
 
 @app.post("/api/chat")
@@ -1282,7 +1283,17 @@ def chat(req: ChatRequest):
     for m in req.history:
         if m.role in ("user", "assistant") and m.content:
             convo.append({"role": m.role, "content": m.content})
-    convo.append({"role": "user", "content": req.message})
+    # An attached file's extracted text rides along as context for THIS turn only
+    # (not persisted into history). The model answers the question grounded in it.
+    user_content = req.message
+    if req.context.strip():
+        user_content = (
+            "【添付ファイルの内容 / Attached file content】\n"
+            f"{req.context.strip()}\n\n"
+            "【質問 / Question】\n"
+            f"{req.message}"
+        )
+    convo.append({"role": "user", "content": user_content})
 
     def gen():
         from senpai.llm.client import stream_chat_turn  # lazy: keep import light
@@ -1703,6 +1714,41 @@ def knowledge_generate(req: GenerateRequest):
     return {"item": _item_payload(item)}
 
 
+class AddPrincipleRequest(BaseModel):
+    statement: str               # the tacit knowledge / advice (the principle)
+    situation: str = ""          # the context the manager is grounding it in
+    tags: list[str] = []         # → Coach retrieval
+    added_by: str = "manager"
+
+
+@app.post("/api/knowledge/principles")
+def knowledge_add_principle(req: AddPrincipleRequest):
+    """Manager-contributed tacit knowledge → a Layer-1 Principle (status
+    'candidate'), grounded in a manager-note Source. Written to the ingested
+    overlay (committed seed untouched); flows through the existing review queue
+    to become an approved principle juniors can see. See senpai.knowledge."""
+    from senpai.knowledge.schema import Citation, Principle, Source
+
+    statement = (req.statement or "").strip()
+    if not statement:
+        raise HTTPException(400, "statement is required")
+
+    sid = kstore.next_source_id()
+    kstore.save_source(Source(
+        source_id=sid, kind="manager_note", participant_role="manager",
+        date=_today().isoformat(), notes=req.situation.strip(),
+    ))
+    pid = kstore.next_principle_id()
+    principle = Principle(
+        principle_id=pid, statement=statement,
+        support=[Citation(source_id=sid, quote=(req.situation.strip() or statement))],
+        tags=[t.strip() for t in req.tags if t.strip()],
+        status="candidate", added_by=req.added_by or "manager",
+    )
+    kstore.save_principle(principle)
+    return {"principle": _principle_payload(principle)}
+
+
 class ReviewRequest(BaseModel):
     action: str          # approve | request_edit | reject
     reviewer: str = "web_reviewer"
@@ -1723,21 +1769,11 @@ def knowledge_item_review(item_id: str, req: ReviewRequest):
 
 
 # --- Multimodal ingestion ---------------------------------------------------
-@app.post("/api/ingest")
-async def ingest(
-    audio: UploadFile | None = File(default=None),
-    image: UploadFile | None = File(default=None),
-    text: str | None = Form(default=None),
-):
-    """Capture → structured sales-activity draft.
-
-    Accepts a voice note (audio), a business-card/whiteboard photo (image),
-    and/or raw text — any combination — and returns an editable draft matching
-    the `sales_activities` schema (activity_type, daily_report, business_card_info,
-    customer_challenge, product_major_category). Wraps senpai.ingestion.multimodal
-    unchanged; falls back to deterministic mock extraction offline (no multimodal
-    API key). The draft is NOT persisted — the caller reviews/edits it first.
-    """
+async def _uploads_to_raw_text(
+    audio: UploadFile | None, image: UploadFile | None, text: str | None,
+) -> str:
+    """Transcribe/OCR any uploads and join with raw text. Shared by /api/extract
+    (chat-over-attachment) and /api/ingest (structured draft). Raises 400 if empty."""
     import os
     import tempfile
 
@@ -1763,7 +1799,66 @@ async def ingest(
 
     if not parts:
         raise HTTPException(400, "provide at least one of: audio, image, text")
+    return "\n\n".join(parts)
 
-    raw = "\n\n".join(parts)
+
+@app.post("/api/extract")
+async def extract_text(
+    audio: UploadFile | None = File(default=None),
+    image: UploadFile | None = File(default=None),
+    text: str | None = Form(default=None),
+):
+    """Extract plain text from an attachment for chat context.
+
+    Voice note → transcript, image → OCR, or raw text — returns just `raw_text`.
+    Unlike /api/ingest this does NOT run structured-activity extraction: the
+    workspace chat attaches this text as context and lets the user ask about it.
+    Data ingestion is a separate flow (/api/ingest, /api/ingest/save)."""
+    raw = await _uploads_to_raw_text(audio, image, text)
+    return {"raw_text": raw}
+
+
+@app.post("/api/ingest")
+async def ingest(
+    audio: UploadFile | None = File(default=None),
+    image: UploadFile | None = File(default=None),
+    text: str | None = Form(default=None),
+):
+    """Capture → structured sales-activity draft.
+
+    Accepts a voice note (audio), a business-card/whiteboard photo (image),
+    and/or raw text — any combination — and returns an editable draft matching
+    the `sales_activities` schema (activity_type, daily_report, business_card_info,
+    customer_challenge, product_major_category). Wraps senpai.ingestion.multimodal
+    unchanged; falls back to deterministic mock extraction offline (no multimodal
+    API key). The draft is NOT persisted — the caller reviews/edits it, then POSTs
+    it to /api/ingest/save."""
+    from senpai.ingestion import multimodal as mm
+
+    raw = await _uploads_to_raw_text(audio, image, text)
     draft = mm.extract_structured_activity(raw)
     return {"raw_text": raw, "draft": draft, "multimodal": config.have_multimodal()}
+
+
+class SaveActivityRequest(BaseModel):
+    draft: dict                  # edited ActivityDraft (activity_type, daily_report, …)
+    customer_id: str
+    deal_id: str
+    employee_id: str
+
+
+@app.post("/api/ingest/save")
+def ingest_save(req: SaveActivityRequest):
+    """Persist a reviewed daily-report draft as a real sales_activities row.
+
+    Builds the record in exact seed shape (correct Japanese fiscal year/quarter,
+    rep dept/division, derived order stats) and appends it to the gitignored
+    overlay (senpai/data/ingested/) — the committed seed is never mutated. The new
+    activity is immediately visible to scoring/timeline for the running process."""
+    if not store.get_deal(req.deal_id):
+        raise HTTPException(404, f"deal {req.deal_id} not found")
+    if not store.get_customer(req.customer_id):
+        raise HTTPException(404, f"customer {req.customer_id} not found")
+    from senpai.ingestion import persist
+    record = persist.save_activity(req.draft, req.customer_id, req.deal_id, req.employee_id)
+    return {"saved": True, "activity": record}

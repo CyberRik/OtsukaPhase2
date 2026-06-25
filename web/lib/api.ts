@@ -26,8 +26,12 @@ import type {
   RepProfile,
   RepProfileRow,
   RepProgress,
+  AddPrincipleRequest,
   CoachingThread,
+  ExtractResult,
   IngestResult,
+  SaveActivityRequest,
+  SaveActivityResult,
   SimilarCase,
   Source,
 } from "./types";
@@ -99,6 +103,13 @@ export const api = {
       { principle_id: principleId, use_llm: useLlm },
       { item: null },
     ),
+  // Manager contributes tacit knowledge → a candidate principle.
+  addPrinciple: (body: AddPrincipleRequest) =>
+    post<{ principle: Principle | null }>(
+      "/api/knowledge/principles",
+      body,
+      { principle: null },
+    ),
   knowledgeReview: (
     itemId: string,
     action: "approve" | "request_edit" | "reject",
@@ -149,6 +160,23 @@ export const api = {
       { query, lang },
       { status: "not_found", query, customer: null, candidates: [] }
     ),
+  // Attachment → plain text for chat context (no structured extraction).
+  // Multipart upload; returns null when the API is down or extraction is empty.
+  extract: async (
+    input: { audio?: File; image?: File; text?: string },
+  ): Promise<{ data: ExtractResult | null; live: boolean }> => {
+    const fd = new FormData();
+    if (input.audio) fd.append("audio", input.audio);
+    if (input.image) fd.append("image", input.image);
+    if (input.text) fd.append("text", input.text);
+    try {
+      const res = await fetch(`${BASE}/api/extract`, { method: "POST", body: fd });
+      if (!res.ok) return { data: null, live: false };
+      return { data: (await res.json()) as ExtractResult, live: true };
+    } catch {
+      return { data: null, live: false };
+    }
+  },
   // Multimodal capture → structured draft. Multipart upload, so it bypasses the
   // JSON `post` helper. Returns { data:null, live:false } when the API is down.
   ingest: async (
@@ -166,6 +194,9 @@ export const api = {
       return { data: null, live: false };
     }
   },
+  // Persist a reviewed daily-report draft as a real sales_activities row.
+  saveActivity: (body: SaveActivityRequest) =>
+    post<SaveActivityResult>("/api/ingest/save", body, { saved: false, activity: null }),
 };
 
 // --- Streaming senior commentary (SSE from the vLLM-backed bridge) ----------
@@ -278,14 +309,18 @@ export async function chatStream(
   history: ChatTurn[],
   role: ChatRole,
   onEvent: (e: ChatEvent) => void,
-  opts?: { signal?: AbortSignal; conversationId?: string },
+  opts?: { signal?: AbortSignal; conversationId?: string; context?: string },
 ): Promise<void> {
   let res: Response;
   try {
     res = await fetch(`${BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history, role, conversation_id: opts?.conversationId }),
+      body: JSON.stringify({
+        message, history, role,
+        conversation_id: opts?.conversationId,
+        context: opts?.context ?? "",
+      }),
       cache: "no-store",
       signal: opts?.signal,
     });

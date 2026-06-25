@@ -26,8 +26,31 @@ def _load() -> dict[str, list[dict]]:
     data: dict[str, list[dict]] = {}
     for name in _FILES:
         path = config.SEED_DIR / f"{name}.json"
-        data[name] = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        rows = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        # Overlay any runtime-ingested rows (daily reports, etc.) ON TOP of the
+        # committed seed. The seed stays canonical/byte-stable; ingested rows live
+        # in a separate gitignored dir and are demo-only (see config.INGESTED_DIR).
+        over = config.INGESTED_DIR / f"{name}.json"
+        if over.exists():
+            extra = json.loads(over.read_text(encoding="utf-8"))
+            if isinstance(extra, list):
+                rows = rows + extra
+        data[name] = rows
     return data
+
+
+def append_activity(record: dict) -> None:
+    """Persist one ingested sales_activity to the gitignored overlay file, then
+    drop the cache so the next read includes it. Never touches the committed seed.
+    Build records with senpai.ingestion.persist.build_activity_record so the shape
+    matches the seed exactly."""
+    config.INGESTED_DIR.mkdir(parents=True, exist_ok=True)
+    path = config.INGESTED_DIR / "sales_activities.json"
+    rows = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+    rows.append(record)
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8")
+    reload()
 
 
 @lru_cache(maxsize=1)
