@@ -1679,6 +1679,7 @@ def knowledge_principles():
         "counts": {
             "total": len(ps),
             "approved": sum(1 for p in ps if p["status"] == "approved"),
+            "pending": sum(1 for p in ps if p["status"] != "approved"),
             "two_source": sum(1 for p in ps if p["n_interviews"] >= 2),
         },
     }

@@ -105,9 +105,11 @@ const ja: Dict = {
   "jhome.qa.reports": "日報を書く",
   "jhome.qa.reports.desc": "書いた日報にコーチが助言",
   "jhome.learn": "今週学ぶ原則",
-  "jhome.principlesApproved": "承認済みの原則",
+  "jhome.principlesApproved": "原則",
   "jhome.itemsApproved": "コーチング教材",
   "jhome.twoSourceFull": "2名の先輩が一致",
+  "jhome.pending": "{n}件 審査中",
+  "jhome.draft": "{n}件 下書き",
 
   // coach
   "coach.title": "メモを、先輩の視点で読み解く。",
@@ -573,9 +575,11 @@ const en: Dict = {
   "jhome.qa.reports": "Write your report",
   "jhome.qa.reports.desc": "Get a senior's check before you submit",
   "jhome.learn": "Principles to learn this week",
-  "jhome.principlesApproved": "Approved principles",
+  "jhome.principlesApproved": "Principles",
   "jhome.itemsApproved": "Coaching items",
   "jhome.twoSourceFull": "Both seniors agree",
+  "jhome.pending": "{n} pending",
+  "jhome.draft": "{n} draft",
 
   "coach.title": "See the note the way a senior would.",
   "coach.lead": "Paste a meeting note or daily report. Senpai makes a senior rep's mental checklist explicit — six lenses of reasoning, not a single answer to copy.",

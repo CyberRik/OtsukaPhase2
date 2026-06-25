@@ -15,16 +15,18 @@ import { Badge } from "@/components/ui/badge";
 export default function JuniorHome() {
   const { t, lang } = useT();
   const [principles, setPrinciples] = useState<Principle[]>([]);
-  const [counts, setCounts] = useState({ approved: 0, items: 0, two: 0 });
+  const [counts, setCounts] = useState({ pTotal: 0, pPending: 0, iTotal: 0, iDraft: 0, two: 0 });
   const [profile, setProfile] = useState<GrowthData | null>(null);
 
   useEffect(() => {
     Promise.all([api.principles(), api.items(), api.growth()]).then(([p, it, gr]) => {
       setPrinciples(p.data.principles);
       setCounts({
-        approved: p.data.counts.approved ?? 0,
+        pTotal: p.data.counts.total ?? 0,
+        pPending: p.data.counts.pending ?? 0,
+        iTotal: it.data.counts.total ?? 0,
+        iDraft: it.data.counts.pending ?? 0,
         two: p.data.counts.two_source ?? 0,
-        items: it.data.counts.approved ?? 0,
       });
       setProfile(gr.data.growth);
     });
@@ -39,9 +41,11 @@ export default function JuniorHome() {
   ];
 
   const stats = [
-    { v: counts.approved, label: t("jhome.principlesApproved") },
-    { v: counts.items, label: t("jhome.itemsApproved") },
-    { v: counts.two, label: t("jhome.twoSourceFull") },
+    { v: counts.pTotal, label: t("jhome.principlesApproved"),
+      sub: counts.pPending ? t("jhome.pending", { n: String(counts.pPending) }) : null },
+    { v: counts.iTotal, label: t("jhome.itemsApproved"),
+      sub: counts.iDraft ? t("jhome.draft", { n: String(counts.iDraft) }) : null },
+    { v: counts.two, label: t("jhome.twoSourceFull"), sub: null as string | null },
   ];
 
   return (
@@ -115,7 +119,10 @@ export default function JuniorHome() {
       <section className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border">
         {stats.map((s) => (
           <div key={s.label} className="bg-card p-5">
-            <div className="text-3xl font-semibold tracking-tight">{s.v}</div>
+            <div className="flex items-baseline gap-2">
+              <div className="text-3xl font-semibold tracking-tight">{s.v}</div>
+              {s.sub && <span className="text-[11px] font-medium text-band-yellow">{s.sub}</span>}
+            </div>
             <div className="mt-1 text-[12px] leading-snug text-muted-foreground">{s.label}</div>
           </div>
         ))}

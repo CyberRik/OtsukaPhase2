@@ -86,7 +86,7 @@ export const api = {
   principles: () =>
     get<{ principles: Principle[]; counts: Record<string, number> }>(
       "/api/knowledge/principles",
-      { principles: PRINCIPLES_FALLBACK, counts: { total: 11, approved: 4, two_source: 4 } },
+      { principles: PRINCIPLES_FALLBACK, counts: { total: 11, approved: 4, pending: 7, two_source: 4 } },
     ),
   items: () =>
     get<{ items: KnowledgeItem[]; counts: Record<string, number> }>(
