@@ -25,7 +25,8 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "tailwind-merge": "^2.6.0",
-    "write-excel-file": "^4.1.1"
+    "write-excel-file": "^4.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
