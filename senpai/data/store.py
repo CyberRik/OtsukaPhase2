@@ -67,8 +67,58 @@ def customer_aliases() -> dict[str, list[str]]:
 def reload() -> None:
     """Drop the cache (used by tests / after regenerating seed)."""
     _load.cache_clear()
+    _index.cache_clear()
     customer_aliases.cache_clear()
     _alias_index.cache_clear()
+
+
+# --- indexes ---------------------------------------------------------------
+# The relational accessors below (activities_for_deal, quote_for_deal, …) used to
+# linear-scan the full table on every call. Hot paths like coach.cases call them
+# tens of thousands of times → O(rows × calls). Build the lookups ONCE here,
+# memoized against the loaded store and dropped on reload(), so each accessor is
+# an O(1) dict hit. Pure performance — identical results.
+@lru_cache(maxsize=1)
+def _index() -> dict:
+    acts_by_deal: dict[str, list[dict]] = {}
+    for a in all_activities():
+        did = a.get("deal_id")
+        if did is not None:
+            acts_by_deal.setdefault(did, []).append(a)
+    for rows in acts_by_deal.values():
+        rows.sort(key=lambda a: a.get("activity_date", ""), reverse=True)
+
+    orders_by_cust: dict[str, list[dict]] = {}
+    for o in all_orders():
+        orders_by_cust.setdefault(o.get("customer_id"), []).append(o)
+    for rows in orders_by_cust.values():
+        rows.sort(key=lambda o: o.get("ordered_at", ""), reverse=True)
+
+    quotes_by_cust: dict[str, list[dict]] = {}
+    for q in all_quotes():
+        quotes_by_cust.setdefault(q.get("customer_id"), []).append(q)
+    for rows in quotes_by_cust.values():
+        rows.sort(key=lambda q: q.get("quoted_at", ""), reverse=True)
+
+    deals_by_cust: dict[str, list[dict]] = {}
+    deals_by_rep: dict[str, list[dict]] = {}
+    for d in all_deals():
+        deals_by_cust.setdefault(d.get("customer_id"), []).append(d)
+        deals_by_rep.setdefault(deal_rep_id(d), []).append(d)
+
+    return {
+        "acts_by_deal": acts_by_deal,
+        "orders_by_cust": orders_by_cust,
+        "quotes_by_cust": quotes_by_cust,
+        "deals_by_cust": deals_by_cust,
+        "deals_by_rep": deals_by_rep,
+        "deal_by_id": {d["deal_id"]: d for d in all_deals()},
+        "customer_by_id": {c["customer_id"]: c for c in all_customers()},
+        "rep_by_id": {r["employee_id"]: r for r in all_reps()},
+        "product_by_id": {p["product_code"]: p for p in all_products()},
+        "quote_by_id": {q["quote_id"]: q for q in all_quotes()},
+        "order_by_id": {o["order_id"]: o for o in all_orders()},
+    }
 
 
 # --- collections -----------------------------------------------------------
@@ -117,19 +167,19 @@ def deal_rep_id(deal: dict) -> str:
 
 # --- lookups ---------------------------------------------------------------
 def get_deal(deal_id: str) -> dict | None:
-    return next((d for d in all_deals() if d["deal_id"] == deal_id), None)
+    return _index()["deal_by_id"].get(deal_id)
 
 
 def get_customer(customer_id: str) -> dict | None:
-    return next((c for c in all_customers() if c["customer_id"] == customer_id), None)
+    return _index()["customer_by_id"].get(customer_id)
 
 
 def get_rep(employee_id: str) -> dict | None:
-    return next((r for r in all_reps() if r["employee_id"] == employee_id), None)
+    return _index()["rep_by_id"].get(employee_id)
 
 
 def get_product(product_code: str) -> dict | None:
-    return next((p for p in all_products() if p["product_code"] == product_code), None)
+    return _index()["product_by_id"].get(product_code)
 
 
 def get_environment(customer_id: str) -> dict | None:
@@ -139,23 +189,23 @@ def get_environment(customer_id: str) -> dict | None:
 
 # --- relations -------------------------------------------------------------
 def deals_for_rep(employee_id: str) -> list[dict]:
-    return [d for d in all_deals() if deal_rep_id(d) == employee_id]
+    return _index()["deals_by_rep"].get(employee_id, [])
 
 
 def deals_for_customer(customer_id: str) -> list[dict]:
-    return [d for d in all_deals() if d["customer_id"] == customer_id]
+    return _index()["deals_by_cust"].get(customer_id, [])
 
 
 def activities_for_deal(deal_id: str) -> list[dict]:
     """All sales activities for a deal, newest first (the deal's interaction log)."""
-    rows = [a for a in all_activities() if a.get("deal_id") == deal_id]
-    return sorted(rows, key=lambda a: a.get("activity_date", ""), reverse=True)
+    return _index()["acts_by_deal"].get(deal_id, [])
 
 
 def activities_for_customer(customer_id: str) -> list[dict]:
     """All activities across a customer's deals, newest first."""
-    deal_ids = {d["deal_id"] for d in deals_for_customer(customer_id)}
-    rows = [a for a in all_activities() if a.get("deal_id") in deal_ids]
+    rows: list[dict] = []
+    for d in deals_for_customer(customer_id):
+        rows.extend(activities_for_deal(d["deal_id"]))
     return sorted(rows, key=lambda a: a.get("activity_date", ""), reverse=True)
 
 
@@ -187,25 +237,30 @@ def quote_for_deal(deal_id: str) -> dict | None:
     """A deal's quote, resolved via the quote_id linked on its activities."""
     qid = next((a.get("quote_id") for a in activities_for_deal(deal_id)
                 if a.get("quote_id")), None)
-    return next((q for q in all_quotes() if q["quote_id"] == qid), None) if qid else None
+    return _index()["quote_by_id"].get(qid) if qid else None
 
 
 def orders_for_deal(deal_id: str) -> list[dict]:
     """Order lines for a deal, resolved via the order_id linked on its activities."""
-    oids = {a.get("order_id") for a in activities_for_deal(deal_id) if a.get("order_id")}
-    return [o for o in all_orders() if o["order_id"] in oids]
+    order_by_id = _index()["order_by_id"]
+    seen: set[str] = set()
+    out: list[dict] = []
+    for a in activities_for_deal(deal_id):
+        oid = a.get("order_id")
+        if oid and oid not in seen and oid in order_by_id:
+            seen.add(oid)
+            out.append(order_by_id[oid])
+    return out
 
 
 def orders_for_customer(customer_id: str) -> list[dict]:
     """All orders for a customer, newest first (the account's purchase history)."""
-    rows = [o for o in all_orders() if o.get("customer_id") == customer_id]
-    return sorted(rows, key=lambda o: o.get("ordered_at", ""), reverse=True)
+    return _index()["orders_by_cust"].get(customer_id, [])
 
 
 def quotes_for_customer(customer_id: str) -> list[dict]:
     """All quotes for a customer, newest first (the account's quoting history)."""
-    rows = [q for q in all_quotes() if q.get("customer_id") == customer_id]
-    return sorted(rows, key=lambda q: q.get("quoted_at", ""), reverse=True)
+    return _index()["quotes_by_cust"].get(customer_id, [])
 
 
 # --- display helpers -------------------------------------------------------
