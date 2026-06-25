@@ -262,9 +262,14 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
     _docs.start()   # begin the per-turn generated-document buffer (download chips)
 
-    # Tool-selection rounds also skip the <think> phase when enabled — this is
-    # where the bulk of the latency lives (the synthesis round alone is not enough).
-    sel_msgs = lambda: _prep(convo, config.TOOLLOOP_NO_THINK)
+    # Tool-selection rounds must KEEP the <think> phase: this reasoning-distill
+    # needs to reason before it will emit a tool call. Prefilling an empty
+    # <think></think> here makes it skip deliberation and *narrate* the call as
+    # prose ("Action: scheduling meeting…") instead of emitting a real tool_call —
+    # so nothing runs and the UI shows no tool. (Verified A/B: empty-think → 0 tool
+    # calls; think-on → schedule_meeting fires.) The latency knob only applies to
+    # the FINAL answer round, which has its own fast/think routing below.
+    sel_msgs = lambda: _prep(convo, False)
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
         try:
