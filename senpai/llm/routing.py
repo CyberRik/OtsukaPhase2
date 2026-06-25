@@ -91,10 +91,16 @@ class DeterministicReasoningRouter:
                 think=True, confidence=0.9,
                 reason=f"numeric/cross-signal tool used: {', '.join(sorted(high_hit))}")
 
-        if len(distinct) >= 2:
+        # Multi-tool synthesis needs reasoning only when at least one tool is NOT a
+        # plain retrieval/provenance lookup. Several retrieval tools together
+        # (query_spr + search_notes + lookup_customer_environment) just restate
+        # grounded records — that's the FAST regime, so don't pay the <think> tax to
+        # summarize them (this was a major Assistant latency sink on research turns).
+        if len(distinct) >= 2 and (distinct - LOW_REASONING_TOOLS):
             return RoutingDecision(
                 think=True, confidence=0.75,
-                reason=f"multi-tool synthesis across {len(distinct)} tools")
+                reason=f"multi-tool synthesis across {len(distinct)} tools "
+                       "(≥1 non-retrieval)")
 
         if request.message and _HIGH_INTENT.search(request.message):
             return RoutingDecision(

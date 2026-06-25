@@ -36,6 +36,7 @@ live Coach commentary ON (default off = deterministic only).
 # install deps (Python bridge + frontend)
 .\.venv\Scripts\pip.exe install -r requirements.txt
 cd web; npm install; cd ..
+```
 
 # Terminal 1 — Backend bridge (FastAPI) → http://localhost:8000
 $env:SENPAI_USE_LLM = '1'

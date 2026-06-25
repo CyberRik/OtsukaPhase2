@@ -418,8 +418,12 @@ def _sse(obj: dict) -> str:
 # Reasoning tags vary by sampling: the model emits either <think> or <thinking>
 # (and the matching close). Match both spellings so a reasoning block is never
 # leaked into the user-facing answer.
-_THINK_CLOSE = re.compile(r"</think(?:ing)?>", re.IGNORECASE)
-_THINK_OPEN = re.compile(r"<think(?:ing)?>", re.IGNORECASE)
+# Reasoning markers this distilled model may emit before its actual answer.
+# Besides <think>/<thinking> it sometimes wraps its scratchpad in <analysis> or
+# <reasoning> — all must be stripped so the chain-of-thought never leaks into a
+# senior's read or a research summary.
+_THINK_CLOSE = re.compile(r"</(?:think(?:ing)?|analysis|reasoning)>", re.IGNORECASE)
+_THINK_OPEN = re.compile(r"<(?:think(?:ing)?|analysis|reasoning)>", re.IGNORECASE)
 
 
 def _strip_reasoning(full: str) -> str | None:
@@ -590,7 +594,12 @@ def _junior_system() -> str:
         "社内の数値は与えられたものだけを使い、人名や提供者名は絶対に推測・生成しないこと。"
         "製品の相談には search_products / create_quote、訪問調整には schedule_meeting、"
         "連絡文の準備には send_email を使えます(いずれも下書きで、送信・確定はしません)。"
-        "社内案件で自信が持てない時は route_to_expert で先輩に橋渡ししてください。\n"
+        "社内案件で自信が持てない時は route_to_expert で先輩に橋渡ししてください。"
+        "ツールが必要な操作（予定調整・見積作成・検索・社内データ確認など）では、"
+        "『〜します』と手順を説明したり、呼び出し内容を文章で書き出したりせず、"
+        "直接ツールを呼び出すこと。ツール結果が返ってから簡潔に回答する。"
+        "独立した複数の情報が必要なときは、ツールを1つずつ順番に呼ばず、"
+        "1ターンでまとめて並行呼び出しして往復回数を減らすこと。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
@@ -627,7 +636,11 @@ def _manager_system() -> str:
         "絶対に人名や提供者名を推測・生成しないでください。"
         "製品の確認や見積例には search_products / create_quote、"
         "調整や連絡文の準備には schedule_meeting / send_email を使えます"
-        "(いずれも下書きで、送信・確定はしません)。\n"
+        "(いずれも下書きで、送信・確定はしません)。"
+        "ツールが必要な操作では、『〜します』と手順を説明したり呼び出し内容を文章で"
+        "書き出したりせず、直接ツールを呼び出すこと。ツール結果が返ってから簡潔に回答する。"
+        "独立した複数の情報が必要なときは、ツールを1つずつ順番に呼ばず、1ターンでまとめて"
+        "並行呼び出しして往復回数を減らすこと。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
@@ -660,7 +673,9 @@ def _research_system() -> str:
         "1. まず query_spr で社内の顧客・案件情報を確認する（英語/ローマ字の社名でも"
         "そのまま渡せば内部で名寄せされる。例: 'Aozora Services'）。\n"
         "2. 案件があれば score_deal_health で健全度、find_similar_deals で類似案件、"
-        "lookup_customer_environment でIT環境、get_product_info で製品情報を補う。\n"
+        "lookup_customer_environment でIT環境、get_product_info で製品情報を補う。"
+        "顧客が分かった後のこれらの補完ツールは互いに独立しているので、1つずつではなく"
+        "1ターンでまとめて並行呼び出しし、往復回数を減らすこと。\n"
         "3. 社内情報で答えられない外部情報（事業内容・業界動向・競合・最新ニュース）が"
         "必要なときに限り web_search を使う。\n"
         "回答ルール: 社内データを最優先で示し、その後に外部情報を添える。"
@@ -1027,7 +1042,7 @@ def _legacy_research_stream(req: ChatRequest):
             allow_fallback=False,
         ):
             text += piece
-        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+        text = (_strip_reasoning(text) or "").strip()
         yield _sse({"type": "answer", "text": text or "リサーチ結果を生成できませんでした。"})
         yield _sse({"type": "done", "model": config.MODEL})
     except Exception:  # noqa: BLE001 - research must not silently use fallback
@@ -1062,7 +1077,7 @@ def _summarize_research_bundle(bundle: ResearchBundle):
             allow_fallback=False,
         ):
             text += piece
-        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+        text = (_strip_reasoning(text) or "").strip()
         yield _sse({"type": "answer", "text": text or "リサーチ結果を生成できませんでした。"})
         yield _sse({"type": "done", "model": config.MODEL})
     except Exception:  # noqa: BLE001 - research must not silently use fallback

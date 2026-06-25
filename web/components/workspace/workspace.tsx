@@ -137,6 +137,14 @@ const SlashPicker = React.forwardRef<
     c.cmd.slice(1).startsWith(typed)
   );
 
+  // `active` can outrun a shrinking `filtered` (the user typed more and fewer
+  // commands match). Clamp the index everywhere so we never read past the end,
+  // and snap it back into range when the filter changes.
+  const activeIdx = active < filtered.length ? active : 0;
+  useEffect(() => {
+    if (active !== 0 && active >= filtered.length) setActive(0);
+  }, [filtered.length, active]);
+
   // Expose keyboard handler so parent Textarea can delegate without stealing focus
   React.useImperativeHandle(ref, () => ({
     handleKey(e: React.KeyboardEvent): boolean {
@@ -153,7 +161,8 @@ const SlashPicker = React.forwardRef<
       }
       if (e.key === "Enter") {
         e.preventDefault();
-        onSelect(filtered[active].cmd + " ");
+        const sel = filtered[activeIdx];
+        if (sel) onSelect(sel.cmd + " ");
         return true;
       }
       if (e.key === "Escape") {
@@ -163,7 +172,7 @@ const SlashPicker = React.forwardRef<
       }
       return false;
     },
-  }), [filtered, active, onSelect, onClose]);
+  }), [filtered, activeIdx, onSelect, onClose]);
 
   // Close if nothing matches
   if (filtered.length === 0) return null;
@@ -182,7 +191,7 @@ const SlashPicker = React.forwardRef<
           onClick={() => onSelect(c.cmd + " ")}
           className={[
             "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
-            i === active
+            i === activeIdx
               ? "bg-primary/[0.07] text-foreground"
               : "text-foreground hover:bg-muted/60",
           ].join(" ")}
@@ -862,7 +871,7 @@ export function Workspace({
     setBusy(false);
   }
 
-  function runChat(text: string) {
+  function runChat(text: string, deal?: string) {
      const clean = text.trim();
      if (!clean || busy) return;
      // Snapshot the conversation BEFORE appending this turn, so the assistant
@@ -873,11 +882,17 @@ export function Workspace({
      // An attached file's text rides along as context for THIS turn only, then
      // the chip clears (it is not persisted into thread history).
      const ctx = attached?.text || undefined;
+     // A deal picked from the Deal selector grounds the turn: name the deal id
+     // (and its customer) in the query the model sees, so the backend extracts
+     // it and scopes retrieval to that exact deal instead of re-resolving from
+     // the prose. The user bubble shows the typed text + a deal badge.
+     const d = deal ? deals.find((x) => x.deal_id === deal) : undefined;
+     const grounded = d ? `${clean}（対象案件: ${d.deal_id} ${d.customer}）` : clean;
      const userText = attached ? `📎 ${attached.fileName} — ${clean}` : clean;
      setMessages((m) => [
        ...m,
-       { id: nextId(), role: "user", text: userText },
-       { id: replyId, role: "assistant", text: clean, history, context: ctx },
+       { id: nextId(), role: "user", text: userText, dealLabel: d?.customer },
+       { id: replyId, role: "assistant", text: grounded, history, context: ctx },
      ]);
      setInput("");
      setAttached(null);
@@ -917,7 +932,7 @@ export function Workspace({
     } else if (p.command === "research") {
       runResearch(p.body, deal);
     } else {
-      runChat(p.body || raw.trim());
+      runChat(p.body || raw.trim(), deal);
     }
     setDealId("");
   }
@@ -1079,7 +1094,7 @@ export function Workspace({
               <Row key={m.id} who="user" name={t("chat.you")}>
                 <div className="rounded-xl rounded-tl-sm border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
                   {m.dealLabel && (
-                    <Badge variant="accent" className="mb-2 font-jp">{customerText(lang, m.dealLabel).text}</Badge>
+                    <Badge variant="accent" className="mb-2 font-jp">{m.dealLabel}</Badge>
                   )}
                   <span className="block whitespace-pre-wrap text-[13.5px] leading-relaxed text-foreground/90">{m.text}</span>
                 </div>
@@ -1240,7 +1255,9 @@ export function Workspace({
                   <option value="">{lang === "ja" ? "未選択" : "None"}</option>
                   {deals.map((d) => (
                     <option key={d.deal_id} value={d.deal_id}>
-                      {d.deal_id} · {customerText(lang, d.customer).text}
+                      {/* Proper company names stay Japanese (the canonical form,
+                          matching the grounded synthesis) regardless of UI lang. */}
+                      {d.deal_id} · {d.customer}
                     </option>
                   ))}
                 </select>

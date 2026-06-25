@@ -594,6 +594,11 @@ def search_notes(query: str = "", limit: int = 5, customer: str = "") -> str:
         limit = int(limit)
     except (TypeError, ValueError):
         limit = 5
+    # Clamp the result count: the notes are the bulk of the synthesis prompt AND of
+    # what the model then quotes back, so an over-fetch (the model sometimes asks for
+    # 10+) dominates Assistant latency at ~9 tok/s. The top semantically-ranked notes
+    # carry the signal; the tail just lengthens the answer. Keep it tight.
+    limit = max(1, min(limit, 6))
 
     # Resolve the account in focus: explicit arg first, then a customer named in the
     # query; None ⇒ no account resolved ⇒ cross-account fallback (preserves behavior).

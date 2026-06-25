@@ -443,11 +443,29 @@ def _key_in_text(key: str, low_text: str) -> bool:
     return key in low_text
 
 
+_CUSTOMER_ID_RE = re.compile(r"\bC\d{1,4}\b", re.IGNORECASE)
+
+
+def _customer_id_in_text(text: str) -> str | None:
+    """A single, unambiguous customer id (e.g. 'C14') named anywhere in the text.
+    Returns the canonical id when exactly one VALID id appears, else None (0 ids,
+    or several different ids → defer to name matching / ambiguity). Mirrors how the
+    research bridge already extracts deal ids ('D027') from a phrased request."""
+    seen = list(dict.fromkeys(m.group(0).upper()
+                              for m in _CUSTOMER_ID_RE.finditer(text or "")))
+    valid = [cid for cid in seen if get_customer(cid)]
+    return valid[0] if len(valid) == 1 else None
+
+
 def match_customer_in_text(text: str) -> dict | None:
     """Find the customer named anywhere in free text — across JA, English, romaji
     and alias forms. Longest match wins (so 'Aozora Services' beats 'Aozora', and
     '大和商事システム' beats '大和'); an ambiguous winning form resolves to None so
-    we never attribute the wrong customer's history."""
+    we never attribute the wrong customer's history. An explicit customer id ('C14')
+    is the most precise, unambiguous signal and wins over any name match."""
+    cid = _customer_id_in_text(text)
+    if cid:
+        return get_customer(cid)
     low = (text or "").lower()
     best: tuple[int, set[str]] | None = None
     for key, ids in _alias_index().items():
@@ -480,7 +498,8 @@ def resolve_customer_in_text(text: str) -> CustomerResolution:
     query as the name), this locates the customer token inside an action/verb-
     wrapped message: 'create a quotation for akebono' → ambiguous (3 あけぼの
     companies), not not_found. So callers (e.g. research) reach internal records
-    instead of falling through to web search on a phrased request."""
+    instead of falling through to web search on a phrased request. An explicit
+    customer id ('research about C14') resolves directly via match_customer_in_text."""
     uniq = match_customer_in_text(text)
     if uniq:
         return CustomerResolution(status="resolved", query=text, customer=uniq)
