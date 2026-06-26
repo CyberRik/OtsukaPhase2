@@ -229,6 +229,41 @@ refer to signals by `[id]`, never invent.
 
 Both views are role-aware (`junior | manager`) and mount identical components.
 
+### 4.6 Industry and customer-size differentiation
+
+The synthetic data and the graph are both **industry- and size-aware** — this is the closest
+the current system comes to geographic/market-segment differentiation.
+
+**Customer size tiers (`_SIZE` in `data/gen_seed.py`):**
+- Two tiers: `小規模` (small) and `中規模` (medium), weighted 3:1 toward SMB.
+- Every customer record carries a `size` field exposed in `AccountSummary.size` and the
+  graph node's attribute.
+- Otsuka Shokai's real book is SMB-heavy, so the dataset intentionally mirrors that skew.
+
+**Industry segmentation (`_INDUSTRY`):**
+
+```
+製造 / 小売 / 医療 / 建設 / 飲食 / 物流 / 教育 / 不動産 / 士業 / IT
+```
+
+10 industry tags, one per customer, propagated into:
+- **Knowledge graph** — `industry:<name>` grouping nodes connected to each customer via
+  `IN_INDUSTRY` edges; deal nodes carry the customer's `industry` attribute.
+- **`reps_who_win(category, industry, after_activity_type)`** — parameterized query that
+  filters the win-rate leaderboard to a specific industry, answering "which reps close
+  サーバー deals in 製造業 after a site survey?"
+- **`similar_by_graph(deal_id)`** — multi-signal similarity scorer that adds +1 for an
+  industry match (on top of +2 per shared product, +1 for same rep), so industry context
+  shapes which past deals surface as comparable.
+- **`account_graph(customer_id)`** — returns `industry` and `size` in the customer header
+  so the senior commentary can frame risk in market-segment terms.
+- **`AccountSummary`** — `industry` and `size` are first-class fields; the account-context
+  assembler includes them in the grounded header line fed to the model.
+
+**Design note:** no geographic/prefecture field exists in the current schema. Industry serves
+as the primary market-segment discriminator; size captures the SMB vs mid-market split that
+shapes deal complexity and decision-maker topology.
+
 ---
 
 ## 5. Morning Briefing (`senpai/briefing.py`)
@@ -281,7 +316,143 @@ fiscal years).
   `messages`. Resolved threads correlate with the improving-rep flag, giving `rep_progress`
   its acted-on signal.
 
-### 6.2 Rep coaching profile (`senpai/coach/profile.py`)
+### 6.2 Manager Coaching Workspace (`senpai/coaching.py`)
+
+461-line module that answers a manager's daily question: **"where should I spend my coaching
+time today?"** — four grounded views, no LLM, no new scoring.
+
+**Seven deterministic issue rules** (`_issues()`), mapped to priority tiers:
+
+| Issue key | Priority | Fires when |
+|---|---|---|
+| `confidence_mismatch` | high | `optimism_mismatch` flag is set on the deal |
+| `missing_decision_maker` | high | deal is at `DECISION_MAKER_RANKS` but no business card title found |
+| `long_inactivity` | high | last activity >30 days ago (or no activities at all) |
+| `premature_discount` | medium | discount >10% AND no decision-maker OR deal in a low rank |
+| `repeated_unresolved` | medium | current `order_rank` regressed vs `initial_order_rank` |
+| `weak_customer_discovery` | medium | ≥3 activities but <34% have `customer_challenge` filled |
+| `incomplete_reports` | low | a configurable completeness threshold |
+
+`compute_issues()` is the public entry point — it's reused by `coach/profile.py` so the same
+rules power both the workspace queue and the per-rep profile without duplication.
+
+**Four views** (`coaching_workspace()`):
+
+1. **`needs_coaching`** — ranked queue: primary sort by `ISSUE_PRIORITY` tier, secondary by
+   deal health score descending; each entry carries one headline issue + a transparent reason.
+2. **`trends`** — team-wide issue frequency, with a direction derived from `order_rank`
+   movement (rank declined = "worsening", advanced = "improving").
+3. **`confidence_vs_reality`** — Confidence vs Reality: the rep's stated rank (their
+   expressed confidence) is cross-checked against 3 observed signals
+   (quote on file, DM identified, recent activity in last 30d); mismatched deals surface first.
+4. **`summary`** — a weekly digest: total open deals, deals with ≥1 issue, most-common issue.
+
+API: `GET /api/coach/workspace`.
+
+### 6.3 Review Coach (`senpai/coach/review.py`)
+
+218-line module that gives a **deal-specific coaching read** by scanning what is *absent* from
+a rep's note — not what is present. Absence-based firing is the key design: the lens fires
+when cue phrases are **not found**, because gaps are what a senior reads for.
+
+**Five LENSES**, each with: cue list, observation text, missing-info label, bilingual open
+question, risk level, and decision factor:
+
+| Lens | What absence signals |
+|---|---|
+| `decision_maker` | No 決裁・部長・社長・役員・キーマン mention — authority path unknown |
+| `timeline` | No 期日・来月・Q末・スケジュール — no close horizon agreed |
+| `criteria` | No 選定理由・評価・比較 — what the customer actually wants is unclear |
+| `next_step` | No 次回・提案・デモ — no committed forward action |
+| `budget` | No 予算・費用・価格帯 — financial qualification absent |
+
+Also includes **presence detectors** for stall language (`検討中・返事待ち・保留`) and
+competitor signals — firing even when a lens is silent.
+
+**`CoachReview` dataclass** assembles: `observations`, `missing_info`, `risks`, `questions`,
+`next_actions`, `decision_factors`, `used_deal` (the grounded deal record),
+`explanations` (one per lens), and **`open_questions`** — bilingual (JA+EN) open-ended
+questions that surface the unknown, never factual claims.
+
+**Grounding P0 rule:** absence → open questions only. The coach never says "the customer
+wants X" when X isn't in the note. Every question is phrased to *elicit* the missing fact,
+not invent it. English equivalents live in `_LENS_QUESTION_EN` so bilingual output is
+consistent.
+
+API: `POST /api/coach/review`.
+
+### 6.4 Similar Past Cases (`senpai/coach/cases.py`)
+
+148-line module that teaches through **real organizational experience** rather than invented
+advice. Given a rep's note (and optional current deal), it retrieves a small set of closed
+deals whose situation rhymes with the current one — mixing wins and losses for contrast.
+
+**Five situational themes**, each mapped to validated principle IDs:
+
+| Theme | Principle IDs | When it fires |
+|---|---|---|
+| `no_decision_maker` | P003, P006 | lost deal, no DM title in any activity |
+| `discounting` | P002 | lost deal, discount >10% |
+| `stalled` | P001 | lost deal, few activities or no comments |
+| `budget` | P005 | cue phrases about 予算/費用 in the note |
+| `discovery` | P008, P010 | note references 初回/ヒアリング/環境 |
+| `disciplined_close` | P001, P010 | won deal (the positive contrast case) |
+
+**Scoring (`find_similar_cases()`):** every closed deal starts at 0.5 (baseline so some
+experience always surfaces). Product category match adds +3; thematic cue match adds +1.5;
+lost deals get +0.3 (failures teach more vividly).
+
+**Teaching mix guarantee:** the function explicitly ensures the returned set contains at least
+one `won` and one `lost` deal — so the rep always sees a contrast, not just failures.
+
+Each returned case is language-neutral facts: `deal_id`, customer name, category, amount,
+outcome, theme, `principle_ids`, `decision_maker` flag, `discounted` flag, `n_activities`.
+The frontend renders the localized summary; no synthetic narrative is generated here.
+
+### 6.5 Context Retrieval Layer (`senpai/coach/context.py`)
+
+497-line grounded context assembler. Before the model produces a commentary, this function
+assembles the **full business context package** from store records so the model reasons over
+real signals — not the meeting note alone.
+
+**Resolution cascade** (`_resolve_customer_cascade()`):
+
+| Confidence | Method | Policy |
+|---|---|---|
+| `high` | explicit `deal_id`, exact alias match | Ground fully — inject all customer/deal facts |
+| `medium` | fuzzy character-similarity (score ≥ 0.72) | Near-miss — surface as "did you mean…?" candidate, read note-only until rep confirms |
+| `low` | company-name-pattern extraction | Likely match, unconfirmed — same near-miss policy |
+| `none` | no customer identified | Note-only — model must not fabricate customer facts |
+
+This prevents the most dangerous failure mode: "Okamoto Electronics" in a note must not
+silently pull in 岡本電機's deal records.
+
+**Bilingual signal translation (`_SIGNAL_EN`):**
+12 regex patterns translate the engine's Japanese flag/signal strings into English at
+context-assembly time. Example: `^(\d+)日間接触なし\(目安(\d+)日超\)$` → `"{N} days without
+contact (over the {M}-day benchmark)"`. This means the model has no Japanese to
+copy-paste into an English commentary.
+
+**`build_commentary_context()` assembles:**
+- Customer profile (name, industry, size, IT environment)
+- Deal status (rank, amount, expected date, days inactive)
+- Health score, band, and signals (translated to the requested language)
+- Active flags in human-readable form
+- Quote on file (amount, product category, discount %, quoted date)
+- Order history digest (count, total ¥, last order date)
+- Customer history across other deals (won/lost/open counts)
+- **Account health cross-link** — `account_health(customer_id)` included so the model
+  can frame a stalled deal against a healthy overall account ("deal stuck at 3_A but
+  the account is green overall — not a relationship problem")
+- Similar past cases (if `COACH_USE_SIMILAR_CASES` is on)
+- Relevant corpus principles (if `COACH_USE_CORPUS` is on)
+
+**DO NOT FABRICATE guards:** the context text includes explicit instructions at each
+uncertain resolution tier so the model knows exactly what it can and cannot state.
+Ambiguous or low-confidence matches are clearly labelled so the model hedges rather
+than presenting unverified facts as certain.
+
+### 6.6 Rep coaching profile (`senpai/coach/profile.py`)
 
 `rep_coaching_profile(employee_id)` aggregates deterministic coaching issues across a rep's
 whole book into a 1:1 brief:
@@ -296,7 +467,7 @@ whole book into a 1:1 brief:
 
 API: `GET /api/coach/rep-profile/{id}`, `GET /api/coach/rep-profiles`.
 
-### 6.3 Rep progress (`senpai/coach/progress.py`)
+### 6.7 Rep progress (`senpai/coach/progress.py`)
 
 `rep_progress(employee_id, windows=4)` replays the engine **as of each of the last fiscal years**
 (scoring each deal at its last in-window activity to avoid false staleness signals) and produces:
@@ -310,7 +481,7 @@ an improving discovery-weak rep visibly trends down.
 
 API: `GET /api/coach/rep-progress/{id}`.
 
-### 6.4 Coaching explainability (`senpai/coach/explainability.py`)
+### 6.8 Coaching explainability (`senpai/coach/explainability.py`)
 
 For every coaching recommendation (lens, signal, flag, issue), `build_explanation()` assembles
 a grounded explanation in four parts:
