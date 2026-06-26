@@ -467,14 +467,26 @@ export interface SaveActivityResult {
   activity: Record<string, unknown> | null;
 }
 
+export interface SkillEvidence {
+  text: string;
+  date: string;
+  source: "activity" | "coaching_thread";
+  deal_id?: string | null;
+  positive: boolean;
+}
+
 export interface GrowthSkill {
   key: string;
   stars: number;
+  trend: "improving" | "flat" | "needs_work";
+  evidence: SkillEvidence[];
+  insight: string;
 }
 
 export interface GrowthMonth {
   month: string;
   count: number;
+  skill_scores: Partial<Record<string, number | null>>;
 }
 
 export interface GrowthData {

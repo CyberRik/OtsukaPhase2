@@ -278,6 +278,23 @@ const ja: Dict = {
   "skill.closing_discipline": "クロージングの規律",
   "skill.proposal_pricing": "提案・価格設計",
 
+  // growth — coaching threads & deals (dynamic sections)
+  "growth.coaching.sub": "マネージャーからのフィードバックと対応状況",
+  "growth.thread.manager": "マネージャー",
+  "growth.thread.you": "あなたの返信",
+  "growth.myDeals": "担当案件",
+  "growth.myDeals.sub": "現在のパイプラインの健全度",
+  "growth.myDeals.noDeals": "担当案件はありません。",
+  "growth.stale": "{n}日 停滞",
+  // growth — skill evidence & trend
+  "growth.skill.trend.improving": "改善中",
+  "growth.skill.trend.needs_work": "要強化",
+  "growth.skill.trend.flat": "",
+  "growth.skill.evidence.activity": "活動記録",
+  "growth.skill.evidence.coaching_thread": "コーチング",
+  "growth.skill.evidence.positive": "実績",
+  "growth.skill.evidence.gap": "課題",
+  "growth.monthlySkills": "スキル推移",
 
   // dashboard / manager
   "dash.title": "どの案件が本物で、どれが健全に「見える」だけか。",
@@ -743,6 +760,24 @@ const en: Dict = {
   "skill.customer_discovery": "Customer discovery",
   "skill.closing_discipline": "Closing discipline",
   "skill.proposal_pricing": "Proposal & pricing",
+
+  // growth — coaching threads & deals (dynamic sections)
+  "growth.coaching.sub": "Manager feedback and your response status",
+  "growth.thread.manager": "Manager",
+  "growth.thread.you": "Your reply",
+  "growth.myDeals": "My deals",
+  "growth.myDeals.sub": "Health of your current pipeline",
+  "growth.myDeals.noDeals": "No deals assigned.",
+  "growth.stale": "{n}d stale",
+  // growth — skill evidence & trend
+  "growth.skill.trend.improving": "Improving",
+  "growth.skill.trend.needs_work": "Needs work",
+  "growth.skill.trend.flat": "",
+  "growth.skill.evidence.activity": "Activity",
+  "growth.skill.evidence.coaching_thread": "Coaching",
+  "growth.skill.evidence.positive": "Evidence",
+  "growth.skill.evidence.gap": "Gap",
+  "growth.monthlySkills": "Skill overlay",
 
   "dash.title": "Which deals are real — and which just look healthy?",
   "dash.lead": "Deterministic deal-health, scored the same way for every rep. Red/yellow/green with a signal-by-signal reason, plus flags where a report's optimism quietly contradicts its data. No GPU, no black box.",

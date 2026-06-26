@@ -283,5 +283,145 @@
       "reviewed_at": "",
       "notes": ""
     }
+  },
+  {
+    "item_id": "G0008",
+    "scenario": "(要編集)『新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。』が当てはまる場面を想定してください。",
+    "signals": [
+      "新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。"
+    ],
+    "questions": [],
+    "risks": [],
+    "alternatives": [
+      "状況によっては原則の適用が異なる場合があります。"
+    ],
+    "tags": [
+      "クロージング",
+      "案件管理",
+      "決定先延ばし"
+    ],
+    "provenance": {
+      "principle_id": "P001",
+      "interview_ids": [
+        "I01",
+        "I02"
+      ],
+      "generator_model": "offline-skeleton",
+      "prompt_version": "kx-v1",
+      "generated_at": "2026-06-26T03:39:30Z",
+      "grounding_passed": true,
+      "grounding_notes": "シナリオが空、または要編集のまま。"
+    },
+    "review": {
+      "status": "approved",
+      "reviewer": "web_reviewer",
+      "reviewed_at": "2026-06-26T03:39:43Z",
+      "notes": "[override: grounding未通過を人手承認]"
+    }
+  },
+  {
+    "item_id": "G0009",
+    "scenario": "(要編集)『新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。』が当てはまる場面を想定してください。",
+    "signals": [
+      "新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。"
+    ],
+    "questions": [],
+    "risks": [],
+    "alternatives": [
+      "状況によっては原則の適用が異なる場合があります。"
+    ],
+    "tags": [
+      "クロージング",
+      "案件管理",
+      "決定先延ばし"
+    ],
+    "provenance": {
+      "principle_id": "P001",
+      "interview_ids": [
+        "I01",
+        "I02"
+      ],
+      "generator_model": "offline-skeleton",
+      "prompt_version": "kx-v1",
+      "generated_at": "2026-06-26T03:39:48Z",
+      "grounding_passed": false,
+      "grounding_notes": "シナリオが空、または要編集のまま。"
+    },
+    "review": {
+      "status": "draft",
+      "reviewer": "",
+      "reviewed_at": "",
+      "notes": ""
+    }
+  },
+  {
+    "item_id": "G0010",
+    "scenario": "(要編集)『新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。』が当てはまる場面を想定してください。",
+    "signals": [
+      "新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。"
+    ],
+    "questions": [],
+    "risks": [],
+    "alternatives": [
+      "状況によっては原則の適用が異なる場合があります。"
+    ],
+    "tags": [
+      "クロージング",
+      "案件管理",
+      "決定先延ばし"
+    ],
+    "provenance": {
+      "principle_id": "P001",
+      "interview_ids": [
+        "I01",
+        "I02"
+      ],
+      "generator_model": "offline-skeleton",
+      "prompt_version": "kx-v1",
+      "generated_at": "2026-06-26T03:39:49Z",
+      "grounding_passed": false,
+      "grounding_notes": "シナリオが空、または要編集のまま。"
+    },
+    "review": {
+      "status": "draft",
+      "reviewer": "",
+      "reviewed_at": "",
+      "notes": ""
+    }
+  },
+  {
+    "item_id": "G0011",
+    "scenario": "(要編集)『新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。』が当てはまる場面を想定してください。",
+    "signals": [
+      "新しい提案や別の情報提供で間口を広げる前に、今進行中の案件の確度と決定時期を確認して白黒つける。"
+    ],
+    "questions": [],
+    "risks": [],
+    "alternatives": [
+      "状況によっては原則の適用が異なる場合があります。"
+    ],
+    "tags": [
+      "クロージング",
+      "案件管理",
+      "決定先延ばし"
+    ],
+    "provenance": {
+      "principle_id": "P001",
+      "interview_ids": [
+        "I01",
+        "I02"
+      ],
+      "generator_model": "offline-skeleton",
+      "prompt_version": "kx-v1",
+      "generated_at": "2026-06-26T03:39:50Z",
+      "grounding_passed": false,
+      "grounding_notes": "シナリオが空、または要編集のまま。"
+    },
+    "review": {
+      "status": "rejected",
+      "reviewer": "web_reviewer",
+      "reviewed_at": "2026-06-26T03:39:52Z",
+      "notes": ""
+    }
   }
 ]

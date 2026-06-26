@@ -5,7 +5,15 @@ import { GrowthDashboard } from "@/components/growth/growth-dashboard";
 export const dynamic = "force-dynamic";
 
 export default async function JuniorGrowthPage() {
-  const { data } = await api.growth();
+  const { data: growthData } = await api.growth();
+  const repId = growthData.growth.rep.employee_id;
+  const repName = growthData.growth.rep.name;
+
+  const [{ data: threadsData }, { data: dashData }] = await Promise.all([
+    api.coachThreads({ repId }),
+    api.dashboard(repName),
+  ]);
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -13,7 +21,11 @@ export default async function JuniorGrowthPage() {
         titleKey="growth.title"
         leadKey="growth.lead"
       />
-      <GrowthDashboard initial={data} />
+      <GrowthDashboard
+        initial={growthData}
+        threads={threadsData.threads}
+        deals={dashData.deals}
+      />
     </div>
   );
 }

@@ -91,6 +91,21 @@ def grounding2(answer: str, context: str, query: str) -> dict:
             "fidelity": round(1 - len(fabrications) / checked, 3) if checked >= 3 else None}
 
 
+def _retry(fn, what, tries=8, delay=12):
+    """Retry a transport-fragile call across a tunnel reconnect window (~96s).
+    The self-healing tunnel reconnects in seconds; this rides over the gap so a
+    network blip retries instead of crashing the whole run."""
+    last = None
+    for k in range(tries):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001
+            last = e
+            print(f"    ! {what} failed ({str(e)[:55]}) — retry {k + 1}/{tries} in {delay}s")
+            time.sleep(delay)
+    raise last
+
+
 def _freeze_cached(query, role, ctrl_client, ctrl_model, refreeze: bool):
     _CACHE.mkdir(exist_ok=True)
     key = hashlib.md5(f"{ctrl_model}|{role}|{query}".encode()).hexdigest()[:16]
@@ -193,16 +208,31 @@ def main():
         sel = QUERIES[: n // 2] + QUERIES[-(n - n // 2):]
     print(f"control={config.MODEL}  candidate={args.candidate_model}  queries={len(sel)}\n")
 
+    # Per-query checkpoint so a network blip (this box's tunnels are flaky) never
+    # costs more than the current query. Completed rows are reloaded and skipped.
+    ckpt = Path(__file__).resolve().parent / "bench_synth_prompt_checkpoint.json"
     rows = []
+    done = set()
+    if ckpt.exists() and not args.refreeze:
+        try:
+            rows = json.loads(ckpt.read_text(encoding="utf-8")).get("rows", [])
+            done = {r["query"] for r in rows}
+            print(f"resuming: {len(done)} queries already checkpointed\n")
+        except Exception:  # noqa: BLE001
+            rows = []
+
     for i, (q, role, hint) in enumerate(sel, 1):
+        if q in done:
+            print(f"[{i}/{len(sel)}] (cached) {q[:55]}")
+            continue
         print(f"[{i}/{len(sel)}] ({hint}) {q[:60]}")
-        frozen = _freeze_cached(q, role, ctrl, config.MODEL, args.refreeze)
+        frozen = _retry(lambda: _freeze_cached(q, role, ctrl, config.MODEL, args.refreeze), "freeze")
         print(f"    frozen: tools={frozen['tools']} mode={frozen['mode']} (select {frozen['select_s']:.0f}s)")
         row = {"query": q, "role": role, "hint": hint, "mode": frozen["mode"],
                "tools": frozen["tools"], "arms": {}}
         for arm in ARMS:
             cl, model = clients[arm]
-            out = _synth(cl, model, frozen, _ARM_MODE.get(arm, "none"))
+            out = _retry(lambda: _synth(cl, model, frozen, _ARM_MODE.get(arm, "none")), f"synth:{arm}")
             g = grounding2(out["text"], frozen["grounding"], q)
             sm = style_metrics(out["text"])
             out.update({"fidelity": g["fidelity"], "fab_count": g["fab_count"],
@@ -214,12 +244,13 @@ def main():
                   f"fid={fid} enum={out['enum_density']:.2f} rep={out['line_rep']:.2f}")
         if args.judge:
             for arm in ARMS[1:]:
-                j = judge(ctrl, config.MODEL, q, row["arms"]["control"]["text"],
-                          row["arms"][arm]["text"])
+                j = _retry(lambda: judge(ctrl, config.MODEL, q, row["arms"]["control"]["text"],
+                                         row["arms"][arm]["text"]), f"judge:{arm}")
                 row["arms"][arm]["judge"] = j
                 print(f"      judge {arm:11s} better={j['better']:4s} "
                       f"8b={j.get('score_8b')} 27b={j.get('score_27b')} {j.get('why','')}")
         rows.append(row)
+        ckpt.write_text(json.dumps({"rows": rows}, ensure_ascii=False), encoding="utf-8")  # checkpoint
 
     # aggregate
     def avg(arm, key):

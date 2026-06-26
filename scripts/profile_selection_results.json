@@ -1,0 +1,285 @@
+[
+  {
+    "query": "C28について、過去の案件と最近のやり取りを教えて",
+    "role": "junior",
+    "n_rounds": 2,
+    "intent_s": 0.355,
+    "llm_gen_decode_s": 103.4,
+    "llm_prompt_eval_s": 8.4,
+    "net_overhead_s": 3.0,
+    "tool_exec_s": 4.608,
+    "llm_wall_s": 114.8,
+    "total_s": 119.8,
+    "comp_tokens": 1131,
+    "prompt_tokens_last": 6067,
+    "rounds": [
+      {
+        "llm_wall_s": 22.87,
+        "server_prompt_ms": 6558.2,
+        "server_predict_ms": 14586.8,
+        "net_overhead_s": 1.72,
+        "prompt_tokens": 4899,
+        "completion_tokens": 161,
+        "decode_tok_s": 11.0,
+        "tools": [
+          {
+            "name": "query_spr",
+            "exec_s": 0.004,
+            "args": "customer='C28'"
+          },
+          {
+            "name": "search_notes",
+            "exec_s": 4.604,
+            "args": "query='最近のやり取り 訪問 連絡', customer='C28', l"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 91.93,
+        "server_prompt_ms": 1807.2,
+        "server_predict_ms": 88845.6,
+        "net_overhead_s": 1.27,
+        "prompt_tokens": 6067,
+        "completion_tokens": 970,
+        "decode_tok_s": 10.9
+      }
+    ],
+    "tag": "multi-tool data"
+  },
+  {
+    "query": "need more research about C28, look at all past deals and what to expect?",
+    "role": "junior",
+    "n_rounds": 2,
+    "intent_s": 0.0,
+    "llm_gen_decode_s": 134.1,
+    "llm_prompt_eval_s": 2.0,
+    "net_overhead_s": 0.5,
+    "tool_exec_s": 0.056,
+    "llm_wall_s": 136.7,
+    "total_s": 136.8,
+    "comp_tokens": 1458,
+    "prompt_tokens_last": 6125,
+    "rounds": [
+      {
+        "llm_wall_s": 22.28,
+        "server_prompt_ms": 251.7,
+        "server_predict_ms": 21759.0,
+        "net_overhead_s": 0.27,
+        "prompt_tokens": 4904,
+        "completion_tokens": 245,
+        "decode_tok_s": 11.3,
+        "tools": [
+          {
+            "name": "query_spr",
+            "exec_s": 0.0,
+            "args": "customer='C28'"
+          },
+          {
+            "name": "lookup_customer_environment",
+            "exec_s": 0.0,
+            "args": "customer='C28'"
+          },
+          {
+            "name": "search_notes",
+            "exec_s": 0.056,
+            "args": "query='C28 deal history expectations', c"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 114.42,
+        "server_prompt_ms": 1775.7,
+        "server_predict_ms": 112387.2,
+        "net_overhead_s": 0.26,
+        "prompt_tokens": 6125,
+        "completion_tokens": 1213,
+        "decode_tok_s": 10.8
+      }
+    ],
+    "tag": "multi-tool research"
+  },
+  {
+    "query": "決裁者に会えないときはどう対応すべき？",
+    "role": "junior",
+    "n_rounds": 2,
+    "intent_s": 0.002,
+    "llm_gen_decode_s": 82.2,
+    "llm_prompt_eval_s": 1.0,
+    "net_overhead_s": 0.6,
+    "tool_exec_s": 0.135,
+    "llm_wall_s": 83.8,
+    "total_s": 84.0,
+    "comp_tokens": 869,
+    "prompt_tokens_last": 5251,
+    "rounds": [
+      {
+        "llm_wall_s": 13.42,
+        "server_prompt_ms": 235.9,
+        "server_predict_ms": 13036.3,
+        "net_overhead_s": 0.14,
+        "prompt_tokens": 4896,
+        "completion_tokens": 137,
+        "decode_tok_s": 10.5,
+        "tools": [
+          {
+            "name": "search_knowledge",
+            "exec_s": 0.135,
+            "args": "query='決裁者に会えないときの対応方法', tags=['決裁者', 'ア"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 70.42,
+        "server_prompt_ms": 753.0,
+        "server_predict_ms": 69203.4,
+        "net_overhead_s": 0.46,
+        "prompt_tokens": 5251,
+        "completion_tokens": 732,
+        "decode_tok_s": 10.6
+      }
+    ],
+    "tag": "knowledge/coaching"
+  },
+  {
+    "query": "MFP30を2台で見積を作って",
+    "role": "junior",
+    "n_rounds": 3,
+    "intent_s": 0.002,
+    "llm_gen_decode_s": 57.7,
+    "llm_prompt_eval_s": 1.3,
+    "net_overhead_s": 0.4,
+    "tool_exec_s": 0.0,
+    "llm_wall_s": 59.3,
+    "total_s": 59.3,
+    "comp_tokens": 599,
+    "prompt_tokens_last": 5177,
+    "rounds": [
+      {
+        "llm_wall_s": 17.81,
+        "server_prompt_ms": 246.7,
+        "server_predict_ms": 17418.3,
+        "net_overhead_s": 0.14,
+        "prompt_tokens": 4896,
+        "completion_tokens": 181,
+        "decode_tok_s": 10.4,
+        "tools": [
+          {
+            "name": "get_product_info",
+            "exec_s": 0.0,
+            "args": "product='MFP30'"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 7.71,
+        "server_prompt_ms": 418.7,
+        "server_predict_ms": 7137.0,
+        "net_overhead_s": 0.15,
+        "prompt_tokens": 5031,
+        "completion_tokens": 75,
+        "decode_tok_s": 10.5,
+        "tools": [
+          {
+            "name": "create_quote",
+            "exec_s": 0.0,
+            "args": "items=[{'sku': 'MFP30', 'qty': 2}], cust"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 33.83,
+        "server_prompt_ms": 604.5,
+        "server_predict_ms": 33096.3,
+        "net_overhead_s": 0.13,
+        "prompt_tokens": 5177,
+        "completion_tokens": 343,
+        "decode_tok_s": 10.4
+      }
+    ],
+    "tag": "create_quote"
+  },
+  {
+    "query": "明日15時に丸三食品と会議を設定して",
+    "role": "junior",
+    "n_rounds": 2,
+    "intent_s": 0.003,
+    "llm_gen_decode_s": 59.6,
+    "llm_prompt_eval_s": 0.7,
+    "net_overhead_s": 0.3,
+    "tool_exec_s": 0.0,
+    "llm_wall_s": 60.6,
+    "total_s": 60.6,
+    "comp_tokens": 622,
+    "prompt_tokens_last": 5022,
+    "rounds": [
+      {
+        "llm_wall_s": 21.73,
+        "server_prompt_ms": 252.0,
+        "server_predict_ms": 21334.6,
+        "net_overhead_s": 0.14,
+        "prompt_tokens": 4897,
+        "completion_tokens": 223,
+        "decode_tok_s": 10.5,
+        "tools": [
+          {
+            "name": "schedule_meeting",
+            "exec_s": 0.0,
+            "args": "title='丸三食品 会議', date='2026-06-27', star"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 38.85,
+        "server_prompt_ms": 419.4,
+        "server_predict_ms": 38216.8,
+        "net_overhead_s": 0.21,
+        "prompt_tokens": 5022,
+        "completion_tokens": 399,
+        "decode_tok_s": 10.4
+      }
+    ],
+    "tag": "schedule_meeting"
+  },
+  {
+    "query": "いま危ない案件を挙げて、共通の原因は？",
+    "role": "manager",
+    "n_rounds": 2,
+    "intent_s": 0.003,
+    "llm_gen_decode_s": 140.1,
+    "llm_prompt_eval_s": 8.3,
+    "net_overhead_s": 0.6,
+    "tool_exec_s": 0.009,
+    "llm_wall_s": 149.0,
+    "total_s": 149.0,
+    "comp_tokens": 1511,
+    "prompt_tokens_last": 5702,
+    "rounds": [
+      {
+        "llm_wall_s": 29.83,
+        "server_prompt_ms": 7153.6,
+        "server_predict_ms": 22342.0,
+        "net_overhead_s": 0.33,
+        "prompt_tokens": 5035,
+        "completion_tokens": 236,
+        "decode_tok_s": 10.6,
+        "tools": [
+          {
+            "name": "list_at_risk_deals",
+            "exec_s": 0.009,
+            "args": "band='yellow', limit=15"
+          }
+        ]
+      },
+      {
+        "llm_wall_s": 119.21,
+        "server_prompt_ms": 1140.3,
+        "server_predict_ms": 117796.5,
+        "net_overhead_s": 0.27,
+        "prompt_tokens": 5702,
+        "completion_tokens": 1275,
+        "decode_tok_s": 10.8
+      }
+    ],
+    "tag": "at-risk (manager)"
+  }
+]
