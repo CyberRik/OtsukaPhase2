@@ -48,7 +48,9 @@ def _synth_route(no_think: bool):
     `alt_*` is the other endpoint to fail over to. The Fast/Think decision itself
     stays with the existing reasoning router — this only picks who writes the
     already-decided FAST answer."""
-    if no_think and config.FAST_SYNTH_FALLBACK:
+    # SYNTH_ALL_FALLBACK: route ALL synthesis (FAST + THINK) to the 8B — latency
+    # over accuracy. Otherwise the FAST→8B / THINK→27B hybrid.
+    if config.SYNTH_ALL_FALLBACK or (no_think and config.FAST_SYNTH_FALLBACK):
         return fallback_client, config.FALLBACK_MODEL, client, config.MODEL
     return client, config.MODEL, fallback_client, config.FALLBACK_MODEL
 
@@ -268,6 +270,27 @@ def _route_final_answer(convo, tools, tool_log, role):
     yield from _stream_final_answer(convo, tools, no_think=no_think)
 
 
+# Sentinel tool for the "finish-tool" loop. With tool_choice="required" the model
+# must emit a tool call every round, so it can never burn time generating a
+# throwaway answer just to signal "no more tools" (the old double-generation). When
+# it has enough — or the question needs no internal tool — it calls `finish`, which
+# we intercept (never dispatched) and hand to the single routed synthesis round.
+_FINISH_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "finish",
+        "description": (
+            "回答に必要な情報が揃ったら、または社内ツールが不要な質問なら、これを呼ぶこと。"
+            "回答文は自分で書かず finish を呼ぶ。finish を呼ぶと最終回答の生成に進む。 "
+            "Call this as soon as you have enough to answer, or when no internal tool "
+            "is needed. Do NOT write the answer yourself — calling finish triggers the "
+            "final answer."
+        ),
+        "parameters": {"type": "object", "properties": {}, "required": []},
+    },
+}
+
+
 def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                      role: str | None = None):
     """Web-facing tool loop that *streams the final answer* token-by-token.
@@ -295,20 +318,24 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     # so nothing runs and the UI shows no tool. (Verified A/B: empty-think → 0 tool
     # calls; think-on → schedule_meeting fires.) The latency knob only applies to
     # the FINAL answer round, which has its own fast/think routing below.
+    # finish-tool loop: force a tool call every round (tool_choice="required") so the
+    # model never generates a throwaway answer. `finish` is offered alongside the
+    # real tools; calling it (or emitting no real tool) ends the loop → synthesis.
+    sel_tools = [*tools, _FINISH_TOOL]
     sel_msgs = lambda: _prep(convo, False)
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
         try:
             resp = client.chat.completions.create(
-                model=config.MODEL, messages=sel_msgs(), tools=tools,
-                tool_choice="auto", temperature=0.0,
+                model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
+                tool_choice="required", temperature=0.0,
             )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
-                    model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=tools,
-                    tool_choice="auto", temperature=0.0,
+                    model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
+                    tool_choice="required", temperature=0.0,
                 )
             except Exception as fe:  # noqa: BLE001
                 yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
@@ -323,17 +350,19 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             calls = [(f"call_{len(tool_log) + i}", name, json.dumps(args))
                      for i, (name, args) in enumerate(parsed)] if parsed else []
 
-        # No tool calls → this is the answering round. Re-run it as a stream so
-        # the answer flows token-by-token instead of arriving all at once.
-        if not calls:
+        # Drop the `finish` sentinel — it is never dispatched. The model is done when
+        # it calls finish (or emits no real tool) → hand to the routed synthesis round
+        # (FAST→8B / THINK→27B), which generates the answer ONCE, streamed.
+        real_calls = [(cid, name, args) for cid, name, args in calls if name != "finish"]
+        if not real_calls:
             yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
         convo.append({"role": "assistant", "content": None, "tool_calls": [
             {"id": cid, "type": "function",
              "function": {"name": name, "arguments": args}}
-            for cid, name, args in calls]})
-        for cid, name, args in calls:
+            for cid, name, args in real_calls]})
+        for cid, name, args in real_calls:
             result = dispatch(name, args)
             tool_log.append((name, _fmt_args(args), result))
             convo.append({"role": "tool", "tool_call_id": cid, "content": result})

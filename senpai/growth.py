@@ -14,6 +14,8 @@ app usage.
 """
 from __future__ import annotations
 
+import threading
+import time
 from collections import Counter
 from datetime import date, timedelta
 
@@ -345,6 +347,105 @@ def _principles_touched(rep: dict, acts: list[dict], month: str | None = None) -
 
 
 # ---------------------------------------------------------------------------
+# LLM-based skill assessment (optional — falls back to deterministic)
+# ---------------------------------------------------------------------------
+
+_SKILL_CACHE: dict[str, tuple[float, dict]] = {}  # employee_id → (ts, result)
+_SKILL_PENDING: set[str] = set()                   # ids with in-flight LLM calls
+_CACHE_TTL = 10800                                 # re-score after 3 hours
+
+
+def _bg_llm_assess(employee_id: str, acts: list[dict], threads: list[dict]) -> None:
+    """Runs in a daemon thread; populates cache when done."""
+    result = _llm_skill_assessment(acts, threads)
+    if result:
+        _SKILL_CACHE[employee_id] = (time.time(), result)
+    _SKILL_PENDING.discard(employee_id)
+
+def _llm_skill_assessment(acts: list[dict], threads: list[dict]) -> dict[str, dict] | None:
+    """Ask the LLM to score skills 0-100 from actual activity text.
+    Returns {skill_key: {score: float 0-1, insight: str}} or None on any failure."""
+    import json as _json
+    import re as _re
+    try:
+        from senpai.llm.client import fallback_client
+        from senpai import config
+    except Exception:
+        return None
+
+    # Feed the 15 most recent activities (most recent first).
+    recent = sorted(acts, key=lambda a: a.get("activity_date", ""), reverse=True)[:15]
+    act_lines: list[str] = []
+    for a in recent:
+        parts = []
+        if a.get("daily_report"):
+            parts.append(f"報告: {a['daily_report'][:120]}")
+        if a.get("customer_challenge"):
+            parts.append(f"課題: {a['customer_challenge'][:80]}")
+        if a.get("business_card_info"):
+            parts.append(f"名刺: {a['business_card_info'][:60]}")
+        if parts:
+            act_lines.append(f"[{a.get('activity_date', '')}] " + " | ".join(parts))
+
+    if not act_lines:
+        return None
+
+    thread_lines: list[str] = []
+    for t in threads[:5]:
+        msgs = t.get("messages", [])
+        if msgs:
+            thread_lines.append(
+                f"Issue={t.get('issue_key','')} ({t.get('status','')}): "
+                f"{msgs[0].get('text', '')[:100]}"
+            )
+
+    prompt = (
+        "あなたはB2B営業コーチです。以下の新人営業担当者の活動記録とコーチングを読み、"
+        "5つのスキルを評価してください。\n\n"
+        "【活動記録（最新順）】\n"
+        + "\n".join(act_lines)
+        + "\n\n【コーチングフィードバック】\n"
+        + ("\n".join(thread_lines) if thread_lines else "なし")
+        + "\n\n以下のJSONのみ返してください（余分なテキスト不要）:\n"
+        '{"relationship_building":{"score":0-100,"insight":"1文"},'
+        '"decision_maker_discovery":{"score":0-100,"insight":"1文"},'
+        '"customer_discovery":{"score":0-100,"insight":"1文"},'
+        '"closing_discipline":{"score":0-100,"insight":"1文"},'
+        '"proposal_pricing":{"score":0-100,"insight":"1文"}}\n\n'
+        "scoreは実際の活動内容の質を反映してください（0=全く実践なし, 100=理想的な実践）。"
+        "insightは活動記録の具体的な内容を根拠にした1文にしてください。"
+    )
+
+    try:
+        import re as _re2
+        _PREFILL = {"role": "assistant", "content": "<think>\n\n</think>\n\n"}
+        resp = fallback_client.chat.completions.create(
+            model=config.FALLBACK_MODEL,
+            messages=[{"role": "user", "content": prompt}, _PREFILL],
+            temperature=0.2,
+            max_tokens=600,
+        )
+        raw = resp.choices[0].message.content or ""
+        raw = _re2.sub(r"<think>.*?</think>", "", raw, flags=_re2.DOTALL).strip()
+        m = _re.search(r"\{.*\}", raw, _re.DOTALL)
+        if not m:
+            return None
+        data = _json.loads(m.group())
+        result: dict[str, dict] = {}
+        for k in SKILL_KEYS:
+            if k in data and isinstance(data[k], dict):
+                raw_score = data[k].get("score", 50)
+                result[k] = {
+                    "score": max(0.0, min(1.0, float(raw_score) / 100.0)),
+                    "insight": str(data[k].get("insight", "")),
+                }
+        return result or None
+    except Exception as exc:
+        print(f"⚠️  LLM skill assessment failed: {exc}")
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -435,16 +536,38 @@ def rep_growth(employee_id: str, today: date | None = None) -> dict:
         "proposal_pricing": (ev_pp, ins_pp),
     }
 
+    # LLM skill assessment — serve from cache when available, else fire a
+    # background thread and fall back to deterministic for this load.
+    now = time.time()
+    cached_ts, cached_val = _SKILL_CACHE.get(employee_id, (0.0, None))
+    if cached_val is not None and now - cached_ts < _CACHE_TTL:
+        llm = cached_val
+    else:
+        llm = None  # deterministic this load
+        if employee_id not in _SKILL_PENDING:
+            _SKILL_PENDING.add(employee_id)
+            threading.Thread(
+                target=_bg_llm_assess,
+                args=(employee_id, list(acts), list(threads)),
+                daemon=True,
+            ).start()
+
     skills = []
     for k in SKILL_KEYS:
-        ev, ins = skill_extra[k]
+        ev, det_insight = skill_extra[k]
         trend = _compute_trend(monthly_score_list, k) if k in _MONTH_SKILL_FN else "flat"
+        if llm and k in llm:
+            stars = _stars(llm[k]["score"])
+            insight = llm[k]["insight"] or det_insight
+        else:
+            stars = _stars(ratios[k])
+            insight = det_insight
         skills.append({
             "key": k,
-            "stars": _stars(ratios[k]),
+            "stars": stars,
             "trend": trend,
             "evidence": ev,
-            "insight": ins,
+            "insight": insight,
         })
 
     # Principles.

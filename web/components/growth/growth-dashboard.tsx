@@ -47,13 +47,15 @@ function monthLabel(ym: string, lang: "ja" | "en"): string {
 const SKILL_COLORS: Record<string, string> = {
   relationship_building: "bg-blue-400",
   decision_maker_discovery: "bg-violet-400",
-  customer_discovery: "bg-teal-400",
+  customer_discovery: "#2dd4bf",
+  closing_discipline: "bg-rose-400",
   proposal_pricing: "bg-amber-400",
 };
 const SKILL_STROKE: Record<string, string> = {
   relationship_building: "#60a5fa",
   decision_maker_discovery: "#a78bfa",
   customer_discovery: "#2dd4bf",
+  closing_discipline: "#fb7185",
   proposal_pricing: "#fbbf24",
 };
 
@@ -312,7 +314,7 @@ function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: (id: string) => voi
           <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{deal.deal_id}</span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-          <span>¥{deal.amount.toLocaleString()}</span>
+          <span>¥{deal.amount.toLocaleString("ja-JP")}</span>
           <span>{deal.stage}</span>
           {deal.days_stale != null && deal.days_stale > 0 && (
             <span className="text-band-yellow">{t("growth.stale", { n: String(deal.days_stale) })}</span>
@@ -338,7 +340,8 @@ function SkillProgressionChart({
 }) {
   const { t } = useT();
   const [tab, setTab] = useState<"skills" | "activity">("skills");
-  const skillKeys = Object.keys(SKILL_STROKE);
+  // closing_discipline has no per-month ratio so it never appears as a line
+  const skillKeys = Object.keys(SKILL_STROKE).filter((k) => k !== "closing_discipline");
   const n = monthly.length;
   const W = 300;
   const H = 88;
@@ -453,24 +456,57 @@ function SkillProgressionChart({
       ) : (
         /* ── Activity bars tab ── */
         <div className="p-4">
-          <div className="flex h-28 items-end justify-between gap-1.5">
+          <div className="relative flex h-32 items-end justify-between gap-1.5">
             {monthly.map((m) => {
-              const pct = Math.max(6, (m.count / maxCount) * 100);
+              const ratio = maxCount > 0 ? m.count / maxCount : 0;
+              const pct = m.count === 0 ? 0 : Math.max(6, ratio * 100);
+              const opacity = m.count === 0 ? 0.15 : 0.35 + ratio * 0.65;
+              const isCurrent = m.month === monthly[monthly.length - 1].month;
+              const barH = pct === 0 ? "3px" : `${pct}%`;
               return (
-                <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
-                  <span className="text-[10px] font-medium tabular-nums text-muted-foreground">{m.count}</span>
+                <div key={m.month} className="relative flex h-full flex-1 items-end">
+                  {m.count > 0 && (
+                    <span
+                      className={cn(
+                        "absolute left-1/2 -translate-x-1/2 text-[10px] tabular-nums",
+                        isCurrent ? "font-bold text-primary" : "font-medium text-muted-foreground",
+                      )}
+                      style={{ bottom: `calc(${pct}% + 4px)` }}
+                    >
+                      {m.count}
+                    </span>
+                  )}
                   <div
-                    className="w-full rounded-t-md bg-primary/65 transition-all"
-                    style={{ height: `${pct}%` }}
+                    className="w-full rounded-t-md bg-primary transition-all"
+                    style={{ height: barH, opacity }}
                     title={`${monthLabel(m.month, lang)}: ${m.count}`}
                   />
                 </div>
               );
             })}
           </div>
-          <div className="mt-1.5 flex justify-between">
-            {monthly.map((m) => (
-              <span key={m.month} className="flex-1 text-center text-[9.5px] text-muted-foreground/60">
+          {/* avg line */}
+          {maxCount > 0 && (() => {
+            const avg = monthly.reduce((s, m) => s + m.count, 0) / monthly.length;
+            const avgPct = (avg / maxCount) * 100;
+            return (
+              <div className="relative -mt-[calc(theme(spacing.32))]" style={{ height: "128px", pointerEvents: "none" }}>
+                <div
+                  className="absolute w-full border-t border-dashed border-muted-foreground/25"
+                  style={{ bottom: `${avgPct}%` }}
+                />
+              </div>
+            );
+          })()}
+          <div className="mt-2 flex justify-between">
+            {monthly.map((m, i) => (
+              <span
+                key={m.month}
+                className={cn(
+                  "flex-1 text-center text-[9.5px]",
+                  i === monthly.length - 1 ? "font-semibold text-primary" : "text-muted-foreground/60",
+                )}
+              >
                 {monthLabel(m.month, lang)}
               </span>
             ))}

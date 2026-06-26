@@ -104,6 +104,10 @@ REASONING_ROUTER = os.environ.get("SENPAI_REASONING_ROUTER", "deterministic").st
 # for its mentorship narrative. OFF by default; SENPAI_FAST_SYNTH_FALLBACK=1 routes
 # FAST synthesis to the 8B. (Tool selection always stays on the primary 27B.)
 FAST_SYNTH_FALLBACK = os.environ.get("SENPAI_FAST_SYNTH_FALLBACK", "0").lower() not in ("0", "false", "no", "")
+# Latency-first override: route ALL synthesis (FAST + THINK) to the 8B, not just
+# FAST. The 27B THINK synthesis was the slow path (~150s); the 8B does it far
+# faster at a quality cost. Implies the fallback endpoint is the 8B.
+SYNTH_ALL_FALLBACK = os.environ.get("SENPAI_SYNTH_ALL_8B", "0").lower() not in ("0", "false", "no", "")
 
 # --- Review Coach grounding controls ----------------------------------------
 # Grounding-audit P0: similar past cases are CROSS-CUSTOMER by construction
