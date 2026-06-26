@@ -37,6 +37,22 @@ fallback_client = OpenAI(
 )
 
 
+def _synth_route(no_think: bool):
+    """Hybrid model-decomposition router for the *final synthesis* round only.
+
+    FAST (no_think) synthesis → the smaller FALLBACK model (8B Q4); THINK synthesis
+    → the primary (27B), whose mentorship narrative we keep. Gated by
+    `config.FAST_SYNTH_FALLBACK` (OFF by default, so the live path is unchanged —
+    everything stays on the 27B). Tool *selection* never calls this; it is always
+    the primary. Returns (synthesis_client, model_id, alt_client, alt_model) where
+    `alt_*` is the other endpoint to fail over to. The Fast/Think decision itself
+    stays with the existing reasoning router — this only picks who writes the
+    already-decided FAST answer."""
+    if no_think and config.FAST_SYNTH_FALLBACK:
+        return fallback_client, config.FALLBACK_MODEL, client, config.MODEL
+    return client, config.MODEL, fallback_client, config.FALLBACK_MODEL
+
+
 def _parse_xlam(content: str | None):
     """exp3 sometimes emits XLAM-style `[func(a=1, b='x'), ...]` as plain text
     instead of OpenAI tool_calls. Parse it safely with `ast` (literal args only,
@@ -121,7 +137,7 @@ def _delta_reasoning(delta) -> str | None:
 
 def stream_complete(messages: list[dict], temperature: float = 0.3,
                     max_tokens: int | None = None, *, no_think: bool = False,
-                    allow_fallback: bool = True) -> Iterator[str]:
+                    allow_fallback: bool = True, fast_decomp: bool = False) -> Iterator[str]:
     """Stream a completion token-by-token from the OpenAI-compatible server.
     Yields a `<think>…</think>` reasoning span (when the backend emits one)
     followed by the answer deltas — a single text stream callers can split on
@@ -131,19 +147,24 @@ def stream_complete(messages: list[dict], temperature: float = 0.3,
     so the thinking phase stays visible instead of streaming nothing.
     `no_think` disables reasoning for low latency; `allow_fallback=False` pins the
     request to the primary endpoint and re-raises instead of switching models.
-    Raises on transport error so callers can fall back."""
+    `fast_decomp=True` opts this call into the hybrid synthesis route (FAST → 8B)
+    when `config.FAST_SYNTH_FALLBACK` is on — used by FAST grounded summaries
+    (e.g. /research), not by narration. Raises on transport error so callers can
+    fall back."""
     msgs = _prep(messages, no_think)
+    primary_c, primary_m, alt_c, alt_m = (
+        _synth_route(no_think) if fast_decomp else (client, config.MODEL, fallback_client, config.FALLBACK_MODEL))
     try:
-        stream = client.chat.completions.create(
-            model=config.MODEL, messages=msgs, temperature=temperature,
+        stream = primary_c.chat.completions.create(
+            model=primary_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
         )
     except Exception as e:
         if not allow_fallback:
             raise
-        print(f"⚠️ Primary server failed ({e}). Trying fallback stream...")
-        stream = fallback_client.chat.completions.create(
-            model=config.FALLBACK_MODEL, messages=msgs, temperature=temperature,
+        print(f"⚠️ Synthesis server {primary_m} failed ({e}). Trying {alt_m}...")
+        stream = alt_c.chat.completions.create(
+            model=alt_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
         )
     think_open = think_closed = False
@@ -239,6 +260,11 @@ def _route_final_answer(convo, tools, tool_log, role):
             no_think = not decision.think
         except Exception:  # noqa: BLE001 — a router fault must never break the turn
             pass  # fall back to the static TOOLLOOP_NO_THINK default
+    # Observability: surface which model writes this (already-decided) synthesis,
+    # so the hybrid eval can record FAST→8B / THINK→27B ground truth.
+    _sc, _sm, _, _ = _synth_route(no_think)
+    yield {"type": "synth", "model_id": _sm,
+           "tier": "8B" if _sc is fallback_client else "27B", "no_think": no_think}
     yield from _stream_final_answer(convo, tools, no_think=no_think)
 
 
@@ -335,15 +361,16 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_thin
     <think> phase and answers immediately (the dominant latency win)."""
     full, emitted = "", 0
     msgs = _prep(convo, no_think)
+    synth_c, synth_m, alt_c, alt_m = _synth_route(no_think)
     try:
-        stream = client.chat.completions.create(
-            model=config.MODEL, messages=msgs, temperature=0.0,
+        stream = synth_c.chat.completions.create(
+            model=synth_m, messages=msgs, temperature=0.0,
             max_tokens=config.LLM_MAX_TOKENS, stream=True,
         )
     except Exception:  # noqa: BLE001 — fall back to a single blocking answer
         try:
-            resp = fallback_client.chat.completions.create(
-                model=config.FALLBACK_MODEL, messages=msgs, temperature=0.0,
+            resp = alt_c.chat.completions.create(
+                model=alt_m, messages=msgs, temperature=0.0,
                 max_tokens=config.LLM_MAX_TOKENS,
             )
             text = re.sub(r"<think>.*?</think>", "",

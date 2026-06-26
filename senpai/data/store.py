@@ -167,11 +167,15 @@ def deal_rep_id(deal: dict) -> str:
 
 # --- lookups ---------------------------------------------------------------
 def get_deal(deal_id: str) -> dict | None:
-    return _index()["deal_by_id"].get(deal_id)
+    # IDs are uppercase by schema; exact-match first (fast internal path), then an
+    # uppercase fallback so user input like "d128" resolves the same as "D128".
+    idx = _index()["deal_by_id"]
+    return idx.get(deal_id) or (idx.get(deal_id.upper()) if isinstance(deal_id, str) else None)
 
 
 def get_customer(customer_id: str) -> dict | None:
-    return _index()["customer_by_id"].get(customer_id)
+    idx = _index()["customer_by_id"]
+    return idx.get(customer_id) or (idx.get(customer_id.upper()) if isinstance(customer_id, str) else None)
 
 
 def get_rep(employee_id: str) -> dict | None:

@@ -98,6 +98,12 @@ TOOLLOOP_NO_THINK = os.environ.get("SENPAI_TOOLLOOP_NOTHINK", "1").lower() not i
 # Later: "atlas" / "classifier" / "llm" — swap in get_reasoning_router(), no
 # change to the execution loop. Tool-selection rounds are always fast regardless.
 REASONING_ROUTER = os.environ.get("SENPAI_REASONING_ROUTER", "deterministic").strip().lower()
+# Model decomposition: serve the FAST (no_think) final synthesis from the smaller
+# FALLBACK model (8B Q4) instead of the primary 27B — validated ~2.7x faster at
+# grounding parity (docs/phase25_session_log.md). THINK synthesis stays on the 27B
+# for its mentorship narrative. OFF by default; SENPAI_FAST_SYNTH_FALLBACK=1 routes
+# FAST synthesis to the 8B. (Tool selection always stays on the primary 27B.)
+FAST_SYNTH_FALLBACK = os.environ.get("SENPAI_FAST_SYNTH_FALLBACK", "0").lower() not in ("0", "false", "no", "")
 
 # --- Review Coach grounding controls ----------------------------------------
 # Grounding-audit P0: similar past cases are CROSS-CUSTOMER by construction

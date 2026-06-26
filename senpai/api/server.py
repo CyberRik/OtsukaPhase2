@@ -1101,7 +1101,12 @@ def _emit_bundle_sources(bundle: ResearchBundle, cached: bool = False):
 
 def _summarize_research_bundle(bundle: ResearchBundle):
     try:
-        from senpai.llm.client import stream_complete
+        from senpai.llm.client import stream_complete, fallback_client, _synth_route
+        # Research summaries are always FAST grounded restatement → a hybrid 8B
+        # target. Surface which model synthesizes (FAST→8B when the flag is on).
+        _sc, _sm, _, _ = _synth_route(True)
+        yield _sse({"type": "synth", "model_id": _sm,
+                    "tier": "8B" if _sc is fallback_client else "27B", "no_think": True})
         text = ""
         for piece in stream_complete(
             [{"role": "user", "content": _research_summary_prompt(bundle)}],
@@ -1109,6 +1114,7 @@ def _summarize_research_bundle(bundle: ResearchBundle):
             max_tokens=config.LLM_MAX_TOKENS,
             no_think=True,
             allow_fallback=False,
+            fast_decomp=True,
         ):
             text += piece
         text = (_strip_reasoning(text) or "").strip()

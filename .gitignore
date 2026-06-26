@@ -157,6 +157,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+# Freeze cache
+scripts/.freeze_cache/
 
 # Spyder project settings
 .spyderproject
