@@ -14,8 +14,9 @@ but we expanded it across five major directions simultaneously:
 1. **Performance.** A memoized index layer cut coaching API latency from ~7s to ~140ms (~54×
    faster) and the full test suite from 36s to 1.4s.
 2. **Expanded intelligence surfaces.** Account Intelligence (8-dimension customer health),
-   Morning Briefing (urgency-ranked action list), and a full Account Expansion engine (cross-sell /
-   upsell / growth opportunities).
+   Morning Briefing (urgency-ranked action list), a full Account Expansion engine (cross-sell /
+   upsell / growth opportunities), and a Strategic Tier + Regional Stance engine (deal-size and
+   region drive a transparent, deterministic coaching posture).
 3. **Deeper coaching.** Rep coaching profiles, fiscal-year progress tracking, coaching threads,
    a coaching explainability layer, and a growth/motivation portal — all deterministic.
 4. **Document generation.** Four new tools: `generate_proposal` (4-slide PPTX from SPR data),
@@ -31,7 +32,7 @@ but we expanded it across five major directions simultaneously:
    structured `sales_activities` records through an editable draft UI — closing the capture loop
    so the knowledge base can grow from real field activity.
 
-The total test suite grew to **116 tests (1 skipped)** across 17 test files. All engine APIs
+The total test suite grew to **137 tests (1 skipped)** across 17 test files. All engine APIs
 remain GPU-free.
 
 ---
@@ -298,20 +299,30 @@ tuning surface.
 
 **Transparency (the key requirement):** the stance is *deterministic and shown*, not hidden in
 the prompt. `StrategicContext` carries a bilingual `rationale` ("最大の進行中案件が¥1,800,000
-（¥1,500,000以上）のためメガ案件と判定。地域: 関東。") that is surfaced three ways:
-1. In the deterministic `GET /api/account/{id}` payload (`strategy` field).
-2. As a dedicated **`strategy` SSE event** in the commentary stream.
-3. As a **Strategic Stance card** in `account-view.tsx` — tier + region chips, the rationale
-   ("why this was chosen"), and the directive bullets — so the rep judges the advice with the
-   reasoning visible.
+（¥1,500,000以上）のためメガ案件と判定。地域: 関東。") that is surfaced on **every** account
+surface, all reading the same deterministic `GET /api/account/{id}` payload (`strategy` field):
+
+1. **Account page** (`account-view.tsx`) — a Strategic Stance card plus header chips: tier +
+   region, the rationale ("why this was chosen"), and the directive bullets.
+2. **Workspace `/account` brief** (`assembleAccountArtifact`) — a "Strategic stance" section in
+   the immutable artifact (tier · region + rationale + directives), so the stance travels with
+   the saved brief.
+3. **Commentary stream** — a typed `strategy` SSE event on `/api/account/{id}/commentary` for
+   any client that consumes the live stream.
 
 The directives are injected into the commentary prompt via `StrategicContext.as_prompt_block()`;
 the prompt instructs the model to *adopt the posture and reflect it in Recommended Focus*. The
 directives are authored posture heuristics (like `_recommended_focus`), never factual claims —
 the only data they rest on is the deal amount and region, both quoted verbatim in the rationale.
 
+**Robustness:** `normalize_region()` keeps `AccountSummary.region` consistent with the strategy's
+region for any input, and `as_prompt_block()` falls back to the neutral region directive on a
+malformed region rather than raising.
+
 Tests: `tests/test_strategy.py` (7 tests — tier boundaries, region normalization, rationale
-grounding, dict round-trip, all-three-tiers-occur in the seed).
+grounding, dict round-trip, all-three-tiers-occur in the seed). Verified end-to-end through
+`build_account_summary` → `build_account_context` and the stress pipeline (no SPR-data regression
+from the `region` field).
 
 ---
 
@@ -828,11 +839,11 @@ fallback if the Calendar call fails.
 
 ---
 
-## 12. Latency Investigation and Router/Model Evals
+## 13. Latency Investigation and Router/Model Evals
 
 Full details in `docs/phase25_session_log.md`. Summary of decisions:
 
-### 12.1 Latency investigation (prompt + routing, no model change)
+### 13.1 Latency investigation (prompt + routing, no model change)
 
 Baseline: ~395s end-to-end on a multi-tool research turn.
 - **Tool-selection round (~23s):** capping `<think>` buys ~nothing — left intact.
@@ -847,7 +858,7 @@ Three changes landed:
 
 **Result: ~395s → ~256s.**
 
-### 12.2 Atlas intent-router evaluation (offline, NOT shipped)
+### 13.2 Atlas intent-router evaluation (offline, NOT shipped)
 
 63 hand-labeled bilingual queries, `LogisticRegression` on MiniLM embeddings, 5-fold CV.
 
@@ -857,7 +868,7 @@ Three changes landed:
 
 **Decision: do not build Atlas.** Rules win on simplicity and on the mode head.
 
-### 12.3 Model decomposition (in progress)
+### 13.3 Model decomposition (in progress)
 
 Question: can the final synthesis step use a smaller model (Qwen3-8B) for a latency win
 while the 27B keeps doing tool selection?
@@ -875,9 +886,9 @@ fewer bytes/token) is pending; expected ~3× synthesis speedup.
 
 ---
 
-## 13. SSE Event Protocol and Resolution Improvements
+## 14. SSE Event Protocol and Resolution Improvements
 
-### 13.1 Customer resolution — word-boundary rule
+### 14.1 Customer resolution — word-boundary rule
 
 Fixed a live `news → new` false match. ASCII/romaji alias keys now require regex word
 boundaries (`\b`); Japanese keys keep substring matching (no word boundaries in JA text).
@@ -891,7 +902,7 @@ def _key_in_text(key, low_text):
 
 Added `C##` customer-id recognition alongside `D###` deal-ids in free-text extraction.
 
-### 13.2 Tool-calling fix (no-think suppression bug)
+### 14.2 Tool-calling fix (no-think suppression bug)
 
 **Symptom:** "setup a meeting" narrated a fake `[ツール呼び出し]` instead of calling the tool.
 **Root cause:** `TOOLLOOP_NO_THINK` empty-`<think>` prefill in the **selection** round suppressed
@@ -900,12 +911,12 @@ tool emission.
 "call tools directly, don't narrate". A/B test confirmed: `NOTHINK_ON` → 0 tool calls,
 `NOTHINK_OFF` → `schedule_meeting` called correctly.
 
-### 13.3 Reasoning leak fix
+### 14.3 Reasoning leak fix
 
 `_strip_reasoning` generalized to handle `<think>`, `<thinking>`, `<analysis>`, `<reasoning>`
 tag variants. Research summarizers routed through `_strip_reasoning`.
 
-### 13.4 Health engine double-count bug fix (`9194756`)
+### 14.4 Health engine double-count bug fix (`9194756`)
 
 `staleness` and `low_activity` signals were **both firing on the same silence** condition,
 double-penalizing deals that had no recent activity. Fixed in `senpai/health/scoring.py` +
@@ -914,11 +925,11 @@ double-penalizing deals that had no recent activity. Fixed in `senpai/health/sco
 
 ---
 
-## 14. Quality Assurance Infrastructure
+## 15. Quality Assurance Infrastructure
 
 Beyond the pytest suite, this week added three categories of test/audit tooling:
 
-### 14.1 Stress pipeline (`scripts/stress_pipeline.py`)
+### 15.1 Stress pipeline (`scripts/stress_pipeline.py`)
 
 A hermetic robustness harness (no GPU, no network) that probes 7 aspects of the
 deterministic core in one run:
@@ -935,7 +946,7 @@ deterministic core in one run:
    degrade to `None`/`[]`.
 7. **Whole-pipeline determinism** — score every open deal twice → identical results.
 
-### 14.2 Health score backtest (`scripts/backtest_health.py`)
+### 15.2 Health score backtest (`scripts/backtest_health.py`)
 
 A calibration harness that validates the health score against actual deal outcomes:
 
@@ -947,7 +958,7 @@ On the synthetic seed this validates internal consistency (does the score separa
 outcome labels the generator baked in?). The same script is ready for real historical data —
 the report layout is identical, making it the calibration tool for when SPR access arrives.
 
-### 14.3 Grounding audit scripts
+### 15.3 Grounding audit scripts
 
 Three grounding audit scripts (`scripts/grounding_audit.py`, `grounding_audit4.py`,
 `grounding_reaudit.py`) that run on the deterministic engine (no LLM) and check:
@@ -961,7 +972,7 @@ Three grounding audit scripts (`scripts/grounding_audit.py`, `grounding_audit4.p
 - **Structural origin classification** — distinguishes customer evidence (safe) from
   cross-customer analogies (labelled) from corpus/playbook content.
 
-### 14.4 Contract checker (`scripts/check_contract.py`)
+### 15.4 Contract checker (`scripts/check_contract.py`)
 
 Hits every GET endpoint the web client calls via FastAPI's in-process `TestClient` and asserts
 that the top-level keys the TypeScript types expect still exist. Runs in <1s with no GPU.
@@ -971,7 +982,7 @@ that the top-level keys the TypeScript types expect still exist. Runs in <1s wit
 engine and the Next.js app can never silently drift. `scripts/check_contract.py` is the
 automated enforcement gate.
 
-### 14.5 Live cache test (`scripts/live_cache_test.py`)
+### 15.5 Live cache test (`scripts/live_cache_test.py`)
 
 End-to-end test that drives the real bridge in-process via `TestClient`, parses the actual
 SSE stream, and verifies that `context`/`cached` flags are set correctly and real tokens
@@ -979,11 +990,9 @@ stream from the LLM. Requires the model server on `:8765` (`SENPAI_USE_LLM=1`).
 
 ---
 
-## 15. Test Suite
+## 16. Test Suite
 
-17 test files, **116 tests (1 skipped)**, all GPU-free.
-
-17 test files, **116 tests (1 skipped)**, all GPU-free.
+17 test files (plus `conftest.py`), **137 tests (1 skipped)**, all GPU-free.
 
 | File | What it covers |
 |---|---|
@@ -1003,14 +1012,15 @@ stream from the LLM. Requires the model server on `:8765` (`SENPAI_USE_LLM=1`).
 | `test_explainability.py` | Explainability module |
 | `test_ingestion_persist.py` | Ingestion persist + overlay + cache invalidation |
 | `test_research.py` | Research tool and grounding audit |
+| `test_strategy.py` | Strategic Tier + regional stance (boundaries, normalization, grounding) |
 | `conftest.py` | Shared fixtures (`SENPAI_USE_LLM=0`, tmp overlay dirs) |
 
 **New tests this week:** +18 coaching tests, +10 document tests, +8 graph/semantic tests, +6
-briefing tests = **+42 new tests** since the start of Week 2.
+briefing tests, +7 strategy tests = **+49 new tests** since the start of Week 2.
 
 ---
 
-## 16. Retrieval Observability — Retrieval Explorer
+## 17. Retrieval Observability — Retrieval Explorer
 
 **`senpai/retrieval/trace.py`** is a per-turn observability buffer using Python's `ContextVar`
 so concurrent requests never share state. Every retrieval surface (`notes_semantic`,
@@ -1031,7 +1041,7 @@ and immediately spot cross-customer leakage.
 
 ---
 
-## 17. Synthetic Dataset Expansion
+## 18. Synthetic Dataset Expansion
 
 The seed dataset was massively expanded to **FY2023–FY2026 historical data** (3 cohorts):
 - **Live pipeline** (~140 deals): `order_rank` 2_A+…6_P, dated within 0–90 days of anchor
@@ -1047,7 +1057,7 @@ even though the corpus is 520.
 | `sales_activities.json` | **2,337** | Activity log / daily reports |
 | `quotes.json` | **480** | Quotes for progressed deals |
 | `orders.json` | **280** | Order lines (confirmed/won deals) |
-| `customers.json` | **150** | SMB customer master |
+| `customers.json` | **150** | SMB customer master (industry, size, and new `region` field) |
 | `reps.json` | **24** | Sales reps (junior + senior, skill profiles) |
 | `products.json` | 29 | Product master (major/mid/minor, pricing) |
 | `environments.json` | 150 | Customer IT environment records |
@@ -1060,11 +1070,11 @@ Documented in `docs/synthetic_dataset.md` (new file this week).
 
 ---
 
-## 18. Week-over-Week Summary
+## 19. Week-over-Week Summary
 
 | Dimension | Week 1 (end) | Week 2 (end) |
 |---|---|---|
-| Tests | 30 passing | **116 passing (1 skipped)** |
+| Tests | 30 passing | **137 passing (1 skipped)** |
 | Tools | 18 | **38** |
 | API endpoints | ~10 | **~20** |
 | API latency (coaching) | ~7.5s | **~140ms (~54×)** |
@@ -1074,7 +1084,7 @@ Documented in `docs/synthetic_dataset.md` (new file this week).
 | Retrieval | Keyword/tag only | **BM25 + dense + RRF + knowledge graph (744 nodes)** |
 | Document output | None | **PPTX + DOCX (4 tool variants)** |
 | Coaching depth | Review Coach only | **Profile + progress + threads + explainability** |
-| Account view | Deal-level only | **8-dimension account health + trajectory + expansion** |
+| Account view | Deal-level only | **8-dimension account health + trajectory + expansion + strategic tier/region stance** |
 | Workspace | Two separate pages | **Unified slash-command shell + artifacts + XLSX export** |
 | Ingestion | None | **Capture via Clip (paperclip button → editable CaptureTurn) + backend pipeline** |
 | Observability | None | **Retrieval Explorer (per-chunk source + scope + score)** |
@@ -1086,7 +1096,8 @@ Documented in `docs/synthetic_dataset.md` (new file this week).
 
 | Path | What it is |
 |---|---|
-| `senpai/account/` | Account Intelligence engine (health, trajectory, expansion, summary, context) |
+| `senpai/account/` | Account Intelligence engine (health, trajectory, expansion, summary, context, **strategy**) |
+| `senpai/account/strategy.py` | Strategic Tier + regional stance selector (deterministic, transparent rationale) |
 | `senpai/briefing.py` | Morning briefing — urgency-ranked action worklist |
 | `senpai/coach/profile.py` | Rep coaching profile (1:1 brief, weaknesses, strengths) |
 | `senpai/coach/progress.py` | Fiscal-year progress + coaching acted-on rate |
@@ -1110,15 +1121,15 @@ Documented in `docs/synthetic_dataset.md` (new file this week).
 | `web/lib/artifacts.ts` | Artifact type definitions and pure assemblers |
 | `web/public/logo.png` | Senpai brand logo |
 | `web/components/site/brand.tsx` | Brand component |
-| `scripts/stress_pipeline.py` | 7-probe robustness harness (§14.1) |
-| `scripts/backtest_health.py` | Health score calibration / AUC backtest (§14.2) |
-| `scripts/grounding_audit.py` | Cross-customer leakage + prompt composition audit (§14.3) |
-| `scripts/grounding_audit4.py` | Structural grounding classification (§14.3) |
+| `scripts/stress_pipeline.py` | 7-probe robustness harness (§15.1) |
+| `scripts/backtest_health.py` | Health score calibration / AUC backtest (§15.2) |
+| `scripts/grounding_audit.py` | Cross-customer leakage + prompt composition audit (§15.3) |
+| `scripts/grounding_audit4.py` | Structural grounding classification (§15.3) |
 | `scripts/grounding_reaudit.py` | Grounding re-audit (updated version) |
-| `scripts/live_cache_test.py` | Live SSE cache correctness test (§14.5) |
-| `scripts/check_contract.py` | Web ↔ engine contract checker (§14.4) |
-| `scripts/eval_intent_router.py` | Atlas feasibility eval (§12.2) |
-| `scripts/bench_synthesis.py` | Model decomposition A/B with frozen tool context (§12.3) |
+| `scripts/live_cache_test.py` | Live SSE cache correctness test (§15.5) |
+| `scripts/check_contract.py` | Web ↔ engine contract checker (§15.4) |
+| `scripts/eval_intent_router.py` | Atlas feasibility eval (§13.2) |
+| `scripts/bench_synthesis.py` | Model decomposition A/B with frozen tool context (§13.3) |
 | `scripts/bench_synthesis_results.json` | Round 1 benchmark results (27B vs 8B-bf16) |
 | `docs/synthetic_dataset.md` | Synthetic dataset reference (3-year time model, row counts) |
 | `docs/web-integration.md` | Web ↔ engine integration pattern + contract discipline |
