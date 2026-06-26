@@ -24,6 +24,7 @@ the engines, and the surfaces.
 | [`ingestion_integration_prompt.md`](ingestion_integration_prompt.md) | Ingestion / integration prompt for the knowledge pipeline. |
 | [`synthetic_dataset.md`](synthetic_dataset.md) | The synthetic SPR dataset and its deterministic generation. |
 | [`week5_phase2_week1_progress.md`](week5_phase2_week1_progress.md) | Phase 2 week-1 progress log. |
+| [`phase25_session_log.md`](phase25_session_log.md) | **Phase 2.5 session log** — real Google Calendar tool (two-step confirm), dynamic junior-home stats, deal-dropdown grounding, the bug fixes (reasoning leak, slash picker, customer-id resolution, fastembed cache), the latency investigation (~395s→256s), and the two offline evals with measured results: **Atlas intent router** (built, evaluated, *not* shipped) and **model decomposition** (smaller synthesis model benchmark, round 2 pending). |
 
 ## The architecture in one paragraph
 
