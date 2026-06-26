@@ -598,9 +598,83 @@ tool emission.
 `_strip_reasoning` generalized to handle `<think>`, `<thinking>`, `<analysis>`, `<reasoning>`
 tag variants. Research summarizers routed through `_strip_reasoning`.
 
+### 13.4 Health engine double-count bug fix (`9194756`)
+
+`staleness` and `low_activity` signals were **both firing on the same silence** condition,
+double-penalizing deals that had no recent activity. Fixed in `senpai/health/scoring.py` +
+`flags.py` so the two signals are mutually exclusive (staleness subsumes low_activity).
+`tests/test_scoring.py` gained 15 new assertions covering this exact edge case.
+
 ---
 
-## 14. Test Suite
+## 14. Quality Assurance Infrastructure
+
+Beyond the pytest suite, this week added three categories of test/audit tooling:
+
+### 14.1 Stress pipeline (`scripts/stress_pipeline.py`)
+
+A hermetic robustness harness (no GPU, no network) that probes 7 aspects of the
+deterministic core in one run:
+
+1. **Tool dispatch** — every tool survives empty / garbage / hostile args and never raises
+   (the chat loop must never crash); valid calls produce non-empty output.
+2. **Scoring engine** — edge cases (empty fields, missing dates, junk values, every
+   `order_rank` value); score always in 0–100 with a valid band.
+3. **Flags engine** — same edge cases; never crashes.
+4. **Morning briefing** — every rep + team + unknown rep; sorted, grounded, deterministic.
+5. **`find_deals`** — facet filters honoured, outcome matches the rank model, hostile
+   inputs never crash, deterministic.
+6. **Store referential integrity** — all deals resolve to real customers/reps; unknown IDs
+   degrade to `None`/`[]`.
+7. **Whole-pipeline determinism** — score every open deal twice → identical results.
+
+### 14.2 Health score backtest (`scripts/backtest_health.py`)
+
+A calibration harness that validates the health score against actual deal outcomes:
+
+- Scores every **closed** deal (won = `WON_RANKS`, lost = `DEAD_RANKS`).
+- Computes **AUC** — P(a lost deal scores riskier than a won deal); 0.5 = no signal, 1.0 = perfect.
+- Produces a **calibration table**: for each band (and raw-score bucket), the actual loss rate.
+
+On the synthetic seed this validates internal consistency (does the score separate the
+outcome labels the generator baked in?). The same script is ready for real historical data —
+the report layout is identical, making it the calibration tool for when SPR access arrives.
+
+### 14.3 Grounding audit scripts
+
+Three grounding audit scripts (`scripts/grounding_audit.py`, `grounding_audit4.py`,
+`grounding_reaudit.py`) that run on the deterministic engine (no LLM) and check:
+
+- **Cross-customer leakage** — does retrieval ever surface records from a different customer
+  than the one in focus?
+- **Prompt composition by source** — classifies every line of the commentary context into
+  `customer_core / crm / deterministic_health / activity / quote_order / environment /
+  similar_case_CROSS_CUSTOMER / corpus_playbook`, then reports the fraction of each type
+  so we can audit how grounded each prompt is.
+- **Structural origin classification** — distinguishes customer evidence (safe) from
+  cross-customer analogies (labelled) from corpus/playbook content.
+
+### 14.4 Contract checker (`scripts/check_contract.py`)
+
+Hits every GET endpoint the web client calls via FastAPI's in-process `TestClient` and asserts
+that the top-level keys the TypeScript types expect still exist. Runs in <1s with no GPU.
+
+**Discipline enforced:** `docs/web-integration.md` documents the one-boundary rule:
+"endpoint first, then `types.ts` → `api.ts` → `fixtures.ts` → component" — so the Python
+engine and the Next.js app can never silently drift. `scripts/check_contract.py` is the
+automated enforcement gate.
+
+### 14.5 Live cache test (`scripts/live_cache_test.py`)
+
+End-to-end test that drives the real bridge in-process via `TestClient`, parses the actual
+SSE stream, and verifies that `context`/`cached` flags are set correctly and real tokens
+stream from the LLM. Requires the model server on `:8765` (`SENPAI_USE_LLM=1`).
+
+---
+
+## 15. Test Suite
+
+17 test files, **116 tests (1 skipped)**, all GPU-free.
 
 17 test files, **116 tests (1 skipped)**, all GPU-free.
 
@@ -629,41 +703,99 @@ briefing tests = **+42 new tests** since the start of Week 2.
 
 ---
 
-## 15. Synthetic Dataset Expansion
+## 15. Matsuda Context Prototype (`senpai/matsuda/`)
 
-The seed dataset was expanded to **2–3 years of historical data** to support:
-- Fiscal-year progress tracking (needs multiple years of deal history per rep)
-- Order/quote recency signals in account health
-- Win-rate computation over enough closed deals for reliable statistics
+Distinct from the Account Intelligence engine (§4), the **Matsuda Context** is an earlier
+prototype for a "synthesize once, answer many" customer-briefing pattern.
 
-Current dataset:
-- 8 reps (mix of junior/senior roles, skill profiles, improving flags)
-- 35 SMB customers with alias index and IT environment records
-- 60+ deals (37 live pipeline, 4 deliberately dead-but-optimistic for the red-flag story)
-- 186+ sales activities (quality-spread notes: thorough → thin)
-- 50+ quotes, 19+ orders
-- 25 playbook entries, 11 validated senior principles
-- 43 coaching threads across 22 reps/deals
-- `rank_history.json` — order-rank change history for each deal (slip/regression detection)
-- `customer_aliases.json` — English/romaji/alias forms for robust name resolution
+`build_account_context(customer_id) -> AccountContext` pulls all store data for a customer
+once (activities, deals, scoring, flags, similar deals, playbook retrieval) into a single
+persistent `AccountContext` object. Follow-up questions are then answered **purely from that
+synthesized context** — no re-fetching. Key properties:
+
+- Builds a retrieval log that records exactly which sources were consulted and how many rows
+  were found (full auditability).
+- `AccountContext.answer(question)` answers from the frozen context; `to_markdown()` produces
+  an inspectable `report.md`.
+- Hooked into `POST /api/coach/review` and `POST /api/coach/narrate`: requests containing
+  "matsuda" or "松田" are intercepted and routed to the `MatsudaContext` engine instead of
+  the normal LLM pipeline, avoiding the "NO MATCHING CUSTOMER" ambiguity issue.
+- Streamlit demo: `senpai/apps/matsuda_demo.py` + `pages/4_Matsuda_Demo.py`.
 
 ---
 
-## 16. Week-over-Week Summary
+## 16. Retrieval Observability — Retrieval Explorer
+
+**`senpai/retrieval/trace.py`** is a per-turn observability buffer using Python's `ContextVar`
+so concurrent requests never share state. Every retrieval surface (`notes_semantic`,
+`knowledge_keyword`, `graph`) records into this buffer: source type, source ID, customer,
+score, scope (`account:<id>` or `all`).
+
+The API drains the buffer after each tool call and ships it to the UI as `tool` events in the
+SSE stream.
+
+**`web/components/assistant/retrieval-explorer.tsx`** is the UI surface — a collapsible
+panel in the chat thread that shows for every turn:
+- Which retrievers fired (`日報（意味検索）`, `社内ナレッジ（キーワード）`, `関係グラフ`)
+- Scope: **account-scoped** (green badge, the trustworthy default) vs **all customers**
+- Per-chunk detail: ID, customer name, score
+
+This makes grounding **debuggable** — you can see exactly which chunks reached the model
+and immediately spot cross-customer leakage.
+
+---
+
+## 17. Synthetic Dataset Expansion
+
+The seed dataset was massively expanded to **FY2023–FY2026 historical data** (3 cohorts):
+- **Live pipeline** (~140 deals): `order_rank` 2_A+…6_P, dated within 0–90 days of anchor
+- **Historical won** (~280 deals): `1_Confirmed`, spread across prior fiscal years
+- **Historical dead** (~100 deals): `7_Lost`/`8_Cancelled`
+
+`store.open_deals()` filters to open ranks so the live dashboard stays bounded at ~140
+even though the corpus is 520.
+
+| File | Rows | What it is |
+|---|---:|---|
+| `deals.json` | **520** | Opportunity-level records |
+| `sales_activities.json` | **2,337** | Activity log / daily reports |
+| `quotes.json` | **480** | Quotes for progressed deals |
+| `orders.json` | **280** | Order lines (confirmed/won deals) |
+| `customers.json` | **150** | SMB customer master |
+| `reps.json` | **24** | Sales reps (junior + senior, skill profiles) |
+| `products.json` | 29 | Product master (major/mid/minor, pricing) |
+| `environments.json` | 150 | Customer IT environment records |
+| `playbook.json` | 31 | Coaching entries |
+| `rank_history.json` | **1,612** | Order-rank change log (slip/regression detection) |
+| `customer_aliases.json` | 150 | English/romaji alias forms |
+| `coaching_threads.json` | 43 threads | Manager↔rep chat on flagged deals |
+
+**Knowledge seed expanded:** `senpai/knowledge/seed/generated_items.json` grew from 12 → 177
+coaching items (165 new items added — derived from the 11 validated senior principles).
+
+Documented in `docs/synthetic_dataset.md` (new file this week).
+
+---
+
+## 18. Week-over-Week Summary
 
 | Dimension | Week 1 (end) | Week 2 (end) |
 |---|---|---|
 | Tests | 30 passing | **116 passing (1 skipped)** |
 | Tools | 18 | **38** |
 | API endpoints | ~10 | **~20** |
-| API latency (coaching) | ~7.5s | **~140ms** |
-| Retrieval | Keyword/tag only | **BM25 + dense + RRF + knowledge graph** |
+| API latency (coaching) | ~7.5s | **~140ms (~54×)** |
+| Synthetic dataset (deals) | 60 | **520 (3-year history)** |
+| Synthetic dataset (activities) | 186 | **2,337** |
+| Knowledge coaching items | 12 | **177** |
+| Retrieval | Keyword/tag only | **BM25 + dense + RRF + knowledge graph (744 nodes)** |
 | Document output | None | **PPTX + DOCX (4 tool variants)** |
 | Coaching depth | Review Coach only | **Profile + progress + threads + explainability** |
 | Account view | Deal-level only | **8-dimension account health + trajectory + expansion** |
 | Workspace | Two separate pages | **Unified slash-command shell + artifacts + XLSX export** |
 | Ingestion | None | **Audio/image/text → editable draft → overlay persistence** |
-| Knowledge graph | None | **744 nodes, multi-hop queries** |
+| Observability | None | **Retrieval Explorer (per-chunk source + scope + score)** |
+| QA scripts | 0 | **5 (stress pipeline, health backtest, grounding audit ×3, contract checker, live cache test)** |
 
 ---
 
@@ -675,20 +807,36 @@ Current dataset:
 | `senpai/briefing.py` | Morning briefing — urgency-ranked action worklist |
 | `senpai/coach/profile.py` | Rep coaching profile (1:1 brief, weaknesses, strengths) |
 | `senpai/coach/progress.py` | Fiscal-year progress + coaching acted-on rate |
-| `senpai/coach/explainability.py` | Coaching explainability (triggers, evidence, stats) |
-| `senpai/growth.py` | Growth / Motivation portal (5 skill scores) |
+| `senpai/coach/explainability.py` | Coaching explainability (triggers, evidence, outcome stats) |
+| `senpai/growth.py` | Growth / Motivation portal (5 transparent skill scores) |
 | `senpai/documents/` | Document generation (proposal, ringisho, author, context, render, registry, narrative) |
-| `senpai/retrieval/` | Hybrid semantic search (build_index, semantic, deals, knowledge, playbook, trace) |
+| `senpai/retrieval/` | Hybrid semantic search (build_index, semantic, deals, knowledge, playbook, **trace**) |
+| `senpai/retrieval/trace.py` | Per-turn retrieval observability buffer (ContextVar) |
 | `senpai/graph/` | Knowledge graph (build, query) |
 | `senpai/ingestion/` | Multimodal ingestion (pipeline, multimodal, persist) |
-| `senpai/tools/gcal.py` | Google Calendar integration |
-| `senpai/matsuda/` | Account context synthesis prototype (context, synthesize) |
+| `senpai/tools/gcal.py` | Google Calendar integration (two-step confirm) |
+| `senpai/matsuda/` | Account context synthesis prototype — synthesize-once, answer-many |
+| `senpai/apps/matsuda_demo.py` | Streamlit demo for Matsuda Context |
 | `web/components/workspace/` | Workspace shell (workspace, slash picker, artifact-card, unified ArtifactBody, cards/) |
 | `web/components/account/` | Account Intelligence frontend (accounts-index, account-view) |
-| `web/lib/artifact-export.ts` | Client-side XLSX export |
-| `web/lib/artifacts.ts` | Artifact type definitions and assemblers |
-| `scripts/eval_intent_router.py` | Atlas feasibility eval (offline, §12.2) |
+| `web/components/assistant/retrieval-explorer.tsx` | Retrieval Explorer — per-chunk grounding debugger |
+| `web/components/coaching/rep-profiles.tsx` | Rep coaching profiles frontend (372 lines) |
+| `web/lib/artifact-export.ts` | Client-side XLSX export (two-sheet: brief + sources) |
+| `web/lib/artifacts.ts` | Artifact type definitions and pure assemblers |
+| `web/public/logo.png` | Senpai brand logo |
+| `web/components/site/brand.tsx` | Brand component |
+| `scripts/stress_pipeline.py` | 7-probe robustness harness (§14.1) |
+| `scripts/backtest_health.py` | Health score calibration / AUC backtest (§14.2) |
+| `scripts/grounding_audit.py` | Cross-customer leakage + prompt composition audit (§14.3) |
+| `scripts/grounding_audit4.py` | Structural grounding classification (§14.3) |
+| `scripts/grounding_reaudit.py` | Grounding re-audit (updated version) |
+| `scripts/live_cache_test.py` | Live SSE cache correctness test (§14.5) |
+| `scripts/check_contract.py` | Web ↔ engine contract checker (§14.4) |
+| `scripts/eval_intent_router.py` | Atlas feasibility eval (§12.2) |
 | `scripts/bench_synthesis.py` | Model decomposition A/B with frozen tool context (§12.3) |
+| `scripts/bench_synthesis_results.json` | Round 1 benchmark results (27B vs 8B-bf16) |
+| `docs/synthetic_dataset.md` | Synthetic dataset reference (3-year time model, row counts) |
+| `docs/web-integration.md` | Web ↔ engine integration pattern + contract discipline |
 | `docs/phase25_session_log.md` | Phase 2.5 session log (latency, evals, bugs, features) |
 | `docs/accounts.md` | Account Intelligence reference |
 | `docs/coaching.md` | Coaching platform reference |
@@ -696,6 +844,7 @@ Current dataset:
 | `docs/resolution_and_routing.md` | Customer resolution + reasoning router reference |
 | `docs/workspace.md` | Workspace shell reference |
 | `docs/llm_bridge.md` | LLM bridge + SSE protocol reference |
+| `docs/README.md` | Documentation index |
 
 ## Appendix B — Run Commands
 
@@ -704,10 +853,13 @@ export SENPAI_TODAY=2026-06-16
 
 # Python app (no GPU)
 .venv/bin/streamlit run senpai/apps/manager_dashboard.py   # dashboard :8501
+.venv/bin/streamlit run senpai/apps/matsuda_demo.py        # Matsuda demo
 
-# Web app
-SENPAI_TODAY=2026-06-16 uvicorn senpai.api.server:app --port 8000   # API bridge
-cd web && npm install && npm run dev                                  # frontend :3000
+# Web app (combined launcher)
+SENPAI_TODAY=2026-06-16 bash scripts/run_web.sh            # bridge :8000 + frontend :3000
+# Or separately:
+SENPAI_TODAY=2026-06-16 uvicorn senpai.api.server:app --port 8000
+cd web && npm install && npm run dev
 
 # Document generation (no GPU)
 python -m senpai.documents.proposal D001
@@ -718,6 +870,12 @@ SENPAI_TODAY=2026-06-16 python -m senpai.retrieval.build_index
 
 # Verify (no GPU)
 .venv/bin/pytest tests/
+
+# QA scripts (no GPU, no network)
+SENPAI_TODAY=2026-06-16 python scripts/stress_pipeline.py
+SENPAI_TODAY=2026-06-16 python scripts/backtest_health.py
+SENPAI_TODAY=2026-06-16 python scripts/check_contract.py
+SENPAI_TODAY=2026-06-16 python scripts/grounding_audit.py
 
 # Offline evals
 python scripts/eval_intent_router.py
