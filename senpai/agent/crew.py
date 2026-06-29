@@ -33,9 +33,9 @@ from senpai.tools import impl
 
 # The crew roster — sent to the UI first so it can lay out one lane per agent.
 AGENTS = [
-    {"id": "researcher", "label": "リサーチャー", "role": "事実収集", "emoji": "🔍"},
-    {"id": "coach", "label": "コーチ", "role": "健全性診断", "emoji": "🩺"},
-    {"id": "strategist", "label": "ストラテジスト", "role": "戦略立案", "emoji": "♟️"},
+    {"id": "researcher", "label": "リサーチャー", "role": "事実収集", "emoji": ""},
+    {"id": "coach", "label": "コーチ", "role": "健全性診断", "emoji": ""},
+    {"id": "strategist", "label": "ストラテジスト", "role": "戦略立案", "emoji": ""},
 ]
 
 _RESEARCHER_SYS = (
@@ -116,9 +116,9 @@ def _run_strategist(d: dict, customer: str, researcher_md: str, coach_md: str) -
              f"【リサーチャーの所見】\n{researcher_md}\n\n"
              f"【コーチの診断】\n{coach_md}\n\n"
              "上記を統合し、次の打ち合わせに向けた作戦を以下のMarkdown構成でまとめてください。\n"
-             "### 🎯 トークの要点\n（3点・箇条書き）\n"
-             "### 🛡️ 想定される反論と切り返し\n（2点・箇条書き）\n"
-             "### ▶️ 次の一手\n（1〜2個の具体的アクション）"}],
+             "### トークの要点\n（3点・箇条書き）\n"
+             "### 想定される反論と切り返し\n（2点・箇条書き）\n"
+             "### 次の一手\n（1〜2個の具体的アクション）"}],
         no_think=True, max_tokens=1200)  # the user-facing brief — must not truncate
 
 

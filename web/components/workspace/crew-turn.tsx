@@ -194,9 +194,9 @@ export function CrewTurn({
 
       {/* Final artifact — the hero; appears once all work finishes */}
       {brief && status === "done" && (
-        <div className="mt-1 animate-in fade-in duration-300">
-          <div className="mb-3 mt-1 h-px bg-border/50" />
-          <p className="eyebrow mb-3">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
+        <div className="mt-6 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
+          <div className="mb-6 h-px w-8 bg-border" />
+          <p className="eyebrow mb-4">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
           <AnswerMd text={brief} />
         </div>
       )}

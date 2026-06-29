@@ -21,6 +21,7 @@ export interface ExecutionPhase {
 }
 
 export function ExecutionLog({ phases }: { phases: ExecutionPhase[] }) {
+  if (phases.length === 0) return null;
   // Only sections that have actually started carry weight on screen.
   const visible = phases.filter((p) => p.status !== "pending");
   if (visible.length === 0) return null;
