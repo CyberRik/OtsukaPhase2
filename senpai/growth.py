@@ -418,12 +418,13 @@ def _llm_skill_assessment(acts: list[dict], threads: list[dict]) -> dict[str, di
 
     try:
         import re as _re2
-        _PREFILL = {"role": "assistant", "content": "<think>\n\n</think>\n\n"}
+        from senpai.llm.client import _gen_kwargs
         resp = fallback_client.chat.completions.create(
             model=config.FALLBACK_MODEL,
-            messages=[{"role": "user", "content": prompt}, _PREFILL],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
             max_tokens=600,
+            **_gen_kwargs(no_think=True),  # atlas: thinking off + sampling
         )
         raw = resp.choices[0].message.content or ""
         raw = _re2.sub(r"<think>.*?</think>", "", raw, flags=_re2.DOTALL).strip()
