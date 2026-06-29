@@ -80,6 +80,11 @@ const ja: Dict = {
   "cc.askCopilot": "このアカウントについてコパイロットに相談",
   "cc.context": "コンテキスト",
   "cc.hidePanel": "パネルを隠す",
+  // manager command center context pane
+  "mcc.atRisk": "リスク案件",
+  "mcc.noAtRisk": "リスク案件はありません。",
+  "mcc.toCoach": "要コーチング",
+  "mcc.noCoaching": "対応が必要なメンバーはいません。",
   // manager nav
   "nav.dashboard": "ダッシュボード",
   "nav.pipeline": "パイプライン",
@@ -221,6 +226,7 @@ const ja: Dict = {
   "knowledge.title": "先輩の一言から、教えられる原則へ。",
   "knowledge.lead": "2件のインタビュー、検証済みの原則、承認済みのコーチング教材。そのすべてに一字一句の出典が紐づきます。「専門知を捏造しない」を事実にする監査証跡です。",
   "knowledge.sourceCorpus": "一次情報",
+  "knowledge.addPrinciple": "原則を追加",
   "knowledge.traceable": "出典にさかのぼれる",
   "knowledge.verbatim": "一次情報（インタビュー原文）",
   "knowledge.derived": "派生コーチング教材",
@@ -339,6 +345,9 @@ const ja: Dict = {
   // pipeline
   "pipeline.title": "チーム・パイプライン",
   "pipeline.lead": "全案件の健全度を一覧で。行をクリックすると、スコアの根拠・信頼性フラグ・直近メモを確認できます。",
+  "pipeline.tab.overview": "概要",
+  "pipeline.tab.deals": "全案件",
+  "pipeline.tab.flags": "信頼性フラグ",
 
   // coaching
   "coaching.title": "育成機会",
@@ -350,6 +359,10 @@ const ja: Dict = {
   "coaching.openCoach": "コーチで深掘り",
 
   // manager workspace
+  "coaching.tab.needs": "要コーチング",
+  "coaching.tab.trends": "傾向",
+  "coaching.tab.confidence": "確度 vs 実態",
+  "coaching.tab.reps": "メンバー",
   "coaching.needsTitle": "要コーチング",
   "coaching.needsSub": "今日、手をかけるべき案件の優先順位です。",
   "coaching.issueLabel": "課題",
@@ -583,6 +596,10 @@ const en: Dict = {
   "cc.askCopilot": "Ask the Copilot about this account",
   "cc.context": "Context",
   "cc.hidePanel": "Hide panel",
+  "mcc.atRisk": "At-risk deals",
+  "mcc.noAtRisk": "No at-risk deals.",
+  "mcc.toCoach": "Reps to coach",
+  "mcc.noCoaching": "No one needs coaching right now.",
   "nav.dashboard": "Dashboard",
   "nav.pipeline": "Pipeline",
   "nav.coaching": "Coaching",
@@ -718,6 +735,7 @@ const en: Dict = {
   "knowledge.title": "From a senior's sentence to a teachable principle.",
   "knowledge.lead": "Two interviews, validated principles, approved coaching items — and a verbatim citation behind every one. The audit trail that makes 'no invented expertise' a fact, not a claim.",
   "knowledge.sourceCorpus": "Source corpus",
+  "knowledge.addPrinciple": "Add principle",
   "knowledge.traceable": "Traceable to source",
   "knowledge.verbatim": "Interview verbatim",
   "knowledge.derived": "Derived coaching items",
@@ -833,6 +851,9 @@ const en: Dict = {
 
   "pipeline.title": "Team Pipeline",
   "pipeline.lead": "Every deal's health in one view. Click a row to see the reasons behind the score, reliability flags, and recent notes.",
+  "pipeline.tab.overview": "Overview",
+  "pipeline.tab.deals": "All deals",
+  "pipeline.tab.flags": "Reliability flags",
 
   "coaching.title": "Coaching Opportunities",
   "coaching.lead": "Senpai surfaces the deals where coaching would help most — optimism that contradicts the data, or stall signals — each paired with a senior's validated knowledge.",
@@ -843,6 +864,10 @@ const en: Dict = {
   "coaching.openCoach": "Open in Coach",
 
   // manager workspace
+  "coaching.tab.needs": "Needs coaching",
+  "coaching.tab.trends": "Trends",
+  "coaching.tab.confidence": "Confidence vs reality",
+  "coaching.tab.reps": "Reps",
   "coaching.needsTitle": "Needs coaching",
   "coaching.needsSub": "Where your coaching time is best spent today, in priority order.",
   "coaching.issueLabel": "Issue",

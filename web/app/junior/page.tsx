@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { CommandCenter } from "@/components/workspace/command-center";
+import { ContextPane } from "@/components/workspace/context-pane";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +20,8 @@ export default async function JuniorHome() {
       examples={ex.examples}
       deals={db.deals}
       principles={pr.principles}
-      profile={gr.growth}
       role="junior"
+      contextSlot={<ContextPane deals={db.deals} role="junior" profile={gr.growth} />}
     />
   );
 }

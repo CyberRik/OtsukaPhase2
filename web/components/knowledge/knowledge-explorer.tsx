@@ -14,6 +14,7 @@ import { SourceChip, SourceChips } from "@/components/source-chip";
 import { ProvenanceList } from "@/components/provenance";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveBadge } from "@/components/site/live-badge";
+import { AddPrincipleDialog } from "./add-principle-dialog";
 
 function SourceStrip({ sources }: { sources: Source[] }) {
   const { lang } = useT();
@@ -169,11 +170,18 @@ export function KnowledgeExplorer({
   const [selectedId, setSelectedId] = useState<string>(
     principles.find((p) => p.n_interviews >= 2)?.principle_id ?? principles[0]?.principle_id ?? "",
   );
-  // Items are mutable here (generate appends a draft; review updates status),
-  // so they live in state rather than being read straight from props.
+  // Items and principles are mutable here (generate appends a draft, review
+  // updates status, and a manager can author a new candidate principle), so
+  // they live in state rather than being read straight from props.
   const [allItems, setAllItems] = useState<KnowledgeItem[]>(items);
+  const [allPrinciples, setAllPrinciples] = useState<Principle[]>(principles);
   const [generating, setGenerating] = useState(false);
   const [genErr, setGenErr] = useState(false);
+
+  function handleAddPrinciple(p: Principle) {
+    setAllPrinciples((prev) => [p, ...prev]);
+    setSelectedId(p.principle_id);
+  }
 
   async function handleGenerate(principleId: string) {
     setGenerating(true);
@@ -200,7 +208,7 @@ export function KnowledgeExplorer({
     return false;
   }
 
-  const filtered = useMemo(() => principles.filter((p) => {
+  const filtered = useMemo(() => allPrinciples.filter((p) => {
     if (filter === "approved" && p.status !== "approved") return false;
     if (filter === "two" && p.n_interviews < 2) return false;
     if (query) {
@@ -209,9 +217,9 @@ export function KnowledgeExplorer({
       if (!hay.includes(query.toLowerCase())) return false;
     }
     return true;
-  }), [principles, filter, query]);
+  }), [allPrinciples, filter, query]);
 
-  const selected = principles.find((p) => p.principle_id === selectedId) ?? filtered[0];
+  const selected = allPrinciples.find((p) => p.principle_id === selectedId) ?? filtered[0];
   const derived = allItems.filter((it) => it.provenance.principle_id === selected?.principle_id);
 
   return (
@@ -219,7 +227,10 @@ export function KnowledgeExplorer({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="eyebrow flex items-center gap-2"><BookOpen className="h-3.5 w-3.5" /> {t("knowledge.sourceCorpus")}</div>
-          <LiveBadge live={live} />
+          <div className="flex items-center gap-2">
+            {canManage && <AddPrincipleDialog onAdded={handleAddPrinciple} />}
+            <LiveBadge live={live} />
+          </div>
         </div>
         <SourceStrip sources={sources} />
       </section>

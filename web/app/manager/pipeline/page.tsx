@@ -13,7 +13,7 @@ export default async function ManagerPipelinePage() {
         titleKey="pipeline.title"
         leadKey="pipeline.lead"
       />
-      <DashboardView initial={data} live={live} view="pipeline" />
+      <DashboardView initial={data} live={live} view="dashboard" />
     </div>
   );
 }

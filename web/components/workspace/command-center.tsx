@@ -1,35 +1,36 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { useCachedState } from "@/lib/chat-store";
 import type { Role } from "@/lib/session";
-import type { CoachExample, DealRow, GrowthData, Principle } from "@/lib/types";
+import type { CoachExample, DealRow, Principle } from "@/lib/types";
 import { Workspace } from "./workspace";
-import { ContextPane } from "./context-pane";
 
 /**
- * The Junior home: one screen for the whole job. The Context pane (left) shows
- * the rep's live deals/accounts; the Copilot (right) is the existing Workspace.
- * Clicking a deal on the left grounds the Copilot via shared focus.
+ * The Command Center shell: a live context pane (left) beside the Copilot
+ * thread (right). The left pane is role-supplied via `contextSlot` — Junior
+ * passes its deal/account context, Manager passes team triage — while the
+ * collapsible chrome and the Workspace stay shared. Clicking an item in the
+ * context pane grounds the Copilot via the shared workspace focus.
  *
- * The context column is collapsible — collapsing hands its width to the chat, so
- * the rep can run a focused conversation full-bleed and pop the deals back open
- * when they need to switch context. The open/closed state is cached so it
- * survives navigation.
+ * Collapsing the context column hands its width to the chat, so the user can
+ * run a focused conversation full-bleed and pop the context back open when they
+ * need to switch. The open/closed state is cached so it survives navigation.
  */
 export function CommandCenter({
   examples,
   deals,
   principles,
-  profile,
+  contextSlot,
   role = "junior",
 }: {
   examples: CoachExample[];
   deals: DealRow[];
   principles: Principle[];
-  profile: GrowthData;
+  contextSlot: ReactNode;
   role?: Role;
 }) {
   const { t } = useT();
@@ -55,7 +56,7 @@ export function CommandCenter({
               <PanelLeftClose className="h-4 w-4" />
             </button>
           </div>
-          <ContextPane deals={deals} role={role} profile={profile} />
+          {contextSlot}
         </aside>
       )}
 

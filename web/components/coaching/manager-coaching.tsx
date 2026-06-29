@@ -17,11 +17,14 @@ import type {
   CoachingTrend,
   CoachingWorkspace,
   ConfVRItem,
+  RepProfileRow,
 } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { repText, customerText } from "@/lib/content-i18n";
 import { cn } from "@/lib/utils";
 import { ExplainabilityChip } from "@/components/coach/explainability-card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { RepProfiles } from "./rep-profiles";
 
 const PRIORITY_TONE: Record<string, string> = {
   high: "bg-band-red/10 text-band-red border-band-red/30",
@@ -175,46 +178,70 @@ function ConfCard({ c }: { c: ConfVRItem }) {
   );
 }
 
-export function ManagerCoaching({ data }: { data: CoachingWorkspace }) {
+export function ManagerCoaching({
+  data,
+  profiles,
+}: {
+  data: CoachingWorkspace;
+  profiles: RepProfileRow[];
+}) {
   const { t } = useT();
   const maxTrend = Math.max(1, ...data.trends.map((tr) => tr.count));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* The team digest stays always-visible; the dense lenses move into tabs
+          so the page isn't a single long scroll (mirrors the Reports layout). */}
       <SummaryDigest s={data.summary} />
 
-      {/* Section 1 — Needs Coaching */}
-      <section>
-        <div className="eyebrow mb-1 flex items-center gap-1.5"><Flag className="h-3.5 w-3.5" /> {t("coaching.needsTitle")}</div>
-        <p className="mb-3 text-[12px] text-muted-foreground">{t("coaching.needsSub")}</p>
-        {data.needs_coaching.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center text-[13px] text-muted-foreground">
-            {t("coaching.workspaceEmpty")}
-          </div>
-        ) : (
+      <Tabs defaultValue="needs">
+        <TabsList>
+          <TabsTrigger value="needs" className="gap-1.5">
+            <Flag className="h-3.5 w-3.5" /> {t("coaching.tab.needs")}
+            {data.needs_coaching.length > 0 && (
+              <span className="rounded-full bg-band-red/10 px-1.5 text-[10px] font-semibold text-band-red">{data.needs_coaching.length}</span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> {t("coaching.tab.trends")}</TabsTrigger>
+          <TabsTrigger value="confidence" className="gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> {t("coaching.tab.confidence")}</TabsTrigger>
+          <TabsTrigger value="reps" className="gap-1.5"><Users className="h-3.5 w-3.5" /> {t("coaching.tab.reps")}</TabsTrigger>
+        </TabsList>
+
+        {/* Needs Coaching */}
+        <TabsContent value="needs" className="mt-4">
+          <p className="mb-3 text-[12px] text-muted-foreground">{t("coaching.needsSub")}</p>
+          {data.needs_coaching.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center text-[13px] text-muted-foreground">
+              {t("coaching.workspaceEmpty")}
+            </div>
+          ) : (
+            <div className="grid gap-2.5 md:grid-cols-2">
+              {data.needs_coaching.map((c) => <NeedsCard key={c.deal_id} c={c} />)}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Team Coaching Trends */}
+        <TabsContent value="trends" className="mt-4">
+          <p className="mb-3 text-[12px] text-muted-foreground">{t("coaching.trendsSub")}</p>
           <div className="grid gap-2.5 md:grid-cols-2">
-            {data.needs_coaching.map((c) => <NeedsCard key={c.deal_id} c={c} />)}
+            {data.trends.map((tr) => <TrendRow key={tr.issue} tr={tr} max={maxTrend} />)}
           </div>
-        )}
-      </section>
+        </TabsContent>
 
-      {/* Section 2 — Team Coaching Trends */}
-      <section>
-        <div className="eyebrow mb-1 flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> {t("coaching.trendsTitle")}</div>
-        <p className="mb-3 text-[12px] text-muted-foreground">{t("coaching.trendsSub")}</p>
-        <div className="grid gap-2.5 md:grid-cols-2">
-          {data.trends.map((tr) => <TrendRow key={tr.issue} tr={tr} max={maxTrend} />)}
-        </div>
-      </section>
+        {/* Confidence vs Reality */}
+        <TabsContent value="confidence" className="mt-4">
+          <p className="mb-3 text-[12px] text-muted-foreground">{t("coaching.confSub")}</p>
+          <div className="grid gap-2.5 md:grid-cols-2">
+            {data.confidence.map((c) => <ConfCard key={c.deal_id} c={c} />)}
+          </div>
+        </TabsContent>
 
-      {/* Section 3 — Confidence vs Reality */}
-      <section>
-        <div className="eyebrow mb-1 flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> {t("coaching.confTitle")}</div>
-        <p className="mb-3 text-[12px] text-muted-foreground">{t("coaching.confSub")}</p>
-        <div className="grid gap-2.5 md:grid-cols-2">
-          {data.confidence.map((c) => <ConfCard key={c.deal_id} c={c} />)}
-        </div>
-      </section>
+        {/* Per-rep profiles */}
+        <TabsContent value="reps" className="mt-4">
+          <RepProfiles initial={profiles} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

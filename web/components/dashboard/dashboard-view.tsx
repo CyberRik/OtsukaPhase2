@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { customerText, repText, flagMessageText } from "@/lib/content-i18n";
 import { BandDot, BandPill } from "@/components/band";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiveBadge } from "@/components/site/live-badge";
 import { DealDrawer } from "./deal-drawer";
 
@@ -31,6 +32,9 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
   const [rep, setRep] = useState("(all)");
   const [openId, setOpenId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
+  // The three former routes (Dashboard / Pipeline / Reliability) are now tabs
+  // on one page. `view` seeds the default tab; `tab` drives what's shown.
+  const [tab, setTab] = useState<View>(view);
 
   const deals = useMemo(
     () => (rep === "(all)" ? initial.deals : initial.deals.filter((d) => d.rep === rep)),
@@ -52,16 +56,16 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
   };
   const total = Math.max(1, k.open);
 
-  const tableDeals = view === "dashboard"
+  const tableDeals = tab === "dashboard"
     ? [...deals].sort((a, b) => b.score - a.score).slice(0, 6)
     : deals;
 
   function openDeal(id: string) { setOpenId(id); setDrawer(true); }
 
-  const showKpis = view !== "reliability";
-  const showHealth = view === "dashboard";
-  const showTable = view !== "reliability";
-  const showFlags = view !== "pipeline";
+  const showKpis = tab !== "reliability";
+  const showHealth = tab === "dashboard";
+  const showTable = tab !== "reliability";
+  const showFlags = tab !== "pipeline";
 
   return (
     <div className="space-y-8">
@@ -84,6 +88,20 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
         </div>
         <LiveBadge live={live} />
       </div>
+
+      {/* The three former routes are now lenses on one dataset. */}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as View)}>
+        <TabsList>
+          <TabsTrigger value="dashboard">{t("pipeline.tab.overview")}</TabsTrigger>
+          <TabsTrigger value="pipeline">{t("pipeline.tab.deals")}</TabsTrigger>
+          <TabsTrigger value="reliability" className="gap-1.5">
+            {t("pipeline.tab.flags")}
+            {flags.length > 0 && (
+              <span className="rounded-full bg-band-red/10 px-1.5 text-[10px] font-semibold text-band-red">{flags.length}</span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {showKpis && (
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-4">
@@ -171,7 +189,7 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
           <div className="eyebrow flex items-center gap-2"><AlertTriangle className="h-3.5 w-3.5" /> {t("dash.relFlags")}</div>
           {flags.length ? (
             <div className="grid gap-2 md:grid-cols-2">
-              {(view === "dashboard" ? flags.slice(0, 4) : flags).map((f, i) => (
+              {(tab === "dashboard" ? flags.slice(0, 4) : flags).map((f, i) => (
                 <button key={i} onClick={() => openDeal(f.deal_id)}
                   className="flex items-start gap-3 rounded-xl border border-border bg-card p-3.5 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors hover:bg-muted/50">
                   <AlertTriangle className={cn("mt-0.5 h-4 w-4 shrink-0", SEV_TONE[f.severity])} />
