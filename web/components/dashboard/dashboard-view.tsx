@@ -27,7 +27,21 @@ function Kpi({ label, value, sub, tone }: { label: string; value: string; sub?: 
 
 type View = "dashboard" | "pipeline" | "reliability";
 
-export function DashboardView({ initial, live, view = "dashboard" }: { initial: DashboardData; live: boolean; view?: View }) {
+export function DashboardView({
+  initial,
+  live,
+  view = "dashboard",
+  showTabs = true,
+  onAskCopilot,
+}: {
+  initial: DashboardData;
+  live: boolean;
+  view?: View;
+  /** Hide the Overview/Deals/Flags tab switcher (e.g. the compact home glance). */
+  showTabs?: boolean;
+  /** When set, the deal drawer offers an "Ask the Copilot about this deal" action. */
+  onAskCopilot?: (g: { dealId: string; customerId: string; customerName: string }) => void;
+}) {
   const { t, lang } = useT();
   const [rep, setRep] = useState("(all)");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -90,18 +104,20 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
       </div>
 
       {/* The three former routes are now lenses on one dataset. */}
-      <Tabs value={tab} onValueChange={(v) => setTab(v as View)}>
-        <TabsList>
-          <TabsTrigger value="dashboard">{t("pipeline.tab.overview")}</TabsTrigger>
-          <TabsTrigger value="pipeline">{t("pipeline.tab.deals")}</TabsTrigger>
-          <TabsTrigger value="reliability" className="gap-1.5">
-            {t("pipeline.tab.flags")}
-            {flags.length > 0 && (
-              <span className="rounded-full bg-band-red/10 px-1.5 text-[10px] font-semibold text-band-red">{flags.length}</span>
-            )}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {showTabs && (
+        <Tabs value={tab} onValueChange={(v) => setTab(v as View)}>
+          <TabsList>
+            <TabsTrigger value="dashboard">{t("pipeline.tab.overview")}</TabsTrigger>
+            <TabsTrigger value="pipeline">{t("pipeline.tab.deals")}</TabsTrigger>
+            <TabsTrigger value="reliability" className="gap-1.5">
+              {t("pipeline.tab.flags")}
+              {flags.length > 0 && (
+                <span className="rounded-full bg-band-red/10 px-1.5 text-[10px] font-semibold text-band-red">{flags.length}</span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      )}
 
       {showKpis && (
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-4">
@@ -216,7 +232,12 @@ export function DashboardView({ initial, live, view = "dashboard" }: { initial: 
         </section>
       )}
 
-      <DealDrawer dealId={openId} open={drawer} onOpenChange={setDrawer} />
+      <DealDrawer
+        dealId={openId}
+        open={drawer}
+        onOpenChange={setDrawer}
+        onAskCopilot={onAskCopilot}
+      />
     </div>
   );
 }

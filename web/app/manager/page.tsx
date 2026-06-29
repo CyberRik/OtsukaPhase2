@@ -1,27 +1,18 @@
 import { api } from "@/lib/api";
-import { CommandCenter } from "@/components/workspace/command-center";
-import { ManagerContextPane } from "@/components/workspace/manager-context-pane";
+import { PageHeader } from "@/components/site/page-header";
+import { ManagerDashboard } from "@/components/manager/manager-dashboard";
 
 export const dynamic = "force-dynamic";
 
-// The Manager home is the unified Command Center: team triage on the left
-// (at-risk deals + reps needing coaching), the Copilot (Workspace) on the right.
-// Clicking a deal or rep grounds the Copilot for the next question.
-export default async function ManagerHome() {
-  const [{ data: ex }, { data: db }, { data: pr }, { data: co }] = await Promise.all([
-    api.coachExamples(),
-    api.dashboard(),
-    api.principles(),
-    api.coaching(),
-  ]);
-
+// Overview-first home: the full-width team dashboard (Overview / All deals /
+// Flags). The Copilot is its own tab; "Ask the Copilot" on a deal jumps there
+// pre-grounded.
+export default async function ManagerHomePage() {
+  const { data, live } = await api.dashboard();
   return (
-    <CommandCenter
-      examples={ex.examples}
-      deals={db.deals}
-      principles={pr.principles}
-      role="manager"
-      contextSlot={<ManagerContextPane deals={db.deals} needsCoaching={co.needs_coaching} />}
-    />
+    <div className="space-y-8">
+      <PageHeader eyebrowKey="nav.home" titleKey="dash.title" leadKey="dash.lead" />
+      <ManagerDashboard dashboard={data} live={live} />
+    </div>
   );
 }

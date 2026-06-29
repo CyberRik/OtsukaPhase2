@@ -80,12 +80,10 @@ const ja: Dict = {
   "cc.askCopilot": "このアカウントについてコパイロットに相談",
   "cc.context": "コンテキスト",
   "cc.hidePanel": "パネルを隠す",
-  // manager command center context pane
-  "mcc.atRisk": "リスク案件",
-  "mcc.noAtRisk": "リスク案件はありません。",
-  "mcc.toCoach": "要コーチング",
-  "mcc.noCoaching": "対応が必要なメンバーはいません。",
+  // manager home dashboard → Copilot grounding
+  "mcc.askThisDeal": "この案件についてコパイロットに相談",
   // manager nav
+  "nav.copilot": "コパイロット",
   "nav.dashboard": "ダッシュボード",
   "nav.pipeline": "パイプライン",
   "nav.coaching": "育成機会",
@@ -596,10 +594,8 @@ const en: Dict = {
   "cc.askCopilot": "Ask the Copilot about this account",
   "cc.context": "Context",
   "cc.hidePanel": "Hide panel",
-  "mcc.atRisk": "At-risk deals",
-  "mcc.noAtRisk": "No at-risk deals.",
-  "mcc.toCoach": "Reps to coach",
-  "mcc.noCoaching": "No one needs coaching right now.",
+  "mcc.askThisDeal": "Ask the Copilot about this deal",
+  "nav.copilot": "Copilot",
   "nav.dashboard": "Dashboard",
   "nav.pipeline": "Pipeline",
   "nav.coaching": "Coaching",

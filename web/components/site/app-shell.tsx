@@ -9,9 +9,9 @@ import {
   Home,
   Library,
   Lightbulb,
-  ListTree,
   LogOut,
   type LucideIcon,
+  Sparkles,
   Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,14 +36,13 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/junior/reports", key: "nav.reports", icon: FileText, group: "more" },
     { href: "/junior/ingestion", key: "nav.ingestion", icon: Upload, group: "more" },
   ],
-  // Manager: the Command Center (Home) is the daily triage — the old Workspace
-  // (Copilot) lives inside it. Pipeline now folds in the former Pipeline +
-  // Reliability + Dashboard views as tabs; Knowledge absorbs the old
-  // principle-authoring "Ingestion" page. Accounts / Coaching round out the
-  // secondary group.
+  // Manager: Home is the overview-first team dashboard (Overview / All deals /
+  // Flags tabs — the former Dashboard + Pipeline + Reliability routes). The
+  // Copilot is its own tab. Knowledge absorbs the old principle-authoring
+  // "Ingestion" page. Accounts / Coaching round out the secondary group.
   manager: [
     { href: "/manager", key: "nav.home", icon: Home, group: "main" },
-    { href: "/manager/pipeline", key: "nav.pipeline", icon: ListTree, group: "more" },
+    { href: "/manager/workspace", key: "nav.copilot", icon: Sparkles, group: "more" },
     { href: "/manager/coaching", key: "nav.coaching", icon: Lightbulb, group: "more" },
     { href: "/manager/accounts", key: "nav.accounts", icon: Building2, group: "more" },
     { href: "/manager/knowledge", key: "nav.mknowledge", icon: Library, group: "more" },

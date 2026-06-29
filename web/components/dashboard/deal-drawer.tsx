@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Building2, CalendarClock, TrendingUp, User } from "lucide-react";
+import { ArrowUpRight, Building2, CalendarClock, Sparkles, TrendingUp, User } from "lucide-react";
 import { api } from "@/lib/api";
 import type { AccountHealth, DealDetail } from "@/lib/types";
 import { formatYen } from "@/lib/utils";
@@ -23,9 +23,13 @@ const SEV: Record<string, string> = {
 };
 
 export function DealDrawer({
-  dealId, open, onOpenChange,
+  dealId, open, onOpenChange, onAskCopilot,
 }: {
-  dealId: string | null; open: boolean; onOpenChange: (o: boolean) => void;
+  dealId: string | null;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  /** When set, show a CTA that grounds the Copilot on this deal and closes the drawer. */
+  onAskCopilot?: (g: { dealId: string; customerId: string; customerName: string }) => void;
 }) {
   const { t, lang } = useT();
   const pathname = usePathname();
@@ -84,6 +88,23 @@ export function DealDrawer({
               <BandPill band={detail.band} score={detail.score} />
               <div className="w-40"><RiskMeter score={detail.score} band={detail.band} /></div>
             </div>
+
+            {/* Ground the Copilot on this deal, then close the drawer so the rail is in view */}
+            {onAskCopilot && (
+              <button
+                onClick={() => {
+                  onAskCopilot({
+                    dealId: detail.deal.deal_id,
+                    customerId: detail.deal.customer_id,
+                    customerName: customerText(lang, detail.deal.customer).text,
+                  });
+                  onOpenChange(false);
+                }}
+                className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-navy px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-navy/90"
+              >
+                <Sparkles className="h-4 w-4" /> {t("mcc.askThisDeal")}
+              </button>
+            )}
 
             {/* Account cross-link: weigh this deal against the whole relationship */}
             {acctHealth && (
