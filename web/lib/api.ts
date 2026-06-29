@@ -289,7 +289,7 @@ export interface RetrievalTrace {
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
-  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; batchId?: string | null }
+  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; batchId?: string | null; intent?: string }
   | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }

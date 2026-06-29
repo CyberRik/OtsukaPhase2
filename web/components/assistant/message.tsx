@@ -8,17 +8,18 @@
 // renderer, one trust surface: "grounded, not a chatbot" looks the same wherever
 // chat appears.
 
+import { useState } from "react";
 import {
   AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
   FileText, Globe, Layers, Loader2, Mail, Presentation, Receipt, Route, Search,
-  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, type LucideIcon,
+  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, type LucideIcon,
 } from "lucide-react";
 import { documentUrl, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; batchId?: string | null };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; batchId?: string | null; intent?: string };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -73,6 +74,95 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   generate_docx: { ja: "文書(DOCX)生成", en: "Document (DOCX)", icon: FileText, internal: false },
   web_search: { ja: "Web検索", en: "Web search", icon: Globe, internal: false },
 };
+
+function getToolHighlight(tool: ToolCall): string {
+  try {
+    const str = tool.args || "";
+    
+    // Extract a value formatted as key='value' or key=value
+    const extract = (key: string) => {
+      const regex = new RegExp(`${key}=(['"]?)(.*?)\\1(?:,|$)`);
+      const match = str.match(regex);
+      return match ? match[2] : null;
+    };
+
+    if (tool.name === "web_search") return extract("query") || "";
+    if (tool.name === "search_products") return extract("keyword") || extract("category") || "";
+    if (tool.name === "get_product_details") return extract("product_id") || "";
+    if (tool.name === "list_recent_emails") return extract("query") || "";
+    if (tool.name === "schedule_meeting") return extract("title") || "Meeting";
+    
+    const title = extract("title");
+    if (title) return title;
+    
+    const prompt = extract("prompt");
+    if (prompt) return prompt.substring(0, 50) + (prompt.length > 50 ? "..." : "");
+    
+    return extract("company_name") || extract("name") || "";
+  } catch {
+    return "";
+  }
+}
+
+function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool: ToolCall, running: boolean, lang: "ja" | "en", isParallelItem?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const meta = TOOL_LABEL[tool.name];
+  const Icon = meta?.icon ?? Wrench;
+  const baseLabel = meta ? (lang === "ja" ? meta.ja : meta.en) : tool.name;
+  const highlight = getToolHighlight(tool);
+  
+  // Extract sources if applicable (e.g. from web search results returning [1] Source Name)
+  let sourcesCount = 0;
+  if (tool.result && (tool.name === "web_search" || tool.name === "search_products")) {
+    const lines = tool.result.split("\\n");
+    sourcesCount = lines.filter(l => l.trim().startsWith("-")).length;
+  }
+  
+  const displayLabel = highlight ? `${highlight} ${sourcesCount > 0 ? `(${sourcesCount} ${lang === "ja" ? "件" : "sources"})` : ""}` : baseLabel;
+  const finalLabel = highlight ? `${displayLabel} — ${baseLabel}` : displayLabel;
+  
+  return (
+    <div className={`flex flex-col gap-0.5 ${isParallelItem ? '' : 'rounded-md bg-card p-2'}`}>
+      <div 
+        className="flex items-center gap-1.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 p-1 -ml-1 rounded transition-colors text-[11.5px]"
+        onClick={() => setOpen(!open)}
+      >
+        {isParallelItem ? (
+          <span className="w-3 shrink-0 text-center font-mono text-[10px] text-primary">
+            {running ? "●" : (open ? <ChevronDown className="h-3 w-3 inline" /> : <ChevronRight className="h-3 w-3 inline" />)}
+          </span>
+        ) : (
+          <Icon className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+        )}
+        <span className="text-foreground font-medium truncate flex-1">{finalLabel}</span>
+      </div>
+      
+      {open && (
+        <div className="ml-5 mt-1 border-l border-border/40 pl-3 py-1 flex flex-col gap-2 text-[11px]">
+          <div>
+            <div className="font-semibold text-foreground/80 mb-0.5">Query / Args</div>
+            <div className="text-muted-foreground font-mono bg-muted/30 p-1.5 rounded break-all">{tool.args}</div>
+          </div>
+          <div>
+            <div className="font-semibold text-foreground/80 mb-0.5">Result</div>
+            <div className="text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">{tool.result}</div>
+          </div>
+          {tool.document && (
+            <a
+              href={documentUrl(tool.document.download_url)}
+              download={tool.document.filename}
+              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {lang === "ja" ? "ダウンロード" : "Download"}
+              <span className="font-mono text-[10px] text-muted-foreground">{tool.document.filename}</span>
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // --- grounding badge --------------------------------------------------------
 // Honest, at-a-glance provenance for every answer: green when ≥1 internal tool
@@ -130,19 +220,35 @@ export function MessageBubble({ m, t, lang, onPick }: {
 
   return (
     <div className="flex w-full flex-col items-start gap-1.5">
-      {/* Research source ledger (the "grounded, not a chatbot" view) */}
-      {m.research && m.sources && m.sources.length > 0 && (
-        <SourceLedger sources={m.sources} />
-      )}
+      {/* 1. Thinking or Answer */}
+      {error ? (
+        <div className="rounded-xl bg-destructive/10 px-3.5 py-2 text-[13px] text-destructive">
+          {t("assistant.error")}
+        </div>
+      ) : running && !m.content ? (
+        <div className="inline-flex items-center gap-2 py-1 text-[13px] font-medium text-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> 
+          {lang === "ja" ? "考え中..." : "Thinking..."}
+        </div>
+      ) : m.content ? (
+        <div className="w-full pt-1.5">
+          <AnswerMd text={m.content} />
+          {running && <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-foreground/40 align-middle" />}
+        </div>
+      ) : null}
 
-      {/* Tool calls (live while running, collapsible once done) */}
+      {/* 2. Execution Timeline (Level 2) */}
       {m.tools.length > 0 && (
-        <details open={running} className="w-full max-w-[88%] text-[12px]">
-          <summary className="flex cursor-pointer items-center gap-1.5 py-1.5 font-medium text-muted-foreground select-none hover:text-foreground transition-colors">
-            <Wrench className="h-3.5 w-3.5" />
-            {m.tools.length} {t("assistant.toolsUsed")}
+        <details open={running} className="w-full max-w-[88%] text-[12px] group">
+          <summary className="flex cursor-pointer items-center gap-1.5 py-1.5 font-medium text-muted-foreground select-none hover:text-foreground transition-colors list-none [&::-webkit-details-marker]:hidden">
+            <span className="flex items-center justify-center w-4 h-4 shrink-0 transition-transform group-open:rotate-90">
+              <ChevronRight className="h-4 w-4" />
+            </span>
+            {running 
+              ? (lang === "ja" ? `実行中 (${m.tools.length} 操作)` : `Execution (${m.tools.length} operations)`)
+              : (lang === "ja" ? `✓ 調査完了 (${m.tools.length} 操作)` : `✓ Investigation complete (${m.tools.length} operations)`)}
           </summary>
-          <div className="space-y-2 border-l border-border/60 ml-1.5 pl-3 mt-1 pb-2.5">
+          <div className="space-y-2 border-l border-border/60 ml-2 pl-3 mt-1 pb-2.5">
             {(() => {
               const groups: { batchId: string | null; tools: ToolCall[] }[] = [];
               for (const tl of m.tools) {
@@ -156,72 +262,49 @@ export function MessageBubble({ m, t, lang, onPick }: {
 
               return groups.map((g, gi) => {
                 if (g.batchId && g.tools.length > 1) {
+                  const firstTool = g.tools[0];
+                  let batchLabel = firstTool.intent;
+                  if (!batchLabel) {
+                    const meta = TOOL_LABEL[firstTool.name];
+                    batchLabel = meta ? (lang === "ja" ? meta.ja : meta.en) : firstTool.name;
+                  }
+
                   return (
                     <div key={`batch-${gi}`} className="flex flex-col gap-1.5 rounded-md bg-card p-2.5 shadow-sm border border-border/40">
                       <div className="flex items-center gap-2 text-[11.5px] font-medium text-foreground">
                         <span className="w-3 shrink-0 text-center font-mono text-[11px] text-foreground/40">{running ? "□" : "✓"}</span>
-                        <span>{lang === "ja" ? `並列実行 (${g.tools.length}タスク)` : `Parallel execution (${g.tools.length} tasks)`}</span>
+                        <span>{batchLabel}</span>
                         {running && <span className="execution-pulse inline-block h-1.5 w-1.5 rounded-full bg-primary/70 shrink-0" />}
                       </div>
                       <div className="flex flex-col gap-1.5 pl-[22px]">
-                        {g.tools.map((tool, i) => {
-                          const meta = TOOL_LABEL[tool.name];
-                          const label = meta ? (lang === "ja" ? meta.ja : meta.en) : tool.name;
-                          return (
-                            <div key={i} className="flex flex-col gap-0.5">
-                              <div className="flex items-baseline gap-2.5 text-[11.5px]">
-                                <span className="w-3 shrink-0 text-center font-mono text-[10px] text-primary">{running ? "●" : "✓"}</span>
-                                <span className="text-foreground">{label}</span>
-                                <span className="font-mono text-[10px] text-muted-foreground truncate">{tool.args}</span>
-                              </div>
-                              <div className="ml-5 whitespace-pre-wrap text-[11px] text-muted-foreground line-clamp-3">{tool.result}</div>
-                            </div>
-                          );
-                        })}
+                        {g.tools.map((tool, i) => (
+                          <ToolDisclosure key={i} tool={tool} running={running} lang={lang} isParallelItem={true} />
+                        ))}
                       </div>
                     </div>
                   );
                 }
 
-                return g.tools.map((tool, i) => {
-                  const meta = TOOL_LABEL[tool.name];
-                  const Icon = meta?.icon ?? Wrench;
-                  const label = meta ? (lang === "ja" ? meta.ja : meta.en) : tool.name;
-                  return (
-                    <div key={`single-${gi}-${i}`} className="rounded-md bg-card p-2">
-                      <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-foreground">
-                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-                        {label}
-                        <span className="font-mono text-[10.5px] text-muted-foreground truncate">{tool.args}</span>
-                      </div>
-                      <div className="mt-1 whitespace-pre-wrap text-[11.5px] text-muted-foreground">{tool.result}</div>
-                      {tool.document && (
-                        <a
-                          href={documentUrl(tool.document.download_url)}
-                          download={tool.document.filename}
-                          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11.5px] font-medium text-primary transition-colors hover:bg-primary/10"
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          {lang === "ja" ? "ダウンロード" : "Download"}
-                          <span className="font-mono text-[10.5px] text-muted-foreground">{tool.document.filename}</span>
-                        </a>
-                      )}
-                    </div>
-                  );
-                });
+                return g.tools.map((tool, i) => (
+                  <ToolDisclosure key={`single-${gi}-${i}`} tool={tool} running={running} lang={lang} isParallelItem={false} />
+                ));
               });
             })()}
           </div>
         </details>
       )}
 
-      {/* Retrieval Explorer — per-chunk provenance, scope and scores */}
+      {/* Research source ledger */}
+      {m.research && m.sources && m.sources.length > 0 && (
+        <SourceLedger sources={m.sources} />
+      )}
+
+      {/* Retrieval Explorer */}
       {m.retrieval && m.retrieval.length > 0 && (
         <RetrievalExplorer traces={m.retrieval} open={running} lang={lang} />
       )}
 
-      {/* Ambiguous customer — the name matched several accounts; let the user
-          pick rather than the system guessing (provenance stays deterministic). */}
+      {/* Ambiguous candidates */}
       {m.candidates && m.candidates.length > 0 && (
         <div className="w-full max-w-[88%] rounded-lg border border-band-yellow/40 bg-band-yellow/[0.06] p-3">
           <div className="mb-1.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-band-yellow">
@@ -246,47 +329,33 @@ export function MessageBubble({ m, t, lang, onPick }: {
         </div>
       )}
 
-      {/* Answer */}
-      {error ? (
-        <div className="rounded-xl bg-destructive/10 px-3.5 py-2 text-[13px] text-destructive">
-          {t("assistant.error")}
-        </div>
-      ) : m.content ? (
-        <div className="w-full pt-1.5">
-          <AnswerMd text={m.content} />
-          {running && <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-foreground/40 align-middle" />}
-          {(badge || m.routing) && !running && (
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-1.5">
-              {badge && (
-                <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold", badge.cls)}>
-                  <badge.icon className="h-3 w-3" /> {badge.text}
-                </span>
+      {/* Badges / Routing */}
+      {(badge || m.routing) && !running && m.content && (
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 pt-1.5">
+          {badge && (
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold", badge.cls)}>
+              <badge.icon className="h-3 w-3" /> {badge.text}
+            </span>
+          )}
+          {m.routing && (
+            <span
+              title={`${m.routing.reason} (${Math.round(m.routing.confidence * 100)}%)`}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
+                m.routing.think ? "bg-navy/10 text-navy" : "bg-muted text-muted-foreground",
               )}
-              {m.routing && (
-                <span
-                  title={`${m.routing.reason} (${Math.round(m.routing.confidence * 100)}%)`}
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
-                    m.routing.think ? "bg-navy/10 text-navy" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {m.routing.think
-                    ? <><Brain className="h-3 w-3" /> {lang === "ja" ? "推論モード" : "Reasoning"}</>
-                    : <><Zap className="h-3 w-3" /> {lang === "ja" ? "高速モード" : "Fast"}</>}
-                </span>
-              )}
-            </div>
+            >
+              {m.routing.think
+                ? <><Brain className="h-3 w-3" /> {lang === "ja" ? "推論モード" : "Reasoning"}</>
+                : <><Zap className="h-3 w-3" /> {lang === "ja" ? "高速モード" : "Fast"}</>}
+            </span>
           )}
         </div>
-      ) : running ? (
-        <div className="inline-flex items-center gap-1.5 py-2 text-[13px] text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t("assistant.working")}
-        </div>
-      ) : null}
+      )}
 
       {/* Web citations */}
       {m.webUrls && m.webUrls.length > 0 && (
-        <div className="w-full max-w-[88%] rounded-lg border border-border bg-card px-3 py-2">
+        <div className="w-full max-w-[88%] rounded-lg border border-border bg-card px-3 py-2 mt-2">
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             <Globe className="h-3 w-3" /> {lang === "ja" ? "参照（Web）" : "Web sources"}
           </div>

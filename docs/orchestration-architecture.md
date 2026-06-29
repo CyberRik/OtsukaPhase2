@@ -389,3 +389,29 @@ four reasoners onto `reason.py`; (2) unify the three SSE dialects onto the
 `events.py` vocabulary once the frontend can consume it; (3) the product decision on
 collapsing the multi-agent flow; (4) build the `LLMPlanner` seam to fold in
 `/api/chat`. None of these are required for correctness — they are consolidation.
+
+---
+
+## M4: Adaptive Execution (The Chat Loop Integration)
+
+The `/api/chat` tool loop has now been integrated with the orchestration engine using a new **AdaptiveScheduler**. 
+
+Instead of requiring the LLM to explicitly reason about parallelism (e.g. through a `parallel_map` tool), the runtime transparently identifies opportunities for parallel execution. The LLM simply emits consecutive tool calls in a single turn, and the scheduler determines execution strategy.
+
+### 1. Capability Metadata and Policies
+Every tool declares an execution `policy` (`READ` or `WRITE`) and a `namespace`:
+- `READ` tools are side-effect free (e.g., `web_search`, `search_products`) and can be run concurrently.
+- `WRITE` tools mutate state (e.g., `schedule_meeting`, `generate_pptx`) and must run sequentially.
+
+### 2. The AdaptiveScheduler
+When the LLM emits a set of independent tool calls:
+1. The scheduler partitions the calls into batches (stages).
+2. Consecutive `READ` operations are grouped into a single parallel stage.
+3. `WRITE` operations act as barriers, forcing preceding stages to resolve and running sequentially themselves.
+4. An `ExecutionPlan` is generated and passed to the existing `ExecutionEngine`.
+
+This allows a prompt like *"Find the best laptops from MSI, ASUS, Lenovo, and Acer"* to execute 4 web searches simultaneously in the backend, radically reducing latency, while the LLM remains completely unaware of the orchestration mechanics.
+
+### 3. Stability and UI
+- **Context Length Safety**: When many parallel tools run, their concatenated output could overflow the context window (particularly for the fallback model). To guarantee stability, the engine actively truncates massive parallel payloads (e.g. to 1500 chars) before handing the evidence bundle back to the Reasoner.
+- **Visualizing Parallelism**: In the frontend, tool events are tagged with a `batchId`. The `workspace` chat UI dynamically groups tools from the same batch and renders them using a hierarchical "ticks and squares" timeline, clearly exposing the parallel execution behavior to the user.
