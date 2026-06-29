@@ -42,6 +42,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArtifactCard } from "./artifact-card";
 import { MessageBubble, type Msg } from "@/components/assistant/message";
 import { ExperiencePanel } from "@/components/coach/similar-cases";
+import { CrewTurn } from "./crew-turn";
 import { parseInput } from "./slash";
 
 // --- thread model -----------------------------------------------------------
@@ -55,7 +56,8 @@ type WMsg =
   | { id: number; role: "account_pick"; query: string; candidates: AccountPickCandidate[]; suggestedId?: string | null }
   | { id: number; role: "skill"; kind: "review"; note: string; dealId?: string; artifact: Artifact }
   | { id: number; role: "skill"; kind: "account_brief"; customerId: string; artifact: Artifact }
-  | { id: number; role: "skill"; kind: "research"; query: string; entity?: EntityRef; artifact: Artifact };
+  | { id: number; role: "skill"; kind: "research"; query: string; entity?: EntityRef; artifact: Artifact }
+  | { id: number; role: "crew"; mode: "deal" | "team"; query?: string; label?: string };
 
 function Avatar({ who }: { who: "senpai" | "user" }) {
   return who === "senpai" ? (
@@ -99,6 +101,7 @@ const SLASH_COMMANDS = [
     labelJa: "商談メモをレビュー",
     descEn: "Paste a note — get a senior's structured read",
     descJa: "メモを貼り付け、先輩の視点で読み解く",
+    managerOnly: false,
   },
   {
     cmd: "/account",
@@ -106,6 +109,7 @@ const SLASH_COMMANDS = [
     labelJa: "顧客インテリジェンス",
     descEn: "Pull a customer brief from internal records",
     descJa: "社内記録から顧客ブリーフを取得する",
+    managerOnly: false,
   },
   {
     cmd: "/research",
@@ -113,6 +117,23 @@ const SLASH_COMMANDS = [
     labelJa: "トピックをリサーチ",
     descEn: "Search internal data and the web",
     descJa: "社内データとWebを横断して調査する",
+    managerOnly: false,
+  },
+  {
+    cmd: "/crew",
+    labelEn: "Multi-agent deal analysis",
+    labelJa: "エージェントで商談分析",
+    descEn: "A Researcher, Coach & Strategist analyse a deal together",
+    descJa: "リサーチャー・コーチ・ストラテジストが商談を分析",
+    managerOnly: false,
+  },
+  {
+    cmd: "/team",
+    labelEn: "Multi-agent team review",
+    labelJa: "エージェントでチーム分析",
+    descEn: "One analyst per rep, then a team-lead action list",
+    descJa: "担当ごとに分析し、今週の優先アクションを提示",
+    managerOnly: true,
   },
 ] as const;
 
@@ -125,16 +146,18 @@ const SlashPicker = React.forwardRef<
   {
     input: string;
     lang: string;
+    role: "junior" | "manager";
     onSelect: (cmd: string) => void;
     onClose: () => void;
   }
->(function SlashPicker({ input, lang, onSelect, onClose }, ref) {
+>(function SlashPicker({ input, lang, role, onSelect, onClose }, ref) {
   const [active, setActive] = useState(0);
 
-  // Filter commands by what the user has typed after "/"
+  // Filter commands by what the user has typed after "/" (and hide manager-only
+  // skills like /team from the junior workspace).
   const typed = input.startsWith("/") ? input.slice(1).toLowerCase() : "";
   const filtered = SLASH_COMMANDS.filter((c) =>
-    c.cmd.slice(1).startsWith(typed)
+    c.cmd.slice(1).startsWith(typed) && (!c.managerOnly || role === "manager")
   );
 
   // `active` can outrun a shrinking `filtered` (the user typed more and fewer
@@ -871,6 +894,36 @@ export function Workspace({
     setBusy(false);
   }
 
+  // Trigger an inline multi-agent crew the way you'd invoke a sub-agent: a single
+  // contained turn that streams the agents working. /crew <customer|deal> analyses
+  // one deal; /team (manager) fans out one analyst per rep. No new endpoint round
+  // trip here — CrewTurn opens the stream itself and caches its own state.
+  function runCrew(body: string, deal: string) {
+    const clean = body.trim();
+    const d = deal ? deals.find((x) => x.deal_id === deal) : undefined;
+    const query = clean || (d ? `${d.deal_id} ${d.customer}` : "");
+    if (!query) return;
+    const id = nextId();
+    setMessages((m) => [
+      ...m,
+      { id: nextId(), role: "user", text: `/crew ${query}` },
+      { id, role: "crew", mode: "deal", query, label: d?.customer },
+    ]);
+    setInput("");
+    setDealId("");
+  }
+
+  function runTeam() {
+    const id = nextId();
+    setMessages((m) => [
+      ...m,
+      { id: nextId(), role: "user", text: "/team" },
+      { id, role: "crew", mode: "team" },
+    ]);
+    setInput("");
+    setDealId("");
+  }
+
   function runChat(text: string, deal?: string) {
      const clean = text.trim();
      if (!clean || busy) return;
@@ -931,6 +984,10 @@ export function Workspace({
       runAccount(p.body);
     } else if (p.command === "research") {
       runResearch(p.body, deal);
+    } else if (p.command === "crew") {
+      runCrew(p.body, deal);
+    } else if (p.command === "team") {
+      runTeam();
     } else {
       runChat(p.body || raw.trim(), deal);
     }
@@ -1170,6 +1227,13 @@ export function Workspace({
               </Row>
             );
           }
+          if (m.role === "crew") {
+            return (
+              <Row key={m.id} who="senpai" name={assistantName}>
+                <CrewTurn turnId={m.id} conversationId={thread.current} mode={m.mode} query={m.query} label={m.label} />
+              </Row>
+            );
+          }
           return null;
         })}
 
@@ -1184,6 +1248,7 @@ export function Workspace({
               ref={pickerRef}
               input={input}
               lang={lang}
+              role={role}
               onSelect={(cmd) => {
                 setInput(cmd);
                 setShowPicker(false);

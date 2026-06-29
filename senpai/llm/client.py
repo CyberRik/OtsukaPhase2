@@ -311,6 +311,27 @@ _FINISH_TOOL = {
     },
 }
 
+# Action tools that commit a side effect or produce a deliverable (a file, a booked
+# meeting, a quote/email draft) rather than retrieve facts.
+_ACTION_TOOLS = {"schedule_meeting", "create_quote", "send_email"}
+
+
+def _is_terminal_action(name: str, result: str) -> bool:
+    """True when an action tool actually COMMITTED (file generated, meeting booked,
+    draft produced) — meaning the turn is done and the model must not be allowed to
+    re-invoke it. A confirm=false PREVIEW (which asks the rep to confirm first) and a
+    failed call are NOT terminal, so the loop keeps going in those cases.
+
+    This is what stops the model from re-calling generate_pptx every round and
+    emitting duplicate files: once the deck is built, the turn ends on that result."""
+    if not (name in _ACTION_TOOLS or name.startswith("generate_")):
+        return False
+    if "confirm=true" in result or "【プレビュー】" in result:
+        return False  # a preview/draft awaiting the rep's confirmation
+    if result.startswith("[error]") or "見つかりません" in result:
+        return False  # a failed call — let the model recover
+    return True
+
 
 def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                      role: str | None = None):
@@ -402,6 +423,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
                                   "filename": doc["filename"], "download_url": doc["download_url"]}
             yield ev
+
+            if _is_terminal_action(name, result):
+                # The deliverable is done (file built / meeting booked / draft made).
+                # End the turn on its result so the model can't re-invoke it and
+                # produce duplicates — and skip the redundant synthesis round.
+                yield {"type": "answer", "text": result}
+                return
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.

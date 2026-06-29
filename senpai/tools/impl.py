@@ -44,8 +44,15 @@ def _resolve_customer(customer: str) -> dict | None:
 
 
 def _deal_line(d: dict) -> str:
+    # The deal_name (e.g. "藤本食品 複合機案件") and product_category are what let the
+    # model pick the deal the rep actually named — a request for "複合機案件" must not
+    # silently resolve to the biggest open deal. The name already carries the customer.
     cust = store.customer_name(d["customer_id"])
-    return (f"{d['deal_id']} {cust} / 担当{store.rep_name(store.deal_rep_id(d))} / "
+    label = (d.get("deal_name") or "").strip() or cust
+    cat = (d.get("product_category") or "").strip()
+    if cat:
+        label = f"{label}（{cat}）"
+    return (f"{d['deal_id']} {label} / 担当{store.rep_name(store.deal_rep_id(d))} / "
             f"{d['order_rank']} / ¥{d['total_order_amount']:,} / "
             f"完了予定{d['expected_order_date']}")
 
@@ -728,7 +735,9 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
     if not confirm:
         pv = ctx.to_preview()
         pains = "、".join(pv["pain_points"]) or "（SPRに課題記録なし）"
+        deal_label = (ctx.deal_name or ctx.customer) + (f"（{ctx.product_category}）" if ctx.product_category else "")
         return (f"【プレビュー】{ctx.customer}様向け 提案書(PPTX・4スライド)\n"
+                f"- 対象案件: {ctx.deal_id} {deal_label}\n"
                 f"- 課題: {pains}\n"
                 f"- 投資額: {_yen(pv['investment'])}\n"
                 f"- 対象製品: {pv['n_products']}件 / 参考事例: {pv['n_comparables']}件\n"
@@ -753,7 +762,9 @@ def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
     if not confirm:
         pv = ctx.to_preview()
         pains = "、".join(pv["pain_points"]) or "（SPRに課題記録なし）"
+        deal_label = (ctx.deal_name or ctx.customer) + (f"（{ctx.product_category}）" if ctx.product_category else "")
         return (f"【プレビュー】{ctx.customer}様 情報システム部の稟議書(DOCX)\n"
+                f"- 対象案件: {ctx.deal_id} {deal_label}\n"
                 f"- 背景・課題: {pains}\n"
                 f"- 投資額: {_yen(pv['investment'])}\n"
                 "- 構成: 背景・課題 / 提案内容 / 投資額と効果 / 結論・承認依頼\n"

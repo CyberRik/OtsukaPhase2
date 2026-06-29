@@ -96,3 +96,15 @@
       radial-gradient(40% 40% at 85% 10%, hsl(var(--primary) / 0.05), transparent 70%);
   }
 }
+
+/* Execution log active-step pulse — slow opacity only, no transform, no spin.
+   Feels alive without being distracting. */
+@keyframes execution-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+.execution-pulse {
+  display: inline-block;
+  animation: execution-pulse 1.6s ease-in-out infinite;
+}
+

@@ -1384,6 +1384,79 @@ def chat(req: ChatRequest):
     )
 
 
+# --- Multi-agent crew -------------------------------------------------------
+# A small crew of role-specialised agents (Researcher / Coach / Strategist)
+# analyse one deal together — the "not a chatbot" surface. Researcher and Coach
+# run in parallel; the Strategist merges their findings. Triggered from the chat
+# workspace via /crew (deal) and /team (manager fan-out). See senpai.agent.crew.
+class CrewRequest(BaseModel):
+    deal_id: str | None = None
+    message: str | None = None      # free text ("fujimoto") — resolved to a deal
+
+
+@app.post("/api/agent/crew")
+def agent_crew(req: CrewRequest):
+    """Stream a multi-agent crew analysis of one deal (SSE). Accepts an explicit
+    deal_id, or free `message` text that is resolved to the customer's worst open
+    deal. Event types: crew | agent | agent_tool | final | done | error"""
+    from senpai.agent import crew
+
+    deal_id = (req.deal_id or "").strip()
+    short_circuit: list[dict] | None = None
+    if not deal_id:
+        target = crew.resolve_crew_target(req.message or "")
+        if target["status"] == "resolved":
+            deal_id = target["deal_id"]
+        elif target["status"] == "ambiguous":
+            # Same picker the chat/research surfaces use — let the rep choose rather
+            # than guess. The query shown is the matched stem ("fujimoto"), not the
+            # whole sentence. The CrewTurn re-runs this with the chosen deal_id.
+            short_circuit = [
+                {"type": "resolve", "status": "ambiguous",
+                 "query": target.get("stem") or (req.message or ""),
+                 "candidates": target["candidates"]},
+                {"type": "done"}]
+        else:
+            short_circuit = [{"type": "error", "reason": "not_found"}, {"type": "done"}]
+
+    def gen():
+        try:
+            if short_circuit is not None:
+                for ev in short_circuit:
+                    yield _sse(ev)
+                return
+            for ev in crew.run_crew(deal_id):
+                yield _sse(ev)
+        except Exception as e:  # noqa: BLE001 — never crash the stream
+            yield _sse({"type": "error", "reason": str(e)})
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.post("/api/agent/team")
+def agent_team():
+    """Stream a manager fan-out — one analyst agent per rep in parallel, then a team
+    lead synthesis (SSE). Same event contract as /api/agent/crew."""
+    from senpai.agent import crew
+
+    def gen():
+        try:
+            for ev in crew.run_team():
+                yield _sse(ev)
+        except Exception as e:  # noqa: BLE001 — never crash the stream
+            yield _sse({"type": "error", "reason": str(e)})
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.post("/api/coach/similar-cases")
 def coach_similar_cases(req: CoachRequest):
     """Real past deals that rhyme with the current situation — Pillar 2,
