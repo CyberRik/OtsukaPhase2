@@ -21,6 +21,7 @@ import {
   CornerDownLeft,
   GraduationCap,
   Loader2,
+  Mic,
   Paperclip,
   Sparkles,
   Square,
@@ -706,6 +707,11 @@ export function Workspace({
   // the assistant answers over (structured ingestion lives on the Ingestion tab).
   const [attached, setAttached] = useState<{ fileName: string; text: string } | null>(null);
   const [attaching, setAttaching] = useState(false);
+  // Mic dictation: record from the mic, then transcribe straight into the
+  // composer (same /api/extract → Whisper path the audio-file attach uses).
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
   const thread = useCachedConversationId(`workspace:${role}:thread:id`);
 
   const idRef = useRef<number>(-1);
@@ -739,6 +745,51 @@ export function Workspace({
     } else {
       setAttached({ fileName: file.name, text: "" });
     }
+  }
+
+  // Start/stop mic dictation. On stop, the recorded clip is sent to
+  // /api/extract (Whisper) and the transcript is appended to the composer so
+  // the user can review/edit before sending — no auto-send.
+  async function toggleRecording() {
+    if (transcribing || busy || attaching) return;
+    if (recording) {
+      recorderRef.current?.stop();  // fires onstop → transcribe
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setAttached({ fileName: t("mic.denied"), text: "" });
+      return;
+    }
+    // Pick a container the browser actually supports (Safari lacks webm).
+    const mime = ["audio/webm", "audio/mp4", "audio/ogg"].find(
+      (m) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m),
+    );
+    const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((tk) => tk.stop());  // release the mic
+      setRecording(false);
+      const type = recorder.mimeType || "audio/webm";
+      const ext = type.includes("mp4") ? "m4a" : type.includes("ogg") ? "ogg" : "webm";
+      const blob = new Blob(chunks, { type });
+      if (blob.size === 0) return;
+      setTranscribing(true);
+      const file = new File([blob], `dictation.${ext}`, { type });
+      const { data } = await api.extract({ audio: file });
+      setTranscribing(false);
+      const text = data?.raw_text?.trim();
+      if (text) {
+        setInput((prev) => (prev ? `${prev} ${text}` : text));
+        composerRef.current?.focus();
+      }
+    };
+    recorderRef.current = recorder;
+    recorder.start();
+    setRecording(true);
   }
 
   async function runReview(note: string, deal: string) {
@@ -1277,6 +1328,28 @@ export function Workspace({
                     e.target.value = "";
                   }}
                 />
+                {/* Mic dictation — record, then transcribe straight into the
+                    composer via the same Whisper path as the audio attach. */}
+                <button
+                  onClick={toggleRecording}
+                  disabled={busy || attaching || transcribing}
+                  title={recording ? t("mic.stop") : t("mic.start")}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1 rounded-lg border px-2.5 text-[12px] transition-colors disabled:opacity-50",
+                    recording
+                      ? "border-band-red/40 bg-band-red/10 text-band-red"
+                      : "border-border bg-card text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {transcribing
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : recording
+                      ? <Square className="h-3.5 w-3.5 animate-pulse fill-current" />
+                      : <Mic className="h-3.5 w-3.5" />}
+                  <span className="hidden sm:inline">
+                    {transcribing ? t("mic.transcribing") : recording ? t("mic.stop") : t("mic.short")}
+                  </span>
+                </button>
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={busy || attaching}
