@@ -18,7 +18,7 @@ import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; batchId?: string | null };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -143,32 +143,74 @@ export function MessageBubble({ m, t, lang, onPick }: {
             {m.tools.length} {t("assistant.toolsUsed")}
           </summary>
           <div className="space-y-2 border-l border-border/60 ml-1.5 pl-3 mt-1 pb-2.5">
-            {m.tools.map((tool, i) => {
-              const meta = TOOL_LABEL[tool.name];
-              const Icon = meta?.icon ?? Wrench;
-              const label = meta ? (lang === "ja" ? meta.ja : meta.en) : tool.name;
-              return (
-                <div key={i} className="rounded-md bg-card p-2">
-                  <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-foreground">
-                    <Icon className="h-3.5 w-3.5 shrink-0 text-primary/70" />
-                    {label}
-                    <span className="font-mono text-[10.5px] text-muted-foreground">{tool.args}</span>
-                  </div>
-                  <div className="mt-1 whitespace-pre-wrap text-[11.5px] text-muted-foreground">{tool.result}</div>
-                  {tool.document && (
-                    <a
-                      href={documentUrl(tool.document.download_url)}
-                      download={tool.document.filename}
-                      className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11.5px] font-medium text-primary transition-colors hover:bg-primary/10"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      {lang === "ja" ? "ダウンロード" : "Download"}
-                      <span className="font-mono text-[10.5px] text-muted-foreground">{tool.document.filename}</span>
-                    </a>
-                  )}
-                </div>
-              );
-            })}
+            {(() => {
+              const groups: { batchId: string | null; tools: ToolCall[] }[] = [];
+              for (const tl of m.tools) {
+                const last = groups[groups.length - 1];
+                if (tl.batchId && last && last.batchId === tl.batchId) {
+                  last.tools.push(tl);
+                } else {
+                  groups.push({ batchId: tl.batchId || null, tools: [tl] });
+                }
+              }
+
+              return groups.map((g, gi) => {
+                if (g.batchId && g.tools.length > 1) {
+                  return (
+                    <div key={`batch-${gi}`} className="flex flex-col gap-1.5 rounded-md bg-card p-2.5 shadow-sm border border-border/40">
+                      <div className="flex items-center gap-2 text-[11.5px] font-medium text-foreground">
+                        <span className="w-3 shrink-0 text-center font-mono text-[11px] text-foreground/40">{running ? "□" : "✓"}</span>
+                        <span>{lang === "ja" ? `並列実行 (${g.tools.length}タスク)` : `Parallel execution (${g.tools.length} tasks)`}</span>
+                        {running && <span className="execution-pulse inline-block h-1.5 w-1.5 rounded-full bg-primary/70 shrink-0" />}
+                      </div>
+                      <div className="flex flex-col gap-1.5 pl-[22px]">
+                        {g.tools.map((tool, i) => {
+                          const meta = TOOL_LABEL[tool.name];
+                          const label = meta ? (lang === "ja" ? meta.ja : meta.en) : tool.name;
+                          return (
+                            <div key={i} className="flex flex-col gap-0.5">
+                              <div className="flex items-baseline gap-2.5 text-[11.5px]">
+                                <span className="w-3 shrink-0 text-center font-mono text-[10px] text-primary">{running ? "●" : "✓"}</span>
+                                <span className="text-foreground">{label}</span>
+                                <span className="font-mono text-[10px] text-muted-foreground truncate">{tool.args}</span>
+                              </div>
+                              <div className="ml-5 whitespace-pre-wrap text-[11px] text-muted-foreground line-clamp-3">{tool.result}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return g.tools.map((tool, i) => {
+                  const meta = TOOL_LABEL[tool.name];
+                  const Icon = meta?.icon ?? Wrench;
+                  const label = meta ? (lang === "ja" ? meta.ja : meta.en) : tool.name;
+                  return (
+                    <div key={`single-${gi}-${i}`} className="rounded-md bg-card p-2">
+                      <div className="flex items-center gap-1.5 text-[11.5px] font-medium text-foreground">
+                        <Icon className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+                        {label}
+                        <span className="font-mono text-[10.5px] text-muted-foreground truncate">{tool.args}</span>
+                      </div>
+                      <div className="mt-1 whitespace-pre-wrap text-[11.5px] text-muted-foreground">{tool.result}</div>
+                      {tool.document && (
+                        <a
+                          href={documentUrl(tool.document.download_url)}
+                          download={tool.document.filename}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11.5px] font-medium text-primary transition-colors hover:bg-primary/10"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          {lang === "ja" ? "ダウンロード" : "Download"}
+                          <span className="font-mono text-[10.5px] text-muted-foreground">{tool.document.filename}</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                });
+              });
+            })()}
           </div>
         </details>
       )}

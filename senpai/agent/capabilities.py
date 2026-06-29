@@ -18,6 +18,7 @@ from typing import Any, Mapping
 
 from senpai.orchestration import CapabilityRegistry, ExecContext
 from senpai.orchestration.evidence import Evidence
+from senpai.orchestration.metadata import CapabilityMetadata, OperationKind
 from senpai.tools import impl
 
 
@@ -25,6 +26,7 @@ class ToolCapability:
     """Runs one deterministic tool (`impl.dispatch(op, inputs)`) and returns its
     string output as evidence. `op` is the tool name; `impl.dispatch` never raises."""
     name = "tool"
+    metadata = CapabilityMetadata(OperationKind.COMPUTE)
 
     def run(self, op: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
         text = impl.dispatch(op, dict(inputs))

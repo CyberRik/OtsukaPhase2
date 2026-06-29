@@ -19,6 +19,8 @@ import threading
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Mapping, Protocol, runtime_checkable
 
+from senpai.orchestration.metadata import CapabilityMetadata
+
 if TYPE_CHECKING:  # avoid an import cycle — only needed for type hints
     from senpai.orchestration.evidence import Evidence
 
@@ -129,6 +131,7 @@ class Capability(Protocol):
     `name`. `run` dispatches on `op` if the domain has several operations (CRM:
     'lookup_deal' / 'list_proposals'); single-operation capabilities ignore `op`."""
     name: str
+    metadata: CapabilityMetadata
 
     def run(self, op: str, inputs: Mapping[str, Any], ctx: ExecContext) -> "Evidence":
         ...

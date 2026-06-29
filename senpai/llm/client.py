@@ -17,6 +17,12 @@ from openai import OpenAI
 
 from senpai import config
 from senpai.tools.impl import dispatch
+from senpai.orchestration.scheduler import AdaptiveScheduler, ToolCall as SchedToolCall
+from senpai.orchestration.engine import ExecutionEngine
+from senpai.agent.capabilities import build_registry
+
+_SCHEDULER = AdaptiveScheduler()
+_ENGINE = ExecutionEngine(build_registry())
 from senpai.tools.schemas import TOOLS
 
 # A single OpenAI-compatible client. `timeout`/`max_retries` keep a slow or down
@@ -411,15 +417,44 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             {"id": cid, "type": "function",
              "function": {"name": name, "arguments": args}}
             for cid, name, args in real_calls]})
+             
+        sched_calls = [SchedToolCall(id=cid, name=name, arguments=args) for cid, name, args in real_calls]
+        plan = _SCHEDULER.schedule(sched_calls)
+        
+        # Drain any residual traces left over in the main thread before threading
+        _trace.drain()
+        _docs.drain()
+        
+        # Run the ExecutionPlan in parallel via the Engine
+        def _ignore_events(evt: dict) -> None:
+            pass
+        bundle = _ENGINE.run(plan, _ignore_events)
+        
+        # Reconstruct the tool_log and yield UI events just like the sequential loop
+        # We preserve the order of `real_calls`
+        batch_id = f"batch_{id(plan)}" if len(real_calls) > 1 else None
+        
         for cid, name, args in real_calls:
-            result = dispatch(name, args)
+            # Re-fetch the evidence from the bundle
+            ev_frag = bundle.get(cid)
+            result = ev_frag.data.get("text", "[error] Missing execution result") if ev_frag else "[error] Task skipped"
+            
+            # TRUNCATE IF MASSIVE (prevents parallel calls from blowing up context window)
+            if len(result) > 1500:
+                result = result[:1500] + "\n... [truncated for length]"
+            
             tool_log.append((name, _fmt_args(args), result))
             convo.append({"role": "tool", "tool_call_id": cid, "content": result})
-            ev = {"type": "tool", "name": name, "args": _fmt_args(args), "result": result}
-            retrieval = _trace.drain()  # any chunks this tool retrieved (Explorer)
+            
+            ev = {"type": "tool", "name": name, "args": _fmt_args(args), "result": result, "batchId": batch_id}
+            
+            # Since threads might have dumped into the shared contextvar (or their own),
+            # this is a known limitation in M1 for tracing parallel tasks. We do a global drain here.
+            # In a future phase, ToolCapability will attach traces to Evidence natively.
+            retrieval = _trace.drain() 
             if retrieval:
                 ev["retrieval"] = retrieval
-            generated = _docs.drain()   # any file this tool generated (download chip)
+            generated = _docs.drain()
             if generated:
                 doc = generated[-1]
                 ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
