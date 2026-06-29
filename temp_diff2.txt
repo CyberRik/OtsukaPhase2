@@ -1,0 +1,760 @@
+﻿commit 9fda6af99bcf47bbfe0d6145a9f2875b7bb36820
+Author: Ritankar Mondal <ritankarmondal123@gmail.com>
+Date:   Thu Jun 25 16:28:25 2026 +0900
+
+    feat: implement core tool set and backend infrastructure for deal management, health scoring, and knowledge retrieval
+
+diff --git a/README.md b/README.md
+index 1ee4d02..0a3da85 100644
+--- a/README.md
++++ b/README.md
+@@ -36,6 +36,7 @@ live Coach commentary ON (default off = deterministic only).
+ # install deps (Python bridge + frontend)
+ .\.venv\Scripts\pip.exe install -r requirements.txt
+ cd web; npm install; cd ..
++```
+ 
+ # Terminal 1 ΓÇö Backend bridge (FastAPI) ΓåÆ http://localhost:8000
+ $env:SENPAI_USE_LLM = '1'
+diff --git a/scripts/bench_synthesis.py b/scripts/bench_synthesis.py
+new file mode 100644
+index 0000000..c87e211
+--- /dev/null
++++ b/scripts/bench_synthesis.py
+@@ -0,0 +1,225 @@
++"""A/B benchmark: 27B synthesis vs a smaller synthesis model (model decomposition).
++
++Tests the recommendation in the model-decomposition plan: can the FINAL grounded
++synthesis be served by a smaller model (Qwen3-8B) without materially reducing
++quality, for a large latency win?
++
++Design (the methodology that must be right):
++  * FREEZE TOOL OUTPUTS. For each query we run the 27B's tool-SELECTION rounds +
++    execute the tools ONCE (deterministic), then feed the *identical* post-tool
++    context to BOTH synthesis models. This isolates the synthesis-model variable
++    and removes tool-selection nondeterminism ΓÇö the only thing that differs
++    between arms is who writes the final answer.
++  * Control   : 27B (select) -> tools -> 27B (synthesis)
++  * Candidate : 27B (select) -> tools -> 8B (synthesis)   [same frozen context]
++  * The reasoning router decides no_think per query; BOTH arms use the same flag,
++    so we compare like-for-like (FAST restatement vs THINK interpretation).
++
++Metrics (per query + aggregate):
++  * latency (wall), prompt tokens, completion tokens, decode tok/s
++  * grounding fidelity   ΓÇö every ┬Ñamount / C-id / D-id / date / source-id in the
++                           answer must appear in the frozen tool context; anything
++                           that doesn't is a candidate FABRICATION (hard signal).
++  * provenance           ΓÇö source ids (PBxx / Pxxx) cited must exist in context
++  * coaching quality     ΓÇö answers are dumped side-by-side for blind review; an
++                           optional --judge pass scores pairwise with the 27B.
++
++NOTHING in the live request path is touched. Run once:
++  python scripts/bench_synthesis.py --candidate-base http://127.0.0.1:8766/v1 \
++         --candidate-model qwen3-8b [--queries 6] [--judge]
++
++Endpoints: control defaults to senpai config (BASE_URL/MODEL, the 27B on :8765
++via the SSH tunnel); candidate is the 8B (serve with vLLM on :8766, tunnel it).
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import re
++import sys
++import time
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root -> import senpai
++
++import numpy as np
++
++
++# --- benchmark queries: grounded, real customers/deals, FAST + THINK regimes ---
++# (query, role, regime_hint) ΓÇö regime_hint is documentation; the router decides.
++QUERIES: list[tuple[str, str, str]] = [
++    # FAST ΓÇö grounded summarization of records (the decomposition target)
++    ("need more research about C14, look at all past deals and what to expect?", "junior", "fast"),
++    ("Σ╕╕Σ╕ëΘúƒσôüπü«µíêΣ╗╢πü«τè╢µ│üπü¿τ¢┤Φ┐æπü«πéäπéèσÅûπéèπéÆµòÖπüêπüª", "junior", "fast"),
++    ("µá¬σ╝ÅΣ╝Üτñ╛µ¥╛τö░πé╡πâ╝πâôπé╣∩╝êC28∩╝ëπü«σÅûσ╝òσ▒Ñµ¡┤πéÆπü╛πü¿πéüπüª", "junior", "fast"),
++    ("C100πü«µíêΣ╗╢πü¿µ£ÇΦ┐æπü«µùÑσá▒πéÆτó║Φ¬ìπüùπüƒπüä", "junior", "fast"),
++    ("D027πü«Θíºσ«óπü«ITτÆ░σóâπü¿ΘüÄσÄ╗πü«µ┤╗σïòπéÆµò┤τÉåπüùπüª", "junior", "fast"),
++    # THINK ΓÇö numeric / cross-signal interpretation (should stay on 27B)
++    ("D027πü«µíêΣ╗╢σüÑσà¿σ║ªπéÆΦ⌐òΣ╛íπüùπüªπÇüπâ¬πé╣πé»πü¿µ¼íπü«Σ╕ÇµëïπéÆµòÖπüêπüª", "junior", "think"),
++    ("Σ╕╕Σ╕ëΘúƒσôüπü»µÄÑΦºªπü»σñÜπüäπüîσëìΘÇ▓πüùπü¬πüäπÇéπü¬πü£πüïπÇüπü⌐πüåπüÖπü╣πüìπüïσêåµ₧Éπüùπüª", "junior", "think"),
++    ("πüäπü╛σì▒πü¬πüäµíêΣ╗╢πéÆµîÖπüÆπüªπÇüΣ╜òπüîσà▒ΘÇÜπü«σÄƒσ¢áπüïΦÇâπüêπüª", "manager", "think"),
++]
++
++
++def _make_client(base_url: str):
++    from openai import OpenAI
++    return OpenAI(base_url=base_url, api_key="dummy")
++
++
++# --- Phase 1: freeze the post-tool context using the 27B selection loop --------
++def freeze_context(query: str, role: str, ctrl_client, ctrl_model: str):
++    """Run the 27B tool-SELECTION rounds + execute tools, returning the convo just
++    BEFORE synthesis. Mirrors senpai.llm.client.stream_chat_turn's selection loop
++    but stops at the answering round instead of synthesizing."""
++    from senpai import config
++    from senpai.tools.impl import dispatch
++    from senpai.llm.client import _prep, _fmt_args
++    from senpai.api import server
++
++    tools, sysfn = server._CHAT_ROLES.get(role, server._CHAT_ROLES["junior"])
++    convo = [{"role": "system", "content": sysfn()}, {"role": "user", "content": query}]
++    tool_log: list[tuple[str, str, str]] = []
++    t0 = time.perf_counter()
++    for _ in range(config.MAX_TOOL_ROUNDS):
++        resp = ctrl_client.chat.completions.create(
++            model=ctrl_model, messages=_prep(convo, False), tools=tools,
++            tool_choice="auto", temperature=0.0)
++        msg = resp.choices[0].message
++        if not msg.tool_calls:
++            break  # answering round reached ΓÇö stop; synthesis is the benchmarked part
++        calls = [(tc.id, tc.function.name, tc.function.arguments) for tc in msg.tool_calls]
++        convo.append({"role": "assistant", "content": None, "tool_calls": [
++            {"id": cid, "type": "function", "function": {"name": n, "arguments": a}}
++            for cid, n, a in calls]})
++        for cid, name, args in calls:
++            result = dispatch(name, args)
++            tool_log.append((name, _fmt_args(args), result))
++            convo.append({"role": "tool", "tool_call_id": cid, "content": result})
++    sel_s = time.perf_counter() - t0
++
++    # routed reasoning mode for the synthesis round (same flag for both arms)
++    from senpai.llm.routing import get_reasoning_router, RoutingRequest
++    dec = get_reasoning_router().route(RoutingRequest(
++        message=query, role=role, tools_used=[n for n, _a, _r in tool_log],
++        rounds=len(tool_log)))
++    grounding = "\n".join(r for _n, _a, r in tool_log)  # what the answer must stay within
++    return {"convo": convo, "tool_log": tool_log, "no_think": not dec.think,
++            "mode": "think" if dec.think else "fast", "select_s": sel_s,
++            "tools": [n for n, _a, _r in tool_log], "grounding": grounding}
++
++
++# --- Phase 2: synthesize on one model from a frozen context -------------------
++_THINK = re.compile(r"<think(?:ing)?>.*?</think(?:ing)?>|<think(?:ing)?>", re.DOTALL | re.IGNORECASE)
++
++
++def synthesize(client, model: str, frozen: dict):
++    from senpai.llm.client import _prep
++    msgs = _prep(frozen["convo"], frozen["no_think"])
++    t0 = time.perf_counter()
++    resp = client.chat.completions.create(
++        model=model, messages=msgs, temperature=0.0, max_tokens=1024)
++    dt = time.perf_counter() - t0
++    m = resp.choices[0].message
++    text = _THINK.sub("", m.content or "").strip()
++    u = resp.usage
++    comp = u.completion_tokens if u else len(text) // 3
++    return {"text": text, "wall_s": round(dt, 1),
++            "prompt_tokens": u.prompt_tokens if u else None,
++            "completion_tokens": comp,
++            "tok_s": round(comp / dt, 1) if dt else 0.0}
++
++
++# --- Phase 3: automatable grounding / provenance checks -----------------------
++_PATTERNS = {
++    "yen": re.compile(r"┬Ñ[\d,]+"),
++    "customer_id": re.compile(r"\bC\d{1,4}\b"),
++    "deal_id": re.compile(r"\bD\d{3}\b"),
++    "source_id": re.compile(r"\b(?:PB\d+|P\d{3})\b"),
++    "date": re.compile(r"\d{4}-\d{2}-\d{2}"),
++    "bignum": re.compile(r"\b\d{3,}\b"),  # counts / amounts written without ┬Ñ
++}
++
++
++def grounding_report(answer: str, context: str) -> dict:
++    """Every factual token the answer states must be traceable to the frozen tool
++    context. Unsupported tokens are candidate fabrications (the veto metric)."""
++    ctx = context
++    # normalize ┬Ñ amounts (drop commas) so '┬Ñ960,000' matches '960000' in records
++    ctx_norm = ctx.replace(",", "")
++    unsupported: list[str] = []
++    checked = 0
++    for kind, pat in _PATTERNS.items():
++        for tok in set(pat.findall(answer)):
++            checked += 1
++            t_norm = tok.replace(",", "").lstrip("┬Ñ")
++            if t_norm not in ctx_norm and tok not in ctx:
++                unsupported.append(f"{kind}:{tok}")
++    return {"checked": checked, "unsupported": unsupported,
++            "fidelity": round(1 - len(unsupported) / checked, 3) if checked else 1.0}
++
++
++def main() -> None:
++    ap = argparse.ArgumentParser()
++    ap.add_argument("--candidate-base", default="http://127.0.0.1:8766/v1")
++    ap.add_argument("--candidate-model", default="qwen3-8b")
++    ap.add_argument("--queries", type=int, default=len(QUERIES))
++    ap.add_argument("--out", default="scripts/bench_synthesis_results.json")
++    args = ap.parse_args()
++
++    from senpai import config
++    from senpai.llm.client import client as ctrl_client  # 27B primary (:8765)
++    ctrl_model = config.MODEL
++    cand_client = _make_client(args.candidate_base)
++    qs = QUERIES[: args.queries]
++
++    print(f"control:   {config.BASE_URL}  model={ctrl_model}")
++    print(f"candidate: {args.candidate_base}  model={args.candidate_model}")
++    print(f"queries:   {len(qs)}\n")
++
++    rows = []
++    for i, (q, role, hint) in enumerate(qs, 1):
++        print(f"[{i}/{len(qs)}] ({hint}) {q[:50]}ΓÇª")
++        fr = freeze_context(q, role, ctrl_client, ctrl_model)
++        print(f"    selection {fr['select_s']:.0f}s, tools={fr['tools']}, mode={fr['mode']}")
++        ctrl = synthesize(ctrl_client, ctrl_model, fr)
++        print(f"    27B  {ctrl['wall_s']}s  {ctrl['completion_tokens']}tok  {ctrl['tok_s']}tok/s")
++        cand = synthesize(cand_client, args.candidate_model, fr)
++        print(f"    8B   {cand['wall_s']}s  {cand['completion_tokens']}tok  {cand['tok_s']}tok/s")
++        g_ctrl = grounding_report(ctrl["text"], fr["grounding"])
++        g_cand = grounding_report(cand["text"], fr["grounding"])
++        rows.append({"query": q, "role": role, "hint": hint, "mode": fr["mode"],
++                     "tools": fr["tools"], "select_s": round(fr["select_s"], 1),
++                     "control": {**ctrl, "grounding": g_ctrl},
++                     "candidate": {**cand, "grounding": g_cand}})
++        print(f"    grounding fidelity  27B={g_ctrl['fidelity']}  8B={g_cand['fidelity']}"
++              f"   (8B unsupported: {g_cand['unsupported'] or 'none'})")
++
++    # aggregate
++    def agg(arm, key):
++        vals = [r[arm][key] for r in rows if r[arm].get(key) is not None]
++        return round(float(np.mean(vals)), 1) if vals else None
++    summary = {
++        "n": len(rows),
++        "control": {"avg_wall_s": agg("control", "wall_s"),
++                    "avg_completion_tokens": agg("control", "completion_tokens"),
++                    "avg_tok_s": agg("control", "tok_s"),
++                    "avg_fidelity": round(float(np.mean([r["control"]["grounding"]["fidelity"] for r in rows])), 3)},
++        "candidate": {"avg_wall_s": agg("candidate", "wall_s"),
++                      "avg_completion_tokens": agg("candidate", "completion_tokens"),
++                      "avg_tok_s": agg("candidate", "tok_s"),
++                      "avg_fidelity": round(float(np.mean([r["candidate"]["grounding"]["fidelity"] for r in rows])), 3)},
++    }
++    spd = (summary["control"]["avg_wall_s"] / summary["candidate"]["avg_wall_s"]
++           if summary["candidate"]["avg_wall_s"] else None)
++    summary["synthesis_speedup_x"] = round(spd, 2) if spd else None
++
++    Path(args.out).write_text(json.dumps({"summary": summary, "rows": rows},
++                                         ensure_ascii=False, indent=2), encoding="utf-8")
++    print("\n=== SUMMARY ===")
++    print(json.dumps(summary, ensure_ascii=False, indent=2))
++    print(f"\nfull results + side-by-side answers -> {args.out}")
++    print("Review the answers in the JSON for coaching-quality / tone before deciding.")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/scripts/eval_intent_router.py b/scripts/eval_intent_router.py
+new file mode 100644
+index 0000000..d43f4ad
+--- /dev/null
++++ b/scripts/eval_intent_router.py
+@@ -0,0 +1,219 @@
++"""Offline feasibility eval for an Atlas-style intent router.
++
++Tests the hypothesis from docs (intent_router recommendation): can a *lightweight*
++embedding classifier ΓÇö the project's existing multilingual MiniLM (no GPU, no LLM
++call) ΓÇö reliably route a request on three orthogonal heads:
++
++  * destination : research | tool | chat
++  * tool_hint   : which tool (only for destination == tool)
++  * mode        : fast | think   (reasoning-mode prior)
++
++It trains tiny LogisticRegression heads on MiniLM embeddings and reports
++cross-validated accuracy, then compares the destination + mode heads against the
++CURRENT rule baselines (_is_research_intent, DeterministicReasoningRouter) so we
++can see whether the classifier actually beats the rules before wiring anything in.
++
++Run once:  python scripts/eval_intent_router.py
++Needs only fastembed + sklearn + numpy (all already installed). No LLM endpoint.
++"""
++from __future__ import annotations
++
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root ΓåÆ import senpai
++
++import numpy as np
++from collections import Counter
++
++# --- labeled dataset --------------------------------------------------------
++# (query, destination, tool_hint, mode). Real store customers used in research /
++# customer rows so the rule baseline (_is_research_intent) gets a fair shot.
++# tool_hint is "" when destination != "tool". JA-heavy with EN mixed in, mirroring
++# the real bilingual traffic.
++DATA: list[tuple[str, str, str, str]] = [
++    # ---- research (customer-research skill ΓåÆ research_stream) ----
++    ("Σ╕╕Σ╕ëΘúƒσôüπü½πüñπüäπüªµòÖπüêπüª", "research", "", "fast"),
++    ("µá¬σ╝ÅΣ╝Üτñ╛µ¥╛τö░πé╡πâ╝πâôπé╣πü«ΦâîµÖ»πéÆΦ¬┐πü╣πüª", "research", "", "fast"),
++    ("µ¥æτö░σì░σê╖πü«πüôπü¿πéÆµòÖπüêπüª", "research", "", "fast"),
++    ("Θ¥Æµ£¿Σ║ïσïÖµëÇπü½πüñπüäπüªτƒÑπéèπüƒπüä", "research", "", "fast"),
++    ("Φ▒èτö░σ╗║Φ¿¡πü«µâàσá▒πéÆµòÖπüêπüª", "research", "", "fast"),
++    ("Tell me about Σ╕╕Σ╕ëΘúƒσôü", "research", "", "fast"),
++    ("research µá¬σ╝ÅΣ╝Üτñ╛µ¥╛τö░πé╡πâ╝πâôπé╣", "research", "", "fast"),
++    ("πüéπüæπü╝πü«σòåΣ║ïπü«µ£ÇΦ┐æπü«σïòπüìπéÆΦ¬┐πü╣πüª", "research", "", "fast"),
++    ("background on Murata Printing", "research", "", "fast"),
++    ("Φ┐æΦùñΘ¢╗µ⌐ƒπü½πüñπüäπüªπâ¬πé╡πâ╝πâüπüùπüª", "research", "", "fast"),
++    ("D027πü«µíêΣ╗╢ΦâîµÖ»πéÆΦ¬┐πü╣πüƒπüä", "research", "", "fast"),
++    ("µ▒ƒσÅúΘ¢╗µ⌐ƒπü«Σ╝Üτñ╛µªéΦªüπéÆµòÖπüêπüª", "research", "", "fast"),
++
++    # ---- tool: schedule_meeting ----
++    ("µÿÄµùÑ15µÖéπü½Σ╝ÜΦ¡░πéÆΦ¿¡σ«Üπüùπüª", "tool", "schedule_meeting", "fast"),
++    ("Σ╕╕Σ╕ëΘúƒσôüπü¿µ¥ÑΘÇ▒µ£êµ¢£10µÖéπü½πâƒπâ╝πâåπéúπâ│πé░πéÆσàÑπéîπüª", "tool", "schedule_meeting", "fast"),
++    ("setup a meeting with microsoft 5pm today", "tool", "schedule_meeting", "fast"),
++    ("µëôπüíσÉêπéÅπü¢πéÆΘçæµ¢£πü«σìêσ╛îπü½Σ║êτ┤äπüùπüª", "tool", "schedule_meeting", "fast"),
++    ("schedule a 1 hour call tomorrow morning", "tool", "schedule_meeting", "fast"),
++    # ---- tool: send_email ----
++    ("Σ╝èΦùñπüòπéôπü½πüèτñ╝πü«πâíπâ╝πâ½πéÆΣ╕ïµ¢╕πüìπüùπüª", "tool", "send_email", "fast"),
++    ("draft an email to the client about the quote", "tool", "send_email", "fast"),
++    ("Φªïτ⌐ìΘÇüΣ╗ÿπü«πâíπâ╝πâ½µûçΘ¥óπéÆΣ╜£πüúπüª", "tool", "send_email", "fast"),
++    ("πâòπé⌐πâ¡πâ╝πéóπââπâùπü«πâíπâ╝πâ½πéÆµ║ûσéÖπüùπüª", "tool", "send_email", "fast"),
++    # ---- tool: create_quote ----
++    ("MFP30πéÆ2σÅ░πüºΦªïτ⌐ìπéÆΣ╜£πüúπüª", "tool", "create_quote", "fast"),
++    ("πâÄπâ╝πâêPC8σÅ░πü«Φªïτ⌐ìπéÆ10%σ╝òπüìπüºσç║πüùπüª", "tool", "create_quote", "fast"),
++    ("quote 3 servers for Acme", "tool", "create_quote", "fast"),
++    ("πé╡πâ╝πâÉπâ╝1σÅ░σêåπü«Φªïτ⌐ìµ¢╕πéÆΣ╜£µêÉπüùπüª", "tool", "create_quote", "fast"),
++    # ---- tool: web_search ----
++    ("Σ╗èµùÑπü«µ¥▒Σ║¼πü«σñ⌐µ░ùπü»∩╝ƒ", "tool", "web_search", "fast"),
++    ("µ£Çµû░πü«Windows Server πü«Σ╛íµá╝πéÆΦ¬┐πü╣πüª", "tool", "web_search", "fast"),
++    ("USDπüïπéëJPYπü«πâ¼πâ╝πâêπü»Σ╗èπüäπüÅπéë∩╝ƒ", "tool", "web_search", "fast"),
++    ("search the web for NAS market trends 2026", "tool", "web_search", "fast"),
++    ("τ½╢σÉêπü«µû░Φú╜σôüπü«πâïπâÑπâ╝πé╣πéÆΦ¬┐πü╣πüª", "tool", "web_search", "fast"),
++    # ---- tool: route_to_expert ----
++    ("πâìπââπâêπâ»πâ╝πé»µºïµêÉπü½πüñπüäπüªσ░éΘûÇσ«╢πü½τ¢╕Φ½çπüùπüƒπüä", "tool", "route_to_expert", "fast"),
++    ("πüôπü«µíêΣ╗╢πÇüΦ⌐│πüùπüäσàêΦ╝⌐πü½τ╣ïπüäπüºπü╗πüùπüä", "tool", "route_to_expert", "fast"),
++    ("πé╡πâ╝πâÉπâ╝τº╗Φíîπü»Φç¬Σ┐íπüîπü¬πüäπü«πüºσ░éΘûÇσ«╢πéÆτ┤╣Σ╗ïπüùπüª", "tool", "route_to_expert", "fast"),
++    # ---- tool: query_spr (record lookup) ----
++    ("D001πü«µíêΣ╗╢τè╢µ│üπéÆΦªïπü¢πüª", "tool", "query_spr", "fast"),
++    ("Σ╕╕Σ╕ëΘúƒσôüπü«µíêΣ╗╢Σ╕ÇΦªºπéÆσç║πüùπüª", "tool", "query_spr", "fast"),
++    ("show the deals for customer C28", "tool", "query_spr", "fast"),
++    # ---- tool: score_deal_health (numeric ΓåÆ think) ----
++    ("D027πü«σüÑσà¿σ║ªπü»∩╝ƒ", "tool", "score_deal_health", "think"),
++    ("πüôπü«µíêΣ╗╢πü«πâ¬πé╣πé»πé╣πé│πéóπéÆΦ⌐òΣ╛íπüùπüª", "tool", "score_deal_health", "think"),
++    ("how healthy is deal D005?", "tool", "score_deal_health", "think"),
++    # ---- tool: search_products / get_product_info ----
++    ("20Σ╕çσååΣ╗ÑΣ╕ïπü«πâÄπâ╝πâêPCπéÆµÄóπüùπüª", "tool", "search_products", "fast"),
++    ("Color MFP 3000πü«πé╣πâÜπââπé»πü¿Σ╛íµá╝πü»∩╝ƒ", "tool", "get_product_info", "fast"),
++    ("A3σ»╛σ┐£πü«πâùπâ¬πâ│πé┐πéÆΣ╕ÇΦªºπüº", "tool", "search_products", "fast"),
++    # ---- tool: search_knowledge / retrieve_playbook (coaching "how do I") ----
++    ("µ▒║ΦúüΦÇàπü½Σ╝Üπüêπü¬πüäπü¿πüìπü⌐πüåσ»╛σ┐£πüÖπü╣πüì∩╝ƒ", "tool", "search_knowledge", "think"),
++    ("σÇñσ╝òπüìπéÆµ▒éπéüπéëπéîπüƒπü¿πüìπü«ΘÇ▓πéüµû╣πéÆµòÖπüêπüª", "tool", "search_knowledge", "think"),
++    ("τ½╢σÉêπü¿µ»öΦ╝âπüòπéîπüªπüäπéïµíêΣ╗╢πü«µëôπüíµëïπü»∩╝ƒ", "tool", "retrieve_playbook", "think"),
++    # ---- tool: list_at_risk_deals (manager synthesis ΓåÆ think) ----
++    ("σì▒πü¬πüäµíêΣ╗╢πéÆΣ╕ÇΦªºπü½πüùπüª", "tool", "list_at_risk_deals", "think"),
++    ("Σ╗èπâ¬πé╣πé»πü«Θ½ÿπüäµíêΣ╗╢πü»∩╝ƒ", "tool", "list_at_risk_deals", "think"),
++
++    # ---- chat (general; no tool, no skill) ----
++    ("πüôπéôπü½πüíπü»", "chat", "", "fast"),
++    ("πüéπéèπüîπü¿πüåπÇüσè⌐πüïπüúπüƒπéê", "chat", "", "fast"),
++    ("σÉ¢πü»Σ╜òπüîπüºπüìπéïπü«∩╝ƒ", "chat", "", "fast"),
++    ("CRMπü¿πü»Σ╜òπü«τòÑ∩╝ƒ", "chat", "", "fast"),
++    ("SaaSπü«Σ╕ÇΦê¼τÜäπü¬µäÅσæ│πéÆµòÖπüêπüª", "chat", "", "fast"),
++    ("hi there", "chat", "", "fast"),
++    ("what can you do?", "chat", "", "fast"),
++    ("πüèπü»πéêπüåπÇüΣ╗èµùÑπééπéêπéìπüùπüÅ", "chat", "", "fast"),
++    ("πâ¬πâ╝πâëπé┐πéñπâáπüúπüªΣ╕ÇΦê¼πü½πü⌐πüåπüäπüåµäÅσæ│∩╝ƒ", "chat", "", "fast"),
++    ("σû╢µÑ¡πü«σ┐âµºïπüêπéÆΣ╕ÇΦ¿ÇπüºΦ¿Çπüåπü¿∩╝ƒ", "chat", "", "fast"),
++    ("thanks, that helps", "chat", "", "fast"),
++    ("σ░æπüùΘ¢æΦ½çπü½Σ╗ÿπüìσÉêπüúπüª", "chat", "", "fast"),
++
++    # ---- chat but think (open-ended reasoning, still no tool) ----
++    ("πü¬πü£σê¥σ¢₧Φ¿¬σòÅπüºµ▒║ΦúüΦÇàπü«τó║Φ¬ìπüîΘçìΦªüπü¬πü«∩╝ƒ", "chat", "", "think"),
++    ("σÇñσ╝òπüìπü¿σ╖«σêÑσîûπÇüπü⌐πüíπéëπéÆσä¬σàêπüÖπü╣πüìπüïΦÇâπüêπéÆΦü₧πüïπü¢πüª", "chat", "", "think"),
++    ("why does engagement without progress signal risk?", "chat", "", "think"),
++]
++
++
++def _embed(queries: list[str], model_name: str):
++    """Embed with the project's MiniLM. Prefer fastembed (the runtime path); fall
++    back to sentence-transformers with the SAME model when the fastembed cache is
++    incomplete ΓÇö the vectors are equivalent for a feasibility read."""
++    try:
++        from fastembed import TextEmbedding
++        m = TextEmbedding(model_name, threads=1)
++        return np.array(list(m.embed(queries)), dtype=np.float32), "fastembed", \
++            (lambda q: list(m.embed([q])))
++    except Exception as e:  # noqa: BLE001 ΓÇö fall back to sentence-transformers
++        print(f"  (fastembed unavailable: {str(e)[:50]}... -> sentence-transformers)")
++        from sentence_transformers import SentenceTransformer
++        st = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
++        return np.asarray(st.encode(queries, normalize_embeddings=True), dtype=np.float32), \
++            "sentence-transformers", (lambda q: st.encode([q], normalize_embeddings=True))
++
++
++def main() -> None:
++    from sklearn.linear_model import LogisticRegression
++    from sklearn.model_selection import StratifiedKFold, cross_val_predict
++    from sklearn.metrics import accuracy_score, f1_score
++    from senpai import config
++
++    queries = [d[0] for d in DATA]
++    y_dest = np.array([d[1] for d in DATA])
++    y_tool = np.array([d[2] for d in DATA])
++    y_mode = np.array([d[3] for d in DATA])
++
++    print(f"dataset: {len(DATA)} queries")
++    print(f"  destination: {dict(Counter(y_dest))}")
++    print(f"  mode       : {dict(Counter(y_mode))}")
++    print(f"  embedding model: {config.EMBED_MODEL}")
++    print("embedding queries (CPU, MiniLM)ΓÇª")
++
++    import time
++    t0 = time.perf_counter()
++    X, backend, embed_one = _embed(queries, config.EMBED_MODEL)
++    embed_ms = (time.perf_counter() - t0) * 1000
++    # warm single-query latency (what the live path actually pays)
++    t1 = time.perf_counter()
++    _ = embed_one(queries[0])
++    warm_ms = (time.perf_counter() - t1) * 1000
++    print(f"  backend={backend}; embedded {len(queries)} in {embed_ms:.0f} ms; "
++          f"warm single-query ~{warm_ms:.1f} ms\n")
++
++    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
++    clf = lambda: LogisticRegression(max_iter=2000, C=4.0)
++
++    def cv(X_, y_, name):
++        pred = cross_val_predict(clf(), X_, y_, cv=skf)
++        acc = accuracy_score(y_, pred)
++        f1 = f1_score(y_, pred, average="macro")
++        print(f"[{name}] 5-fold CV accuracy={acc:.3f}  macro-F1={f1:.3f}")
++        return pred, acc
++
++    print("=== HEAD A ΓÇö destination (research|tool|chat) ===")
++    dest_pred, dest_acc = cv(X, y_dest, "destination")
++    # majority + rule baselines
++    maj = Counter(y_dest).most_common(1)[0][1] / len(y_dest)
++    print(f"  baseline (majority class)         = {maj:.3f}")
++
++    # rule baseline: current _is_research_intent, scored on the research-vs-rest split
++    from senpai.api.server import _is_research_intent
++    rule_research = np.array(["research" if _is_research_intent(q) else "other" for q in queries])
++    true_research = np.array(["research" if d == "research" else "other" for d in y_dest])
++    rule_acc = accuracy_score(true_research, rule_research)
++    clf_research = np.array(["research" if d == "research" else "other" for d in dest_pred])
++    clf_research_acc = accuracy_score(true_research, clf_research)
++    print(f"  research-detection: rule(_is_research_intent)={rule_acc:.3f}  vs  classifier={clf_research_acc:.3f}")
++
++    print("\n=== HEAD A' ΓÇö tool_hint (only tool-labeled queries) ===")
++    tmask = y_dest == "tool"
++    Xt, yt = X[tmask], y_tool[tmask]
++    # small per-class counts ΓåÆ 3-fold so every fold has each tool where possible
++    nmin = min(Counter(yt).values())
++    folds = max(2, min(3, nmin))
++    skf_t = StratifiedKFold(n_splits=folds, shuffle=True, random_state=0)
++    pred_t = cross_val_predict(clf(), Xt, yt, cv=skf_t)
++    print(f"  {tmask.sum()} tool queries across {len(set(yt))} tools; {folds}-fold")
++    print(f"[tool_hint] CV accuracy={accuracy_score(yt, pred_t):.3f}")
++
++    print("\n=== HEAD B ΓÇö mode (fast|think) ===")
++    mode_pred, mode_acc = cv(X, y_mode, "mode")
++    maj_m = Counter(y_mode).most_common(1)[0][1] / len(y_mode)
++    print(f"  baseline (majority class)         = {maj_m:.3f}")
++    # rule baseline: DeterministicReasoningRouter on query alone (no tools_used)
++    from senpai.llm.routing import DeterministicReasoningRouter, RoutingRequest
++    r = DeterministicReasoningRouter()
++    rule_mode = np.array(["think" if r.route(RoutingRequest(message=q)).think else "fast"
++                          for q in queries])
++    rule_mode_acc = accuracy_score(y_mode, rule_mode)
++    print(f"  mode: rule(DeterministicRouter, query-only)={rule_mode_acc:.3f}  vs  classifier={mode_acc:.3f}")
++
++    print("\n=== misclassified (destination) ===")
++    for q, t, p in zip(queries, y_dest, dest_pred):
++        if t != p:
++            print(f"  {t:>8} -> {p:<8} | {q}")
++
++    print("\nNOTE: tiny hand-labeled set ΓÇö this measures FEASIBILITY (separability"
++          " in MiniLM space), not production accuracy.")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/senpai/api/server.py b/senpai/api/server.py
+index e900a5a..090a09f 100644
+--- a/senpai/api/server.py
++++ b/senpai/api/server.py
+@@ -418,8 +418,12 @@ def _sse(obj: dict) -> str:
+ # Reasoning tags vary by sampling: the model emits either <think> or <thinking>
+ # (and the matching close). Match both spellings so a reasoning block is never
+ # leaked into the user-facing answer.
+-_THINK_CLOSE = re.compile(r"</think(?:ing)?>", re.IGNORECASE)
+-_THINK_OPEN = re.compile(r"<think(?:ing)?>", re.IGNORECASE)
++# Reasoning markers this distilled model may emit before its actual answer.
++# Besides <think>/<thinking> it sometimes wraps its scratchpad in <analysis> or
++# <reasoning> ΓÇö all must be stripped so the chain-of-thought never leaks into a
++# senior's read or a research summary.
++_THINK_CLOSE = re.compile(r"</(?:think(?:ing)?|analysis|reasoning)>", re.IGNORECASE)
++_THINK_OPEN = re.compile(r"<(?:think(?:ing)?|analysis|reasoning)>", re.IGNORECASE)
+ 
+ 
+ def _strip_reasoning(full: str) -> str | None:
+@@ -590,7 +594,12 @@ def _junior_system() -> str:
+         "τñ╛σåàπü«µò░σÇñπü»Σ╕Äπüêπéëπéîπüƒπééπü«πüáπüæπéÆΣ╜┐πüäπÇüΣ║║σÉìπéäµÅÉΣ╛¢ΦÇàσÉìπü»τ╡╢σ»╛πü½µÄ¿µ╕¼πâ╗τöƒµêÉπüùπü¬πüäπüôπü¿πÇé"
+         "Φú╜σôüπü«τ¢╕Φ½çπü½πü» search_products / create_quoteπÇüΦ¿¬σòÅΦ¬┐µò┤πü½πü» schedule_meetingπÇü"
+         "ΘÇúτ╡íµûçπü«µ║ûσéÖπü½πü» send_email πéÆΣ╜┐πüêπü╛πüÖ(πüäπüÜπéîπééΣ╕ïµ¢╕πüìπüºπÇüΘÇüΣ┐íπâ╗τó║σ«Üπü»πüùπü╛πü¢πéô)πÇé"
+-        "τñ╛σåàµíêΣ╗╢πüºΦç¬Σ┐íπüîµîüπüªπü¬πüäµÖéπü» route_to_expert πüºσàêΦ╝⌐πü½µ⌐ïµ╕íπüùπüùπüªπüÅπüáπüòπüäπÇé\n"
++        "τñ╛σåàµíêΣ╗╢πüºΦç¬Σ┐íπüîµîüπüªπü¬πüäµÖéπü» route_to_expert πüºσàêΦ╝⌐πü½µ⌐ïµ╕íπüùπüùπüªπüÅπüáπüòπüäπÇé"
++        "πâäπâ╝πâ½πüîσ┐àΦªüπü¬µôìΣ╜£∩╝êΣ║êσ«ÜΦ¬┐µò┤πâ╗Φªïτ⌐ìΣ╜£µêÉπâ╗µñ£τ┤óπâ╗τñ╛σåàπâçπâ╝πé┐τó║Φ¬ìπü¬πü⌐∩╝ëπüºπü»πÇü"
++        "πÇÄπÇ£πüùπü╛πüÖπÇÅπü¿µëïΘáåπéÆΦ¬¼µÿÄπüùπüƒπéèπÇüσæ╝πü│σç║πüùσåàσ«╣πéÆµûçτ½áπüºµ¢╕πüìσç║πüùπüƒπéèπü¢πüÜπÇü"
++        "τ¢┤µÄÑπâäπâ╝πâ½πéÆσæ╝πü│σç║πüÖπüôπü¿πÇéπâäπâ╝πâ½τ╡Éµ₧£πüîΦ┐öπüúπüªπüïπéëτ░íµ╜öπü½σ¢₧τ¡öπüÖπéïπÇé"
++        "τï¼τ½ïπüùπüƒΦñçµò░πü«µâàσá▒πüîσ┐àΦªüπü¬πü¿πüìπü»πÇüπâäπâ╝πâ½πéÆ1πüñπüÜπüñΘáåτò¬πü½σæ╝πü░πüÜπÇü"
++        "1πé┐πâ╝πâ│πüºπü╛πü¿πéüπüªΣ╕ªΦíîσæ╝πü│σç║πüùπüùπüªσ╛Çσ╛⌐σ¢₧µò░πéÆµ╕¢πéëπüÖπüôπü¿πÇé\n"
+ 
+         "πÇÉΣ╕ÇΦê¼τÜäπü¬Φ│¬σòÅ∩╝êτñ╛σñûπü«Σ║ïσ«ƒπâ╗τé║µ¢┐πâ╗σ╕éσá┤Σ╛íµá╝πâ╗Σ╕ÇΦê¼τƒÑΦ¡ÿπü¬πü⌐∩╝ëπÇæ"
+         "µ▒Äτö¿πéóπé╖πé╣πé┐πâ│πâêπü¿πüùπüªπÇüµû¡πéëπüÜπü½σ╜╣τ½ïπüñσ¢₧τ¡öπéÆπüùπüªπüÅπüáπüòπüäπÇé"
+@@ -627,7 +636,11 @@ def _manager_system() -> str:
+         "τ╡╢σ»╛πü½Σ║║σÉìπéäµÅÉΣ╛¢ΦÇàσÉìπéÆµÄ¿µ╕¼πâ╗τöƒµêÉπüùπü¬πüäπüºπüÅπüáπüòπüäπÇé"
+         "Φú╜σôüπü«τó║Φ¬ìπéäΦªïτ⌐ìΣ╛ïπü½πü» search_products / create_quoteπÇü"
+         "Φ¬┐µò┤πéäΘÇúτ╡íµûçπü«µ║ûσéÖπü½πü» schedule_meeting / send_email πéÆΣ╜┐πüêπü╛πüÖ"
+-        "(πüäπüÜπéîπééΣ╕ïµ¢╕πüìπüºπÇüΘÇüΣ┐íπâ╗τó║σ«Üπü»πüùπü╛πü¢πéô)πÇé\n"
++        "(πüäπüÜπéîπééΣ╕ïµ¢╕πüìπüºπÇüΘÇüΣ┐íπâ╗τó║σ«Üπü»πüùπü╛πü¢πéô)πÇé"
++        "πâäπâ╝πâ½πüîσ┐àΦªüπü¬µôìΣ╜£πüºπü»πÇüπÇÄπÇ£πüùπü╛πüÖπÇÅπü¿µëïΘáåπéÆΦ¬¼µÿÄπüùπüƒπéèσæ╝πü│σç║πüùσåàσ«╣πéÆµûçτ½áπüº"
++        "µ¢╕πüìσç║πüùπüƒπéèπü¢πüÜπÇüτ¢┤µÄÑπâäπâ╝πâ½πéÆσæ╝πü│σç║πüÖπüôπü¿πÇéπâäπâ╝πâ½τ╡Éµ₧£πüîΦ┐öπüúπüªπüïπéëτ░íµ╜öπü½σ¢₧τ¡öπüÖπéïπÇé"
++        "τï¼τ½ïπüùπüƒΦñçµò░πü«µâàσá▒πüîσ┐àΦªüπü¬πü¿πüìπü»πÇüπâäπâ╝πâ½πéÆ1πüñπüÜπüñΘáåτò¬πü½σæ╝πü░πüÜπÇü1πé┐πâ╝πâ│πüºπü╛πü¿πéüπüª"
++        "Σ╕ªΦíîσæ╝πü│σç║πüùπüùπüªσ╛Çσ╛⌐σ¢₧µò░πéÆµ╕¢πéëπüÖπüôπü¿πÇé\n"
+ 
+         "πÇÉΣ╕ÇΦê¼τÜäπü¬Φ│¬σòÅ∩╝êτñ╛σñûπü«Σ║ïσ«ƒπâ╗τé║µ¢┐πâ╗σ╕éσá┤Σ╛íµá╝πâ╗Σ╕ÇΦê¼τƒÑΦ¡ÿπü¬πü⌐∩╝ëπÇæ"
+         "µ▒Äτö¿πéóπé╖πé╣πé┐πâ│πâêπü¿πüùπüªπÇüµû¡πéëπüÜπü½σ╜╣τ½ïπüñσ¢₧τ¡öπéÆπüùπüªπüÅπüáπüòπüäπÇé"
+@@ -660,7 +673,9 @@ def _research_system() -> str:
+         "1. πü╛πüÜ query_spr πüºτñ╛σåàπü«Θíºσ«óπâ╗µíêΣ╗╢µâàσá▒πéÆτó║Φ¬ìπüÖπéï∩╝êΦï▒Φ¬₧/πâ¡πâ╝πâ₧σ¡ùπü«τñ╛σÉìπüºπéé"
+         "πü¥πü«πü╛πü╛µ╕íπü¢πü░σåàΘâ¿πüºσÉìσ»äπü¢πüòπéîπéïπÇéΣ╛ï: 'Aozora Services'∩╝ëπÇé\n"
+         "2. µíêΣ╗╢πüîπüéπéîπü░ score_deal_health πüºσüÑσà¿σ║ªπÇüfind_similar_deals πüºΘí₧Σ╝╝µíêΣ╗╢πÇü"
+-        "lookup_customer_environment πüºITτÆ░σóâπÇüget_product_info πüºΦú╜σôüµâàσá▒πéÆΦú£πüåπÇé\n"
++        "lookup_customer_environment πüºITτÆ░σóâπÇüget_product_info πüºΦú╜σôüµâàσá▒πéÆΦú£πüåπÇé"
++        "Θíºσ«óπüîσêåπüïπüúπüƒσ╛îπü«πüôπéîπéëπü«Φú£σ«îπâäπâ╝πâ½πü»Σ║Æπüäπü½τï¼τ½ïπüùπüªπüäπéïπü«πüºπÇü1πüñπüÜπüñπüºπü»πü¬πüÅ"
++        "1πé┐πâ╝πâ│πüºπü╛πü¿πéüπüªΣ╕ªΦíîσæ╝πü│σç║πüùπüùπÇüσ╛Çσ╛⌐σ¢₧µò░πéÆµ╕¢πéëπüÖπüôπü¿πÇé\n"
+         "3. τñ╛σåàµâàσá▒πüºτ¡öπüêπéëπéîπü¬πüäσñûΘâ¿µâàσá▒∩╝êΣ║ïµÑ¡σåàσ«╣πâ╗µÑ¡τòîσïòσÉæπâ╗τ½╢σÉêπâ╗µ£Çµû░πâïπâÑπâ╝πé╣∩╝ëπüî"
+         "σ┐àΦªüπü¬πü¿πüìπü½ΘÖÉπéè web_search πéÆΣ╜┐πüåπÇé\n"
+         "σ¢₧τ¡öπâ½πâ╝πâ½: τñ╛σåàπâçπâ╝πé┐πéÆµ£Çσä¬σàêπüºτñ║πüùπÇüπü¥πü«σ╛îπü½σñûΘâ¿µâàσá▒πéÆµ╖╗πüêπéïπÇé"
+@@ -1027,7 +1042,7 @@ def _legacy_research_stream(req: ChatRequest):
+             allow_fallback=False,
+         ):
+             text += piece
+-        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
++        text = (_strip_reasoning(text) or "").strip()
+         yield _sse({"type": "answer", "text": text or "πâ¬πé╡πâ╝πâüτ╡Éµ₧£πéÆτöƒµêÉπüºπüìπü╛πü¢πéôπüºπüùπüƒπÇé"})
+         yield _sse({"type": "done", "model": config.MODEL})
+     except Exception:  # noqa: BLE001 - research must not silently use fallback
+@@ -1062,7 +1077,7 @@ def _summarize_research_bundle(bundle: ResearchBundle):
+             allow_fallback=False,
+         ):
+             text += piece
+-        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
++        text = (_strip_reasoning(text) or "").strip()
+         yield _sse({"type": "answer", "text": text or "πâ¬πé╡πâ╝πâüτ╡Éµ₧£πéÆτöƒµêÉπüºπüìπü╛πü¢πéôπüºπüùπüƒπÇé"})
+         yield _sse({"type": "done", "model": config.MODEL})
+     except Exception:  # noqa: BLE001 - research must not silently use fallback
+diff --git a/senpai/data/store.py b/senpai/data/store.py
+index b0e0e84..d4740e2 100644
+--- a/senpai/data/store.py
++++ b/senpai/data/store.py
+@@ -443,11 +443,29 @@ def _key_in_text(key: str, low_text: str) -> bool:
+     return key in low_text
+ 
+ 
++_CUSTOMER_ID_RE = re.compile(r"\bC\d{1,4}\b", re.IGNORECASE)
++
++
++def _customer_id_in_text(text: str) -> str | None:
++    """A single, unambiguous customer id (e.g. 'C14') named anywhere in the text.
++    Returns the canonical id when exactly one VALID id appears, else None (0 ids,
++    or several different ids ΓåÆ defer to name matching / ambiguity). Mirrors how the
++    research bridge already extracts deal ids ('D027') from a phrased request."""
++    seen = list(dict.fromkeys(m.group(0).upper()
++                              for m in _CUSTOMER_ID_RE.finditer(text or "")))
++    valid = [cid for cid in seen if get_customer(cid)]
++    return valid[0] if len(valid) == 1 else None
++
++
+ def match_customer_in_text(text: str) -> dict | None:
+     """Find the customer named anywhere in free text ΓÇö across JA, English, romaji
+     and alias forms. Longest match wins (so 'Aozora Services' beats 'Aozora', and
+     'σñºσÆîσòåΣ║ïπé╖πé╣πâåπâá' beats 'σñºσÆî'); an ambiguous winning form resolves to None so
+-    we never attribute the wrong customer's history."""
++    we never attribute the wrong customer's history. An explicit customer id ('C14')
++    is the most precise, unambiguous signal and wins over any name match."""
++    cid = _customer_id_in_text(text)
++    if cid:
++        return get_customer(cid)
+     low = (text or "").lower()
+     best: tuple[int, set[str]] | None = None
+     for key, ids in _alias_index().items():
+@@ -480,7 +498,8 @@ def resolve_customer_in_text(text: str) -> CustomerResolution:
+     query as the name), this locates the customer token inside an action/verb-
+     wrapped message: 'create a quotation for akebono' ΓåÆ ambiguous (3 πüéπüæπü╝πü«
+     companies), not not_found. So callers (e.g. research) reach internal records
+-    instead of falling through to web search on a phrased request."""
++    instead of falling through to web search on a phrased request. An explicit
++    customer id ('research about C14') resolves directly via match_customer_in_text."""
+     uniq = match_customer_in_text(text)
+     if uniq:
+         return CustomerResolution(status="resolved", query=text, customer=uniq)
+diff --git a/senpai/llm/client.py b/senpai/llm/client.py
+index 4c97bca..ba56eac 100644
+--- a/senpai/llm/client.py
++++ b/senpai/llm/client.py
+@@ -260,9 +260,14 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
+     from senpai.retrieval import trace as _trace
+     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
+ 
+-    # Tool-selection rounds also skip the <think> phase when enabled ΓÇö this is
+-    # where the bulk of the latency lives (the synthesis round alone is not enough).
+-    sel_msgs = lambda: _prep(convo, config.TOOLLOOP_NO_THINK)
++    # Tool-selection rounds must KEEP the <think> phase: this reasoning-distill
++    # needs to reason before it will emit a tool call. Prefilling an empty
++    # <think></think> here makes it skip deliberation and *narrate* the call as
++    # prose ("Action: scheduling meetingΓÇª") instead of emitting a real tool_call ΓÇö
++    # so nothing runs and the UI shows no tool. (Verified A/B: empty-think ΓåÆ 0 tool
++    # calls; think-on ΓåÆ schedule_meeting fires.) The latency knob only applies to
++    # the FINAL answer round, which has its own fast/think routing below.
++    sel_msgs = lambda: _prep(convo, False)
+     for round_i in range(config.MAX_TOOL_ROUNDS):
+         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
+         try:
+diff --git a/senpai/llm/routing.py b/senpai/llm/routing.py
+index b2ba8b1..620c67d 100644
+--- a/senpai/llm/routing.py
++++ b/senpai/llm/routing.py
+@@ -91,10 +91,16 @@ class DeterministicReasoningRouter:
+                 think=True, confidence=0.9,
+                 reason=f"numeric/cross-signal tool used: {', '.join(sorted(high_hit))}")
+ 
+-        if len(distinct) >= 2:
++        # Multi-tool synthesis needs reasoning only when at least one tool is NOT a
++        # plain retrieval/provenance lookup. Several retrieval tools together
++        # (query_spr + search_notes + lookup_customer_environment) just restate
++        # grounded records ΓÇö that's the FAST regime, so don't pay the <think> tax to
++        # summarize them (this was a major Assistant latency sink on research turns).
++        if len(distinct) >= 2 and (distinct - LOW_REASONING_TOOLS):
+             return RoutingDecision(
+                 think=True, confidence=0.75,
+-                reason=f"multi-tool synthesis across {len(distinct)} tools")
++                reason=f"multi-tool synthesis across {len(distinct)} tools "
++                       "(ΓëÑ1 non-retrieval)")
+ 
+         if request.message and _HIGH_INTENT.search(request.message):
+             return RoutingDecision(
+diff --git a/senpai/tools/impl.py b/senpai/tools/impl.py
+index 0fd591c..4a956f2 100644
+--- a/senpai/tools/impl.py
++++ b/senpai/tools/impl.py
+@@ -594,6 +594,11 @@ def search_notes(query: str = "", limit: int = 5, customer: str = "") -> str:
+         limit = int(limit)
+     except (TypeError, ValueError):
+         limit = 5
++    # Clamp the result count: the notes are the bulk of the synthesis prompt AND of
++    # what the model then quotes back, so an over-fetch (the model sometimes asks for
++    # 10+) dominates Assistant latency at ~9 tok/s. The top semantically-ranked notes
++    # carry the signal; the tail just lengthens the answer. Keep it tight.
++    limit = max(1, min(limit, 6))
+ 
+     # Resolve the account in focus: explicit arg first, then a customer named in the
+     # query; None ΓçÆ no account resolved ΓçÆ cross-account fallback (preserves behavior).
+diff --git a/web/components/workspace/workspace.tsx b/web/components/workspace/workspace.tsx
+index c89ebf6..ae724c3 100644
+--- a/web/components/workspace/workspace.tsx
++++ b/web/components/workspace/workspace.tsx
+@@ -137,6 +137,14 @@ const SlashPicker = React.forwardRef<
+     c.cmd.slice(1).startsWith(typed)
+   );
+ 
++  // `active` can outrun a shrinking `filtered` (the user typed more and fewer
++  // commands match). Clamp the index everywhere so we never read past the end,
++  // and snap it back into range when the filter changes.
++  const activeIdx = active < filtered.length ? active : 0;
++  useEffect(() => {
++    if (active !== 0 && active >= filtered.length) setActive(0);
++  }, [filtered.length, active]);
++
+   // Expose keyboard handler so parent Textarea can delegate without stealing focus
+   React.useImperativeHandle(ref, () => ({
+     handleKey(e: React.KeyboardEvent): boolean {
+@@ -153,7 +161,8 @@ const SlashPicker = React.forwardRef<
+       }
+       if (e.key === "Enter") {
+         e.preventDefault();
+-        onSelect(filtered[active].cmd + " ");
++        const sel = filtered[activeIdx];
++        if (sel) onSelect(sel.cmd + " ");
+         return true;
+       }
+       if (e.key === "Escape") {
+@@ -163,7 +172,7 @@ const SlashPicker = React.forwardRef<
+       }
+       return false;
+     },
+-  }), [filtered, active, onSelect, onClose]);
++  }), [filtered, activeIdx, onSelect, onClose]);
+ 
+   // Close if nothing matches
+   if (filtered.length === 0) return null;
+@@ -182,7 +191,7 @@ const SlashPicker = React.forwardRef<
+           onClick={() => onSelect(c.cmd + " ")}
+           className={[
+             "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
+-            i === active
++            i === activeIdx
+               ? "bg-primary/[0.07] text-foreground"
+               : "text-foreground hover:bg-muted/60",
+           ].join(" ")}
+@@ -862,7 +871,7 @@ export function Workspace({
+     setBusy(false);
+   }
+ 
+-  function runChat(text: string) {
++  function runChat(text: string, deal?: string) {
+      const clean = text.trim();
+      if (!clean || busy) return;
+      // Snapshot the conversation BEFORE appending this turn, so the assistant
+@@ -873,11 +882,17 @@ export function Workspace({
+      // An attached file's text rides along as context for THIS turn only, then
+      // the chip clears (it is not persisted into thread history).
+      const ctx = attached?.text || undefined;
++     // A deal picked from the Deal selector grounds the turn: name the deal id
++     // (and its customer) in the query the model sees, so the backend extracts
++     // it and scopes retrieval to that exact deal instead of re-resolving from
++     // the prose. The user bubble shows the typed text + a deal badge.
++     const d = deal ? deals.find((x) => x.deal_id === deal) : undefined;
++     const grounded = d ? `${clean}∩╝êσ»╛Φ▒íµíêΣ╗╢: ${d.deal_id} ${d.customer}∩╝ë` : clean;
+      const userText = attached ? `≡ƒôÄ ${attached.fileName} ΓÇö ${clean}` : clean;
+      setMessages((m) => [
+        ...m,
+-       { id: nextId(), role: "user", text: userText },
+-       { id: replyId, role: "assistant", text: clean, history, context: ctx },
++       { id: nextId(), role: "user", text: userText, dealLabel: d?.customer },
++       { id: replyId, role: "assistant", text: grounded, history, context: ctx },
+      ]);
+      setInput("");
+      setAttached(null);
+@@ -917,7 +932,7 @@ export function Workspace({
+     } else if (p.command === "research") {
+       runResearch(p.body, deal);
+     } else {
+-      runChat(p.body || raw.trim());
++      runChat(p.body || raw.trim(), deal);
+     }
+     setDealId("");
+   }
+@@ -1079,7 +1094,7 @@ export function Workspace({
+               <Row key={m.id} who="user" name={t("chat.you")}>
+                 <div className="rounded-xl rounded-tl-sm border border-border bg-card p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                   {m.dealLabel && (
+-                    <Badge variant="accent" className="mb-2 font-jp">{customerText(lang, m.dealLabel).text}</Badge>
++                    <Badge variant="accent" className="mb-2 font-jp">{m.dealLabel}</Badge>
+                   )}
+                   <span className="block whitespace-pre-wrap text-[13.5px] leading-relaxed text-foreground/90">{m.text}</span>
+                 </div>
+@@ -1240,7 +1255,9 @@ export function Workspace({
+                   <option value="">{lang === "ja" ? "µ£¬Θü╕µè₧" : "None"}</option>
+                   {deals.map((d) => (
+                     <option key={d.deal_id} value={d.deal_id}>
+-                      {d.deal_id} ┬╖ {customerText(lang, d.customer).text}
++                      {/* Proper company names stay Japanese (the canonical form,
++                          matching the grounded synthesis) regardless of UI lang. */}
++                      {d.deal_id} ┬╖ {d.customer}
+                     </option>
+                   ))}
+                 </select>

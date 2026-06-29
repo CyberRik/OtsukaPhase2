@@ -109,6 +109,23 @@ FAST_SYNTH_FALLBACK = os.environ.get("SENPAI_FAST_SYNTH_FALLBACK", "0").lower() 
 # faster at a quality cost. Implies the fallback endpoint is the 8B.
 SYNTH_ALL_FALLBACK = os.environ.get("SENPAI_SYNTH_ALL_8B", "0").lower() not in ("0", "false", "no", "")
 
+# --- Atlas (spark) serving knobs --------------------------------------------
+# The served model is now the atlas 35B (Qwen3.6-35B-A3B-NVFP4, spark/atlas on
+# :8888). Two atlas-specific behaviours feed every create() call (see
+# senpai/llm/client.py::_gen_kwargs):
+#   1. Reasoning is toggled via the chat template's `enable_thinking` kwarg
+#      (passed through extra_body→chat_template_kwargs), NOT the old empty
+#      <think> prefill — atlas ignores the prefill.
+#   2. Sampling MUST be set explicitly. With no sampling params atlas decodes
+#      greedily and degenerates into repetition loops ("3. 3. 3.") on long
+#      output; the recommended Qwen3 non-thinking sampling fixes it.
+LLM_TOP_P = _env_float("SENPAI_LLM_TOP_P", 0.95)
+LLM_TOP_K = _env_int("SENPAI_LLM_TOP_K", 20)
+# Final-answer (synthesis) temperature. Non-zero on purpose: greedy (0.0) long
+# generation degenerates on this NVFP4 model. Tool-selection rounds stay greedy
+# (short, structured output — no degeneration, more deterministic tool picks).
+SYNTH_TEMPERATURE = _env_float("SENPAI_SYNTH_TEMPERATURE", 0.7)
+
 # --- Review Coach grounding controls ----------------------------------------
 # Grounding-audit P0: similar past cases are CROSS-CUSTOMER by construction
 # (find_similar_cases injects another customer's closed deal ~99% of the time),

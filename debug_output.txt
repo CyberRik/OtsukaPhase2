@@ -1,0 +1,24 @@
+data: {"type": "start", "model": "Qwen3.6-27B-Claude-Opus-Reasoning-Distilled", "endpoint": "http://127.0.0.1:8765/v1", "role": "research", "conversation_id": "default"}
+
+data: {"type": "artifact_meta", "kind": "research"}
+
+data: {"type": "resolve", "status": "not_found", "query": "discount strategy", "customer": null, "candidates": []}
+
+data: {"type": "source", "key": "internal_records", "label": "Internal Records", "status": "not_found"}
+
+data: {"type": "source", "key": "deals", "label": "Deals", "status": "skipped"}
+
+data: {"type": "source", "key": "activities", "label": "Activities", "status": "skipped"}
+
+data: {"type": "source", "key": "environment", "label": "Environment", "status": "skipped"}
+
+data: {"type": "web", "status": "found", "query": "discount strategy company overview latest news", "answer": "Strategy announced approval of STRC semi-monthly dividends and completed a $1.5 billion debt repurchase in 2026. Discount strategies aim to boost sales and attract customers through reduced prices. The impact of these strategies on sales volume and profitability is under analysis.", "results": [{"title": "What is Discount Strategy? - DealHub", "url": "https://dealhub.io/glossary/discount-strategy", "content": "A discount strategy is a deliberate pricing approach businesses adopt to stimulate sales and attract customers by offering reduced-price products or services.", "score": 0.48996773}, {"title": "PRICING & DISCOUNT STRATEGY ANALYSIS: IMPACT ON SALES ...", "url": "https://medium.com/@ibrahimmobolaji015/pricing-discount-strategy-analysis-impact-on-sales-volume-and-profitability-c1a810711ca7", "content": "This project analyzes one full year of transactional sales data (2023) to assess whether the company's discount strategy is driving sustainable", "score": 0.36629558}, {"title": "News and Press Release Archive - Strategy", "url": "https://www.strategy.com/press", "content": "Title. Filing Date ; Strategy Announces Approval of STRC Semi-Monthly Dividends. June 8, 2026 ; Strategy Completes $1.5 Billion Debt Repurchase and achieves BTC", "score": 0.32402197}, {"title": "How to Implement a Discount Pricing Strategy - Vendavo", "url": "https://www.vendavo.com/insights/blog/how-to-implement-effective-discount-pricing-strategy", "content": "Learn how to plan and execute a discount pricing strategy that drives sales without harming your brand or profits. Discover types, steps, and smart tools.", "score": 0.29933092}], "live": true, "reason": ""}
+
+data: {"type": "source", "key": "web_search", "label": "Web Search", "status": "found", "count": 4}
+
+data: {"type": "synth", "model_id": "qwen3-8b", "tier": "8B", "no_think": true}
+
+data: {"type": "answer", "text": "{\n  \"sales_preparation\": {\n    \"key_points\": [\n      \"割引戦略は販売促進と顧客獲得を目的とした価格設定の方法です。\",\n      \"割引戦略の影響は販売量と利益性に及ぶ可能性があります。\",\n      \"企業は割引戦略を通じて売上を向上させることを目的としています。\"\n    ],\n    \"notes\": \"内部記録は見つからなかったため、ウェブ情報に基づく情報です。\"\n  },\n  \"customer_insight\": {\n    \"key_points\": [\n      \"割引戦略は顧客を引きつけるための重要な手段です。\",\n      \"企業は割引戦略を通じて売上を向上させることを目的としています。\"\n    ],\n    \"notes\": \"具体的な顧客データは見つからなかったため、一般的な情報に基づいています。\"\n  },\n  \"strategy_overview\": {\n    \"key_points\": [\n      \"割引戦略は、価格を下げることで販売を促進する方法です。\",\n      \"企業は割引戦略を通じて利益と売上を向上させることを目的としています。\"\n    ],\n    \"notes\": \"ウェブ情報に基づく概要です。\"\n  }\n}"}
+
+data: {"type": "done", "model": "Qwen3.6-27B-Claude-Opus-Reasoning-Distilled"}
+

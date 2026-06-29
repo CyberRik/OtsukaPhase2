@@ -82,17 +82,27 @@ def _parse_xlam(content: str | None):
     return calls or None
 
 
-# Prefilling the assistant turn with an already-closed, empty think block makes
-# the reasoning distill skip its <think> phase and answer immediately. This is
-# the only lever that works on the current llama-server build — the model's chat
-# template has no `enable_thinking` var and ignores `reasoning_effort`/`/no_think`.
-# Cutting the (long) reasoning phase is the dominant latency win for short
-# conversational outputs like Senior Commentary.
-_NO_THINK_PREFILL = {"role": "assistant", "content": "<think>\n\n</think>\n\n"}
+# Atlas (spark) controls reasoning via the chat template's `enable_thinking`
+# kwarg, surfaced to the OpenAI SDK through extra_body→chat_template_kwargs.
+# (The old empty-<think> assistant prefill — the only lever on the previous
+# llama-server build — is a NO-OP on atlas: it still emits a <think> phase.)
+# Atlas also requires explicit sampling: with none it decodes greedily and
+# degenerates into repetition loops on long output. `_gen_kwargs` carries both
+# into every create() call; `no_think=True` disables the reasoning phase.
+def _gen_kwargs(no_think: bool) -> dict:
+    return {
+        "top_p": config.LLM_TOP_P,
+        "extra_body": {
+            "chat_template_kwargs": {"enable_thinking": not no_think},
+            "top_k": config.LLM_TOP_K,
+        },
+    }
 
 
 def _prep(messages: list[dict], no_think: bool) -> list[dict]:
-    return [*messages, _NO_THINK_PREFILL] if no_think else messages
+    # Reasoning is now toggled via _gen_kwargs(enable_thinking); the messages
+    # pass through unchanged (the empty-<think> prefill did nothing on atlas).
+    return messages
 
 
 def simple_complete(messages: list[dict], temperature: float = 0.3,
@@ -108,7 +118,7 @@ def simple_complete(messages: list[dict], temperature: float = 0.3,
     try:
         resp = client.chat.completions.create(
             model=config.MODEL, messages=msgs, temperature=temperature,
-            max_tokens=max_tokens or config.LLM_MAX_TOKENS,
+            max_tokens=max_tokens or config.LLM_MAX_TOKENS, **_gen_kwargs(no_think),
         )
     except Exception as e:
         if not allow_fallback:
@@ -116,7 +126,7 @@ def simple_complete(messages: list[dict], temperature: float = 0.3,
         print(f"⚠️ Primary server failed ({e}). Trying fallback...")
         resp = fallback_client.chat.completions.create(
             model=config.FALLBACK_MODEL, messages=msgs, temperature=temperature,
-            max_tokens=max_tokens or config.LLM_MAX_TOKENS,
+            max_tokens=max_tokens or config.LLM_MAX_TOKENS, **_gen_kwargs(no_think),
         )
     content = resp.choices[0].message.content or ""
     content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
@@ -160,6 +170,7 @@ def stream_complete(messages: list[dict], temperature: float = 0.3,
         stream = primary_c.chat.completions.create(
             model=primary_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
+            **_gen_kwargs(no_think),
         )
     except Exception as e:
         if not allow_fallback:
@@ -168,6 +179,7 @@ def stream_complete(messages: list[dict], temperature: float = 0.3,
         stream = alt_c.chat.completions.create(
             model=alt_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
+            **_gen_kwargs(no_think),
         )
     think_open = think_closed = False
     for chunk in stream:
@@ -202,14 +214,14 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
         try:
             resp = client.chat.completions.create(
                 model=config.MODEL, messages=convo, tools=tools,
-                tool_choice="auto", temperature=0.0,
+                tool_choice="auto", temperature=0.0, **_gen_kwargs(True),
             )
         except Exception as e:
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
                     model=config.FALLBACK_MODEL, messages=convo, tools=tools,
-                    tool_choice="auto", temperature=0.0,
+                    tool_choice="auto", temperature=0.0, **_gen_kwargs(True),
                 )
             except Exception as fe:
                 answer = f"⚠️ サーバーエラー: {e} (Fallback: {fe})"
@@ -225,6 +237,11 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
                      for i, (name, args) in enumerate(parsed)] if parsed else []
 
         if not calls:
+            if tool_log:
+                last_name, _, last_result = tool_log[-1]
+                if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                    answer = last_result
+                    break
             answer = (msg.content or "").strip() or "(no response)"
             break
 
@@ -238,6 +255,10 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
             convo.append({"role": "tool", "tool_call_id": cid, "content": result})
         yield tool_log, None
     else:
+        if tool_log:
+            last_name, _, last_result = tool_log[-1]
+            if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                answer = last_result
         answer = answer or "⚠️ ツール呼び出しの上限に達しました。"
     yield tool_log, answer
 
@@ -266,7 +287,7 @@ def _route_final_answer(convo, tools, tool_log, role):
     # so the hybrid eval can record FAST→8B / THINK→27B ground truth.
     _sc, _sm, _, _ = _synth_route(no_think)
     yield {"type": "synth", "model_id": _sm,
-           "tier": "8B" if _sc is fallback_client else "27B", "no_think": no_think}
+           "tier": "atlas", "no_think": no_think}
     yield from _stream_final_answer(convo, tools, no_think=no_think)
 
 
@@ -328,14 +349,14 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         try:
             resp = client.chat.completions.create(
                 model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
-                tool_choice="required", temperature=0.0,
+                tool_choice="required", temperature=0.0, **_gen_kwargs(True),
             )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
                     model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
-                    tool_choice="required", temperature=0.0,
+                    tool_choice="required", temperature=0.0, **_gen_kwargs(True),
                 )
             except Exception as fe:  # noqa: BLE001
                 yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
@@ -355,6 +376,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # (FAST→8B / THINK→27B), which generates the answer ONCE, streamed.
         real_calls = [(cid, name, args) for cid, name, args in calls if name != "finish"]
         if not real_calls:
+            if tool_log:
+                last_name, _, last_result = tool_log[-1]
+                if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                    yield {"type": "answer", "text": last_result}
+                    return
             yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
@@ -379,6 +405,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.
+            if tool_log:
+                last_name, _, last_result = tool_log[-1]
+                if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                    yield {"type": "answer", "text": last_result}
+                    return
             yield from _route_final_answer(convo, tools, tool_log, role)
             return
 
@@ -393,14 +424,14 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_thin
     synth_c, synth_m, alt_c, alt_m = _synth_route(no_think)
     try:
         stream = synth_c.chat.completions.create(
-            model=synth_m, messages=msgs, temperature=0.0,
-            max_tokens=config.LLM_MAX_TOKENS, stream=True,
+            model=synth_m, messages=msgs, temperature=config.SYNTH_TEMPERATURE,
+            max_tokens=config.LLM_MAX_TOKENS, stream=True, **_gen_kwargs(no_think),
         )
     except Exception:  # noqa: BLE001 — fall back to a single blocking answer
         try:
             resp = alt_c.chat.completions.create(
-                model=alt_m, messages=msgs, temperature=0.0,
-                max_tokens=config.LLM_MAX_TOKENS,
+                model=alt_m, messages=msgs, temperature=config.SYNTH_TEMPERATURE,
+                max_tokens=config.LLM_MAX_TOKENS, **_gen_kwargs(no_think),
             )
             text = re.sub(r"<think>.*?</think>", "",
                           resp.choices[0].message.content or "", flags=re.DOTALL).strip()
