@@ -77,10 +77,11 @@ def transcribe_audio(file_path: str) -> str:
 
     try:
         with open(file_path, "rb") as audio_file:
+            # No `language=` hint — let Whisper auto-detect, so speech is
+            # transcribed in whatever language it was spoken (EN→EN, JA→JA).
             transcript = multimodal_client.audio.transcriptions.create(
                 model=config.INGEST_AUDIO_MODEL,
                 file=audio_file,
-                language="ja"  # optimize for Japanese B2B sales
             )
         return transcript.text
     except Exception as e:
