@@ -246,3 +246,6 @@ senpai/data/generated/
 # Raw source deck used to derive the brand template — large, not needed at runtime.
 # Only the slimmed-down derived template (otsuka_template.pptx) is committed.
 senpai/data/templates/otsuka_source.pptx
+
+# Node.js dependencies
+node_modules/
