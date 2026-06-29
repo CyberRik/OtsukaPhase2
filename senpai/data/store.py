@@ -461,38 +461,60 @@ def _customer_id_in_text(text: str) -> str | None:
     return valid[0] if len(valid) == 1 else None
 
 
+def _best_alias_matches(text: str) -> tuple[tuple[int, set[str]] | None,
+                                            tuple[int, set[str]] | None]:
+    """Scan the alias index for the most specific name/alias present in `text`,
+    tracked separately for UNIQUELY-resolving keys and AMBIGUOUS (multi-customer)
+    keys. Returns (best_unique, best_ambiguous) as (key_len, ids) or None.
+
+    A unique full name must beat a shared stem even when the stem is "longer" by
+    raw character count — character length is not comparable across scripts, so a
+    4-char exact kanji name ('松田運輸' → one customer) would otherwise lose to a
+    7-char romaji stem ('matsuda' → four 松田 companies) and re-trigger ambiguity
+    forever. Callers prefer `best_unique` when present; ambiguity is only real
+    when NO unique alias is in the text."""
+    low = (text or "").lower()
+    best_uniq: tuple[int, set[str]] | None = None
+    best_amb: tuple[int, set[str]] | None = None
+    for key, ids in _alias_index().items():
+        if not _key_in_text(key, low):
+            continue
+        if len(ids) == 1:
+            if best_uniq is None or len(key) > best_uniq[0]:
+                best_uniq = (len(key), ids)
+        elif best_amb is None or len(key) > best_amb[0]:
+            best_amb = (len(key), ids)
+    return best_uniq, best_amb
+
+
 def match_customer_in_text(text: str) -> dict | None:
     """Find the customer named anywhere in free text — across JA, English, romaji
-    and alias forms. Longest match wins (so 'Aozora Services' beats 'Aozora', and
-    '大和商事システム' beats '大和'); an ambiguous winning form resolves to None so
-    we never attribute the wrong customer's history. An explicit customer id ('C14')
-    is the most precise, unambiguous signal and wins over any name match."""
+    and alias forms. A uniquely-resolving name wins (so 'Aozora Services' beats
+    'Aozora', and an exact '松田運輸' beats the shared 'matsuda' stem); an ambiguous
+    stem with no unique name present resolves to None so we never attribute the
+    wrong customer's history. An explicit customer id ('C14') is the most precise,
+    unambiguous signal and wins over any name match."""
     cid = _customer_id_in_text(text)
     if cid:
         return get_customer(cid)
-    low = (text or "").lower()
-    best: tuple[int, set[str]] | None = None
-    for key, ids in _alias_index().items():
-        if _key_in_text(key, low) and (best is None or len(key) > best[0]):
-            best = (len(key), ids)
-    if best and len(best[1]) == 1:
-        return get_customer(next(iter(best[1])))
+    best_uniq, _ = _best_alias_matches(text)
+    if best_uniq:
+        return get_customer(next(iter(best_uniq[1])))
     return None
 
 
 def ambiguous_match_in_text(text: str) -> list[dict]:
-    """When the longest customer name/alias found in `text` maps to MORE THAN ONE
-    customer (e.g. 'marusan' → 丸三クリニック / 丸三食品 / 丸三商事 / 丸三システム),
-    return those candidate records so callers can disambiguate instead of silently
-    failing. Empty when the match is unique (use match_customer_in_text) or absent.
-    This is the surface-the-ambiguity counterpart to the never-guess resolvers."""
-    low = (text or "").lower()
-    best: tuple[int, set[str]] | None = None
-    for key, ids in _alias_index().items():
-        if _key_in_text(key, low) and (best is None or len(key) > best[0]):
-            best = (len(key), ids)
-    if best and len(best[1]) > 1:
-        return [c for cid in sorted(best[1]) if (c := get_customer(cid))]
+    """When the customer name/alias found in `text` maps to MORE THAN ONE customer
+    (e.g. 'marusan' → 丸三クリニック / 丸三食品 / 丸三商事 / 丸三システム) AND no
+    unique full name is also present, return those candidate records so callers can
+    disambiguate instead of silently failing. Empty when a unique name is present
+    (use match_customer_in_text) or no name matches. This is the surface-the-
+    ambiguity counterpart to the never-guess resolvers."""
+    best_uniq, best_amb = _best_alias_matches(text)
+    if best_uniq:  # an exact full name pins it down → not ambiguous
+        return []
+    if best_amb:
+        return [c for cid in sorted(best_amb[1]) if (c := get_customer(cid))]
     return []
 
 

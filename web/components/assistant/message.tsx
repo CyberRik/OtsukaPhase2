@@ -65,8 +65,12 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   draft_message: { ja: "メッセージ下書き", en: "Message draft", icon: Mail, internal: true },
   generate_proposal: { ja: "提案書(PPTX)生成", en: "Proposal (PPTX)", icon: Presentation, internal: true },
   generate_ringisho: { ja: "稟議書(DOCX)生成", en: "Ringi-sho (DOCX)", icon: FileText, internal: true },
-  generate_pptx: { ja: "プレゼン(PPTX)生成", en: "Slides (PPTX)", icon: Presentation, internal: true },
-  generate_docx: { ja: "文書(DOCX)生成", en: "Document (DOCX)", icon: FileText, internal: true },
+  // General-purpose authoring tools: NOT inherently grounded in internal data —
+  // they build from a free prompt (+ optional web). Only generate_proposal /
+  // generate_ringisho are deal-grounded, so don't let these falsely claim
+  // "grounded in internal data" on a generic deck.
+  generate_pptx: { ja: "プレゼン(PPTX)生成", en: "Slides (PPTX)", icon: Presentation, internal: false },
+  generate_docx: { ja: "文書(DOCX)生成", en: "Document (DOCX)", icon: FileText, internal: false },
   web_search: { ja: "Web検索", en: "Web search", icon: Globe, internal: false },
 };
 
@@ -95,9 +99,14 @@ function groundingBadge(m: Msg, lang: "ja" | "en") {
       cls: "bg-band-yellow/10 text-band-yellow",
     };
   }
+  // A tool ran but none of them retrieve internal facts (e.g. a generic PPTX from
+  // a free prompt) → say so honestly instead of "no tools" or "internal data".
+  const ranTools = m.tools.length > 0;
   return {
     icon: Sparkles,
-    text: lang === "ja" ? "一般的な回答（ツール未使用）" : "General answer (no tools)",
+    text: lang === "ja"
+      ? (ranTools ? "一般的な生成（社内データ非依存）" : "一般的な回答（ツール未使用）")
+      : (ranTools ? "General output (not internal data)" : "General answer (no tools)"),
     cls: "bg-muted text-muted-foreground",
   };
 }

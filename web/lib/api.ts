@@ -1,6 +1,6 @@
-// Typed client for the Senpai FastAPI bridge. Every call falls back to the
+﻿// Typed client for the Senpai FastAPI bridge. Every call falls back to the
 // committed fixtures when the API is unreachable, so the demo never shows a
-// broken screen — it shows real-shaped data and a small "offline" hint.
+// broken screen â€” it shows real-shaped data and a small "offline" hint.
 
 import {
   COACH_EXAMPLES,
@@ -103,14 +103,14 @@ export const api = {
   sources: () =>
     get<{ sources: Source[] }>("/api/knowledge/sources", { sources: SOURCES_FALLBACK }),
   // Knowledge authoring (manager). Mutations: when offline, `live` is false and
-  // `item` is null — the UI surfaces that rather than pretending it succeeded.
+  // `item` is null â€” the UI surfaces that rather than pretending it succeeded.
   knowledgeGenerate: (principleId: string, useLlm = false) =>
     post<{ item: KnowledgeItem | null }>(
       "/api/knowledge/generate",
       { principle_id: principleId, use_llm: useLlm },
       { item: null },
     ),
-  // Manager contributes tacit knowledge → a candidate principle.
+  // Manager contributes tacit knowledge â†’ a candidate principle.
   addPrinciple: (body: AddPrincipleRequest) =>
     post<{ principle: Principle | null }>(
       "/api/knowledge/principles",
@@ -167,7 +167,7 @@ export const api = {
       { query, lang },
       { status: "not_found", query, customer: null, candidates: [] }
     ),
-  // Attachment → plain text for chat context (no structured extraction).
+  // Attachment â†’ plain text for chat context (no structured extraction).
   // Multipart upload; returns null when the API is down or extraction is empty.
   extract: async (
     input: { audio?: File; image?: File; text?: string },
@@ -184,7 +184,7 @@ export const api = {
       return { data: null, live: false };
     }
   },
-  // Multimodal capture → structured draft. Multipart upload, so it bypasses the
+  // Multimodal capture â†’ structured draft. Multipart upload, so it bypasses the
   // JSON `post` helper. Returns { data:null, live:false } when the API is down.
   ingest: async (
     input: { audio?: File; image?: File; text?: string },
@@ -241,11 +241,11 @@ export async function narrateStream(
       signal: opts?.signal,
     });
   } catch {
-    onEvent({ type: "error", reason: "network" });
+    console.error(`network error`); onEvent({ type: "error", reason: "network" });
     return;
   }
   if (!res.ok || !res.body) {
-    onEvent({ type: "error", reason: `http_${res.status}` });
+    console.error(`http error: ${res.status}`); onEvent({ type: "error", reason: `http_${res.status}` });
     return;
   }
 
@@ -260,7 +260,7 @@ export async function narrateStream(
 // `tool` event before the final `answer`.
 export type ChatRole = "junior" | "manager" | "research";
 
-// A customer the system could not disambiguate from the text — surfaced so the
+// A customer the system could not disambiguate from the text â€” surfaced so the
 // user can pick instead of the system guessing (provenance stays deterministic).
 export interface ResolveCandidate {
   customer_id: string;
@@ -268,7 +268,7 @@ export interface ResolveCandidate {
   deal_id?: string | null;
 }
 
-// One retrieval event surfaced by a tool — the Retrieval Explorer's data.
+// One retrieval event surfaced by a tool â€” the Retrieval Explorer's data.
 export interface RetrievalItem {
   id: string;
   customer?: string | null;
@@ -332,14 +332,93 @@ export async function chatStream(
       signal: opts?.signal,
     });
   } catch {
-    onEvent({ type: "error", reason: "network" });
+    console.error(`network error`); onEvent({ type: "error", reason: "network" });
     return;
   }
   if (!res.ok || !res.body) {
-    onEvent({ type: "error", reason: `http_${res.status}` });
+    console.error(`http error: ${res.status}`); onEvent({ type: "error", reason: `http_${res.status}` });
     return;
   }
   await readSSE(res, (obj) => onEvent(obj as ChatEvent), () =>
+    onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+// --- Multi-agent crew (SSE) -------------------------------------------------
+// A crew of role-specialised agents (Researcher / Coach / Strategist) analyse one
+// deal together. The roster arrives first; then each agent streams its status, the
+// tools it runs, and its written contribution; the Strategist's merged brief lands
+// in `final`. See senpai.agent.crew on the backend.
+export interface CrewAgentSpec {
+  // "researcher" | "coach" | "strategist" for the deal crew, or a rep id (e.g. "R01")
+  // for the manager fan-out â€” one lane per agent either way.
+  id: string;
+  label: string;
+  role: string;
+  emoji: string;
+}
+export type CrewEvent =
+  | { type: "crew"; mode?: "team"; deal_id?: string; customer?: string; deal_name?: string; product_category?: string; agents: CrewAgentSpec[] }
+  | { type: "agent"; id: string; status: "running" | "done" | "error"; contribution?: string; elapsed?: number; reason?: string }
+  | { type: "agent_tool"; agent_id: string; name: string; summary: string }
+  | { type: "resolve"; status: "ambiguous"; query: string; candidates: ResolveCandidate[] }
+  | { type: "final"; markdown: string; elapsed?: number }
+  | { type: "done" }
+  | { type: "error"; reason?: string };
+
+/** Stream a multi-agent crew analysis of one deal. Pass a deal id, or free text
+ *  ("fujimoto") that the backend resolves to the customer's worst open deal.
+ *  Resolves when the stream ends. */
+export async function crewStream(
+  target: { dealId?: string; message?: string },
+  onEvent: (e: CrewEvent) => void,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/agent/crew`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deal_id: target.dealId, message: target.message }),
+      cache: "no-store",
+      signal: opts?.signal,
+    });
+  } catch {
+    console.error(`network error`); onEvent({ type: "error", reason: "network" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    console.error(`http error: ${res.status}`); onEvent({ type: "error", reason: `http_${res.status}` });
+    return;
+  }
+  await readSSE(res, (obj) => onEvent(obj as CrewEvent), () =>
+    onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+/** Stream the manager fan-out: one analyst agent per rep in parallel, then a team
+ *  lead synthesis. Same CrewEvent contract as crewStream (agents = reps). */
+export async function teamStream(
+  onEvent: (e: CrewEvent) => void,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/agent/team`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      signal: opts?.signal,
+    });
+  } catch {
+    console.error(`network error`); onEvent({ type: "error", reason: "network" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    console.error(`http error: ${res.status}`); onEvent({ type: "error", reason: `http_${res.status}` });
+    return;
+  }
+  await readSSE(res, (obj) => onEvent(obj as CrewEvent), () =>
     onEvent({ type: "error", reason: "stream" }),
   );
 }
