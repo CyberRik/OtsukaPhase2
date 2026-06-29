@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 
+from senpai.documents import playbook
 from senpai.documents.context import DocumentContext
 
 
@@ -46,6 +47,7 @@ def proposal_value_prop(ctx: DocumentContext, lang: str = "ja") -> str:
             "あなたは大塚商会の営業提案ライターです。以下の事実だけを使い、"
             "提案書の表紙に載せる1文の価値提案(キャッチコピー)を日本語で書いてください。"
             "新しい数値や事実を創作しないこと。1文のみ、20〜40字程度。\n"
+            f"{playbook.proposal_style_guide()}\n"
             f"顧客: {ctx.customer}（{ctx.industry}/{ctx.size}）\n"
             f"主要課題: {pains}\n"
             f"提供領域: {ctx.product_category}\n")
@@ -70,6 +72,7 @@ def ringisho_prose(ctx: DocumentContext) -> dict:
             "ビジネス文体で書いてください。提示された事実・数値のみを用い、創作しないこと。"
             "次の4つの見出しごとに、それぞれ2〜4文の段落で出力してください: "
             "【背景・課題】【提案内容】【投資額と効果】【結論・承認依頼】。\n"
+            f"{playbook.proposal_style_guide()}\n"
             f"自社: {ctx.customer}（{ctx.industry}/{ctx.size}）\n"
             f"課題: {pains}\n"
             f"導入予定（大塚商会より調達）: {prods}（{ctx.product_category}）\n"

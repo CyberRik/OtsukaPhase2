@@ -16,6 +16,8 @@ import json
 import os
 import re
 
+from senpai.documents import playbook
+
 MAX_SLIDES = 20
 MAX_SECTIONS = 15
 
@@ -70,6 +72,7 @@ def author_deck(prompt: str, grounding: str = "", lang: str = "ja") -> dict | No
         '"slides": [{"title": str, "bullets": [str, ...]}, ...]}. '
         f"Use 4-{MAX_SLIDES} content slides, 3-6 concise bullets each. "
         f"Write in {'Japanese' if lang == 'ja' else 'English'}.\n"
+        f"{playbook.deck_style_guide()}\n"
         f"Topic / request: {prompt}\n"
         f"{_grounding_block(grounding)}")
     obj = _extract_json(_complete(instr) or "")
