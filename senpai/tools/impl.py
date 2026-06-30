@@ -724,7 +724,8 @@ def _yen(n) -> str:
 
 
 def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False) -> str:
-    """4-slide PPTX sales proposal grounded in a deal's SPR data. Two-step confirm."""
+    """4-slide PPTX sales proposal grounded in a deal's SPR data. Builds directly
+    (no confirmation step) — the call commits the file in one round."""
     from senpai.documents import proposal, registry
     from senpai.documents.context import build_document_context
     if not deal_id:
@@ -732,16 +733,6 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
     ctx = build_document_context(deal_id)
     if ctx is None:
         return f"案件 {deal_id} は見つかりません。"
-    if not confirm:
-        pv = ctx.to_preview()
-        pains = "、".join(pv["pain_points"]) or "（SPRに課題記録なし）"
-        deal_label = (ctx.deal_name or ctx.customer) + (f"（{ctx.product_category}）" if ctx.product_category else "")
-        return (f"【プレビュー】{ctx.customer}様向け 提案書(PPTX・4スライド)\n"
-                f"- 対象案件: {ctx.deal_id} {deal_label}\n"
-                f"- 課題: {pains}\n"
-                f"- 投資額: {_yen(pv['investment'])}\n"
-                f"- 対象製品: {pv['n_products']}件 / 参考事例: {pv['n_comparables']}件\n"
-                "【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
     res = proposal.generate(deal_id, lang=lang)
     if res is None:
         return f"案件 {deal_id} は見つかりません。"
@@ -815,7 +806,8 @@ def _author_spec(kind: str, prompt: str, customer: str, use_web: bool, lang: str
 def generate_pptx(prompt: str = "", title: str = "", use_web: bool = False,
                   customer: str = "", lang: str = "ja", confirm: bool = False) -> str:
     """General-purpose PPTX from a free prompt (LLM-authored, optionally grounded by
-    internal records / web_search). No fixed slide count. Two-step confirm. Needs the model."""
+    internal records / web_search). No fixed slide count. Builds directly (no
+    confirmation step) — the call commits the file in one round. Needs the model."""
     from senpai.documents import author, registry
     from senpai.documents.render import output_path, render_pptx
     if not (prompt or "").strip():
@@ -826,10 +818,6 @@ def generate_pptx(prompt: str = "", title: str = "", use_web: bool = False,
     if spec is None:
         return "本機能はモデル(LLM)が必要です。現在モデルに接続できません。"
     slides = spec.get("slides", [])
-    if not confirm:
-        outline = "\n".join(f"  {i + 1}. {s.get('title', '')}" for i, s in enumerate(slides))
-        return (f"【プレビュー】PPTX「{title or spec.get('_title') or prompt}」{len(slides)}スライド:\n"
-                f"{outline}\n【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
     if title and slides:
         slides[0]["title"] = title
     path = output_path("pptx", title or spec.get("_title") or prompt[:30], "pptx")

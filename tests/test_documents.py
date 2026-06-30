@@ -100,16 +100,14 @@ def test_ringisho_headings_and_amount():
     assert f"{ctx.financials['investment']:,}" in text
 
 
-# --- tool confirm gating -------------------------------------------------------
-def test_proposal_tool_confirm_gating(_tmp_generated):
+# --- pptx generates directly (no confirm gate) ---------------------------------
+def test_proposal_tool_generates_directly(_tmp_generated):
     gen = _tmp_generated
-    out_preview = dispatch("generate_proposal", {"deal_id": DEAL})
-    assert "プレビュー" in out_preview
-    assert not gen.exists() or not list(gen.glob("*.pptx"))   # no file on preview
-
-    out_made = dispatch("generate_proposal", {"deal_id": DEAL, "confirm": True})
-    assert "生成しました" in out_made
-    assert len(list(gen.glob("*.pptx"))) == 1                 # exactly one file written
+    # PPTX proposals build in one round — no preview/confirm step.
+    out = dispatch("generate_proposal", {"deal_id": DEAL})
+    assert "生成しました" in out
+    assert "プレビュー" not in out
+    assert len(list(gen.glob("*.pptx"))) == 1                 # file written on the first call
 
 
 def test_ringisho_tool_writes_docx(_tmp_generated):

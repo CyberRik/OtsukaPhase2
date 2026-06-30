@@ -22,6 +22,7 @@ into an error fragment — one bad capability can never crash a run.
 from __future__ import annotations
 
 import concurrent.futures as cf
+import contextvars
 import itertools
 import threading
 import time
@@ -120,7 +121,15 @@ class ExecutionEngine:
                     # precedes any progress the worker emits (clean UI timeline).
                     out(events.TASK_STARTED, task_id=tid, capability=t.capability,
                         op=t.op, group=t.group, summary=t.summary)
-                    fut = ex.submit(self._exec_task, t, deps_ev, out, expand, cancel)
+                    # Run the worker in a COPY of the submitting thread's context so
+                    # per-turn ContextVar buffers (generated-document chips in
+                    # documents/registry.py, retrieval traces) set by the caller before
+                    # run() are visible inside the worker — they share the same buffer
+                    # list object, so a tool's register()/trace there surfaces on the
+                    # main thread's drain(). Without this, threaded execution silently
+                    # drops the same-turn download chip and retrieval trace.
+                    ctx = contextvars.copy_context()
+                    fut = ex.submit(ctx.run, self._exec_task, t, deps_ev, out, expand, cancel)
                     futures[fut] = tid
 
                 if not futures:

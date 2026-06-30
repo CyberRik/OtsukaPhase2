@@ -50,9 +50,9 @@ TOOL_METADATA: dict[str, CapabilityMetadata] = {
     "send_email": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=True),
     "get_calendar": CapabilityMetadata(OperationKind.READ, cacheable=True),
     "query_graph": CapabilityMetadata(OperationKind.SEARCH, cacheable=True),
-    "generate_proposal": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=True),
+    "generate_proposal": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=False),
     "generate_ringisho": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=True),
-    "generate_pptx": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=True),
+    "generate_pptx": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=False),
     "generate_docx": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=True),
 }
 
