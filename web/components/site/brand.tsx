@@ -17,7 +17,7 @@ export function Brand({ compact = false, fullMark = false, tagline }: { compact?
       {/* Tagline */}
       {!compact && tagline && (
         <div className="hidden sm:block border-l border-border/60 pl-3">
-          <div className="text-[9px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          <div className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight line-clamp-2 max-w-[140px] text-balance">
             {tagline}
           </div>
         </div>

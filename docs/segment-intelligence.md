@@ -278,8 +278,12 @@ Sample output today:
   `file://<rel>` there). So they already compose: a manager asking "why do we lose
   these deals, and what did we actually propose?" can be answered from **segment
   reports** (the aggregate, from the seed DB) *and* **the real local proposal/notes**
-  (from the workspace) in one EvidenceBundle. Fusing both into a single grounded
-  answer is the job of the forthcoming `LLMPlanner`.
+  (from the workspace) in one EvidenceBundle. The **`LLMPlanner`** (`senpai/planner/`,
+  see `docs/orchestration-architecture.md` §M6) now performs exactly this fusion for
+  document generation — it selects a capability graph (Conversation / Workspace / CRM /
+  Knowledge / Web / Documents) and runs it on the shared engine. Adding Segment
+  Intelligence as a selectable gather capability is the natural next step for the
+  planner's manager-facing flows.
 
 ---
 

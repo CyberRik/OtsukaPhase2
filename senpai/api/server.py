@@ -915,6 +915,18 @@ def _is_file_scoped(message: str) -> bool:
     return bool(_FILE_SCOPE_RE.search(message or ""))
 
 
+# Planner intent → the LLMPlanner (capability graph), not the ReAct loop. Covers
+# document GENERATION (proposal / deck / docx …), workspace NOTE writes, and workspace
+# ORGANIZE. The detection lives in senpai.planner.selection (the planner owns intent);
+# these thin aliases keep the router readable and the names stable for tests. Ordinary
+# tool asks ("draft an email", "make a quote", "tell me about X") stay in the chat
+# loop; 稟議 (ringisho) has its own tool and is excluded.
+from senpai.planner.selection import (
+    is_document_goal as _is_document_goal,
+    is_planner_goal as _is_planner_goal,
+)
+
+
 def _is_followup(message: str, has_context: bool) -> bool:
     if not has_context or _deal_id_in_text(message):
         return False
@@ -1333,6 +1345,28 @@ def chat(req: ChatRequest):
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
 
+    # Planner goal ("make a proposal for …", "organize my files", "save this as a
+    # note") → route the SAME chat turn through the LLMPlanner: it selects a capability
+    # graph (Conversation / Workspace / CRM / Knowledge / Web / Documents / Write /
+    # Organize), runs it on the engine, and returns the artifact. No /plan prefix — a
+    # normal prompt just works. An attached file rides along as conversation context; a
+    # selector-picked deal is authoritative. Everything else stays in the ReAct loop.
+    if _is_planner_goal(req.message):
+        convo: list[dict] = []
+        for m in req.history:
+            if m.role in ("user", "assistant") and m.content:
+                convo.append({"role": m.role, "content": m.content})
+        if req.context.strip():
+            convo.append({"role": "user",
+                          "content": f"【添付ファイルの内容】\n{req.context.strip()}"})
+        convo.append({"role": "user", "content": req.message})
+        sel_deal = (req.deal_id or "").strip().upper() or None
+        return StreamingResponse(
+            _plan_stream(req.message, convo, req.role, deal_id=sel_deal),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     tools, system_fn = _CHAT_ROLES.get(req.role, _CHAT_ROLES["junior"])
 
     # Conversation context cache: remember the account in focus so follow-ups that
@@ -1449,6 +1483,81 @@ def chat(req: ChatRequest):
 
     return StreamingResponse(
         gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# --- LLMPlanner: goal -> capability graph -> document ------------------------
+# The minimal planner surface (milestone 1: document generation). Unlike /api/chat
+# (a ReAct tool loop), this translates ONE goal into a static capability plan, runs
+# it on the shared ExecutionEngine, and returns the artifact. Same event shapes as
+# chat (tool / document / answer) so the existing frontend renders it unchanged.
+class PlanRequest(BaseModel):
+    message: str                             # the document goal
+    history: list[ChatMessage] = []          # prior user/assistant turns (for grounding)
+    role: str = "junior"
+    conversation_id: str | None = None
+
+
+# Grounding-capability display labels for the planner's per-source tool cards.
+_CAP_TOOL_LABEL = {
+    "conversation": "会話の文脈", "workspace": "ローカル文書", "crm": "社内記録(SPR)",
+    "knowledge": "社内ナレッジ", "web": "Web検索",
+}
+
+
+def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = None):
+    """Shared planner SSE generator: goal → capability graph → engine → artifact.
+    Emits the same `plan | tool | document | answer | done` events used by /api/chat,
+    so both the dedicated /api/plan surface and the auto-routed chat turn render
+    identically. `deal_id` (selector pick) is authoritative when provided."""
+    from senpai.planner import run_document_goal
+    yield _sse({"type": "start", "model": config.MODEL,
+                "endpoint": config.BASE_URL, "role": role, "surface": "planner"})
+    try:
+        result = run_document_goal(goal, conversation=convo, role=role, deal_id=deal_id)
+    except Exception as e:  # noqa: BLE001 — never crash the stream
+        yield _sse({"type": "error", "reason": str(e)})
+        yield _sse({"type": "done", "model": config.MODEL})
+        return
+
+    sel = result["selection"]
+    # The capability graph the planner chose (the UI may render it; unknown to the
+    # current chat handler, which safely ignores it).
+    yield _sse({"type": "plan", "goal": result["goal"], "doc_kind": sel["doc_kind"],
+                "capabilities": result["capabilities"], "reason": sel.get("reason", ""),
+                "target": sel.get("target"), "deal_id": sel.get("deal_id"),
+                "tasks": result["plan"]})
+    # Focus chip: the resolved entity, so the account context stays visible.
+    if sel.get("target") or sel.get("deal_id"):
+        yield _sse({"type": "context", "status": "active",
+                    "customer": sel.get("target"), "deal_id": sel.get("deal_id"),
+                    "cached": False})
+    # One tool card per capability that actually contributed grounding.
+    for cap in result.get("grounded_on", []):
+        yield _sse({"type": "tool", "name": _CAP_TOOL_LABEL.get(cap, cap),
+                    "args": f"「{goal}」", "result": "根拠を収集しました。"})
+    text = result.get("text", "")
+    if result.get("document"):
+        yield _sse({"type": "tool", "name": "資料生成",
+                    "args": f"kind={sel['doc_kind']}", "result": text,
+                    "document": result["document"]})
+    yield _sse({"type": "answer", "text": text or "資料を生成できませんでした。"})
+    yield _sse({"type": "done", "model": config.MODEL})
+
+
+@app.post("/api/plan")
+def plan_document(req: PlanRequest):
+    """Plan a document goal into a capability graph, execute it, stream the result.
+    The dedicated planner surface; `/api/chat` also auto-routes document goals here."""
+    convo: list[dict] = []
+    for m in req.history:
+        if m.role in ("user", "assistant") and m.content:
+            convo.append({"role": m.role, "content": m.content})
+    convo.append({"role": "user", "content": req.message})
+    return StreamingResponse(
+        _plan_stream(req.message, convo, req.role),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

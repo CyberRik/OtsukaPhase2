@@ -7,12 +7,13 @@ into an immutable **evidence bundle**, and a single **reasoner** synthesizes the
 artifact. New capabilities (Filesystem, Email, Calendar, Browser, Office) become
 *additive* — write one class, register it — instead of another rewrite.
 
-> Status: **M0–M5 shipped.** M0 = the engine (`senpai/orchestration/`). M1 = Research.
+> Status: **M0–M6 shipped.** M0 = the engine (`senpai/orchestration/`). M1 = Research.
 > M2 = crew + team gather. M3 = account gather (`senpai/account/`) + a consolidation
 > pass. M4 = the `/api/chat` tool loop on the engine via the **AdaptiveScheduler**. M5
 > = the **Workspace capability** (`senpai/workspace/`) — sandboxed local documents, and
-> the first production user of **runtime DAG expansion** (`ctx.expand`). Next up: the
-> **`LLMPlanner`** on top of this richer capability graph (see "Roadmap" at the end).
+> the first production user of **runtime DAG expansion** (`ctx.expand`). M6 = the
+> **`LLMPlanner`** (`senpai/planner/`) — goal → capability graph → engine → artifact,
+> proven first on document generation (see "M6" and the Roadmap at the end).
 
 ---
 
@@ -471,7 +472,66 @@ same "citations are provenance" discipline (`file://<rel>` here, `deal_id`s ther
 So the two are already composable: a manager question can draw on **segment reports**
 (why we lose these deals, from the seed DB) *and* **local files** (the actual proposal
 we sent) in one EvidenceBundle. Fusing them into one grounded answer is exactly the
-job of the `LLMPlanner` next.
+job of the `LLMPlanner` — now shipped for document generation (M6).
+
+---
+
+## M6 — LLMPlanner (goal → capability graph → artifact)
+
+The planner that had been a `Planner` Protocol seam since M0 is now real, and
+**deliberately minimal**: it is *not* an autonomous or recursive agent. It makes
+exactly one decision — *which capabilities are needed to ground this document* — and
+emits a static `ExecutionPlan`. The existing engine runs it; the capabilities do the
+work; the terminal capability turns the bundle into the artifact.
+
+```
+goal ──► LLMPlanner ──► ExecutionPlan ──► ExecutionEngine ──► EvidenceBundle ──► artifact
+         (selects caps)   (fixed 2-level DAG)   (reused)          (reused)         (a file)
+```
+
+`senpai/planner/` (the whole surface is small on purpose):
+
+| File | Role |
+|---|---|
+| `selection.py` | `Selection` (the plan the planner emits) + `heuristic_selection` — the deterministic default and the always-available fallback. **IDs are resolved here from the store, never by the model** (the "never invent an ID" rule): an explicit `D###`, else a customer name → its primary open deal. A `proposal` with no resolvable deal degrades to a free `pptx`. |
+| `capabilities.py` | Gather + terminal capabilities, each a **thin adapter over logic that already exists**. Gather: `conversation` / `workspace` / `crm` / `knowledge` / `web` emit uniform `{"text", "label"}` grounding. Three terminals **consume the bundle (via `ctx.deps`)**, never re-gather: `documents` authors+renders+registers a downloadable file (`author`/`proposal`/`render`/`registry`); `workspace_write` writes a markdown **note into the workspace** (sandbox-checked, confirm-gated `edit_workspace_document`); `workspace_organize` **tidies the workspace** — buckets loose files into topic folders via the sandbox's no-overwrite `move_within`, **preview-first**, moves only on an explicit apply cue. |
+| `plan.py` | `document_plan(selection)` — the fixed two-level DAG: gather capabilities at level 0 (parallel, independent), one `documents` task depending on all of them. The edges *are* the ordering; the engine and capabilities stay ignorant of it. |
+| `llm_planner.py` | `LLMPlanner.plan(goal)` — one `simple_complete` call picks the capability set + doc kind (strict JSON, validated); any failure falls straight back to `heuristic_selection`. The model chooses *what to gather*, never IDs, ordering, or execution. |
+| `run.py` | `run_document_goal(goal, conversation=…)` — plan → execute on the shared `ExecutionEngine` → read the terminal `documents` fragment as the artifact. `python -m senpai.planner.run "D001 の提案書"` runs it (proposal path is GPU-free). |
+
+**Capability-driven, not tool-driven.** The plan is expressed in capabilities
+(Workspace, CRM, Knowledge, Web, Conversation, Documents), so the planner selects
+*which sources ground the artifact* rather than scripting tool calls. The grounding
+that `generate_pptx` used to gather *inside* the tool (conversation + workspace + CRM +
+web) is now the **explicit gather half of the graph**, and the `documents` capability
+consumes it from the bundle — the same grounding, promoted from a hidden side-effect to
+first-class plan nodes.
+
+**Why the artifact step has no Reasoner yet.** For document generation the artifact
+*is* the file and the `documents` capability already emits the one-line confirmation, so
+`run.py` returns the fragment directly. The `reason.py` seam is where meeting-prep /
+account-intelligence will synthesize prose over the bundle — the next expansion, not
+this milestone.
+
+**Surface — integrated into normal chat.** `/api/chat` routes by intent: a
+**document-generation goal** (`_is_document_goal` — a *create* verb + a *document* noun,
+tight enough that "draft an email" / "make a quote" / "tell me about X" stay put; 稟議
+excluded) is auto-routed through the planner via the shared `_plan_stream`, which emits
+the same `plan | context | tool | document | answer` events the chat UI already renders —
+so a plain *"make a proposal for Murata Printing"* prompt just works, **no `/plan`
+prefix**. An attached file rides along as conversation context; a selector-picked deal is
+authoritative. `POST /api/plan` remains as an explicit/programmatic surface. The ReAct
+tool-loop and its `generate_*` tools are untouched — the planner is an additive front
+door, not a replacement. Full walkthrough: **`docs/llm-planner.md`**.
+
+**Tests** (`tests/test_planner.py`, 8, GPU-free): selection resolves a real deal id /
+web-gates a general deck / resolves a customer name to its open deal; the plan's
+`documents` task depends on every gather task and is acyclic; **end-to-end** a proposal
+goal plans → runs on the engine → produces a *registered, downloadable* PPTX grounded on
+conversation + CRM + workspace (the capability graph feeding the artifact, not a
+re-gather); the `documents` grounding assembles deps most-specific-first; the authored
+pptx path degrades cleanly with no model. Full suite: **8 new tests pass, 0 new
+regressions** (the same two pre-existing isolation failures remain).
 
 ---
 
@@ -484,16 +544,19 @@ job of the `LLMPlanner` next.
 | Chat loop on engine (AdaptiveScheduler) | ✅ live (M4) |
 | Runtime DAG expansion (`ctx.expand`) | ✅ **live in production** (M5 Workspace) |
 | Workspace: local file find + extract | ✅ live (M5), read-only |
-| `LLMPlanner` (multi-step DAG for open-ended goals) | ▶ **next** — the Planner Protocol seam is reserved |
+| `LLMPlanner` — goal → capability graph → artifact | ✅ **live (M6)** — document generation; `senpai/planner/`, `POST /api/plan` |
+| `LLMPlanner` — meeting-prep / account-intelligence / open-ended | ▶ **next** — same spine, add a Reasoner pass over the bundle |
 | Approval Gate (`OperationKind=WRITE`) | ⏳ stub — generalizes today's `confirm=` |
 | Reducer (map-reduce before synthesis) | ⏳ `PassthroughReducer` stub |
 | `ConnectionProvider` / `auth.required` (Email/Calendar) | ⏳ reserved field/event |
 | Converge the 4 bespoke reasoners onto `reason.py` | ⏳ deferred simplification |
 
-**The next milestone is the `LLMPlanner`.** With Workspace shipped, the planner has a
-capability graph worth orchestrating — CRM + Knowledge + Web + Segment + Workspace — so
-a true end-to-end agentic flow like *"prepare me for tomorrow's Endo Kogyo meeting"*
-becomes: plan a DAG across those capabilities → engine runs it (with Workspace fan-out
-over local proposals/notes) → Reducer compacts → single Reasoner drafts the prep, citing
-both `deal_id`s and `file://` sources. M5 is the proof that the last hop — real files,
-unknown breadth, runtime expansion — already works.
+**The `LLMPlanner` is now live for document generation (M6).** The next milestone
+extends the *same spine* to open-ended flows like *"prepare me for tomorrow's Endo Kogyo
+meeting"*: the planner already selects a capability graph and runs it on the engine — the
+additions are (a) a broader plan shape (more gather capabilities, e.g. Segment
+Intelligence + Activities) and (b) a real **Reasoner** pass (`reason.py`) that synthesizes
+prose over the bundle instead of the trivial artifact-is-the-file step, with the
+**Reducer** compacting when local files overflow the context. Citing both `deal_id`s and
+`file://` sources already falls out of the EvidenceBundle. M6 is the proof that the
+full hop — goal → capability selection → engine → bundle → artifact — works end to end.

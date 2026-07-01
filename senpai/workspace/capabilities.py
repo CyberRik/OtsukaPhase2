@@ -69,6 +69,16 @@ class WorkspaceCapability:
         limit = max(1, min(limit, config.WORKSPACE_MAX_FILES))
 
         docs = sandbox.list_documents()
+
+        # If the query is an absolute path allowed by the sandbox, manually add it
+        try:
+            potential_path = Path(query.strip())
+            if potential_path.is_absolute() and sandbox.is_allowed(potential_path):
+                if sandbox.safe_path(potential_path) and potential_path not in docs:
+                    docs.append(potential_path)
+        except Exception:
+            pass
+
         if not docs:
             ctx.emit("no documents in workspace")
             return Evidence.empty(provenance={"root": str(sandbox.workspace_root()),

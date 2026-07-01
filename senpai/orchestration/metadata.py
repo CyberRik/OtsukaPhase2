@@ -52,6 +52,7 @@ TOOL_METADATA: dict[str, CapabilityMetadata] = {
     "query_graph": CapabilityMetadata(OperationKind.SEARCH, cacheable=True),
     "segment_intelligence": CapabilityMetadata(OperationKind.SEARCH, cacheable=True),
     "search_workspace_documents": CapabilityMetadata(OperationKind.SEARCH, max_concurrency=4),
+    "edit_workspace_document": CapabilityMetadata(OperationKind.WRITE, parallel_safe=False, idempotent=False, requires_confirmation=True),
     "generate_proposal": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=False),
     "generate_ringisho": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=True),
     "generate_pptx": CapabilityMetadata(OperationKind.EXTERNAL, parallel_safe=False, idempotent=False, requires_confirmation=False),

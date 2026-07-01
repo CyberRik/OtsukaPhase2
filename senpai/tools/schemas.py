@@ -649,6 +649,24 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "edit_workspace_document",
+            "description": "Create or modify a local text document (e.g. .txt, .md, .csv, .json) in the user's workspace. "
+                           "You must pass confirm=False first to return a preview. Then ask the user to confirm. "
+                           "If they confirm, run again with confirm=True to commit the write to disk.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "The absolute path or relative path from the workspace to save the file."},
+                    "content": {"type": "string", "description": "The text content to write into the file."},
+                    "confirm": {"type": "boolean", "description": "Set true ONLY after the user confirms; actually writes the file. Default false returns a preview."},
+                },
+                "required": ["path", "content"],
+            },
+        },
+    },
 ]
 
 
@@ -670,7 +688,7 @@ JUNIOR_TOOLS = _pick(
     "search_notes", "lookup_customer_environment", "get_product_info", "search_products",
     "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
     "send_email", "get_calendar", "route_to_expert", "morning_briefing",
-    "get_seasonal_context", "web_search", "search_workspace_documents",
+    "get_seasonal_context", "web_search", "search_workspace_documents", "edit_workspace_document",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
 )
 
@@ -680,7 +698,7 @@ MANAGER_TOOLS = _pick(
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
     "search_knowledge", "search_notes", "query_graph", "segment_intelligence", "search_products",
     "create_quote", "schedule_meeting",
-    "send_email", "get_calendar", "draft_message", "web_search", "search_workspace_documents",
+    "send_email", "get_calendar", "draft_message", "web_search", "search_workspace_documents", "edit_workspace_document",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
 )
 
@@ -691,5 +709,5 @@ MANAGER_TOOLS = _pick(
 RESEARCH_TOOLS = _pick(
     "query_spr", "find_deals", "find_similar_deals", "score_deal_health", "search_notes",
     "lookup_customer_environment", "get_product_info", "segment_intelligence",
-    "get_seasonal_context", "web_search", "search_workspace_documents",
+    "get_seasonal_context", "web_search", "search_workspace_documents", "edit_workspace_document",
 )

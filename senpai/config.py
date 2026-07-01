@@ -162,10 +162,11 @@ GENERATED_DIR = PKG_DIR / "data" / "generated"
 # local documents (PDF/DOCX/PPTX/XLSX/TXT/MD) and returns structured evidence into
 # the orchestration EvidenceBundle. It is strictly READ-ONLY and confined to
 # WORKSPACE_ROOT: every path is resolved and must stay inside that root (no
-# traversal, no symlink escape). Point SENPAI_WORKSPACE_ROOT at a real docs folder
-# to demo; defaults to a gitignored sample dir under the package.
+# traversal, no symlink escape). Points at a real local docs folder; override with
+# SENPAI_WORKSPACE_ROOT. list_documents() prunes VCS/build dirs and our own
+# `generated` output so machine artifacts don't feed back in as grounding.
 WORKSPACE_ROOT = Path(
-    os.environ.get("SENPAI_WORKSPACE_ROOT", str(PKG_DIR / "data" / "workspace"))
+    os.environ.get("SENPAI_WORKSPACE_ROOT", r"E:\my_stuff\Otsuka")
 ).resolve()
 # Extensions the Workspace will find/extract (read-only). Lowercase, with dot.
 WORKSPACE_EXTS = tuple(

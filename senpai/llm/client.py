@@ -17,6 +17,7 @@ from openai import OpenAI
 
 from senpai import config
 from senpai.tools.impl import dispatch
+from senpai.tools import conversation as _conversation
 from senpai.orchestration.scheduler import AdaptiveScheduler, ToolCall as SchedToolCall
 from senpai.orchestration.engine import ExecutionEngine
 from senpai.agent.capabilities import build_registry
@@ -470,6 +471,12 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # is invisible here (different context) and comes back empty. registry._DOCS
         # is a plain module global shared by all threads, so the diff always sees it.
         docs_before = set(_docs._DOCS.keys())
+        # Publish the live conversation so grounding-aware tools (generate_pptx/docx)
+        # can ground on what's already in focus this session — a company/quote read
+        # from a local file, a deal looked up earlier — instead of hallucinating.
+        # Set here, in the same synchronous block as the engine run (no yield between),
+        # so copy_context() in the engine carries it into the worker threads.
+        _conversation.set_conversation(convo)
         bundle = _ENGINE.run(plan, _ignore_events) if fresh else None
         new_doc_ids = [d for d in _docs._DOCS if d not in docs_before]
 

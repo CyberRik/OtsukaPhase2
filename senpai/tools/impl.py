@@ -786,13 +786,89 @@ def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
     return f"稟議書(DOCX)を生成しました: {rec['filename']}（{ctx.customer}様）。"
 
 
+def _conversation_grounding(prompt: str) -> str:
+    """Context already established in this session — prior tool results (e.g. a
+    workspace file we read) and assistant answers — so a doc that references 'the
+    company/quote we just discussed' grounds on it instead of being invented. Reads
+    the live conversation the chat loop publishes (senpai.tools.conversation).
+
+    Kept compact and recent: the doc author only needs the entity in focus and the
+    facts around it, not the whole transcript. System messages and failed/empty tool
+    results are dropped; the current request is included so intent is explicit."""
+    from senpai.tools import conversation as _conv
+    convo = _conv.conversation()
+    if not convo:
+        return ""
+    snippets: list[str] = []
+    for m in convo:
+        role, content = m.get("role"), m.get("content")
+        if role == "system" or not isinstance(content, str) or not content.strip():
+            continue
+        if role == "tool":
+            if content.startswith("[error]") or "見つかりません" in content:
+                continue
+            snippets.append(content.strip())
+        elif role == "assistant":
+            snippets.append(content.strip())
+        elif role == "user":
+            snippets.append(f"（依頼）{content.strip()}")
+    if not snippets:
+        return ""
+    joined = "\n---\n".join(snippets[-8:])
+    return joined[:4000]
+
+
+def _workspace_grounding(query: str) -> str:
+    """Relevant LOCAL documents for `query`, or '' when nothing genuinely matched.
+    Gated on a real filename/path match (score > 0), not the finder's recency
+    fallback, so an unrelated deck ('best gaming laptops') isn't padded with random
+    files. Read-only, sandboxed — the entity may live only in the rep's own files."""
+    if not (query or "").strip():
+        return ""
+    try:
+        from senpai.workspace import workspace_evidence
+        from senpai.workspace.gather import _format
+        res = workspace_evidence(query, limit=3)
+    except Exception:  # noqa: BLE001 — grounding is best-effort
+        return ""
+    if not res.get("documents"):
+        return ""
+    if not any((f.get("score") or 0) > 0 for f in res.get("found", [])):
+        return ""
+    return _format(res)
+
+
 def _gather_grounding(prompt: str, customer: str, use_web: bool) -> str:
-    """Best-effort context for the general doc tools: internal records for a named
-    customer, and/or a web_search. Empty string is fine (model uses general knowledge)."""
+    """Best-effort context for the general doc tools, gathered in priority order so
+    the deck grounds on what the rep is actually referencing:
+      1. the live conversation — a company/quote/deal discussed earlier this session
+      2. the rep's own local documents (workspace) that match the topic
+      3. internal CRM records for a named customer
+      4. a live web_search (external/factual topics)
+    Any layer may be empty (then the model uses general knowledge). Conversation and
+    workspace come first because they carry the specific entity in focus — that is
+    what stops a 'proposal for <company we just read from a file>' from being
+    hallucinated as a generic deck under the wrong company name."""
     parts: list[str] = []
-    cust = _resolve_customer(customer) if customer else store.match_customer_in_text(prompt)
+
+    convo_ctx = _conversation_grounding(prompt)
+    if convo_ctx:
+        parts.append(f"【これまでの会話・確定済みの文脈】\n{convo_ctx}")
+
+    ws = _workspace_grounding(prompt or customer)
+    if ws:
+        parts.append(f"【ローカル文書（あなたのファイル）】\n{ws}")
+
+    # CRM: an explicit customer is authoritative. Otherwise fall back to a fuzzy
+    # name match — but NOT when the entity clearly lives in the workspace: a
+    # local-file company must not pull an unrelated CRM customer, that mismatch is
+    # exactly what produced the wrong company name in the generated deck.
+    cust = _resolve_customer(customer) if customer else None
+    if cust is None and not ws:
+        cust = store.match_customer_in_text(prompt)
     if cust:
         parts.append(f"【社内データ】\n{query_spr(customer=cust['customer_id'])}")
+
     if use_web:
         try:
             parts.append(f"【Web検索】\n{web_search(query=prompt)}")
@@ -831,19 +907,22 @@ def _resolve_use_web(use_web, prompt: str, customer: str) -> bool:
     return _auto_web(prompt)
 
 
-def _gen_key(kind: str, prompt: str, customer: str, use_web: bool) -> str:
-    return _hashlib.md5(f"{kind}|{prompt}|{customer}|{use_web}".encode()).hexdigest()
+def _gen_key(kind: str, prompt: str, customer: str, use_web: bool, grounding: str = "") -> str:
+    return _hashlib.md5(
+        f"{kind}|{prompt}|{customer}|{use_web}|{grounding}".encode()).hexdigest()
 
 
 def _author_spec(kind: str, prompt: str, customer: str, use_web: bool, lang: str):
     """Author (or reuse cached) a deck/doc spec for the general tools. None if the
-    model is unavailable."""
-    key = _gen_key(kind, prompt, customer, use_web)
+    model is unavailable. The cache key includes the gathered grounding so the same
+    prompt in a different conversation (different entity in focus) re-authors rather
+    than returning a stale, differently-grounded deck."""
+    from senpai.documents import author
+    grounding = _gather_grounding(prompt, customer, use_web)
+    key = _gen_key(kind, prompt, customer, use_web, grounding)
     spec = _GEN_SPEC_CACHE.get(key)
     if spec is not None:
         return spec
-    from senpai.documents import author
-    grounding = _gather_grounding(prompt, customer, use_web)
     spec = (author.author_deck if kind == "pptx" else author.author_doc)(
         prompt, grounding=grounding, lang=lang)
     if spec is not None:
@@ -949,6 +1028,38 @@ def search_workspace_documents(query: str = "", limit: int = 0) -> str:
     return _format(res)
 
 
+def edit_workspace_document(path: str, content: str, confirm: bool = False) -> str:
+    """Modifies or creates a local text document in the workspace.
+    To prevent data loss, `confirm=True` must be explicitly passed to commit the write;
+    otherwise, a preview is returned for the user to review.
+    """
+    from senpai.workspace import sandbox
+    try:
+        safe_p = sandbox.safe_path(path)
+    except sandbox.SandboxError as e:
+        return f"エラー: パスが無効または境界外です ({e})"
+    
+    if safe_p.suffix.lower() not in (".txt", ".md", ".json", ".csv"):
+        return f"エラー: テキストファイル（.txt, .md, .json, .csv等）のみ編集可能です。指定された拡張子: {safe_p.suffix}"
+    
+    if not confirm:
+        return (f"【ファイル編集プレビュー（保存されていません）】\n"
+                f"対象: {sandbox.rel(safe_p)}\n"
+                f"新しい内容:\n{content}\n\n"
+                f"よろしければ確認して「保存して」と指示してください（confirm=True を指定して再実行します）。")
+    
+    try:
+        safe_p.parent.mkdir(parents=True, exist_ok=True)
+        safe_p.write_text(content, encoding="utf-8")
+        from senpai.retrieval import trace as _trace
+        _trace.record("workspace_edit", scope="local_files",
+                      items=[{"id": sandbox.rel(safe_p), "score": len(content)}],
+                      query=path, n=1)
+        return f"ファイル {sandbox.rel(safe_p)} を保存しました。"
+    except Exception as e:
+        return f"ファイルの保存中にエラーが発生しました: {e}"
+
+
 _DISPATCH = {
     "query_spr": query_spr,
     "find_deals": find_deals,
@@ -981,6 +1092,7 @@ _DISPATCH = {
     "query_graph": query_graph,
     "segment_intelligence": segment_intelligence,
     "search_workspace_documents": search_workspace_documents,
+    "edit_workspace_document": edit_workspace_document,
     # Document generation (the chatbot's "do stuff" tools)
     "generate_proposal": generate_proposal,
     "generate_ringisho": generate_ringisho,
