@@ -9,10 +9,27 @@ GPU-free (mirrors senpai/llm/narrate.py's fallback philosophy).
 """
 from __future__ import annotations
 
+import json
 import os
+import re
 
 from senpai.documents import playbook
 from senpai.documents.context import DocumentContext
+
+
+def _extract_json(text: str) -> dict | None:
+    """Pull the first JSON object out of a model response (handles code fences)."""
+    if not text:
+        return None
+    t = re.sub(r"```(?:json)?", "", text).strip()
+    start, end = t.find("{"), t.rfind("}")
+    if start == -1 or end <= start:
+        return None
+    try:
+        obj = json.loads(t[start:end + 1])
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        return None
 
 
 def _use_llm() -> bool:
@@ -54,6 +71,92 @@ def proposal_value_prop(ctx: DocumentContext, lang: str = "ja") -> str:
         if (out := _complete(prompt)):
             return out.splitlines()[0].strip()
     return f"{ctx.customer}様の「{pains}」を、{ctx.product_category}で解決するご提案"
+
+
+# --- proposal deck prose --------------------------------------------------------
+def _clean_bullets(items, limit: int) -> list[str]:
+    out: list[str] = []
+    for it in items or []:
+        s = str(it).strip().lstrip("・-•").strip()
+        if s:
+            out.append(s)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _templated_prose(ctx: DocumentContext, pains: list[str]) -> dict:
+    """Grounded, GPU-free framing for the proposal deck. Better than raw field-dumps
+    even without the model: each pain is tied to its business impact, and the arc
+    (why-now → challenges → solution → value → next steps) is preserved."""
+    cat = ctx.product_category or "本領域"
+    return {
+        "catch": f"{ctx.customer}様の「{'、'.join(pains[:3])}」を、{cat}で解決するご提案",
+        "why_now": [
+            f"{ctx.industry or '同業界'}では業務のデジタル化と省力化が加速しています",
+            "対応の遅れは生産性・コスト面での機会損失につながります",
+            "今こそ、確実な実績のある構成で着実に前進すべきタイミングです",
+        ],
+        "challenges": [f"{p} — 業務効率・コスト・リスクへの影響" for p in pains[:5]],
+        "solution": [
+            f"{cat}を軸に、上記の課題へ一対一で対応します",
+            "大塚商会の導入実績と保守体制により、確実な導入・運用を実現します",
+        ],
+        "value": [
+            "投資に見合う業務改善・省力化の効果が見込めます",
+            "同規模・同業の導入実績に照らし、妥当な投資水準です",
+        ],
+        "next_steps": [
+            "詳細お見積のご提示",
+            "導入スケジュールのすり合わせ",
+            "ご要望に応じた小規模スタート・検証も可能です",
+        ],
+    }
+
+
+def proposal_prose(ctx: DocumentContext, lang: str = "ja") -> dict:
+    """One grounded pass of persuasive framing for the proposal deck, following
+    Otsuka's arc. Returns a title catch + bullet lists for the qualitative slides.
+    NUMBERS / product prices / comparables are NOT here — they stay deterministic in
+    proposal.py; this supplies only prose, so nothing is invented. Templated fallback
+    when the model is off, so a grounded deck is always produced GPU-free."""
+    pains = ctx.pain_points[:5] or ["現行業務の課題"]
+    base = _templated_prose(ctx, pains)
+    if not _use_llm():
+        return base
+    prods = "、".join(p["name"] for p in ctx.products[:5]) or ctx.product_category
+    prompt = (
+        "あなたは大塚商会のトップ営業提案ライターです。以下の事実だけを用いて、提案書"
+        "(スライド)の各セクションの箇条書きを作成し、STRICT JSONのみで出力してください"
+        "(前置き・コードフェンス不可)。スキーマ:\n"
+        '{"catch": str, "why_now": [str], "challenges": [str], '
+        '"solution": [str], "value": [str], "next_steps": [str]}\n'
+        "- catch: 表紙の価値提案1文(20〜40字、顧客が得る成果で表現)。\n"
+        "- why_now: 『なぜ今か』の背景を3点(業界動向・タイミング)。\n"
+        "- challenges: 提示された課題を、それぞれ業務・コスト・リスクへの影響を一言添えて"
+        "言い換える(新たな課題を創作しない)。\n"
+        "- solution: 提供領域/製品が各課題にどう効くかを便益ベースで2〜3点。\n"
+        "- value: 投資対効果の説得材料を2〜3点(具体的な金額は書かない/別途記載)。\n"
+        "- next_steps: 次の一歩を丁寧な依頼文体で2〜3点。\n"
+        "新しい数値・固有名詞・製品を創作しないこと。各項目は短い体言止めで。\n"
+        f"{playbook.proposal_style_guide()}\n"
+        f"顧客: {ctx.customer}（{ctx.industry}/{ctx.size}）\n"
+        f"提供領域: {ctx.product_category}\n"
+        f"想定製品: {prods}\n"
+        f"課題: {'、'.join(pains)}\n")
+    obj = _extract_json(_complete(prompt) or "")
+    if not obj:
+        return base
+    # Merge over the templated base so any missing/empty field stays grounded.
+    catch = str(obj.get("catch") or "").strip().splitlines()[0:1]
+    return {
+        "catch": (catch[0] if catch else base["catch"]),
+        "why_now": _clean_bullets(obj.get("why_now"), 4) or base["why_now"],
+        "challenges": _clean_bullets(obj.get("challenges"), 5) or base["challenges"],
+        "solution": _clean_bullets(obj.get("solution"), 3) or base["solution"],
+        "value": _clean_bullets(obj.get("value"), 3) or base["value"],
+        "next_steps": _clean_bullets(obj.get("next_steps"), 3) or base["next_steps"],
+    }
 
 
 # --- ringisho -------------------------------------------------------------------

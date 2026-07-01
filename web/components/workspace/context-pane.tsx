@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, Flame, MessagesSquare, Search } from "lucide-react";
+import { Building2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { useWorkspaceFocus } from "@/lib/chat-store";
-import { customerText, departmentText, repText, tagText } from "@/lib/content-i18n";
+import { customerText } from "@/lib/content-i18n";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -52,35 +52,6 @@ export function ContextPane({
 
   return (
     <div className="space-y-4">
-      {/* Rep orientation strip (relocated from the old Home page). */}
-      <div className="rounded-xl border border-border bg-card px-3.5 py-3">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-jp text-[13.5px] font-semibold text-foreground">
-            {repText(lang, profile.rep.name).text}
-          </span>
-          <span className="select-none text-muted-foreground/40">·</span>
-          <span className="font-jp text-[12px] text-muted-foreground">
-            {departmentText(lang, profile.rep.department).text}
-          </span>
-          {profile.rep.specialty_tags.slice(0, 2).map((tg) => (
-            <Badge key={tg} variant="default" className="text-[10px]">
-              #{tagText(lang, tg).text}
-            </Badge>
-          ))}
-        </div>
-        <div className="mt-2 flex items-center gap-3 text-[11.5px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <MessagesSquare className="h-3.5 w-3.5 shrink-0" />
-            <span className="font-semibold text-foreground">{profile.totals.reviews}</span>
-            {t("growth.journey.reviews")}
-          </span>
-          <span className="select-none text-muted-foreground/30">·</span>
-          <span className="inline-flex items-center gap-1.5">
-            <Flame className="h-3.5 w-3.5 shrink-0 text-band-yellow" />
-            {t("growth.weeks", { n: String(profile.totals.streak_weeks) })}
-          </span>
-        </div>
-      </div>
 
       <div>
         <div className="eyebrow">{t("cc.todayWork")}</div>

@@ -51,7 +51,7 @@ type AccountPickCandidate = { customer_id: string; name: string };
 type WMsg =
   | { id: number; role: "user"; text: string; dealLabel?: string }
   | { id: number; role: "system"; text: string }
-  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number; context?: string }
+  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number; context?: string; dealId?: string }
   | { id: number; role: "loading" }
   | { id: number; role: "account_pick"; query: string; candidates: AccountPickCandidate[]; suggestedId?: string | null }
   | { id: number; role: "skill"; kind: "review"; note: string; dealId?: string; artifact: Artifact }
@@ -573,10 +573,10 @@ function ResearchTurn({
 const EMPTY_MSG: Msg = { role: "assistant", content: "", tools: [], status: "running" };
 
 function ChatTurn({
-  turnId, runId, message, history, role, conversationId, context, onDone, onPick,
+  turnId, runId, message, history, role, conversationId, context, dealId, onDone, onPick,
 }: {
   turnId: number; runId: number; message: string; history: ChatHistoryTurn[];
-  role: "junior" | "manager"; conversationId: string; context?: string;
+  role: "junior" | "manager"; conversationId: string; context?: string; dealId?: string;
   onDone: (text: string) => void;
   onPick: (c: ResolveCandidate, query: string) => void;
 }) {
@@ -650,7 +650,7 @@ function ChatTurn({
           patch((m) => ({ ...m, status: m.candidates?.length ? "done" : (abortedRef.current ? (m.content ? "done" : "error") : "error") }));
           break;
       }
-    }, { conversationId, signal: ctrl.signal, context }).then(() => {
+    }, { conversationId, signal: ctrl.signal, context, dealId }).then(() => {
       ctrlRef.current = null;
       setMsg((prev) => {
         const final: Msg = prev.status === "running"
@@ -1074,17 +1074,16 @@ export function Workspace({
      // An attached file's text rides along as context for THIS turn only, then
      // the chip clears (it is not persisted into thread history).
      const ctx = attached?.text || undefined;
-     // A deal picked from the Deal selector grounds the turn: name the deal id
-     // (and its customer) in the query the model sees, so the backend extracts
-     // it and scopes retrieval to that exact deal instead of re-resolving from
-     // the prose. The user bubble shows the typed text + a deal badge.
+     // A deal picked from the Deal selector grounds the turn as a STRUCTURED field
+     // (dealId), not by appending prose to the message. The backend scopes to that
+     // exact deal directly — the model never has to re-resolve it from prose, and
+     // the message it reasons over stays clean. The user bubble shows a deal badge.
      const d = deal ? deals.find((x) => x.deal_id === deal) : undefined;
-     const grounded = d ? `${clean}（対象案件: ${d.deal_id} ${d.customer}）` : clean;
      const userText = attached ? `📎 ${attached.fileName} — ${clean}` : clean;
      setMessages((m) => [
        ...m,
        { id: nextId(), role: "user", text: userText, dealLabel: d?.customer },
-       { id: replyId, role: "assistant", text: grounded, history, context: ctx },
+       { id: replyId, role: "assistant", text: clean, history, context: ctx, dealId: d?.deal_id },
      ]);
      setInput("");
      setAttached(null);
@@ -1312,6 +1311,7 @@ export function Workspace({
                   role={role}
                   conversationId={thread.current}
                   context={m.context}
+                  dealId={m.dealId}
                   onDone={(text) =>
                     setMessages((prev) => prev.map((msg) => (msg.id === m.id ? { ...msg, answer: text } : msg)))
                   }

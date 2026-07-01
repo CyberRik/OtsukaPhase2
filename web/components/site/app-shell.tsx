@@ -139,7 +139,7 @@ export function AppShell({ role, children }: { role: Role; children: React.React
           </div>
         </header>
 
-        <main className="w-full flex-1 overflow-hidden px-5 py-4 md:px-8 md:py-5 max-w-none flex flex-col min-h-0">
+        <main className="w-full flex-1 overflow-y-auto px-5 py-4 md:px-8 md:py-5 max-w-none flex flex-col min-h-0">
           {children}
         </main>
       </div>
