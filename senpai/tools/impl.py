@@ -873,6 +873,28 @@ def generate_docx(prompt: str = "", title: str = "", use_web: bool = False,
 # ---------------------------------------------------------------------------
 # Dispatch (mirrors demo/tools.py)
 # ---------------------------------------------------------------------------
+def segment_intelligence(query: str = "", category: str = "", industry: str = "",
+                         outcome: str = "all", limit: int = 6) -> str:
+    """Aggregate/thematic answers across category×industry market segments — win
+    rates, common failure modes, recommended plays — grounded in the deal-health
+    engine and citing evidence deal ids. GPU-free (committed reports or in-memory
+    deterministic build)."""
+    from senpai.graph import communities
+    from senpai.retrieval import trace as _trace
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 6
+    reports = communities.select(query=query, category=category, industry=industry,
+                                 outcome=outcome, limit=limit)
+    _trace.record("segment_intelligence", scope="all",
+                  items=[{"id": r["id"], "score": r.get("win_rate")} for r in reports],
+                  query=" ".join(x for x in [query, category, industry] if x), n=len(reports))
+    if not reports:
+        return "該当するセグメント（カテゴリ×業界）が見つかりませんでした。"
+    return "\n\n".join(communities.format_report(r) for r in reports)
+
+
 _DISPATCH = {
     "query_spr": query_spr,
     "find_deals": find_deals,
@@ -903,6 +925,7 @@ _DISPATCH = {
     "search_knowledge": search_knowledge,
     "search_notes": search_notes,
     "query_graph": query_graph,
+    "segment_intelligence": segment_intelligence,
     # Document generation (the chatbot's "do stuff" tools)
     "generate_proposal": generate_proposal,
     "generate_ringisho": generate_ringisho,
@@ -953,6 +976,8 @@ if __name__ == "__main__":
         ("list_at_risk_deals", {"limit": 5}),
         ("query_graph", {"intent": "reps_who_win", "category": "サーバー"}),
         ("query_graph", {"intent": "account", "customer": "C28"}),
+        ("segment_intelligence", {"query": "製造業のサーバー案件はなぜ負ける？", "outcome": "lost"}),
+        ("segment_intelligence", {"query": "どのカテゴリの勝率が低い？"}),
         ("team_pipeline_overview", {}),
         ("team_report_digest", {}),
         ("rep_coaching_focus", {}),
