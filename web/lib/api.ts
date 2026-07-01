@@ -114,25 +114,25 @@ async function authPost(path: string, body: unknown): Promise<AuthResult> {
 }
 
 export const api = {
-  // The junior roster for the signup rep-picker ("which salesperson am I?").
-  juniorReps: () =>
-    get<{ juniors: { employee_id: string; name: string }[] }>(
-      "/api/reps/juniors",
-      { juniors: [] },
+  // The manager pool for the junior signup picker ("who's your manager?").
+  managerReps: () =>
+    get<{ managers: { employee_id: string; name: string; role: string; department: string; division: string }[] }>(
+      "/api/reps/managers",
+      { managers: [] },
     ),
-  signup: (
-    username: string,
-    password: string,
-    role: "junior" | "manager",
-    employeeId?: string,
-  ) => authPost("/api/auth/signup", { username, password, role, employee_id: employeeId }),
+  // Register a new junior: creates a fresh rep assigned to `managerId`.
+  signup: (username: string, password: string, name: string, managerId: string) =>
+    authPost("/api/auth/signup", { username, password, name, manager_id: managerId }),
   login: (username: string, password: string) =>
     authPost("/api/auth/login", { username, password }),
-  dashboard: (rep?: string) =>
-    get<DashboardData>(
-      `/api/dashboard${rep && rep !== "(all)" ? `?rep=${encodeURIComponent(rep)}` : ""}`,
-      DASHBOARD_FALLBACK,
-    ),
+  // `manager` (an employee_id) scopes the dashboard to that manager's coachees.
+  dashboard: (rep?: string, manager?: string) => {
+    const qs = new URLSearchParams();
+    if (rep && rep !== "(all)") qs.set("rep", rep);
+    if (manager) qs.set("manager", manager);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return get<DashboardData>(`/api/dashboard${suffix}`, DASHBOARD_FALLBACK);
+  },
   deal: (id: string) => get<DealDetail | null>(`/api/deals/${id}`, null),
   coach: (note: string, deal_id?: string, narrate = false) =>
     post<CoachResponse>("/api/coach/review", { note, deal_id, narrate }, COACH_FALLBACK),
@@ -179,11 +179,25 @@ export const api = {
     ),
   growth: (rep?: string) =>
     get<GrowthResponse>(`/api/growth${rep ? `?rep=${encodeURIComponent(rep)}` : ""}`, GROWTH_FALLBACK),
-  coaching: () => get<CoachingWorkspace>("/api/coaching", COACHING_FALLBACK),
+  // `manager` (an employee_id) scopes to that manager's coachees; omit for all.
+  coaching: (manager?: string) =>
+    get<CoachingWorkspace>(
+      `/api/coaching${manager ? `?manager=${encodeURIComponent(manager)}` : ""}`,
+      COACHING_FALLBACK,
+    ),
   // Per-rep 1:1 coaching. Rollup has a fixture fallback; the drill-downs return
   // null/[] offline (the UI hides those panels when data is absent).
-  repProfiles: () =>
-    get<{ reps: RepProfileRow[] }>("/api/coach/rep-profiles", { reps: REP_PROFILES_FALLBACK }),
+  repProfiles: (manager?: string) =>
+    get<{ reps: RepProfileRow[] }>(
+      `/api/coach/rep-profiles${manager ? `?manager=${encodeURIComponent(manager)}` : ""}`,
+      { reps: REP_PROFILES_FALLBACK },
+    ),
+  // "My team" roster for a manager — includes zero-deal (newly-assigned) reps.
+  coachTeam: (manager?: string) =>
+    get<{ reps: { employee_id: string; name: string; role: string; open_deals: number }[] }>(
+      `/api/coach/team${manager ? `?manager=${encodeURIComponent(manager)}` : ""}`,
+      { reps: [] },
+    ),
   repProfile: (employeeId: string) =>
     get<RepProfile | null>(`/api/coach/rep-profile/${encodeURIComponent(employeeId)}`, null),
   repProgress: (employeeId: string, windows = 4) =>

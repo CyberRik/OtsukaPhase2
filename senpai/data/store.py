@@ -53,6 +53,27 @@ def append_activity(record: dict) -> None:
     reload()
 
 
+def next_employee_id() -> str:
+    """The next free employee id (R01, R02, … → R25). Ids are 'R' + a number."""
+    nums = [int(re.sub(r"\D", "", r["employee_id"]) or 0) for r in all_reps()]
+    return f"R{(max(nums) + 1) if nums else 1:02d}"
+
+
+def append_rep(record: dict) -> None:
+    """Persist one new rep (a signup) to the gitignored overlay, then drop the
+    cache so the next read includes it. Never touches the committed seed — same
+    additive-overlay pattern as append_activity. `record` must match the seed rep
+    shape (employee_id, name, role, department, division, specialty_tags,
+    is_top_performer) plus the optional reports_to link."""
+    config.INGESTED_DIR.mkdir(parents=True, exist_ok=True)
+    path = config.INGESTED_DIR / "reps.json"
+    rows = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+    rows.append(record)
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8")
+    reload()
+
+
 @lru_cache(maxsize=1)
 def customer_aliases() -> dict[str, list[str]]:
     """English / romaji / known-alias forms per customer_id (customer_aliases.json).
@@ -235,6 +256,23 @@ def coaching_threads_for_deal(deal_id: str) -> list[dict]:
     """Coaching threads raised on a specific deal, newest first."""
     rows = [t for t in all_coaching_threads() if t.get("deal_id") == deal_id]
     return sorted(rows, key=lambda t: t.get("created_at", ""), reverse=True)
+
+
+def coachees_of(manager_id: str) -> set[str]:
+    """Employee ids this manager coaches — the reps in any thread where they are
+    the manager_id. This is the only explicit 'who I coach' relationship in the
+    data (there's no org/reporting chart), so it defines a manager's team."""
+    return {t["employee_id"] for t in all_coaching_threads()
+            if t.get("manager_id") == manager_id and t.get("employee_id")}
+
+
+def team_of(manager_id: str) -> set[str]:
+    """A manager's full team: reps they coach in threads (coachees_of) plus reps
+    assigned to them at signup (reports_to). Existing managers get their
+    thread-based team; freshly-created juniors join via reports_to even before
+    they have any deals or threads."""
+    assigned = {r["employee_id"] for r in all_reps() if r.get("reports_to") == manager_id}
+    return coachees_of(manager_id) | assigned
 
 
 def quote_for_deal(deal_id: str) -> dict | None:

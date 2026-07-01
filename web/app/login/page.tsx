@@ -102,12 +102,14 @@ function LoginForm() {
               </div>
             </div>
 
-            <p className="mt-5 text-center text-[12px] text-muted-foreground">
-              {t("login.noAccount")}{" "}
-              <Link href={`/signup?role=${role}`} className="font-medium text-primary hover:underline">
-                {t("login.createAccount")}
-              </Link>
-            </p>
+            {role === "junior" && (
+              <p className="mt-5 text-center text-[12px] text-muted-foreground">
+                {t("login.noAccount")}{" "}
+                <Link href="/signup" className="font-medium text-primary hover:underline">
+                  {t("login.createAccount")}
+                </Link>
+              </p>
+            )}
           </div>
         </div>
       </main>

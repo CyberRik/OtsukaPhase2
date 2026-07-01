@@ -20,19 +20,20 @@ export function demoCreds(role: Role) {
 type Ctx = {
   role: Role | null;
   username: string | null;
-  // The seed rep this account is (juniors adopt one at signup); scopes a
-  // junior's dashboard/growth/coaching. Null for managers and the offline demo.
+  // The seed rep this account is; scopes the data (a junior's own rep, or a
+  // manager's identity). Null for the offline demo fallback.
   employeeId: string | null;
   ready: boolean;
   // Resolve to the account's role on success, or null on failure. `roleHint`
   // (from the login page URL) is only used to pick the demo account when the
   // backend is unreachable; a real login's role comes from the account itself.
   login: (roleHint: Role, username: string, password: string) => Promise<Role | null>;
+  // Register a new junior: creates a fresh rep assigned to `managerId`.
   signup: (
-    role: Role,
     username: string,
     password: string,
-    employeeId?: string,
+    name: string,
+    managerId: string,
   ) => Promise<{ ok: boolean; role?: Role; error?: string }>;
   logout: () => void;
 };
@@ -101,8 +102,8 @@ export function SessionProvider({ initial, children }: { initial: Role | null; c
     return null;
   };
 
-  const signup = async (r: Role, user: string, password: string, empId?: string) => {
-    const res = await api.signup(user.trim(), password, r, empId);
+  const signup = async (user: string, password: string, name: string, managerId: string) => {
+    const res = await api.signup(user.trim(), password, name.trim(), managerId);
     if (res.ok && res.role) {
       persist(res.role, res.username ?? user.trim(), res.employee_id, res.token);
       return { ok: true, role: res.role };

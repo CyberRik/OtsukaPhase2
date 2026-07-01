@@ -235,12 +235,10 @@ def health():
 # auth — simple demo signup/login (persisted, hashed accounts; see senpai.api.auth)
 # ---------------------------------------------------------------------------
 class SignupRequest(BaseModel):
-    username: str
+    username: str          # login handle
     password: str
-    role: Literal["junior", "manager"] = "junior"
-    # Which seed rep a junior signs up AS (adopts). Required for juniors so the
-    # dashboard resolves to a real, populated identity; ignored for managers.
-    employee_id: str | None = None
+    name: str              # the new rep's display name
+    manager_id: str        # the existing senior/expert they report to
 
 
 class LoginRequest(BaseModel):
@@ -248,27 +246,51 @@ class LoginRequest(BaseModel):
     password: str
 
 
-@app.get("/api/reps/juniors")
-def reps_juniors():
-    """The junior roster for the signup rep-picker: which salesperson am I?"""
-    return {"juniors": [{"employee_id": r["employee_id"], "name": r["name"]}
-                        for r in junior_reps()]}
+def _manager_pool() -> list[dict]:
+    """The senior/expert reps a new junior can report to — the assignable manager
+    pool. Any senior/expert qualifies (assignment is org-based via reports_to,
+    not derived from existing coaching threads)."""
+    return [{"employee_id": r["employee_id"], "name": r["name"], "role": r["role"],
+             "department": r.get("department", ""), "division": r.get("division", "")}
+            for r in store.all_reps() if r.get("role") in ("senior", "expert")]
+
+
+@app.get("/api/reps/managers")
+def reps_managers():
+    """The manager pool for the junior signup picker: who's your manager?"""
+    return {"managers": _manager_pool()}
 
 
 @app.post("/api/auth/signup")
 def auth_signup(req: SignupRequest):
-    """Create an account. 400 if the username is taken, inputs are blank, or a
-    junior didn't pick a valid rep. Returns a session token plus the account's
-    username, role, and employee_id."""
-    employee_id: str | None = None
-    if req.role == "junior":
-        valid = {r["employee_id"] for r in junior_reps()}
-        if req.employee_id not in valid:
-            raise HTTPException(400, "choose which sales rep you are")
-        employee_id = req.employee_id
+    """Register a NEW junior. Creates a fresh seed-shape junior rep (no deals or
+    coaching yet), assigned to an existing manager (reports_to), then an account
+    linked to it. 400 on blank fields, a taken username, or an invalid manager.
+
+    The new rep inherits the manager's department/division so it slots into the
+    org cleanly. See store.append_rep / store.next_employee_id."""
+    name, username = (req.name or "").strip(), (req.username or "").strip()
+    if not name or not username or not req.password:
+        raise HTTPException(400, "name, username and password are required")
+    manager = store.get_rep(req.manager_id)
+    if manager is None or manager.get("role") not in ("senior", "expert"):
+        raise HTTPException(400, "choose your manager")
+    if auth.username_exists(username):
+        raise HTTPException(400, "username already taken")
+
+    employee_id = store.next_employee_id()
+    store.append_rep({
+        "employee_id": employee_id,
+        "name": name,
+        "role": "junior",
+        "department": manager.get("department", ""),
+        "division": manager.get("division", ""),
+        "specialty_tags": [],
+        "is_top_performer": False,
+        "reports_to": req.manager_id,
+    })
     try:
-        user = auth.create_user(req.username, req.password, req.role,
-                                employee_id=employee_id)
+        user = auth.create_user(username, req.password, "junior", employee_id=employee_id)
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     return {"token": auth.issue_token(), **user}
@@ -278,28 +300,11 @@ def auth_signup(req: SignupRequest):
 def auth_login(req: LoginRequest):
     """Authenticate. 401 on bad credentials. Returns a session token plus the
     account's username, role, and employee_id (role picks the experience; the
-    employee_id scopes a junior's data to their adopted rep)."""
+    employee_id scopes the data to that rep)."""
     user = auth.verify_user(req.username, req.password)
     if user is None:
         raise HTTPException(401, "invalid username or password")
     return {"token": auth.issue_token(), **user}
-
-
-# The two classic demo accounts, seeded through the real auth path so they keep
-# working (junior adopts the first seed junior rep). Idempotent — skips any that
-# already exist (including real signups that claimed the name).
-def _seed_demo_users() -> None:
-    juniors = junior_reps()
-    first_junior = juniors[0]["employee_id"] if juniors else None
-    for username, role, eid in (("junior", "junior", first_junior),
-                                ("manager", "manager", None)):
-        try:
-            auth.create_user(username, "demo123", role, employee_id=eid)
-        except ValueError:
-            pass  # already seeded (or claimed) — leave it
-
-
-_seed_demo_users()
 
 
 # ---------------------------------------------------------------------------
@@ -328,10 +333,14 @@ def download_document(doc_id: str):
 # dashboard
 # ---------------------------------------------------------------------------
 @app.get("/api/dashboard")
-def dashboard(rep: str | None = None):
+def dashboard(rep: str | None = None, manager: str | None = None):
     today = _today()
+    # A manager sees only their team (coachees + assigned juniors); None = all.
+    team = {store.rep_name(e) for e in store.team_of(manager)} if manager else None
     rows, flagged = [], []
     for d in store.open_deals():
+        if team is not None and store.rep_name(store.deal_rep_id(d)) not in team:
+            continue
         row, frows = _scored_row(d, today)
         rows.append(row)
         flagged.extend(frows)
@@ -341,7 +350,8 @@ def dashboard(rep: str | None = None):
 
     order = {"high": 0, "medium": 1, "low": 2}
     flagged.sort(key=lambda r: order.get(r["severity"], 3))
-    reps = sorted({store.rep_name(store.deal_rep_id(d)) for d in store.open_deals()})
+    reps = sorted(team) if team is not None else \
+        sorted({store.rep_name(store.deal_rep_id(d)) for d in store.open_deals()})
     kpis = {
         "open_deals": len(rows),
         "at_risk": sum(1 for r in rows if r["band"] == "red"),
@@ -1769,11 +1779,13 @@ def account_commentary(customer_id: str, lang: str = "ja",
 # manager coaching workspace ("where should I coach today?")
 # ---------------------------------------------------------------------------
 @app.get("/api/coaching")
-def coaching():
+def coaching(manager: str | None = None):
     """Manager's daily workspace — Needs Coaching queue, team trends, Confidence
     vs Reality, and a weekly digest. Read-only aggregation over the existing
-    deal-health + flags engines; see senpai.coaching."""
-    return coaching_workspace(today=_today())
+    deal-health + flags engines; see senpai.coaching. `manager` (an employee_id)
+    scopes it to that manager's team; omit for the whole team."""
+    rep_ids = store.team_of(manager) if manager else None
+    return coaching_workspace(today=_today(), rep_ids=rep_ids)
 
 
 @app.get("/api/coach/rep-profile/{employee_id}")
@@ -1785,9 +1797,33 @@ def coach_rep_profile(employee_id: str):
 
 
 @app.get("/api/coach/rep-profiles")
-def coach_rep_profiles():
-    """Team rollup: one compact profile per rep, worst-needing-coaching first."""
-    return {"reps": team_coaching_profiles(today=_today())}
+def coach_rep_profiles(manager: str | None = None):
+    """Team rollup: one compact profile per rep, worst-needing-coaching first.
+    `manager` (an employee_id) limits it to that manager's team."""
+    rep_ids = store.team_of(manager) if manager else None
+    return {"reps": team_coaching_profiles(today=_today(), rep_ids=rep_ids)}
+
+
+@app.get("/api/coach/team")
+def coach_team(manager: str | None = None):
+    """A manager's 'My team' roster — every rep on their team (coachees + assigned
+    juniors), each with their open-deal count. Unlike the rep-profiles rollup this
+    KEEPS zero-deal reps, so a freshly-assigned junior is visible. Empty team when
+    `manager` is omitted."""
+    ids = store.team_of(manager) if manager else set()
+    reps = []
+    for eid in ids:
+        rep = store.get_rep(eid) or {}
+        open_deals = sum(1 for d in store.deals_for_rep(eid)
+                         if config.is_open_rank(d.get("order_rank")))
+        reps.append({
+            "employee_id": eid,
+            "name": rep.get("name", eid),
+            "role": rep.get("role", ""),
+            "open_deals": open_deals,
+        })
+    reps.sort(key=lambda r: (-r["open_deals"], r["employee_id"]))
+    return {"reps": reps}
 
 
 @app.get("/api/coach/rep-progress/{employee_id}")

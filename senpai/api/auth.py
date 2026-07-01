@@ -51,10 +51,9 @@ def _norm(username: str) -> str:
 def _public(rec: dict) -> dict:
     """The user shape safe to return to the client (no password material).
 
-    ``employee_id`` ties the account to a rep in the seed data so the junior
-    experience (deals, growth, coaching) resolves to a real identity instead of
-    always defaulting to the first junior. ``None`` for managers, who see the
-    whole team."""
+    ``employee_id`` ties the account to a rep in the seed data so the experience
+    (deals, growth, coaching) resolves to a real identity. ``role`` is the account
+    role — 'junior' or 'manager' — which picks which UI the app loads."""
     return {
         "username": rec["username"],
         "role": rec["role"],
@@ -62,15 +61,25 @@ def _public(rec: dict) -> dict:
     }
 
 
+def username_exists(username: str) -> bool:
+    """Whether an account with this username already exists (case-insensitive).
+    Used to pre-check a signup before creating a rep, so a taken username can't
+    leave an orphan rep behind."""
+    return _norm(username) in _load()
+
+
 def create_user(
-    username: str, password: str, role: Role, employee_id: str | None = None
+    username: str,
+    password: str,
+    role: Role,
+    employee_id: str | None = None,
 ) -> dict:
     """Register a new account. Raises ``ValueError`` if inputs are blank, the
-    role is invalid, or the username is already taken. Returns the public user.
+    role is invalid, or the username is taken. Returns the public user.
 
-    ``employee_id`` links the account to an existing seed rep (juniors adopt a
-    rep so their dashboard is populated); the caller validates it belongs to the
-    junior roster."""
+    ``employee_id`` links the account to a rep — a junior's own newly-created rep,
+    or an existing rep when seeding logins. Each account maps to a distinct rep,
+    so no cross-account rep sharing needs guarding."""
     key = _norm(username)
     if not key or not password:
         raise ValueError("username and password are required")

@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { currentEmployeeId } from "@/lib/server-session";
 import { PageHeader } from "@/components/site/page-header";
 import { Workspace } from "@/components/workspace/workspace";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function ManagerCopilotPage() {
   const [{ data: ex }, { data: db }, { data: pr }] = await Promise.all([
     api.coachExamples(),
-    api.dashboard(),
+    api.dashboard(undefined, await currentEmployeeId()),
     api.principles(),
   ]);
 

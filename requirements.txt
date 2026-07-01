@@ -33,6 +33,11 @@ rank-bm25==0.2.2          # lexical BM25 over Japanese-tokenized text
 janome==0.5.0             # pure-Python Japanese tokenizer (no MeCab/system dep)
 networkx==3.6.1           # knowledge graph (customer→deal→activity→rep→product)
 
+# --- Rep login seeding (scripts/seed_rep_logins.py) ---
+# Kanji→romaji so seeded rep usernames are typeable. Pure-Python, bundled dict;
+# the script falls back to employee_id usernames if this is absent.
+pykakasi==2.3.0
+
 # --- Document generation (chatbot tools: generate_proposal/ringisho/pptx/docx) ---
 # Pure-Python, no system deps; imported lazily in senpai/documents so a missing lib
 # can't break tool import. Files are written to senpai/data/generated/ (gitignored).

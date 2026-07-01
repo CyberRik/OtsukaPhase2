@@ -317,8 +317,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【OA機器（カテゴリ全体）】案件104件（成約56・失注18、勝率76%）。失注の主因は「接触の停滞」（18件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "OA機器セグメントでは、失注案件の主要因として「staleness」「rank_age」「rank_regression」が同数で最も多く見られ、さらに「stall_language」も失注要因として確認されています。また、案件の品質に関連するフラグでは「unsupported_rank」が最も多く、次に「missing_fields」が確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -900,8 +900,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【サーバー（カテゴリ全体）】案件27件（成約15・失注7、勝率68%）。失注の主因は「接触の停滞」（7件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "サーバーカテゴリの商談では、勝率68.2%を記録し、失敗案件は7件、未決案件が5件残っています。主要な失敗要因として「staleness」、「rank_age」、「rank_regression」が同数で検出されており、データ品質面では「missing_fields」と「unsupported_rank」のフラグが多数確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -977,8 +977,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【PC周辺機器×小売】案件22件（成約15・失注2、勝率88%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "PC周辺機器の小売分野における成約率は88.2%で、22件の取引のうち15件が成立しています。成約に至らなかった案件では、不活性やランクに関する要因が失敗シグナルとして確認されています。また、取引データにはサポート外ランクや必須フィールド不足といったフラグが多く見られます。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -1050,8 +1050,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ソフトウェア×飲食】案件22件（成約15・失注4、勝率79%）。失注の主因は「接触の停滞」（4件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "ソフトウェアと飲食業界のセグメントでは、22件の取引のうち15件が成立し、勝率は約79%です。成約に至らなかった案件では、案件の陳腐化やランクに関する要因が失敗シグナルとして顕著に見られました。また、取引プロセス全体ではサポート外のランクや必須フィールドの不足といったフラグが多数検出されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -1266,8 +1266,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ソフトウェア×小売】案件16件（成約9・失注3、勝率75%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "小売業界におけるソフトウェアカテゴリの成約率は75%で、16件の取引中9件が成立しています。一方、失効やランクの古さといった要因が失敗シグナルとして多く見られ、サポート外ランクや必須項目の欠如といったフラグが多数検出されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -1717,8 +1717,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ネットワーク機器×小売】案件13件（成約7・失注3、勝率70%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "小売業におけるネットワーク機器の成約率は70%で、3件の成約見込み案件が残っています。成約失敗の主な要因として、案件の陳腐化やランクに関する問題が挙げられています。また、データの不備やサポート外のランク設定といったフラグが多数検出されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -1783,8 +1783,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【PC周辺機器×不動産】案件11件（成約6・失注2、勝率75%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "不動産業界におけるPC周辺機器の成約率は75%で、11件の取引のうち6件が成立しています。一方で、サポート外のランクや不足フィールドといったデータ品質に関連するフラグが多数検出されています。また、案件の停滞やランクの劣化といった失敗要因も確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -1892,8 +1892,8 @@
       }
     ],
     "recommended_principle_ids": [],
-    "narrative_ja": "【ソフトウェア×建設】案件11件（成約9・失注0、勝率100%）。",
-    "narrative_source": "template",
+    "narrative_ja": "建設業界におけるソフトウェアセグメントの成約率は100%で、失注は発生していません。ただし、案件の約半数で「unsupported_rank」のフラグが検出されており、残りの案件では期日超過やステータス更新の遅れなどの課題が見られます。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2083,8 +2083,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【OA機器×不動産】案件10件（成約4・失注3、勝率57%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "不動産業界におけるOA機器の成約率は57.1%で、3件が成約し3件が失注しています。失注要因としては「staleness」「rank_age」「rank_regression」が同数で最も多く見られました。また、案件データには「missing_fields」や「unsupported_rank」などの不備が頻繁に確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2129,8 +2129,8 @@
       }
     ],
     "recommended_principle_ids": [],
-    "narrative_ja": "【ソフトウェア×教育】案件10件（成約8・失注0、勝率100%）。",
-    "narrative_source": "template",
+    "narrative_ja": "教育分野におけるソフトウェアカテゴリの成約率は100%で、失注はゼロとなっています。残存案件のうち、フィールド不足やサポート外のランク、期限切れなどのデータ不備が主要なフラグとして検出されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2189,8 +2189,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【PC周辺機器×士業】案件9件（成約3・失注2、勝率60%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "士業におけるPC周辺機器の成約率は60%で、残りの案件はオープン状態にあります。成約に至らない要因としては、データの古さやランクに関する問題が共通して見られます。また、案件の品質面では必須フィールドの不足やサポート外のランクが主な課題となっています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2373,8 +2373,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ネットワーク機器×建設】案件9件（成約3・失注2、勝率60%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "建設業界におけるネットワーク機器の商談では、成約率が60%を記録しています。一方で、サポート外のランクや必須項目の欠如といったデータ不備が顕著な課題として浮上しています。また、案件の陳腐化やランクの劣化、停滞したやり取りも失敗要因として確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2607,8 +2607,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【OA機器×建設】案件8件（成約3・失注2、勝率60%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "建設業界におけるOA機器の成約率は60%で、3件の成約と2件の失約を記録しています。成約見込み案件は3件残っており、失約要因としては「staleness」や「rank_age」などの信号が検出されています。また、案件には「unsupported_rank」や「missing_fields」などのフラグが複数付与されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2647,8 +2647,8 @@
       }
     ],
     "recommended_principle_ids": [],
-    "narrative_ja": "【OA機器×医療】案件8件（成約6・失注0、勝率100%）。",
-    "narrative_source": "template",
+    "narrative_ja": "医療業界におけるOA機器の商談は8件行われ、そのうち6件が成約し、2件が未決の状態です。失注は0件であり、成約率は100%となっています。主なフラグは「unsupported_rank」が6件、「missing_fields」が3件、「stale_active」が1件です。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2749,8 +2749,8 @@
       }
     ],
     "recommended_principle_ids": [],
-    "narrative_ja": "【ネットワーク機器×教育】案件7件（成約6・失注0、勝率100%）。",
-    "narrative_source": "template",
+    "narrative_ja": "教育分野におけるネットワーク機器の商談では、7件のうち6件が成立し、1件が未成のまま残っています。成約に至らなかった案件は存在せず、失注はゼロ件となっています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2803,8 +2803,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【PC周辺機器×医療】案件7件（成約5・失注2、勝率71%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "医療業界におけるPC周辺機器の成約率は71.4%で、7件の取引中5件が成立しています。成約に至らなかった案件では、案件の陳腐化やランクの劣化、停滞といった要因が共通して見受けられます。また、取引データには非対応ランクや必須項目の欠如といったフラグが多く付与されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2857,8 +2857,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【サーバー×飲食】案件7件（成約5・失注2、勝率71%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "飲食業界におけるサーバー製品のカテゴリーは、7件の取引中5件を獲得し、勝率71.4%を記録しています。一方、失効した案件では「staleness」や「rank_age」などの要因が共通して見られ、全体的な案件データには「missing_fields」や「unsupported_rank」のフラグが多数付与されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2914,8 +2914,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【OA機器×物流】案件6件（成約4・失注1、勝率80%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "OA機器の物流業界における成約率は80%で、6件の取引のうち4件が成立しています。成約に至らなかった案件では、未対応ランクや必須項目不足といったデータ上の不備が主な要因として確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2962,8 +2962,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ストレージ×士業】案件5件（成約4・失注1、勝率80%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "士業におけるストレージ製品の成約率は80%で、5件の取引中4件が成立しています。成約に至らなかった案件では、古さやランクの劣化などが失敗要因として確認されています。また、対応不可なランクや必須情報の不足といったフラグが多数検出されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -2991,8 +2991,8 @@
       }
     ],
     "recommended_principle_ids": [],
-    "narrative_ja": "【OA機器×製造】案件5件（成約5・失注0、勝率100%）。",
-    "narrative_source": "template",
+    "narrative_ja": "OA機器の製造業における成約件数は5件で、成約率は100%です。失約件数は0件ですが、主要な失敗シグナルは確認されていません。一方で、対応不可なランクに関するフラグが4件検出されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -3043,8 +3043,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ネットワーク機器×製造】案件5件（成約4・失注1、勝率80%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "製造業におけるネットワーク機器の商談は5件で、4件が成約し80%の成約率を記録しました。一方、失約要因として古さやランクの低下、言語の停滞などがそれぞれ1件ずつ見られました。また、商談の失敗要因としてはサポート外ランクが3件、不足フィールドが1件と多く確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   },
   {
@@ -3095,8 +3095,8 @@
     "recommended_principle_ids": [
       "P001"
     ],
-    "narrative_ja": "【ネットワーク機器×IT】案件5件（成約2・失注3、勝率40%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
-    "narrative_source": "template",
+    "narrative_ja": "IT業界におけるネットワーク機器の商談は5件行われ、2件が成立し3件が失注しました。失注要因としては、商談の古さやランクの低下・逆転、および対応言語の問題が主な要因として挙げられています。また、サポート外のランクや必須フィールドの不足といったフラグも確認されています。",
+    "narrative_source": "llm",
     "grounded": true
   }
 ]

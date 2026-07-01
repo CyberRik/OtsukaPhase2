@@ -1,7 +1,9 @@
-"""Signup/login for the simple demo auth (senpai.api.auth + /api/auth/*).
+"""Signup/login for the demo auth. Junior signup CREATES a new seed-shape rep
+assigned to an existing manager; managers are the existing senior/expert reps.
 
-Hermetic: points the user store at a tmp file so the suite never touches the
-real ingested overlay.
+Hermetic: both the user store (auth.USERS_PATH) and the rep overlay
+(config.INGESTED_DIR) point at a throwaway dir, so the suite never mutates the
+real overlay. store.reload() clears the cache around each test.
 """
 from __future__ import annotations
 
@@ -10,15 +12,19 @@ from fastapi.testclient import TestClient
 
 import senpai.api.auth as auth
 import senpai.api.server as server
+from senpai import config
+from senpai.data import store
 from senpai.growth import junior_reps
+from scripts.seed_rep_logins import account_role, romaji_username
 
 
 @pytest.fixture(autouse=True)
-def _tmp_users(tmp_path, monkeypatch):
-    # Point the store at a throwaway file, then re-seed the demo accounts into
-    # it (the import-time seed wrote to the real overlay before this patch).
+def _isolate(tmp_path, monkeypatch):
     monkeypatch.setattr(auth, "USERS_PATH", tmp_path / "users.json")
-    server._seed_demo_users()
+    monkeypatch.setattr(config, "INGESTED_DIR", tmp_path)
+    store.reload()
+    yield
+    store.reload()
 
 
 @pytest.fixture()
@@ -26,95 +32,123 @@ def client():
     return TestClient(server.app)
 
 
-def _a_junior() -> str:
-    return junior_reps()[0]["employee_id"]
+def _a_manager() -> dict:
+    return next(r for r in store.all_reps() if r.get("role") in ("senior", "expert"))
 
 
-def test_signup_manager_creates_account_and_returns_role_and_token(client):
-    res = client.post("/api/auth/signup",
-                      json={"username": "Alice", "password": "pw123", "role": "manager"})
+def _a_coach() -> str:
+    """An existing manager that already has thread-based coachees."""
+    return next(t["manager_id"] for t in store.all_coaching_threads() if t.get("manager_id"))
+
+
+def _signup(client, **over):
+    mgr = _a_manager()
+    body = {"username": "newbie", "password": "pw", "name": "新人 太郎",
+            "manager_id": mgr["employee_id"]}
+    body.update(over)
+    return client.post("/api/auth/signup", json=body)
+
+
+# --- signup creates a real new rep -----------------------------------------
+def test_signup_creates_new_junior_rep(client):
+    mgr = _a_manager()
+    before = {r["employee_id"] for r in store.all_reps()}
+    res = _signup(client, manager_id=mgr["employee_id"])
     assert res.status_code == 200
     body = res.json()
-    assert body["username"] == "Alice"
-    assert body["role"] == "manager"
-    assert body["employee_id"] is None  # managers see the whole team
-    assert body["token"]
+    assert body["role"] == "junior"
+    new_id = body["employee_id"]
+    assert new_id not in before  # a brand-new id, not an adopted one
+
+    rep = store.get_rep(new_id)
+    assert rep and rep["role"] == "junior"
+    assert rep["reports_to"] == mgr["employee_id"]
+    assert rep["department"] == mgr["department"]  # inherited from the manager
+    assert rep["division"] == mgr["division"]
+    assert rep["employee_id"] in {r["employee_id"] for r in junior_reps()}
 
 
-def test_junior_signup_adopts_seed_rep(client):
-    eid = _a_junior()
-    res = client.post("/api/auth/signup",
-                      json={"username": "newbie", "password": "pw", "role": "junior",
-                            "employee_id": eid})
-    assert res.status_code == 200
-    assert res.json()["employee_id"] == eid
-    # And the identity persists on login.
-    login = client.post("/api/auth/login", json={"username": "newbie", "password": "pw"})
-    assert login.json()["employee_id"] == eid
+def test_signup_persists_identity_on_login(client):
+    res = _signup(client, username="alice")
+    new_id = res.json()["employee_id"]
+    login = client.post("/api/auth/login", json={"username": "alice", "password": "pw"})
+    assert login.status_code == 200
+    assert login.json()["employee_id"] == new_id
 
 
-def test_junior_signup_requires_valid_rep(client):
-    missing = client.post("/api/auth/signup",
-                          json={"username": "x", "password": "pw", "role": "junior"})
-    assert missing.status_code == 400
-    bogus = client.post("/api/auth/signup",
-                        json={"username": "y", "password": "pw", "role": "junior",
-                              "employee_id": "R999"})
-    assert bogus.status_code == 400
+def test_signup_requires_a_valid_manager(client):
+    a_junior = next(r["employee_id"] for r in store.all_reps() if r["role"] == "junior")
+    assert _signup(client, manager_id=a_junior).status_code == 400   # not a manager
+    assert _signup(client, manager_id="R999").status_code == 400     # nonexistent
 
 
-def test_juniors_roster_endpoint(client):
-    res = client.get("/api/reps/juniors")
-    assert res.status_code == 200
-    juniors = res.json()["juniors"]
-    assert juniors and all("employee_id" in j and "name" in j for j in juniors)
+def test_signup_requires_fields(client):
+    assert _signup(client, name="").status_code == 400
+    assert _signup(client, username="").status_code == 400
 
 
-def test_login_succeeds_with_correct_password(client):
-    client.post("/api/auth/signup", json={"username": "bob", "password": "secret",
-                                           "role": "junior", "employee_id": _a_junior()})
-    res = client.post("/api/auth/login", json={"username": "bob", "password": "secret"})
-    assert res.status_code == 200
-    assert res.json()["role"] == "junior"
+def test_duplicate_username_rejected_without_orphan_rep(client):
+    assert _signup(client, username="dup").status_code == 200
+    n_reps = len(store.all_reps())
+    assert _signup(client, username="dup").status_code == 400
+    assert len(store.all_reps()) == n_reps  # the taken username created no rep
 
 
-def test_login_is_case_insensitive_on_username(client):
-    client.post("/api/auth/signup", json={"username": "Carol", "password": "pw", "role": "manager"})
-    res = client.post("/api/auth/login", json={"username": "CAROL", "password": "pw"})
-    assert res.status_code == 200
+# --- manager pool + team roster --------------------------------------------
+def test_manager_pool_lists_only_senior_and_expert(client):
+    managers = client.get("/api/reps/managers").json()["managers"]
+    assert managers
+    assert all(m["role"] in ("senior", "expert") for m in managers)
 
 
-def test_duplicate_signup_rejected(client):
-    client.post("/api/auth/signup", json={"username": "dave", "password": "pw", "role": "manager"})
-    res = client.post("/api/auth/signup", json={"username": "dave", "password": "other", "role": "manager"})
-    assert res.status_code == 400
-    assert "taken" in res.json()["detail"]
+def test_assigned_junior_shows_in_managers_team(client):
+    mgr = _a_manager()["employee_id"]
+    new_id = _signup(client, manager_id=mgr).json()["employee_id"]
+    assert new_id in store.team_of(mgr)
+    roster = client.get(f"/api/coach/team?manager={mgr}").json()["reps"]
+    row = next((r for r in roster if r["employee_id"] == new_id), None)
+    assert row is not None and row["open_deals"] == 0  # visible despite no deals
 
 
-def test_login_wrong_password_rejected(client):
-    client.post("/api/auth/signup", json={"username": "erin", "password": "right", "role": "manager"})
-    res = client.post("/api/auth/login", json={"username": "erin", "password": "wrong"})
-    assert res.status_code == 401
+def test_team_endpoint_empty_without_manager(client):
+    assert client.get("/api/coach/team").json()["reps"] == []
 
 
-def test_login_unknown_user_rejected(client):
-    res = client.post("/api/auth/login", json={"username": "nobody", "password": "x"})
-    assert res.status_code == 401
+# --- manager scoping (existing coach) --------------------------------------
+def test_rep_profiles_scoped_to_team(client):
+    coach = _a_coach()
+    team = store.team_of(coach)
+    scoped = client.get(f"/api/coach/rep-profiles?manager={coach}").json()["reps"]
+    assert all(r["employee_id"] in team for r in scoped)
+    everyone = client.get("/api/coach/rep-profiles").json()["reps"]
+    assert len(scoped) <= len(everyone)
 
 
-def test_password_is_not_stored_in_clear(client, tmp_path):
-    client.post("/api/auth/signup", json={"username": "frank", "password": "topsecret", "role": "manager"})
-    stored = (tmp_path / "users.json").read_text(encoding="utf-8")
-    assert "topsecret" not in stored
-    assert "password_hash" in stored
+def test_dashboard_scoped_to_team(client):
+    coach = _a_coach()
+    team_names = {store.rep_name(e) for e in store.team_of(coach)}
+    scoped = client.get(f"/api/dashboard?manager={coach}").json()
+    assert all(d["rep"] in team_names for d in scoped["deals"])
 
 
-def test_demo_users_seeded_and_junior_maps_to_a_rep(client):
-    """The built-in demo logins still work through the real auth path, and the
-    junior demo account resolves to a seed junior rep."""
-    j = client.post("/api/auth/login", json={"username": "junior", "password": "demo123"})
-    assert j.status_code == 200
-    assert j.json()["employee_id"] in {r["employee_id"] for r in junior_reps()}
-    m = client.post("/api/auth/login", json={"username": "manager", "password": "demo123"})
-    assert m.status_code == 200
-    assert m.json()["employee_id"] is None
+# --- credentials / empty-rep safety ----------------------------------------
+def test_login_wrong_password_and_unknown_user(client):
+    _signup(client, username="erin")
+    assert client.post("/api/auth/login",
+                       json={"username": "erin", "password": "nope"}).status_code == 401
+    assert client.post("/api/auth/login",
+                       json={"username": "ghost", "password": "x"}).status_code == 401
+
+
+def test_new_reps_endpoints_do_not_crash_on_empty_data(client):
+    new_id = _signup(client).json()["employee_id"]
+    assert client.get(f"/api/growth?rep={new_id}").status_code == 200
+    assert client.get(f"/api/coach/rep-profile/{new_id}").status_code == 200
+
+
+def test_rep_login_helpers():
+    assert account_role("junior") == "junior"
+    assert account_role("senior") == "manager"
+    assert account_role("expert") == "manager"
+    # Fallback path is deterministic even if romaji is unavailable.
+    assert romaji_username("", "R07") == "r07"

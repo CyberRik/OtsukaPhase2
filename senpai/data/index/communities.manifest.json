@@ -1,9 +1,9 @@
 {
-  "model": "Qwen3.6-27B-Claude-Opus-Reasoning-Distilled",
+  "model": "atlas-35b",
   "today": "2026-07-01",
   "counts": {
     "segments": 44,
-    "llm": 0,
-    "template": 44
+    "llm": 22,
+    "template": 22
   }
 }

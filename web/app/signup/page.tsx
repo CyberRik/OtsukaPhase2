@@ -2,56 +2,57 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, LayoutDashboard, UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
-import { useSession, type Role } from "@/lib/session";
+import { useSession } from "@/lib/session";
 import { Brand } from "@/components/site/brand";
 import { LangToggle } from "@/components/site/lang-toggle";
 import { Button } from "@/components/ui/button";
+
+type Manager = { employee_id: string; name: string; role: string; department: string; division: string };
 
 function SignupForm() {
   const { t } = useT();
   const router = useRouter();
   const { signup } = useSession();
-  const params = useSearchParams();
-  const initialRole: Role = params.get("role") === "manager" ? "manager" : "junior";
 
-  const [role, setRole] = useState<Role>(initialRole);
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [empId, setEmpId] = useState("");
-  const [juniors, setJuniors] = useState<{ employee_id: string; name: string }[]>([]);
+  const [managerId, setManagerId] = useState("");
+  const [managers, setManagers] = useState<Manager[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // The roster a junior adopts a rep from ("which salesperson am I?").
+  // The manager pool a new junior reports to ("who's your manager?").
   useEffect(() => {
-    api.juniorReps().then(({ data }) => setJuniors(data.juniors));
+    api.managerReps().then(({ data }) => setManagers(data.managers));
   }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (role === "junior" && !empId) {
-      setError(t("signup.pickRep"));
+    if (!name.trim() || !username.trim() || !password) {
+      setError(t("signup.error"));
+      return;
+    }
+    if (!managerId) {
+      setError(t("signup.pickManager"));
       return;
     }
     setBusy(true);
     setError(null);
-    const res = await signup(role, username, password, role === "junior" ? empId : undefined);
+    const res = await signup(username, password, name, managerId);
     setBusy(false);
-    if (res.ok && res.role) {
-      router.replace(res.role === "manager" ? "/manager" : "/junior");
+    if (res.ok) {
+      router.replace("/junior");
+    } else if (res.error === "username already taken") {
+      setError(t("signup.taken"));
     } else {
-      setError(res.error === "username already taken" ? t("signup.taken") : t("signup.error"));
+      setError(t("signup.error"));
     }
   }
-
-  const roles: { value: Role; label: string; icon: typeof UserRound; accent: string }[] = [
-    { value: "junior", label: t("role.junior"), icon: UserRound, accent: "text-primary" },
-    { value: "manager", label: t("role.manager"), icon: LayoutDashboard, accent: "text-navy" },
-  ];
 
   return (
     <div className="hero-wash flex min-h-screen flex-col">
@@ -74,46 +75,30 @@ function SignupForm() {
 
             <form onSubmit={submit} className="mt-6 space-y-3">
               <div className="space-y-1.5">
-                <label className="eyebrow">{t("signup.role")}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {roles.map((r) => {
-                    const Icon = r.icon;
-                    const selected = role === r.value;
-                    return (
-                      <button
-                        key={r.value}
-                        type="button"
-                        onClick={() => setRole(r.value)}
-                        className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors ${
-                          selected
-                            ? "border-primary bg-primary/5 text-foreground"
-                            : "border-input bg-card text-muted-foreground hover:border-primary/40"
-                        }`}
-                      >
-                        <Icon className={`h-4 w-4 ${r.accent}`} /> {r.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <label className="eyebrow">{t("signup.name")}</label>
+                <input
+                  value={name}
+                  onChange={(e) => { setName(e.target.value); setError(null); }}
+                  className="h-10 w-full rounded-lg border border-input bg-card px-3 text-[14px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  autoComplete="off"
+                />
               </div>
 
-              {role === "junior" && (
-                <div className="space-y-1.5">
-                  <label className="eyebrow">{t("signup.whichRep")}</label>
-                  <select
-                    value={empId}
-                    onChange={(e) => { setEmpId(e.target.value); setError(null); }}
-                    className="h-10 w-full rounded-lg border border-input bg-card px-3 text-[14px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <option value="">{t("signup.pickRep")}</option>
-                    {juniors.map((r) => (
-                      <option key={r.employee_id} value={r.employee_id}>
-                        {r.name} ({r.employee_id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              <div className="space-y-1.5">
+                <label className="eyebrow">{t("signup.whichManager")}</label>
+                <select
+                  value={managerId}
+                  onChange={(e) => { setManagerId(e.target.value); setError(null); }}
+                  className="h-10 w-full rounded-lg border border-input bg-card px-3 text-[14px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">{t("signup.pickManager")}</option>
+                  {managers.map((m) => (
+                    <option key={m.employee_id} value={m.employee_id}>
+                      {m.name} ({m.employee_id}) · {m.department} {m.division}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="space-y-1.5">
                 <label className="eyebrow">{t("signup.username")}</label>
@@ -142,7 +127,7 @@ function SignupForm() {
 
             <p className="mt-5 text-center text-[12px] text-muted-foreground">
               {t("signup.haveAccount")}{" "}
-              <Link href={`/login?role=${role}`} className="font-medium text-primary hover:underline">
+              <Link href="/login?role=junior" className="font-medium text-primary hover:underline">
                 {t("signup.signin")}
               </Link>
             </p>

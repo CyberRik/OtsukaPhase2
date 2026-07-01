@@ -215,12 +215,18 @@ def _talking_points(rep, focus, strengths, threads) -> list[str]:
     return pts
 
 
-def team_coaching_profiles(today: date | None = None) -> list[dict]:
+def team_coaching_profiles(today: date | None = None,
+                           rep_ids: set[str] | None = None) -> list[dict]:
     """One compact profile per rep with open deals, ranked so the reps who need
-    the most coaching attention come first (mirrors tools.rep_coaching_focus)."""
+    the most coaching attention come first (mirrors tools.rep_coaching_focus).
+
+    `rep_ids`, when given, limits the rollup to those reps — a manager's own
+    coachees (see store.coachees_of). None = the whole team (default)."""
     today = today or config.today()
     rows = []
     for rep in store.all_reps():
+        if rep_ids is not None and rep["employee_id"] not in rep_ids:
+            continue
         prof = rep_coaching_profile(rep["employee_id"], today=today)
         if not prof["open_deals"]:
             continue

@@ -127,7 +127,11 @@ def _confidence_vs_reality(deal, acts, res, today, rep, customer) -> dict:
     }
 
 
-def coaching_workspace(today: date | None = None) -> dict:
+def coaching_workspace(today: date | None = None,
+                       rep_ids: set[str] | None = None) -> dict:
+    """`rep_ids`, when given, scopes the workspace to those reps' deals — used to
+    show a manager only the reps they coach (see store.coachees_of). None = the
+    whole team (default)."""
     today = today or config.today()
     cards: list[dict] = []
     issue_counter: Counter = Counter()
@@ -138,6 +142,8 @@ def coaching_workspace(today: date | None = None) -> dict:
     improving = 0
 
     for deal in store.open_deals():
+        if rep_ids is not None and store.deal_rep_id(deal) not in rep_ids:
+            continue
         acts = store.activities_for_deal(deal["deal_id"])
         res = score_deal(deal, acts, today=today)
         flags = deal_flags(deal, acts, health_band=res.band, today=today)
