@@ -271,11 +271,19 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
     yield tool_log, answer
 
 
-def _route_final_answer(convo, tools, tool_log, role):
+def _fallback_answer(substantive: list[tuple[str, str]]) -> str:
+    """A grounded last resort when synthesis yields nothing: the most recent
+    substantive tool result, presented plainly. Empty when nothing useful was
+    gathered (then the caller keeps the honest '(no response)')."""
+    return substantive[-1][1] if substantive else ""
+
+
+def _route_final_answer(convo, tools, tool_log, role, fallback_text: str = ""):
     """Decide FAST vs REASONING for the synthesis round via the ReasoningRouter,
     emit a `routing` event (observability), then stream the answer. Tool-selection
     stays fast regardless; only this round is dynamically routed. When the router
-    is "off" we fall back to the static TOOLLOOP_NO_THINK behaviour."""
+    is "off" we fall back to the static TOOLLOOP_NO_THINK behaviour. `fallback_text`
+    is surfaced if synthesis comes back empty, so a turn never shows a blank."""
     no_think = config.TOOLLOOP_NO_THINK
     if config.REASONING_ROUTER and config.REASONING_ROUTER != "off":
         try:
@@ -296,7 +304,8 @@ def _route_final_answer(convo, tools, tool_log, role):
     _sc, _sm, _, _ = _synth_route(no_think)
     yield {"type": "synth", "model_id": _sm,
            "tier": "atlas", "no_think": no_think}
-    yield from _stream_final_answer(convo, tools, no_think=no_think)
+    yield from _stream_final_answer(convo, tools, no_think=no_think,
+                                    fallback_text=fallback_text)
 
 
 # Sentinel tool for the "finish-tool" loop. With tool_choice="required" the model
@@ -357,11 +366,14 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
     # Loop-intelligence bookkeeping (per turn): the results already gathered, keyed
-    # by (name, canonical-args), plus how many times each tool has run. These stop
-    # the model from re-querying the same thing or hammering one tool — the spiral
-    # that overflows the synthesis context and yields a blank answer.
+    # by (name, canonical-args), plus how many ROUNDS each tool has run in. Counting
+    # rounds (not calls) is deliberate — a single round may fan out 4 parallel
+    # web_searches (fine), but a tool reappearing across many rounds is the rephrasing
+    # spiral that overflows synthesis and yields a blank answer. `substantive` keeps
+    # the best real tool output so a turn can always answer, even if synthesis fails.
     executed: dict[tuple[str, str], str] = {}
-    tool_call_counts: dict[str, int] = {}
+    tool_rounds: dict[str, int] = {}
+    substantive: list[tuple[str, str]] = []   # (tool_name, result) worth answering from
     from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
@@ -416,7 +428,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
                     yield {"type": "answer", "text": last_result}
                     return
-            yield from _route_final_answer(convo, tools, tool_log, role)
+            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return
 
         convo.append({"role": "assistant", "content": None, "tool_calls": [
@@ -431,10 +443,14 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         fresh, fresh_ids = [], set()
         for cid, name, args in real_calls:
             key = (name, _canon_args(args))
-            if key not in executed and tool_call_counts.get(name, 0) < _PER_TOOL_CAP:
+            # Round-based cap: a call is fresh if not an exact repeat AND this tool
+            # hasn't already run in _TOOL_ROUND_CAP prior rounds. Multiple calls of
+            # the same tool WITHIN this round all pass (parallel fan-out stays intact).
+            if key not in executed and tool_rounds.get(name, 0) < _TOOL_ROUND_CAP:
                 fresh.append((cid, name, args))
                 fresh_ids.add(cid)
-                tool_call_counts[name] = tool_call_counts.get(name, 0) + 1
+        for name in {n for _c, n, _a in fresh}:   # one increment per tool per round
+            tool_rounds[name] = tool_rounds.get(name, 0) + 1
 
         sched_calls = [SchedToolCall(id=cid, name=name, arguments=args) for cid, name, args in fresh]
         plan = _SCHEDULER.schedule(sched_calls)
@@ -479,6 +495,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             if len(result) > 1500:
                 result = result[:1500] + "\n... [truncated for length]"
             executed[key] = result
+            # Remember genuinely informative results so the turn can always answer,
+            # even if the synthesis round comes back empty (see _route_final_answer).
+            if not (result.startswith("[error]") or "見つかりません" in result
+                    or "ありません" in result[:20]):
+                substantive.append((name, result))
 
             tool_log.append((name, _fmt_args(args), result))
             convo.append({"role": "tool", "tool_call_id": cid, "content": result})
@@ -512,7 +533,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # Every call this round was a repeat → the model is spinning. Stop looping
         # and synthesize from what we already gathered instead of burning rounds.
         if not fresh:
-            yield from _route_final_answer(convo, tools, tool_log, role)
+            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return
 
         if last_round:
@@ -522,11 +543,12 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
                     yield {"type": "answer", "text": last_result}
                     return
-            yield from _route_final_answer(convo, tools, tool_log, role)
+            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return
 
 
-def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_think: bool = False):
+def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
+                         no_think: bool = False, fallback_text: str = ""):
     """Stream one tool-free completion as the answer, stripping any reasoning.
     Emits `delta` events live and a terminal `answer` with the full text.
     `no_think` prefills an empty think block so the reasoning distill skips its
@@ -581,9 +603,13 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_thin
     # with thinking disabled so the model answers immediately, rather than showing a
     # blank "(no response)" turn.
     if not no_think:
-        yield from _stream_final_answer(convo, tools, no_think=True)
+        yield from _stream_final_answer(convo, tools, no_think=True,
+                                        fallback_text=fallback_text)
         return
-    yield {"type": "answer", "text": "(no response)"}
+    # Still empty even without thinking → surface the gathered evidence directly
+    # rather than a blank turn. Only fall back to "(no response)" when we truly have
+    # nothing.
+    yield {"type": "answer", "text": fallback_text or "(no response)"}
 
 
 def _fmt_args(arguments) -> str:
@@ -604,7 +630,9 @@ def _canon_args(arguments) -> str:
         return str(arguments)
 
 
-# A read/search tool called more than this many times in one turn is almost always
-# the model spiraling (rephrasing the same query). Past the cap, further calls are
-# short-circuited to a "you already have this" nudge instead of a real dispatch.
-_PER_TOOL_CAP = 3
+# A tool that reappears in more than this many ROUNDS in one turn is almost always
+# the model spiraling (rephrasing the same query across turns). Past the cap, further
+# calls are short-circuited to a "you already have this" nudge instead of a real
+# dispatch. Counting rounds (not calls) still allows a single round to fan out many
+# parallel calls (the "search 4 laptops at once" case).
+_TOOL_ROUND_CAP = 2
