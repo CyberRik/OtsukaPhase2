@@ -530,14 +530,14 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "generate_proposal",
-            "description": "Generate a 4-slide PowerPoint (.pptx) SALES PROPOSAL for a "
-                           "specific deal, grounded in its SPR data: it maps the customer's "
-                           "pain points (from daily reports) against the deal's real "
-                           "financials and comparable deals. Two-step: call with "
-                           "confirm=false (default) to return a preview for the rep to "
-                           "review; only after the rep says to create it, call again with "
-                           "confirm=true to actually build and save the file. Use when the "
-                           "rep asks to make a proposal/提案書 deck for a deal.",
+            "description": "Generate a persuasive PowerPoint (.pptx) SALES PROPOSAL for a "
+                           "specific deal, grounded in its SPR data. It follows a full "
+                           "proposal arc (background → challenges → solution → ROI → next "
+                           "steps), mapping the customer's real pain points against the "
+                           "deal's real financials, quote, and same-category comparable "
+                           "deals — persuasive framing, grounded numbers. Builds the file "
+                           "directly in one call (no confirmation step). Use when the rep "
+                           "asks to make a proposal/提案書 deck for a deal.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -579,17 +579,18 @@ TOOLS = [
             "description": "Generate a general-purpose PowerPoint (.pptx) on ANY topic from a "
                            "natural-language prompt — not tied to a deal. The deck is authored "
                            "by the model and can be about anything (e.g. 'make a deck about "
-                           "GTA 6'); no fixed slide count. Set use_web=true to ground it in a "
-                           "web search; pass customer to ground it in internal records. "
-                           "Two-step: confirm=false (default) returns a slide outline preview; "
-                           "confirm=true builds and saves the file. Use generate_proposal "
+                           "GTA 6'); no fixed slide count. Grounding is automatic: external/"
+                           "factual topics (products, prices, 'best-of', comparisons, current "
+                           "models) are web-grounded by default, and a customer grounds it in "
+                           "internal records — you normally do NOT set use_web. Builds the file "
+                           "directly in one call (no confirmation step). Use generate_proposal "
                            "instead for a deal-specific sales proposal.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "prompt": {"type": "string", "description": "What the presentation should be about"},
                     "title": {"type": "string", "description": "Optional title override"},
-                    "use_web": {"type": "boolean", "description": "Ground the deck in a web_search (for external/current topics). Default false."},
+                    "use_web": {"type": "boolean", "description": "Override web grounding. Omit to auto-decide (external/factual topics are web-grounded automatically). Set false to force the model's own knowledge; true to force a web search."},
                     "customer": {"type": "string", "description": "Optional customer name/ID to ground the deck in internal records"},
                     "lang": {"type": "string", "description": "'ja' (default) or 'en'"},
                     "confirm": {"type": "boolean",
@@ -605,17 +606,17 @@ TOOLS = [
             "name": "generate_docx",
             "description": "Generate a general-purpose Word document (.docx) on ANY topic from "
                            "a natural-language prompt — not tied to a deal. Authored by the "
-                           "model; can be about anything. Set use_web=true to ground it in a "
-                           "web search; pass customer to ground it in internal records. "
-                           "Two-step: confirm=false (default) returns a section outline; "
-                           "confirm=true builds and saves the file. Use generate_ringisho "
-                           "instead for a deal-specific 稟議書.",
+                           "model; can be about anything. Grounding is automatic: external/"
+                           "factual topics are web-grounded by default, and a customer grounds "
+                           "it in internal records — you normally do NOT set use_web. Builds the "
+                           "file directly in one call (no confirmation step). Use "
+                           "generate_ringisho instead for a deal-specific 稟議書.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "prompt": {"type": "string", "description": "What the document should be about"},
                     "title": {"type": "string", "description": "Optional title override"},
-                    "use_web": {"type": "boolean", "description": "Ground the document in a web_search. Default false."},
+                    "use_web": {"type": "boolean", "description": "Override web grounding. Omit to auto-decide (external/factual topics are web-grounded automatically). Set false to force the model's own knowledge; true to force a web search."},
                     "customer": {"type": "string", "description": "Optional customer name/ID to ground the document in internal records"},
                     "lang": {"type": "string", "description": "'ja' (default) or 'en'"},
                     "confirm": {"type": "boolean",

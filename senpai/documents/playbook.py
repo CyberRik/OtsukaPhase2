@@ -75,12 +75,26 @@ def proposal_style_guide() -> str:
 def deck_style_guide() -> str:
     """Style block for the freeform deck author (author.py).
 
-    Same craft principles plus the section arc as a suggested skeleton, so business
-    decks flow problem→solution→evidence→action. Topic stays whatever the user asked.
+    The general tool builds INFORMATIONAL / analytical decks about any topic, so the
+    default framing is a clean explainer — NOT a sales proposal. The proposal arc
+    (with its 「御中」 addressee cover) is offered only as an option for decks that
+    really are a pitch to a customer, which stops informational decks from sprouting
+    a nonsensical "貴社御中 / 担当" greeting slide.
     """
     return (
-        "【構成・文体の指針(大塚商会スタイル)】\n"
-        f"{_principles_block()}\n"
-        "提案・営業系の内容では概ね次の流れを意識する（話題に合わせて取捨選択してよい）:\n"
+        "【スライド作成の指針】\n"
+        "- 1スライド1メッセージ。要点は短い体言止め・箇条書き(3〜6項目)で。\n"
+        "- 見出しはそのスライドの結論・要点を表す言葉にする(製品名の羅列にしない)。\n"
+        "- 参考情報にある事実のみ用い、出典・前提のない数値や固有名詞を創作しない。"
+        "可能ならWeb出典を添え、数値には必要に応じて『※あくまで目安』を付す。\n"
+        "- これは情報提供・分析・比較のための資料。特定の相手への営業提案でない限り、"
+        "「〇〇御中」「貴社御中」「担当」等の宛名・挨拶の表紙は付けない。"
+        "表紙は主題と一行の副題のみとする。\n"
+        "- 予算・価格の条件がある場合はその水準を正しく解釈し(上限が高ければ上位機種を対象にする等)、"
+        "条件に本当に合う選択肢だけを扱う。日付・時点の表記は資料内で矛盾させない。\n"
+        "情報提供系の一般的な構成の例(話題に合わせて取捨選択):\n"
+        "  1. 導入・全体像  2. 選定基準/観点  3. 主要な選択肢(1枚ずつ)  "
+        "4. 比較・要点  5. おすすめ・結論  6. 出典・注意点\n"
+        "営業提案(特定顧客向けの pitch)の場合のみ、次の流れを用いてよい:\n"
         f"{arc_outline_text()}"
     )

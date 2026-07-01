@@ -1275,6 +1275,7 @@ class ChatRequest(BaseModel):
     role: str = "junior"                     # "junior" | "manager"
     conversation_id: str | None = None
     context: str = ""                        # attached-file text (chat-over-attachment)
+    deal_id: str | None = None               # deal picked from the selector (structured)
 
 
 @app.post("/api/chat")
@@ -1310,9 +1311,18 @@ def chat(req: ChatRequest):
     cached_ctx = _CHAT_CONTEXTS.get(conversation_id)
     cust = store.match_customer_in_text(req.message)
     msg_deal = _deal_id_in_text(req.message)
+    sel_deal = (req.deal_id or "").strip().upper() or None
     active: dict | None = None
     cached_flag = False
-    if cust:
+    selected_flag = False
+    if sel_deal and (sd := store.get_deal(sel_deal)):
+        # Deal picked from the selector — authoritative. Skip prose parsing and,
+        # crucially, tell the model it is already identified so it doesn't spend a
+        # tool round re-resolving the customer/deal.
+        active = {"customer_id": sd["customer_id"],
+                  "customer": store.customer_name(sd["customer_id"]), "deal_id": sel_deal}
+        selected_flag = True
+    elif cust:
         active = {"customer_id": cust["customer_id"], "customer": cust.get("name"),
                   "deal_id": msg_deal or (cached_ctx or {}).get("deal_id")}
     elif msg_deal and (d := store.get_deal(msg_deal)):
@@ -1337,9 +1347,18 @@ def chat(req: ChatRequest):
     system = system_fn()
     if active and active.get("customer"):
         focus = active["customer"] + (f"（案件 {active['deal_id']}）" if active.get("deal_id") else "")
-        system += (f"\n\n【現在の対象顧客】{focus}。アカウント固有の質問では、"
-                   f"search_notes に customer='{active['customer']}' を渡し、この顧客の"
-                   f"記録に限定して回答すること。")
+        if selected_flag:
+            # The user already pinned the exact deal. Use it directly — no
+            # identification searches — so the turn resolves in as few rounds as
+            # possible.
+            system += (f"\n\n【選択中の案件】ユーザーは {focus} を明示的に選択済み。"
+                       f"案件IDが必要なツール（generate_proposal 等）には "
+                       f"deal_id='{active['deal_id']}' をそのまま渡すこと。案件や顧客を"
+                       f"特定するための追加検索(query_spr/search_notes)は不要 — すでに確定している。")
+        else:
+            system += (f"\n\n【現在の対象顧客】{focus}。アカウント固有の質問では、"
+                       f"search_notes に customer='{active['customer']}' を渡し、この顧客の"
+                       f"記録に限定して回答すること。")
     # An ambiguous customer (amb_candidates) short-circuits to the picker below
     # before the LLM runs, so no ambiguity clause is added to the system prompt.
 

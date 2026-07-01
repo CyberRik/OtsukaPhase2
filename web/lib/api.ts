@@ -367,7 +367,7 @@ export async function chatStream(
   history: ChatTurn[],
   role: ChatRole,
   onEvent: (e: ChatEvent) => void,
-  opts?: { signal?: AbortSignal; conversationId?: string; context?: string },
+  opts?: { signal?: AbortSignal; conversationId?: string; context?: string; dealId?: string },
 ): Promise<void> {
   let res: Response;
   try {
@@ -378,6 +378,9 @@ export async function chatStream(
         message, history, role,
         conversation_id: opts?.conversationId,
         context: opts?.context ?? "",
+        // The deal the user picked from the selector rides as a STRUCTURED field,
+        // not appended to the message prose — the backend scopes to it directly.
+        deal_id: opts?.dealId,
       }),
       cache: "no-store",
       signal: opts?.signal,

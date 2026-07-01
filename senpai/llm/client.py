@@ -356,6 +356,12 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     is stripped so only the user-facing answer streams. `role` feeds the router."""
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
+    # Loop-intelligence bookkeeping (per turn): the results already gathered, keyed
+    # by (name, canonical-args), plus how many times each tool has run. These stop
+    # the model from re-querying the same thing or hammering one tool — the spiral
+    # that overflows the synthesis context and yields a blank answer.
+    executed: dict[tuple[str, str], str] = {}
+    tool_call_counts: dict[str, int] = {}
     from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
@@ -417,48 +423,83 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             {"id": cid, "type": "function",
              "function": {"name": name, "arguments": args}}
             for cid, name, args in real_calls]})
-             
-        sched_calls = [SchedToolCall(id=cid, name=name, arguments=args) for cid, name, args in real_calls]
+
+        # Split into FRESH calls (worth running) and the rest (already gathered this
+        # turn, or over the per-tool cap). Stale calls are NOT dispatched — they get
+        # a terse "already have this" tool response so the model stops re-searching,
+        # and they never hit the engine, the timeline, or the synthesis grounding.
+        fresh, fresh_ids = [], set()
+        for cid, name, args in real_calls:
+            key = (name, _canon_args(args))
+            if key not in executed and tool_call_counts.get(name, 0) < _PER_TOOL_CAP:
+                fresh.append((cid, name, args))
+                fresh_ids.add(cid)
+                tool_call_counts[name] = tool_call_counts.get(name, 0) + 1
+
+        sched_calls = [SchedToolCall(id=cid, name=name, arguments=args) for cid, name, args in fresh]
         plan = _SCHEDULER.schedule(sched_calls)
-        
+
         # Drain any residual traces left over in the main thread before threading
         _trace.drain()
         _docs.drain()
-        
+
         # Run the ExecutionPlan in parallel via the Engine
         def _ignore_events(evt: dict) -> None:
             pass
-        bundle = _ENGINE.run(plan, _ignore_events)
-        
-        # Reconstruct the tool_log and yield UI events just like the sequential loop
-        # We preserve the order of `real_calls`
-        batch_id = f"batch_{id(plan)}" if len(real_calls) > 1 else None
-        
+        # Snapshot generated-document ids BEFORE the run so a new file can be
+        # attributed to its tool call by diffing the process-global registry. This
+        # is robust across the threaded SSE path: Starlette resumes this sync
+        # generator on different anyio threadpool threads between yields, so the
+        # per-turn ContextVar buffer (_docs.start/drain) set on an earlier `next()`
+        # is invisible here (different context) and comes back empty. registry._DOCS
+        # is a plain module global shared by all threads, so the diff always sees it.
+        docs_before = set(_docs._DOCS.keys())
+        bundle = _ENGINE.run(plan, _ignore_events) if fresh else None
+        new_doc_ids = [d for d in _docs._DOCS if d not in docs_before]
+
+        # Reconstruct the tool_log and yield UI events just like the sequential loop.
+        # We preserve the order of `real_calls`.
+        batch_id = f"batch_{id(plan)}" if len(fresh) > 1 else None
+
         for cid, name, args in real_calls:
-            # Re-fetch the evidence from the bundle
-            ev_frag = bundle.get(cid)
+            key = (name, _canon_args(args))
+            if cid not in fresh_ids:
+                # Duplicate / over-cap: satisfy the API (every tool_call id needs a
+                # response) but don't dispatch, don't surface a card, don't pad the
+                # grounding — just nudge the model to answer with what it has.
+                cached = executed.get(
+                    key, "（取得済み。これ以上検索せず、収集済みの情報で回答してください。）")
+                convo.append({"role": "tool", "tool_call_id": cid, "content": cached})
+                continue
+
+            ev_frag = bundle.get(cid) if bundle else None
             result = ev_frag.data.get("text", "[error] Missing execution result") if ev_frag else "[error] Task skipped"
-            
+
             # TRUNCATE IF MASSIVE (prevents parallel calls from blowing up context window)
             if len(result) > 1500:
                 result = result[:1500] + "\n... [truncated for length]"
-            
+            executed[key] = result
+
             tool_log.append((name, _fmt_args(args), result))
             convo.append({"role": "tool", "tool_call_id": cid, "content": result})
-            
+
             ev = {"type": "tool", "name": name, "args": _fmt_args(args), "result": result, "batchId": batch_id}
-            
+
             # Since threads might have dumped into the shared contextvar (or their own),
             # this is a known limitation in M1 for tracing parallel tasks. We do a global drain here.
             # In a future phase, ToolCapability will attach traces to Evidence natively.
-            retrieval = _trace.drain() 
+            retrieval = _trace.drain()
             if retrieval:
                 ev["retrieval"] = retrieval
-            generated = _docs.drain()
-            if generated:
-                doc = generated[-1]
-                ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
-                                  "filename": doc["filename"], "download_url": doc["download_url"]}
+            # Attach the file this call produced. A generated document is a WRITE
+            # deliverable (generate_*/action tools), which the scheduler runs
+            # serially — so there is at most one per round, and the newest new id
+            # belongs to this terminal call.
+            if new_doc_ids and (name.startswith("generate_") or name in _ACTION_TOOLS):
+                doc = _docs.get(new_doc_ids[-1])
+                if doc:
+                    ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
+                                      "filename": doc["filename"], "download_url": doc["download_url"]}
             yield ev
 
             if _is_terminal_action(name, result):
@@ -467,6 +508,12 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 # produce duplicates — and skip the redundant synthesis round.
                 yield {"type": "answer", "text": result}
                 return
+
+        # Every call this round was a repeat → the model is spinning. Stop looping
+        # and synthesize from what we already gathered instead of burning rounds.
+        if not fresh:
+            yield from _route_final_answer(convo, tools, tool_log, role)
+            return
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.
@@ -526,7 +573,17 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *, no_thin
             yield {"type": "delta", "text": new}
 
     final = re.sub(r"<think>.*?</think>", "", full, flags=re.DOTALL).strip()
-    yield {"type": "answer", "text": final or "(no response)"}
+    if final:
+        yield {"type": "answer", "text": final}
+        return
+    # Empty answer — the reasoning phase ate the whole token budget before it wrote
+    # anything (an unclosed <think>, common after a large tool context). Retry ONCE
+    # with thinking disabled so the model answers immediately, rather than showing a
+    # blank "(no response)" turn.
+    if not no_think:
+        yield from _stream_final_answer(convo, tools, no_think=True)
+        return
+    yield {"type": "answer", "text": "(no response)"}
 
 
 def _fmt_args(arguments) -> str:
@@ -535,3 +592,19 @@ def _fmt_args(arguments) -> str:
         return ", ".join(f"{k}={v!r}" for k, v in d.items())
     except Exception:
         return str(arguments)
+
+
+def _canon_args(arguments) -> str:
+    """Order-independent, whitespace-normalized args form, for deduping tool calls
+    within a turn ({"a":1,"b":2} and {"b":2,"a":1} collapse to one key)."""
+    try:
+        d = json.loads(arguments) if isinstance(arguments, str) else (arguments or {})
+        return json.dumps(d, sort_keys=True, ensure_ascii=False)
+    except Exception:
+        return str(arguments)
+
+
+# A read/search tool called more than this many times in one turn is almost always
+# the model spiraling (rephrasing the same query). Past the cap, further calls are
+# short-circuited to a "you already have this" nudge instead of a real dispatch.
+_PER_TOOL_CAP = 3

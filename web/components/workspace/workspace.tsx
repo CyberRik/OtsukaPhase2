@@ -42,10 +42,8 @@ import { ExecutionTimeline, type ExecutionPhase } from "@/components/agent/agent
 import { ArtifactCard } from "./artifact-card";
 import { MessageBubble, type Msg } from "@/components/assistant/message";
 import { ExperiencePanel } from "@/components/coach/similar-cases";
-import { AccountPickTurn, AccountTurn } from "./account-turn";
 import { CrewTurn } from "./crew-turn";
-import { ReviewTurn } from "./review-turn";
-import { SlashPicker, parseInput } from "@/components/workspace/slash";
+import { parseInput } from "@/components/workspace/slash";
 
 // --- thread model -----------------------------------------------------------
 type AccountPickCandidate = { customer_id: string; name: string };
@@ -53,7 +51,7 @@ type AccountPickCandidate = { customer_id: string; name: string };
 type WMsg =
   | { id: number; role: "user"; text: string; dealLabel?: string }
   | { id: number; role: "system"; text: string }
-  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number; context?: string }
+  | { id: number; role: "assistant"; text: string; history: ChatHistoryTurn[]; answer?: string; runId?: number; context?: string; dealId?: string }
   | { id: number; role: "loading" }
   | { id: number; role: "account_pick"; query: string; candidates: AccountPickCandidate[]; suggestedId?: string | null }
   | { id: number; role: "skill"; kind: "review"; note: string; dealId?: string; artifact: Artifact }
@@ -409,7 +407,7 @@ function ResearchTurn({
   const [collapsed, setCollapsed] = useCachedState<boolean>(`ws:art:${key}:coll`, false);
   const [showArtifact, setShowArtifact] = useCachedState<boolean>(`ws:art:${key}:showart`, false);
   const startedRef = useRef(false);
-  const collapseRef = useRef<NodeJS.Timeout>();
+  const collapseRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => () => { if (collapseRef.current) clearTimeout(collapseRef.current); }, []);
 
@@ -575,10 +573,10 @@ function ResearchTurn({
 const EMPTY_MSG: Msg = { role: "assistant", content: "", tools: [], status: "running" };
 
 function ChatTurn({
-  turnId, runId, message, history, role, conversationId, context, onDone, onPick,
+  turnId, runId, message, history, role, conversationId, context, dealId, onDone, onPick,
 }: {
   turnId: number; runId: number; message: string; history: ChatHistoryTurn[];
-  role: "junior" | "manager"; conversationId: string; context?: string;
+  role: "junior" | "manager"; conversationId: string; context?: string; dealId?: string;
   onDone: (text: string) => void;
   onPick: (c: ResolveCandidate, query: string) => void;
 }) {
@@ -652,7 +650,7 @@ function ChatTurn({
           patch((m) => ({ ...m, status: m.candidates?.length ? "done" : (abortedRef.current ? (m.content ? "done" : "error") : "error") }));
           break;
       }
-    }, { conversationId, signal: ctrl.signal, context }).then(() => {
+    }, { conversationId, signal: ctrl.signal, context, dealId }).then(() => {
       ctrlRef.current = null;
       setMsg((prev) => {
         const final: Msg = prev.status === "running"
@@ -1076,17 +1074,16 @@ export function Workspace({
      // An attached file's text rides along as context for THIS turn only, then
      // the chip clears (it is not persisted into thread history).
      const ctx = attached?.text || undefined;
-     // A deal picked from the Deal selector grounds the turn: name the deal id
-     // (and its customer) in the query the model sees, so the backend extracts
-     // it and scopes retrieval to that exact deal instead of re-resolving from
-     // the prose. The user bubble shows the typed text + a deal badge.
+     // A deal picked from the Deal selector grounds the turn as a STRUCTURED field
+     // (dealId), not by appending prose to the message. The backend scopes to that
+     // exact deal directly — the model never has to re-resolve it from prose, and
+     // the message it reasons over stays clean. The user bubble shows a deal badge.
      const d = deal ? deals.find((x) => x.deal_id === deal) : undefined;
-     const grounded = d ? `${clean}（対象案件: ${d.deal_id} ${d.customer}）` : clean;
      const userText = attached ? `📎 ${attached.fileName} — ${clean}` : clean;
      setMessages((m) => [
        ...m,
        { id: nextId(), role: "user", text: userText, dealLabel: d?.customer },
-       { id: replyId, role: "assistant", text: grounded, history, context: ctx },
+       { id: replyId, role: "assistant", text: clean, history, context: ctx, dealId: d?.deal_id },
      ]);
      setInput("");
      setAttached(null);
@@ -1207,10 +1204,10 @@ export function Workspace({
   }
 
   return (
-    <div className={cn("mx-auto flex min-h-[calc(100vh-9rem)] flex-col", wide ? "max-w-none" : "max-w-3xl")}>
-      <div className="flex-1 space-y-8 pb-6">
+    <div className={cn("mx-auto flex h-full w-full flex-col min-h-0", wide ? "max-w-5xl" : "max-w-3xl")}>
+      <div className="flex-1 overflow-y-auto space-y-8 pb-6 pr-1 pt-3 min-h-0">
         {messages.length === 0 && (
-          <div className="py-6">
+          <div className="pt-1.5 pb-6">
             <p className="text-[15px] font-medium tracking-tight text-foreground">
               {lang === "ja" ? "Senpai ワークスペース" : "Senpai Workspace"}
             </p>
@@ -1314,6 +1311,7 @@ export function Workspace({
                   role={role}
                   conversationId={thread.current}
                   context={m.context}
+                  dealId={m.dealId}
                   onDone={(text) =>
                     setMessages((prev) => prev.map((msg) => (msg.id === m.id ? { ...msg, answer: text } : msg)))
                   }
@@ -1348,7 +1346,7 @@ export function Workspace({
             return (
               <Row key={m.id} who="senpai" name={assistantName}>
                 {m.kind === "review" && <ReviewTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} note={m.note} dealId={m.dealId} principles={principles} onPick={onPick} />}
-                {m.kind === "account_brief" && <AccountTurn artifact={m.artifact} customerId={m.customerId} />}
+                {m.kind === "account_brief" && <AccountTurn key={m.artifact.id} artifact={m.artifact} customerId={m.customerId} />}
                 {m.kind === "research" && <ResearchTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} query={m.query} entity={m.entity} onPick={onPickResearch} />}
               </Row>
             );

@@ -237,6 +237,29 @@ export function MessageBubble({ m, t, lang, onPick }: {
         </div>
       ) : null}
 
+      {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
+           buried inside the collapsed tool card) so the deliverable is one click. */}
+      {(() => {
+        const docs = m.tools.map((tl) => tl.document).filter(Boolean) as GeneratedDocument[];
+        if (docs.length === 0) return null;
+        return (
+          <div className="flex w-full max-w-[88%] flex-wrap gap-2 pt-1">
+            {docs.map((doc, i) => (
+              <a
+                key={doc.doc_id ?? `${doc.filename}-${i}`}
+                href={documentUrl(doc.download_url)}
+                download={doc.filename}
+                className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/[0.06] px-3 py-2 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                <Download className="h-4 w-4 shrink-0" />
+                {lang === "ja" ? "ダウンロード" : "Download"}
+                <span className="font-mono text-[11px] text-muted-foreground">{doc.filename}</span>
+              </a>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* 2. Execution Timeline (Level 2) */}
       {m.tools.length > 0 && (
         <details open={running} className="w-full max-w-[88%] text-[12px] group">

@@ -78,15 +78,17 @@ def test_context_unknown_deal_is_none():
 
 
 # --- proposal (PPTX) -----------------------------------------------------------
-def test_proposal_four_slides_and_grounded():
+def test_proposal_arc_and_grounded():
     res = proposal.generate(DEAL)
     assert res is not None
-    path, ctx = res
+    path, ctx, spec = res
     prs = Presentation(str(path))
-    assert len(prs.slides) == 4
+    # Full proposal arc: 表紙 → 背景 → 課題 → ソリューション → 投資対効果 → 次のステップ.
+    assert len(prs.slides) == 6
+    assert len(spec["slides"]) == 6
     text = _pptx_text(path)
     assert ctx.customer in text                       # title slide names the customer
-    assert f"{ctx.financials['investment']:,}" in text  # ROI slide carries the real ¥
+    assert f"{ctx.financials['investment']:,}" in text  # ROI slide carries the real ¥ (D001 has no quote)
 
 
 # --- ringisho (DOCX) -----------------------------------------------------------

@@ -40,6 +40,45 @@ def _pain_points(activities: list[dict]) -> list[str]:
     return out
 
 
+def _comparable_deals(deal_id: str, product_category: str, customer_id: str,
+                      industry: str, target_amount: int) -> list[dict]:
+    """Reference cases for a proposal. A rep cites deals a prospect can relate to,
+    so we prefer **the same product category at OTHER customers**, one deal per
+    customer (diverse — never three from one firm), won outcomes first, then closest
+    in size. Falls back to industry-similar deals only when the category is too thin
+    to fill three, so a proposal always shows *something* real rather than nothing."""
+    cat = (product_category or "").strip()
+    picked: list[dict] = []
+    seen_customers: set[str] = {customer_id}
+    if cat:
+        cands = [d for d in store.all_deals()
+                 if d.get("product_category") == cat and d["customer_id"] not in seen_customers]
+
+        def _key(d: dict):
+            cust = store.get_customer(d["customer_id"]) or {}
+            won = d.get("order_rank") in config.WON_RANKS
+            same_ind = bool(industry) and cust.get("industry") == industry
+            amt_gap = abs(d.get("total_order_amount", 0) - (target_amount or 0))
+            return (won, same_ind, -amt_gap)
+
+        for d in sorted(cands, key=_key, reverse=True):
+            if d["customer_id"] in seen_customers:
+                continue                       # one per customer → diverse social proof
+            seen_customers.add(d["customer_id"])
+            picked.append(d)
+            if len(picked) >= 3:
+                break
+    if len(picked) < 3:                        # top up with industry-similar deals
+        for d in find_similar_deals(customer_id=customer_id, industry=industry, limit=6):
+            if d["deal_id"] == deal_id or d["customer_id"] in seen_customers:
+                continue
+            seen_customers.add(d["customer_id"])
+            picked.append(d)
+            if len(picked) >= 3:
+                break
+    return picked
+
+
 def _matched_products(product_category: str) -> list[dict]:
     """Catalog products whose classification overlaps the deal's product_category."""
     cat = (product_category or "").strip()
@@ -112,10 +151,14 @@ def build_document_context(deal_id: str) -> DocumentContext | None:
     quote = store.quote_for_deal(deal_id)
     if quote:
         financials["quote_amount"] = quote.get("quote_amount")
+        financials["standard_amount"] = quote.get("standard_amount")
+        financials["discount_rate"] = quote.get("discount_rate")
+        financials["discount_amount"] = quote.get("discount_amount")
 
     comparables = []
-    for c in find_similar_deals(customer_id=d["customer_id"],
-                                industry=customer.get("industry", ""))[:3]:
+    for c in _comparable_deals(deal_id, d.get("product_category", "") or "",
+                               d["customer_id"], customer.get("industry", ""),
+                               d.get("total_order_amount", 0)):
         comparables.append({
             "deal_id": c["deal_id"],
             "customer": store.customer_name(c["customer_id"]),

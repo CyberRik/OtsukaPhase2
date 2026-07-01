@@ -9,6 +9,7 @@ the deterministic store / scoring engine, so these run GPU-free.
 from __future__ import annotations
 
 import json
+import re
 
 from senpai import config
 from senpai.data import store
@@ -723,6 +724,20 @@ def _yen(n) -> str:
         return "¥0"
 
 
+def _deck_outline(slides: list[dict]) -> str:
+    """Render a deck's headings + subheadings for the success message, so the rep
+    sees the structure that was built (titles as headings, bullets/subtitle as
+    sub-items) even though the file is generated directly."""
+    lines: list[str] = []
+    for i, s in enumerate(slides):
+        lines.append(f"  {i + 1}. {s.get('title', '')}")
+        subs = [str(b) for b in (s.get("bullets") or []) if str(b).strip()]
+        if not subs and s.get("subtitle"):
+            subs = [ln for ln in str(s["subtitle"]).splitlines() if ln.strip()]
+        lines.extend(f"     - {b}" for b in subs)
+    return "\n".join(lines)
+
+
 def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False) -> str:
     """4-slide PPTX sales proposal grounded in a deal's SPR data. Builds directly
     (no confirmation step) — the call commits the file in one round."""
@@ -736,9 +751,12 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
     res = proposal.generate(deal_id, lang=lang)
     if res is None:
         return f"案件 {deal_id} は見つかりません。"
-    path, _ctx = res
+    path, _ctx, spec = res
     rec = registry.register("proposal", path, deal_id=deal_id)
-    return f"提案書(PPTX・4スライド)を生成しました: {rec['filename']}（{ctx.customer}様）。"
+    slides = spec.get("slides", [])
+    outline = _deck_outline(slides)
+    return (f"提案書(PPTX・{len(slides)}スライド)を生成しました: {rec['filename']}（{ctx.customer}様）。\n"
+            f"構成:\n{outline}")
 
 
 def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
@@ -783,6 +801,36 @@ def _gather_grounding(prompt: str, customer: str, use_web: bool) -> str:
     return "\n\n".join(p for p in parts if p)
 
 
+# External/factual cues in a free-prompt deck/doc — the topics that go stale in a
+# model's weights (products, prices, "best-of" picks, current models, comparisons).
+# When present, a general deck is grounded in a live web_search unless the caller
+# says otherwise. Internal decks (a customer is named) ground in records instead.
+_WEB_SIGNAL_RE = re.compile(
+    r"best|top|latest|newest|current|cheap|price|budget|under|vs\b|versus|compare|"
+    r"comparison|review|ranking|recommend|spec|market|trend|news|deal|20(2[3-9]|[3-9]\d)|"
+    r"おすすめ|比較|最新|価格|相場|予算|以内|ランキング|レビュー|選び方|市場|"
+    r"トレンド|ニュース|スペック|円",
+    re.IGNORECASE,
+)
+
+
+def _auto_web(prompt: str) -> bool:
+    """True when a free-prompt deck/doc should be web-grounded by default: the topic
+    reads as external/factual/current, so the model's own knowledge is likely stale."""
+    return bool(_WEB_SIGNAL_RE.search(prompt or ""))
+
+
+def _resolve_use_web(use_web, prompt: str, customer: str) -> bool:
+    """Decide grounding. Explicit True/False from the caller wins. When unspecified
+    (None), auto-enable web for external/factual prompts, but not when the deck is
+    scoped to a customer (that grounds in internal records instead)."""
+    if use_web is not None:
+        return bool(use_web)
+    if customer:
+        return False
+    return _auto_web(prompt)
+
+
 def _gen_key(kind: str, prompt: str, customer: str, use_web: bool) -> str:
     return _hashlib.md5(f"{kind}|{prompt}|{customer}|{use_web}".encode()).hexdigest()
 
@@ -803,18 +851,19 @@ def _author_spec(kind: str, prompt: str, customer: str, use_web: bool, lang: str
     return spec
 
 
-def generate_pptx(prompt: str = "", title: str = "", use_web: bool = False,
+def generate_pptx(prompt: str = "", title: str = "", use_web=None,
                   customer: str = "", lang: str = "ja", confirm: bool = False) -> str:
-    """General-purpose PPTX from a free prompt (LLM-authored, optionally grounded by
-    internal records / web_search). No fixed slide count. Builds directly (no
-    confirmation step) — the call commits the file in one round. Needs the model."""
+    """General-purpose PPTX from a free prompt (LLM-authored). No fixed slide count.
+    Builds directly (no confirmation step) — the call commits the file in one round.
+    Grounding is automatic: external/factual topics are web-grounded by default; a
+    named customer grounds it in internal records. Needs the model."""
     from senpai.documents import author, registry
     from senpai.documents.render import output_path, render_pptx
     if not (prompt or "").strip():
         return "[error] プレゼンの主題(prompt)を指定してください。"
     if not author._use_llm():
         return "本機能はモデル(LLM)が必要です（SENPAI_USE_LLM=1 とモデルサーバ）。"
-    spec = _author_spec("pptx", prompt, customer, bool(use_web), lang)
+    spec = _author_spec("pptx", prompt, customer, _resolve_use_web(use_web, prompt, customer), lang)
     if spec is None:
         return "本機能はモデル(LLM)が必要です。現在モデルに接続できません。"
     slides = spec.get("slides", [])
@@ -823,20 +872,23 @@ def generate_pptx(prompt: str = "", title: str = "", use_web: bool = False,
     path = output_path("pptx", title or spec.get("_title") or prompt[:30], "pptx")
     render_pptx(spec, path)
     rec = registry.register("pptx", path)
-    return f"プレゼン(PPTX)を生成しました: {rec['filename']}（{len(slides)}スライド）。"
+    outline = _deck_outline(slides)
+    return (f"プレゼン(PPTX)を生成しました: {rec['filename']}（{len(slides)}スライド）。\n"
+            f"構成:\n{outline}")
 
 
-def generate_docx(prompt: str = "", title: str = "", use_web: bool = False,
+def generate_docx(prompt: str = "", title: str = "", use_web=None,
                   customer: str = "", lang: str = "ja", confirm: bool = False) -> str:
-    """General-purpose DOCX from a free prompt (LLM-authored, optionally grounded).
-    Two-step confirm. Needs the model."""
+    """General-purpose DOCX from a free prompt (LLM-authored). Grounding is automatic:
+    external/factual topics are web-grounded by default; a named customer grounds it
+    in internal records. Needs the model."""
     from senpai.documents import author, registry
     from senpai.documents.render import output_path, render_docx
     if not (prompt or "").strip():
         return "[error] 文書の主題(prompt)を指定してください。"
     if not author._use_llm():
         return "本機能はモデル(LLM)が必要です（SENPAI_USE_LLM=1 とモデルサーバ）。"
-    spec = _author_spec("docx", prompt, customer, bool(use_web), lang)
+    spec = _author_spec("docx", prompt, customer, _resolve_use_web(use_web, prompt, customer), lang)
     if spec is None:
         return "本機能はモデル(LLM)が必要です。現在モデルに接続できません。"
     sections = spec.get("sections", [])
