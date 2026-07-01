@@ -1,0 +1,32 @@
+Fix Graph RAG Visualization System - Event Not Reaching Dashboard
+
+## Problem
+Created a real-time visualization system for Graph RAG queries. Queries execute successfully and return results, but visualization events aren't reaching the browser dashboard. The server runs but emits no logs when queries execute.
+
+## Architecture
+- Backend: Python instrumentation system that emits events during query execution
+- Server: FastAPI WebSocket server on port 8001 that broadcasts events
+- Frontend: Browser dashboard connecting via WebSocket to receive events
+- Flow: Query â QueryTracer.emit() â VisualizationHub â visualization_server â WebSocket â Dashboard
+
+## What Works
+â Queries execute and return correct results
+â FastAPI server runs on port 8001
+â Dashboard connects to WebSocket (shows "ð¢ Connected")
+â Manual hub.emit() test events reach the manager queue
+
+## What's Broken
+â No log output when running queries through query_instrumented functions
+â Events don't appear on dashboard when running: `from senpai.graph.query_instrumented import *; reps_who_win_viz(category="ãµã¼ãã¼")`
+â No "Event queued:" logs appear in server output
+â Dashboard remains blank with 0 events
+
+## Files Involved
+1. `senpai/graph/visualization.py` - QueryTracer class, VisualizationHub, create_query_tracer()
+2. `senpai/graph/query_instrumented.py` - reps_who_win_viz(), account_graph_viz(), etc.
+3. `senpai/api/visualization_server.py` - FastAPI server with WebSocket broadcast
+
+## Test Results
+- When importing visualization_server, hub.subscribers goes from 0 to 1 â
+- Manual hub.emit() creates event history and queues event â
+- But reps_who_win_viz() query produces NO events in hub.event_history
