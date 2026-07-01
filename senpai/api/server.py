@@ -892,6 +892,29 @@ def _deal_id_in_text(message: str) -> str | None:
     return m.group(0).upper() if m else None
 
 
+# Explicit "look in my local files" intent. When the user scopes the question to
+# their own documents, the turn should be answered from the Workspace tool and NOT
+# wander into the CRM/internal-record tools — that scope-bleed is what makes a simple
+# "what's in my file" spiral through query_spr/search_notes. Kept narrow: it must
+# name files/documents/the workspace, not merely mention "generate a file".
+_FILE_SCOPE_RE = re.compile(
+    # Possessive/locative framing around files/documents — "my files", "in the
+    # documents", "search my docs" — NOT bare "a document" (that's generate_docx).
+    r"\b(?:my|the|these|those)\s+(?:files?|documents?|docs?)\b|"
+    r"\b(?:in|from|search|read|check|open|look(?:ing)?\s+(?:in|at|through))\s+"
+    r"(?:my|the|these|those)?\s*(?:files?|documents?|folder)\b|"
+    r"\bworkspace\b|\blocal files?\b|"
+    r"(?:私の|自分の|マイ)(?:ファイル|資料|ドキュメント|文書)|"
+    r"(?:ファイル|資料|ドキュメント|文書)(?:の中|内|から|を見|を調|を検索|を確認|に|にある)|"
+    r"ワークスペース|ローカル(?:ファイル|文書)",
+    re.IGNORECASE,
+)
+
+
+def _is_file_scoped(message: str) -> bool:
+    return bool(_FILE_SCOPE_RE.search(message or ""))
+
+
 def _is_followup(message: str, has_context: bool) -> bool:
     if not has_context or _deal_id_in_text(message):
         return False
@@ -1371,6 +1394,15 @@ def chat(req: ChatRequest):
                        f"記録に限定して回答すること。")
     # An ambiguous customer (amb_candidates) short-circuits to the picker below
     # before the LLM runs, so no ambiguity clause is added to the system prompt.
+
+    # File-scoped question → pin the turn to the Workspace tool. Without this the
+    # model bleeds into CRM/internal-record tools ("yamato" → a wrong customer
+    # lookup) even though the answer is in a local file. Explicit scope, one tool.
+    if _is_file_scoped(req.message):
+        system += ("\n\n【スコープ: ローカル文書】ユーザーは自分のファイル/資料に限定して"
+                   "質問している。search_workspace_documents だけを使い、その結果のみに基づいて"
+                   "回答すること。CRM・社内記録のツール(query_spr/search_notes/find_deals 等)は"
+                   "呼ばない。文書に答えが無ければ、その旨を述べる（推測しない）。")
 
     convo: list[dict] = [{"role": "system", "content": system}]
     for m in req.history:
