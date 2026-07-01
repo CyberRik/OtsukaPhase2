@@ -723,6 +723,20 @@ def _yen(n) -> str:
         return "¥0"
 
 
+def _deck_outline(slides: list[dict]) -> str:
+    """Render a deck's headings + subheadings for the success message, so the rep
+    sees the structure that was built (titles as headings, bullets/subtitle as
+    sub-items) even though the file is generated directly."""
+    lines: list[str] = []
+    for i, s in enumerate(slides):
+        lines.append(f"  {i + 1}. {s.get('title', '')}")
+        subs = [str(b) for b in (s.get("bullets") or []) if str(b).strip()]
+        if not subs and s.get("subtitle"):
+            subs = [ln for ln in str(s["subtitle"]).splitlines() if ln.strip()]
+        lines.extend(f"     - {b}" for b in subs)
+    return "\n".join(lines)
+
+
 def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False) -> str:
     """4-slide PPTX sales proposal grounded in a deal's SPR data. Builds directly
     (no confirmation step) — the call commits the file in one round."""
@@ -738,7 +752,9 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
         return f"案件 {deal_id} は見つかりません。"
     path, _ctx = res
     rec = registry.register("proposal", path, deal_id=deal_id)
-    return f"提案書(PPTX・4スライド)を生成しました: {rec['filename']}（{ctx.customer}様）。"
+    outline = _deck_outline(proposal.build_proposal_spec(ctx, lang=lang).get("slides", []))
+    return (f"提案書(PPTX・4スライド)を生成しました: {rec['filename']}（{ctx.customer}様）。\n"
+            f"構成:\n{outline}")
 
 
 def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
@@ -823,7 +839,9 @@ def generate_pptx(prompt: str = "", title: str = "", use_web: bool = False,
     path = output_path("pptx", title or spec.get("_title") or prompt[:30], "pptx")
     render_pptx(spec, path)
     rec = registry.register("pptx", path)
-    return f"プレゼン(PPTX)を生成しました: {rec['filename']}（{len(slides)}スライド）。"
+    outline = _deck_outline(slides)
+    return (f"プレゼン(PPTX)を生成しました: {rec['filename']}（{len(slides)}スライド）。\n"
+            f"構成:\n{outline}")
 
 
 def generate_docx(prompt: str = "", title: str = "", use_web: bool = False,

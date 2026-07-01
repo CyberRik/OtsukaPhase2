@@ -42,10 +42,8 @@ import { ExecutionTimeline, type ExecutionPhase } from "@/components/agent/agent
 import { ArtifactCard } from "./artifact-card";
 import { MessageBubble, type Msg } from "@/components/assistant/message";
 import { ExperiencePanel } from "@/components/coach/similar-cases";
-import { AccountPickTurn, AccountTurn } from "./account-turn";
 import { CrewTurn } from "./crew-turn";
-import { ReviewTurn } from "./review-turn";
-import { SlashPicker, parseInput } from "@/components/workspace/slash";
+import { parseInput } from "@/components/workspace/slash";
 
 // --- thread model -----------------------------------------------------------
 type AccountPickCandidate = { customer_id: string; name: string };
@@ -409,7 +407,7 @@ function ResearchTurn({
   const [collapsed, setCollapsed] = useCachedState<boolean>(`ws:art:${key}:coll`, false);
   const [showArtifact, setShowArtifact] = useCachedState<boolean>(`ws:art:${key}:showart`, false);
   const startedRef = useRef(false);
-  const collapseRef = useRef<NodeJS.Timeout>();
+  const collapseRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => () => { if (collapseRef.current) clearTimeout(collapseRef.current); }, []);
 
@@ -1207,10 +1205,10 @@ export function Workspace({
   }
 
   return (
-    <div className={cn("mx-auto flex min-h-[calc(100vh-9rem)] flex-col", wide ? "max-w-none" : "max-w-3xl")}>
-      <div className="flex-1 space-y-8 pb-6">
+    <div className={cn("mx-auto flex h-full w-full flex-col min-h-0", wide ? "max-w-5xl" : "max-w-3xl")}>
+      <div className="flex-1 overflow-y-auto space-y-8 pb-6 pr-1 pt-3 min-h-0">
         {messages.length === 0 && (
-          <div className="py-6">
+          <div className="pt-1.5 pb-6">
             <p className="text-[15px] font-medium tracking-tight text-foreground">
               {lang === "ja" ? "Senpai ワークスペース" : "Senpai Workspace"}
             </p>
@@ -1348,7 +1346,7 @@ export function Workspace({
             return (
               <Row key={m.id} who="senpai" name={assistantName}>
                 {m.kind === "review" && <ReviewTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} note={m.note} dealId={m.dealId} principles={principles} onPick={onPick} />}
-                {m.kind === "account_brief" && <AccountTurn artifact={m.artifact} customerId={m.customerId} />}
+                {m.kind === "account_brief" && <AccountTurn key={m.artifact.id} artifact={m.artifact} customerId={m.customerId} />}
                 {m.kind === "research" && <ResearchTurn key={m.artifact.id} turnId={m.id} artifact={m.artifact} query={m.query} entity={m.entity} onPick={onPickResearch} />}
               </Row>
             );

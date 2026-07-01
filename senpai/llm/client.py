@@ -428,7 +428,16 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # Run the ExecutionPlan in parallel via the Engine
         def _ignore_events(evt: dict) -> None:
             pass
+        # Snapshot generated-document ids BEFORE the run so a new file can be
+        # attributed to its tool call by diffing the process-global registry. This
+        # is robust across the threaded SSE path: Starlette resumes this sync
+        # generator on different anyio threadpool threads between yields, so the
+        # per-turn ContextVar buffer (_docs.start/drain) set on an earlier `next()`
+        # is invisible here (different context) and comes back empty. registry._DOCS
+        # is a plain module global shared by all threads, so the diff always sees it.
+        docs_before = set(_docs._DOCS.keys())
         bundle = _ENGINE.run(plan, _ignore_events)
+        new_doc_ids = [d for d in _docs._DOCS if d not in docs_before]
         
         # Reconstruct the tool_log and yield UI events just like the sequential loop
         # We preserve the order of `real_calls`
@@ -454,11 +463,15 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             retrieval = _trace.drain() 
             if retrieval:
                 ev["retrieval"] = retrieval
-            generated = _docs.drain()
-            if generated:
-                doc = generated[-1]
-                ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
-                                  "filename": doc["filename"], "download_url": doc["download_url"]}
+            # Attach the file this call produced. A generated document is a WRITE
+            # deliverable (generate_*/action tools), which the scheduler runs
+            # serially — so there is at most one per round, and the newest new id
+            # belongs to this terminal call.
+            if new_doc_ids and (name.startswith("generate_") or name in _ACTION_TOOLS):
+                doc = _docs.get(new_doc_ids[-1])
+                if doc:
+                    ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
+                                      "filename": doc["filename"], "download_url": doc["download_url"]}
             yield ev
 
             if _is_terminal_action(name, result):

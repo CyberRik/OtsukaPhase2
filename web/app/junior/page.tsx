@@ -21,7 +21,7 @@ export default async function JuniorHome() {
       deals={db.deals}
       principles={pr.principles}
       role="junior"
-      contextSlot={<ContextPane deals={db.deals} role="junior" profile={gr.growth} />}
+      contextSlot={<ContextPane key="junior-context" deals={db.deals} role="junior" profile={gr.growth} />}
     />
   );
 }

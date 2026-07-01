@@ -39,13 +39,25 @@ export function CommandCenter({
   return (
     <div
       className={cn(
-        "grid gap-4 lg:items-start",
+        "relative grid gap-4 lg:gap-8 h-full w-full min-h-0",
         open ? "lg:grid-cols-[280px_minmax(0,1fr)]" : "lg:grid-cols-1",
       )}
     >
+      {!open && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title={t("cc.todayWork")}
+          className="absolute left-0 lg:-left-8 top-3 z-30 flex h-8 items-center gap-1.5 rounded-lg lg:rounded-l-none lg:rounded-r-lg lg:border-l-0 border border-border bg-card px-2.5 text-[12px] text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground shrink-0"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+          <span className="lg:hidden xl:inline">{t("cc.todayWork")}</span>
+        </button>
+      )}
+
       {open && (
-        <aside className="max-h-[42vh] overflow-y-auto rounded-xl border border-border bg-card/40 p-3 lg:sticky lg:top-[4.5rem] lg:max-h-[calc(100vh-5.5rem)]">
-          <div className="mb-2 flex items-center justify-between">
+        <aside className="overflow-y-auto rounded-xl border border-border bg-card/40 p-3 h-full flex flex-col min-h-0 max-lg:max-h-[42vh]">
+          <div className="mb-2 flex items-center justify-between shrink-0">
             <span className="eyebrow">{t("cc.context")}</span>
             <button
               type="button"
@@ -56,20 +68,13 @@ export function CommandCenter({
               <PanelLeftClose className="h-4 w-4" />
             </button>
           </div>
-          {contextSlot}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {contextSlot}
+          </div>
         </aside>
       )}
 
-      <div className="min-w-0">
-        {!open && (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-          >
-            <PanelLeftOpen className="h-4 w-4" /> {t("cc.todayWork")}
-          </button>
-        )}
+      <div className={cn("min-w-0 h-full flex flex-col min-h-0", !open && "pl-12 lg:pl-16")}>
         <Workspace examples={examples} deals={deals} principles={principles} role={role} wide />
       </div>
     </div>

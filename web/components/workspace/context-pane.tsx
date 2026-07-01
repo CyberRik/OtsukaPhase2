@@ -125,7 +125,7 @@ export function ContextPane({
                 <div className="min-w-0">
                   <div className="truncate text-[13.5px] font-medium">{name}</div>
                   <div className="truncate text-[11.5px] text-muted-foreground">
-                    {d.stage} · ¥{d.amount.toLocaleString()}
+                    {d.stage} · ¥{d.amount.toLocaleString("ja-JP")}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
