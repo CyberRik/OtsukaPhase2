@@ -7,11 +7,12 @@ into an immutable **evidence bundle**, and a single **reasoner** synthesizes the
 artifact. New capabilities (Filesystem, Email, Calendar, Browser, Office) become
 *additive* — write one class, register it — instead of another rewrite.
 
-> Status: **M0 + M1 + M2 + M3 shipped.** M0 = the engine (`senpai/orchestration/`).
-> M1 = Research. M2 = crew + team gather. M3 = account gather (`senpai/account/`),
-> plus a consolidation pass (dead code removed, shaping de-duplicated). All
-> retrieval-heavy workflows now share the spine, all parity-proven and live. What
-> remains is the deferred simplification phase. See "Migration" below.
+> Status: **M0–M5 shipped.** M0 = the engine (`senpai/orchestration/`). M1 = Research.
+> M2 = crew + team gather. M3 = account gather (`senpai/account/`) + a consolidation
+> pass. M4 = the `/api/chat` tool loop on the engine via the **AdaptiveScheduler**. M5
+> = the **Workspace capability** (`senpai/workspace/`) — sandboxed local documents, and
+> the first production user of **runtime DAG expansion** (`ctx.expand`). Next up: the
+> **`LLMPlanner`** on top of this richer capability graph (see "Roadmap" at the end).
 
 ---
 
@@ -51,9 +52,11 @@ just hardcoded and inconsistent:
 | Target resolution | `resolve_crew_target`, `resolve_customer_detailed` | `crew.py`, `store.py` |
 
 The one genuinely LLM-*planned* surface is `/api/chat`'s `stream_chat_turn` (the
-model picks tools dynamically). **Scope: unify the four deterministic surfaces
-(research, crew, account, team); leave the chat tool-loop alone.** It may later
-share the same capabilities, but its dynamic planning stays.
+model picks tools dynamically). The original scope was "unify the four deterministic
+surfaces; leave the chat tool-loop alone." **M4 revised that:** the chat loop now runs
+its tool calls *through the engine* via the AdaptiveScheduler (below), so it shares the
+engine and parallelism — but its *planning* is still the LLM emitting tool calls, not a
+`Planner`. The DAG-planning of open-ended goals is the `LLMPlanner`, still ahead.
 
 ---
 
@@ -384,11 +387,11 @@ Every retrieval-heavy workflow now gathers through the engine:
 | account | engine (1 cap) | inline `stream_complete` | context/delta |
 | `/api/chat` | LLM-planned tool loop (intentionally not migrated) | routed synthesis | tool/delta |
 
-The deferred simplification phase is now the only remaining work: (1) converge the
-four reasoners onto `reason.py`; (2) unify the three SSE dialects onto the
-`events.py` vocabulary once the frontend can consume it; (3) the product decision on
-collapsing the multi-agent flow; (4) build the `LLMPlanner` seam to fold in
-`/api/chat`. None of these are required for correctness — they are consolidation.
+This table captured the state after M3. **M4 then put `/api/chat` on the engine**
+(AdaptiveScheduler) and **M5 added the Workspace capability + runtime expansion** — see
+those sections and the Roadmap for the current picture. The remaining work is the
+`LLMPlanner` (next) plus the deferred simplification (converge the reasoners onto
+`reason.py`, unify the SSE dialects, the multi-agent-collapse product decision).
 
 ---
 
@@ -415,3 +418,82 @@ This allows a prompt like *"Find the best laptops from MSI, ASUS, Lenovo, and Ac
 ### 3. Stability and UI
 - **Context Length Safety**: When many parallel tools run, their concatenated output could overflow the context window (particularly for the fallback model). To guarantee stability, the engine actively truncates massive parallel payloads (e.g. to 1500 chars) before handing the evidence bundle back to the Reasoner.
 - **Visualizing Parallelism**: In the frontend, tool events are tagged with a `batchId`. The `workspace` chat UI dynamically groups tools from the same batch and renders them using a hierarchical "ticks and squares" timeline, clearly exposing the parallel execution behavior to the user.
+
+---
+
+## M5 — Workspace capability (local files; runtime expansion in production)
+
+The first capability that reaches **outside the seed database** — it finds and reads
+real local documents and returns their text as structured Evidence into the same
+EvidenceBundle every other capability feeds. It is also the **first production use of
+the engine's runtime DAG expansion** (`ctx.expand`), which until now only the M0
+self-test exercised. This is the proof that the spine scales past the seed DB.
+
+`senpai/workspace/` (GPU-free, read-only, sandboxed):
+
+| File | Role |
+|---|---|
+| `sandbox.py` | The single choke point. `safe_path` resolves a path (symlinks included) and rejects anything outside `config.WORKSPACE_ROOT`; `list_documents()` recursively lists allowed files; a missing root degrades to `[]`, never raises. |
+| `extract.py` | Text extraction per type — PDF (`pypdf`), DOCX (`python-docx`), PPTX (`python-pptx`), XLSX (`openpyxl`), TXT/MD (plain). Char-capped, never raises: a corrupt file yields empty text + a note. |
+| `capabilities.py` | `WorkspaceCapability` — `op="find"` relevance-ranks documents and **`ctx.expand`s one `extract` task per hit** (parallel); `op="extract"` reads one file to structured Evidence with a `file://<rel>` citation. |
+| `plan.py` | `workspace_plan(query)` — a single `find` seed task; the DAG grows at runtime to fit what's on disk. |
+| `gather.py` | Runs the plan on the engine; `workspace_evidence()` returns structured `{found, documents, citations}`; `gather_workspace_documents()` reduces to a grounded string. |
+
+**The runtime fan-out (the whole point):**
+
+```
+workspace:find ──► ctx.expand ──► workspace:extract × N   (parallel)
+```
+
+`find` can't know how many documents exist, so the plan seeds one task and the
+capability appends N `extract` tasks once it has looked at the disk — bounded by
+`WORKSPACE_MAX_FILES`. `plan.expanded` fires; the extracts run in parallel; each lands
+as its own fragment keyed `find:extract:<i>`.
+
+**Surface + safety.** Exposed as the `search_workspace_documents` chat tool (junior /
+research / manager subsets), `SEARCH` policy in `metadata.py`, and a `trace.record`
+for the Retrieval Explorer. **Strictly read-only** — there is no write/edit/delete op
+by design; sandbox escape is unit-tested. Config: `SENPAI_WORKSPACE_ROOT`,
+`WORKSPACE_EXTS`, `WORKSPACE_MAX_FILES`, `WORKSPACE_MAX_CHARS`, `WORKSPACE_MAX_BYTES`.
+
+**Tests** (`tests/test_workspace.py`, 7): sandbox rejects `../` / absolute / symlink
+escapes; every declared type extracts; `find` fans out into one `extract` per document
+(the DAG *grew*); citations are `file://…`; fan-out is capped; a missing workspace
+degrades. Full suite: **7 new tests pass, 0 new regressions** (the two remaining
+failures — `test_semantic` lexical, `test_research` ambiguity — are pre-existing and
+fail in isolation, unrelated to this work).
+
+### Reuse of the Segment-Intelligence pattern
+Workspace deliberately mirrors `docs/segment-intelligence.md`'s proven shape: **the
+tool returns grounded retrieval; the chat loop's existing synthesis round does the
+"reduce"** (no nested LLM call in the tool). Same `trace.record` → Retrieval Explorer,
+same "citations are provenance" discipline (`file://<rel>` here, `deal_id`s there).
+So the two are already composable: a manager question can draw on **segment reports**
+(why we lose these deals, from the seed DB) *and* **local files** (the actual proposal
+we sent) in one EvidenceBundle. Fusing them into one grounded answer is exactly the
+job of the `LLMPlanner` next.
+
+---
+
+## Roadmap — what's live vs. what's ahead
+
+| Capability / seam | State |
+|---|---|
+| ExecutionEngine, EvidenceBundle, events | ✅ live (M0) |
+| Research / crew / team / account gather | ✅ live (M1–M3) |
+| Chat loop on engine (AdaptiveScheduler) | ✅ live (M4) |
+| Runtime DAG expansion (`ctx.expand`) | ✅ **live in production** (M5 Workspace) |
+| Workspace: local file find + extract | ✅ live (M5), read-only |
+| `LLMPlanner` (multi-step DAG for open-ended goals) | ▶ **next** — the Planner Protocol seam is reserved |
+| Approval Gate (`OperationKind=WRITE`) | ⏳ stub — generalizes today's `confirm=` |
+| Reducer (map-reduce before synthesis) | ⏳ `PassthroughReducer` stub |
+| `ConnectionProvider` / `auth.required` (Email/Calendar) | ⏳ reserved field/event |
+| Converge the 4 bespoke reasoners onto `reason.py` | ⏳ deferred simplification |
+
+**The next milestone is the `LLMPlanner`.** With Workspace shipped, the planner has a
+capability graph worth orchestrating — CRM + Knowledge + Web + Segment + Workspace — so
+a true end-to-end agentic flow like *"prepare me for tomorrow's Endo Kogyo meeting"*
+becomes: plan a DAG across those capabilities → engine runs it (with Workspace fan-out
+over local proposals/notes) → Reducer compacts → single Reasoner drafts the prep, citing
+both `deal_id`s and `file://` sources. M5 is the proof that the last hop — real files,
+unknown breadth, runtime expansion — already works.

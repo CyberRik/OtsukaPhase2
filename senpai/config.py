@@ -157,6 +157,29 @@ INGESTED_DIR = PKG_DIR / "data" / "ingested"
 # created on first write. The committed seed is never touched by document generation.
 GENERATED_DIR = PKG_DIR / "data" / "generated"
 
+# --- Workspace (sandboxed local document access) ----------------------------
+# The Workspace capability reaches OUTSIDE the seed DB — it finds and reads real
+# local documents (PDF/DOCX/PPTX/XLSX/TXT/MD) and returns structured evidence into
+# the orchestration EvidenceBundle. It is strictly READ-ONLY and confined to
+# WORKSPACE_ROOT: every path is resolved and must stay inside that root (no
+# traversal, no symlink escape). Point SENPAI_WORKSPACE_ROOT at a real docs folder
+# to demo; defaults to a gitignored sample dir under the package.
+WORKSPACE_ROOT = Path(
+    os.environ.get("SENPAI_WORKSPACE_ROOT", str(PKG_DIR / "data" / "workspace"))
+).resolve()
+# Extensions the Workspace will find/extract (read-only). Lowercase, with dot.
+WORKSPACE_EXTS = tuple(
+    e.strip().lower() for e in os.environ.get(
+        "SENPAI_WORKSPACE_EXTS", ".pdf,.docx,.pptx,.xlsx,.txt,.md").split(",") if e.strip())
+# Runtime fan-out cap: a `find` never expands into more than this many parallel
+# `extract` tasks, so one query can't read an unbounded tree.
+WORKSPACE_MAX_FILES = _env_int("SENPAI_WORKSPACE_MAX_FILES", 12)
+# Per-document extracted-text cap (chars) — keeps the evidence bundle bounded and
+# the reasoner context safe, mirroring the chat loop's 1500-char tool truncation.
+WORKSPACE_MAX_CHARS = _env_int("SENPAI_WORKSPACE_MAX_CHARS", 4000)
+# Skip absurdly large files before we even open them (bytes).
+WORKSPACE_MAX_BYTES = _env_int("SENPAI_WORKSPACE_MAX_BYTES", 25_000_000)
+
 # Committed brand template for generated PPTX decks: an Otsuka proposal deck with
 # all content slides stripped, leaving only its slide masters/layouts/theme (the
 # Meiryo UI font + corporate styling). render.render_pptx opens this as the base

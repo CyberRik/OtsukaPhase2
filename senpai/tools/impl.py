@@ -929,6 +929,26 @@ def segment_intelligence(query: str = "", category: str = "", industry: str = ""
     return "\n\n".join(communities.format_report(r) for r in reports)
 
 
+def search_workspace_documents(query: str = "", limit: int = 0) -> str:
+    """Find and read relevant LOCAL documents (PDF/DOCX/PPTX/XLSX/TXT/MD) from the
+    sandboxed workspace, returning their text with per-file citations. Runs on the
+    orchestration engine: one `find` fans out into parallel `extract` tasks. READ-ONLY.
+    The chat loop's synthesis round reduces the returned documents into the answer."""
+    from senpai.retrieval import trace as _trace
+    from senpai.workspace import workspace_evidence
+    lim = None
+    try:
+        lim = int(limit) if limit else None
+    except (TypeError, ValueError):
+        lim = None
+    res = workspace_evidence(query, limit=lim)
+    _trace.record("workspace", scope="local_files",
+                  items=[{"id": d["rel"], "score": d.get("chars")} for d in res["documents"]],
+                  query=query, n=len(res["documents"]))
+    from senpai.workspace.gather import _format
+    return _format(res)
+
+
 _DISPATCH = {
     "query_spr": query_spr,
     "find_deals": find_deals,
@@ -960,6 +980,7 @@ _DISPATCH = {
     "search_notes": search_notes,
     "query_graph": query_graph,
     "segment_intelligence": segment_intelligence,
+    "search_workspace_documents": search_workspace_documents,
     # Document generation (the chatbot's "do stuff" tools)
     "generate_proposal": generate_proposal,
     "generate_ringisho": generate_ringisho,

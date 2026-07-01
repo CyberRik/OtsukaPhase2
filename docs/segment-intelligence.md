@@ -270,6 +270,17 @@ Sample output today:
   ネットワーク機器 this quarter"), a Leiden partition as an alternative axis, and an
   optional `/manager/segments` browsable UI page (currently Copilot-tool-only).
 
+- **Composing with the Workspace capability.** Segment Intelligence and the
+  orchestration **Workspace capability** (`senpai/workspace/`, see
+  `docs/orchestration-architecture.md` §M5) share this exact design — *the tool
+  returns grounded retrieval; the chat loop's synthesis round does the reduce*; same
+  `trace.record` → Retrieval Explorer; citations are provenance (`deal_id`s here,
+  `file://<rel>` there). So they already compose: a manager asking "why do we lose
+  these deals, and what did we actually propose?" can be answered from **segment
+  reports** (the aggregate, from the seed DB) *and* **the real local proposal/notes**
+  (from the workspace) in one EvidenceBundle. Fusing both into a single grounded
+  answer is the job of the forthcoming `LLMPlanner`.
+
 ---
 
 ## 9. TL;DR

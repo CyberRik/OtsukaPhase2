@@ -626,6 +626,29 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_workspace_documents",
+            "description": "Find and READ relevant local documents (PDF, DOCX, PPTX, "
+                           "XLSX, TXT, Markdown) from the user's sandboxed workspace "
+                           "folder, and return their text with per-file citations. Use "
+                           "when the answer may live in the user's own files (a proposal "
+                           "deck, meeting notes, a spreadsheet, a PDF) rather than the CRM "
+                           "or the web — e.g. 'what did we send Endo Kogyo?', 'summarize my "
+                           "notes on this account'. Read-only; never edits or deletes.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string",
+                              "description": "What to look for; matched against file names/paths. Empty returns the most recent documents."},
+                    "limit": {"type": "integer",
+                              "description": "Max documents to read (default/cap set by the server)."},
+                },
+                "required": ["query"],
+            },
+        },
+    },
 ]
 
 
@@ -647,7 +670,7 @@ JUNIOR_TOOLS = _pick(
     "search_notes", "lookup_customer_environment", "get_product_info", "search_products",
     "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
     "send_email", "get_calendar", "route_to_expert", "morning_briefing",
-    "get_seasonal_context", "web_search",
+    "get_seasonal_context", "web_search", "search_workspace_documents",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
 )
 
@@ -657,7 +680,7 @@ MANAGER_TOOLS = _pick(
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
     "search_knowledge", "search_notes", "query_graph", "segment_intelligence", "search_products",
     "create_quote", "schedule_meeting",
-    "send_email", "get_calendar", "draft_message", "web_search",
+    "send_email", "get_calendar", "draft_message", "web_search", "search_workspace_documents",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
 )
 
@@ -668,5 +691,5 @@ MANAGER_TOOLS = _pick(
 RESEARCH_TOOLS = _pick(
     "query_spr", "find_deals", "find_similar_deals", "score_deal_health", "search_notes",
     "lookup_customer_environment", "get_product_info", "segment_intelligence",
-    "get_seasonal_context", "web_search",
+    "get_seasonal_context", "web_search", "search_workspace_documents",
 )
