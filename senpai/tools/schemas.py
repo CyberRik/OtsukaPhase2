@@ -497,6 +497,34 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "segment_intelligence",
+            "description": "Answer AGGREGATE / thematic / portfolio questions across market "
+                           "segments (product category × customer industry) that per-deal or "
+                           "per-account lookups can't: win rates, the common FAILURE MODES "
+                           "behind lost deals, and the recommended play per segment. Use for "
+                           "questions like 'なぜ製造業のサーバー案件は負ける？', 'common failure "
+                           "modes across our lost deals', 'which segment loses most and why', "
+                           "'どのカテゴリの勝率が低い？'. Each segment answer is grounded in real "
+                           "tallies from the deal-health engine and cites the evidence deal ids. "
+                           "Pass category and/or industry to focus; omit both for a portfolio "
+                           "overview.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string",
+                              "description": "The manager's thematic question (used to pick relevant segments)"},
+                    "category": {"type": "string", "description": "Product category filter, e.g. 'サーバー'"},
+                    "industry": {"type": "string", "description": "Customer industry filter, e.g. '製造業'"},
+                    "outcome": {"type": "string", "description": "'won' | 'lost' | 'all' (default 'all') — nudges ranking"},
+                    "limit": {"type": "integer", "description": "Max segments to return (default 6)"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
     # --- Document generation: the chatbot's "do stuff" tools ------------------
     {
         "type": "function",
@@ -626,7 +654,7 @@ JUNIOR_TOOLS = _pick(
 MANAGER_TOOLS = _pick(
     "query_spr", "find_deals", "score_deal_health", "morning_briefing", "list_at_risk_deals",
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
-    "search_knowledge", "search_notes", "query_graph", "search_products",
+    "search_knowledge", "search_notes", "query_graph", "segment_intelligence", "search_products",
     "create_quote", "schedule_meeting",
     "send_email", "get_calendar", "draft_message", "web_search",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
@@ -638,6 +666,6 @@ MANAGER_TOOLS = _pick(
 # source priority (internal records → deal signals → web).
 RESEARCH_TOOLS = _pick(
     "query_spr", "find_deals", "find_similar_deals", "score_deal_health", "search_notes",
-    "lookup_customer_environment", "get_product_info",
+    "lookup_customer_environment", "get_product_info", "segment_intelligence",
     "get_seasonal_context", "web_search",
 )

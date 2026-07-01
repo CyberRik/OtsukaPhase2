@@ -1,0 +1,3102 @@
+[
+  {
+    "id": "cat=ソフトウェア",
+    "level": "category",
+    "category": "ソフトウェア",
+    "industry": "",
+    "deal_ids": [
+      "D005",
+      "D012",
+      "D014",
+      "D021",
+      "D026",
+      "D029",
+      "D030",
+      "D031",
+      "D058",
+      "D059",
+      "D061",
+      "D062",
+      "D064",
+      "D066",
+      "D073",
+      "D076",
+      "D079",
+      "D081",
+      "D085",
+      "D092",
+      "D095",
+      "D101",
+      "D105",
+      "D109",
+      "D117",
+      "D119",
+      "D127",
+      "D128",
+      "D133",
+      "D141",
+      "D142",
+      "D144",
+      "D149",
+      "D157",
+      "D158",
+      "D159",
+      "D168",
+      "D172",
+      "D175",
+      "D183",
+      "D185",
+      "D187",
+      "D188",
+      "D193",
+      "D196",
+      "D198",
+      "D199",
+      "D203",
+      "D204",
+      "D206",
+      "D208",
+      "D213",
+      "D216",
+      "D223",
+      "D224",
+      "D225",
+      "D232",
+      "D236",
+      "D239",
+      "D246",
+      "D252",
+      "D253",
+      "D260",
+      "D263",
+      "D268",
+      "D272",
+      "D281",
+      "D294",
+      "D296",
+      "D303",
+      "D309",
+      "D311",
+      "D319",
+      "D320",
+      "D323",
+      "D344",
+      "D345",
+      "D347",
+      "D350",
+      "D355",
+      "D357",
+      "D358",
+      "D378",
+      "D382",
+      "D387",
+      "D397",
+      "D401",
+      "D402",
+      "D406",
+      "D407",
+      "D408",
+      "D414",
+      "D416",
+      "D419",
+      "D423",
+      "D441",
+      "D448",
+      "D450",
+      "D459",
+      "D462",
+      "D468",
+      "D472",
+      "D477",
+      "D490",
+      "D492",
+      "D501",
+      "D504",
+      "D514"
+    ],
+    "n_deals": 108,
+    "n_won": 65,
+    "n_lost": 14,
+    "n_open": 29,
+    "win_rate": 0.823,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 14
+      },
+      {
+        "signal": "rank_age",
+        "count": 14
+      },
+      {
+        "signal": "rank_regression",
+        "count": 14
+      },
+      {
+        "signal": "stall_language",
+        "count": 7
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 65
+      },
+      {
+        "flag": "missing_fields",
+        "count": 36
+      },
+      {
+        "flag": "stale_active",
+        "count": 11
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 5
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ソフトウェア（カテゴリ全体）】案件108件（成約65・失注14、勝率82%）。失注の主因は「接触の停滞」（14件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器",
+    "level": "category",
+    "category": "OA機器",
+    "industry": "",
+    "deal_ids": [
+      "D004",
+      "D008",
+      "D010",
+      "D011",
+      "D027",
+      "D034",
+      "D038",
+      "D041",
+      "D049",
+      "D055",
+      "D056",
+      "D057",
+      "D060",
+      "D070",
+      "D077",
+      "D082",
+      "D083",
+      "D086",
+      "D087",
+      "D091",
+      "D094",
+      "D097",
+      "D100",
+      "D104",
+      "D108",
+      "D110",
+      "D116",
+      "D134",
+      "D136",
+      "D138",
+      "D143",
+      "D146",
+      "D148",
+      "D153",
+      "D161",
+      "D162",
+      "D165",
+      "D170",
+      "D173",
+      "D177",
+      "D181",
+      "D192",
+      "D200",
+      "D201",
+      "D212",
+      "D214",
+      "D215",
+      "D220",
+      "D230",
+      "D234",
+      "D241",
+      "D257",
+      "D265",
+      "D267",
+      "D269",
+      "D271",
+      "D274",
+      "D286",
+      "D297",
+      "D301",
+      "D314",
+      "D318",
+      "D321",
+      "D325",
+      "D331",
+      "D332",
+      "D337",
+      "D340",
+      "D356",
+      "D360",
+      "D361",
+      "D363",
+      "D367",
+      "D369",
+      "D373",
+      "D374",
+      "D380",
+      "D381",
+      "D388",
+      "D390",
+      "D396",
+      "D399",
+      "D412",
+      "D415",
+      "D417",
+      "D418",
+      "D421",
+      "D427",
+      "D434",
+      "D438",
+      "D443",
+      "D454",
+      "D455",
+      "D460",
+      "D464",
+      "D465",
+      "D471",
+      "D483",
+      "D489",
+      "D493",
+      "D497",
+      "D499",
+      "D507",
+      "D510"
+    ],
+    "n_deals": 104,
+    "n_won": 56,
+    "n_lost": 18,
+    "n_open": 30,
+    "win_rate": 0.757,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 18
+      },
+      {
+        "signal": "rank_age",
+        "count": 18
+      },
+      {
+        "signal": "rank_regression",
+        "count": 18
+      },
+      {
+        "signal": "stall_language",
+        "count": 6
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 66
+      },
+      {
+        "flag": "missing_fields",
+        "count": 38
+      },
+      {
+        "flag": "stale_active",
+        "count": 10
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 5
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器（カテゴリ全体）】案件104件（成約56・失注18、勝率76%）。失注の主因は「接触の停滞」（18件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器",
+    "level": "category",
+    "category": "ネットワーク機器",
+    "industry": "",
+    "deal_ids": [
+      "D003",
+      "D006",
+      "D017",
+      "D018",
+      "D024",
+      "D028",
+      "D033",
+      "D035",
+      "D047",
+      "D051",
+      "D052",
+      "D053",
+      "D069",
+      "D071",
+      "D074",
+      "D078",
+      "D089",
+      "D090",
+      "D096",
+      "D098",
+      "D099",
+      "D103",
+      "D107",
+      "D112",
+      "D114",
+      "D122",
+      "D139",
+      "D147",
+      "D150",
+      "D156",
+      "D166",
+      "D169",
+      "D174",
+      "D176",
+      "D180",
+      "D184",
+      "D191",
+      "D205",
+      "D209",
+      "D211",
+      "D221",
+      "D227",
+      "D228",
+      "D243",
+      "D251",
+      "D261",
+      "D266",
+      "D275",
+      "D280",
+      "D287",
+      "D289",
+      "D293",
+      "D304",
+      "D305",
+      "D306",
+      "D315",
+      "D322",
+      "D326",
+      "D328",
+      "D335",
+      "D338",
+      "D354",
+      "D362",
+      "D376",
+      "D383",
+      "D389",
+      "D392",
+      "D395",
+      "D400",
+      "D404",
+      "D405",
+      "D413",
+      "D420",
+      "D424",
+      "D425",
+      "D430",
+      "D432",
+      "D439",
+      "D440",
+      "D447",
+      "D449",
+      "D451",
+      "D453",
+      "D466",
+      "D470",
+      "D474",
+      "D476",
+      "D482",
+      "D491",
+      "D495",
+      "D500",
+      "D503",
+      "D515",
+      "D516",
+      "D518",
+      "D520"
+    ],
+    "n_deals": 96,
+    "n_won": 46,
+    "n_lost": 23,
+    "n_open": 27,
+    "win_rate": 0.667,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 23
+      },
+      {
+        "signal": "rank_age",
+        "count": 23
+      },
+      {
+        "signal": "rank_regression",
+        "count": 23
+      },
+      {
+        "signal": "stall_language",
+        "count": 12
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 60
+      },
+      {
+        "flag": "missing_fields",
+        "count": 45
+      },
+      {
+        "flag": "stale_active",
+        "count": 10
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 8
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器（カテゴリ全体）】案件96件（成約46・失注23、勝率67%）。失注の主因は「接触の停滞」（23件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器",
+    "level": "category",
+    "category": "PC周辺機器",
+    "industry": "",
+    "deal_ids": [
+      "D001",
+      "D002",
+      "D007",
+      "D009",
+      "D016",
+      "D019",
+      "D023",
+      "D025",
+      "D039",
+      "D040",
+      "D042",
+      "D044",
+      "D045",
+      "D046",
+      "D050",
+      "D054",
+      "D063",
+      "D093",
+      "D118",
+      "D120",
+      "D121",
+      "D126",
+      "D129",
+      "D140",
+      "D145",
+      "D154",
+      "D160",
+      "D171",
+      "D178",
+      "D179",
+      "D186",
+      "D194",
+      "D195",
+      "D217",
+      "D218",
+      "D226",
+      "D229",
+      "D231",
+      "D240",
+      "D242",
+      "D244",
+      "D245",
+      "D247",
+      "D248",
+      "D250",
+      "D258",
+      "D264",
+      "D277",
+      "D278",
+      "D279",
+      "D283",
+      "D284",
+      "D285",
+      "D290",
+      "D292",
+      "D295",
+      "D300",
+      "D307",
+      "D316",
+      "D317",
+      "D329",
+      "D330",
+      "D333",
+      "D336",
+      "D339",
+      "D342",
+      "D343",
+      "D349",
+      "D351",
+      "D353",
+      "D359",
+      "D365",
+      "D370",
+      "D379",
+      "D384",
+      "D386",
+      "D398",
+      "D403",
+      "D410",
+      "D411",
+      "D431",
+      "D452",
+      "D461",
+      "D467",
+      "D473",
+      "D480",
+      "D486",
+      "D505",
+      "D506",
+      "D509",
+      "D519"
+    ],
+    "n_deals": 91,
+    "n_won": 56,
+    "n_lost": 11,
+    "n_open": 24,
+    "win_rate": 0.836,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 11
+      },
+      {
+        "signal": "rank_age",
+        "count": 11
+      },
+      {
+        "signal": "rank_regression",
+        "count": 11
+      },
+      {
+        "signal": "stall_language",
+        "count": 6
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 59
+      },
+      {
+        "flag": "missing_fields",
+        "count": 39
+      },
+      {
+        "flag": "stale_active",
+        "count": 7
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 6
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器（カテゴリ全体）】案件91件（成約56・失注11、勝率84%）。失注の主因は「接触の停滞」（11件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=役務",
+    "level": "category",
+    "category": "役務",
+    "industry": "",
+    "deal_ids": [
+      "D013",
+      "D020",
+      "D032",
+      "D036",
+      "D037",
+      "D043",
+      "D048",
+      "D068",
+      "D075",
+      "D084",
+      "D102",
+      "D106",
+      "D111",
+      "D113",
+      "D124",
+      "D135",
+      "D137",
+      "D151",
+      "D155",
+      "D182",
+      "D219",
+      "D222",
+      "D237",
+      "D238",
+      "D249",
+      "D259",
+      "D288",
+      "D298",
+      "D299",
+      "D302",
+      "D308",
+      "D310",
+      "D324",
+      "D346",
+      "D364",
+      "D371",
+      "D372",
+      "D377",
+      "D385",
+      "D391",
+      "D409",
+      "D433",
+      "D437",
+      "D444",
+      "D446",
+      "D456",
+      "D458",
+      "D463",
+      "D475",
+      "D479",
+      "D481",
+      "D485",
+      "D496",
+      "D502",
+      "D511",
+      "D512",
+      "D513",
+      "D517"
+    ],
+    "n_deals": 58,
+    "n_won": 24,
+    "n_lost": 17,
+    "n_open": 17,
+    "win_rate": 0.585,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 17
+      },
+      {
+        "signal": "rank_age",
+        "count": 17
+      },
+      {
+        "signal": "rank_regression",
+        "count": 17
+      },
+      {
+        "signal": "stall_language",
+        "count": 9
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 42
+      },
+      {
+        "flag": "missing_fields",
+        "count": 28
+      },
+      {
+        "flag": "stale_active",
+        "count": 8
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 2
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【役務（カテゴリ全体）】案件58件（成約24・失注17、勝率58%）。失注の主因は「接触の停滞」（17件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ストレージ",
+    "level": "category",
+    "category": "ストレージ",
+    "industry": "",
+    "deal_ids": [
+      "D015",
+      "D022",
+      "D065",
+      "D080",
+      "D123",
+      "D125",
+      "D131",
+      "D132",
+      "D152",
+      "D164",
+      "D167",
+      "D189",
+      "D190",
+      "D197",
+      "D202",
+      "D207",
+      "D235",
+      "D256",
+      "D262",
+      "D273",
+      "D276",
+      "D291",
+      "D327",
+      "D352",
+      "D393",
+      "D394",
+      "D426",
+      "D442",
+      "D445",
+      "D457",
+      "D484",
+      "D487",
+      "D488",
+      "D494",
+      "D498",
+      "D508"
+    ],
+    "n_deals": 36,
+    "n_won": 18,
+    "n_lost": 10,
+    "n_open": 8,
+    "win_rate": 0.643,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 10
+      },
+      {
+        "signal": "rank_age",
+        "count": 10
+      },
+      {
+        "signal": "rank_regression",
+        "count": 10
+      },
+      {
+        "signal": "stall_language",
+        "count": 4
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 26
+      },
+      {
+        "flag": "missing_fields",
+        "count": 13
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 2
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ストレージ（カテゴリ全体）】案件36件（成約18・失注10、勝率64%）。失注の主因は「接触の停滞」（10件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=サーバー",
+    "level": "category",
+    "category": "サーバー",
+    "industry": "",
+    "deal_ids": [
+      "D067",
+      "D072",
+      "D088",
+      "D115",
+      "D130",
+      "D163",
+      "D210",
+      "D233",
+      "D254",
+      "D255",
+      "D270",
+      "D282",
+      "D312",
+      "D313",
+      "D334",
+      "D341",
+      "D348",
+      "D366",
+      "D368",
+      "D375",
+      "D422",
+      "D428",
+      "D429",
+      "D435",
+      "D436",
+      "D469",
+      "D478"
+    ],
+    "n_deals": 27,
+    "n_won": 15,
+    "n_lost": 7,
+    "n_open": 5,
+    "win_rate": 0.682,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 7
+      },
+      {
+        "signal": "rank_age",
+        "count": 7
+      },
+      {
+        "signal": "rank_regression",
+        "count": 7
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 19
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 18
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【サーバー（カテゴリ全体）】案件27件（成約15・失注7、勝率68%）。失注の主因は「接触の停滞」（7件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器|ind=小売",
+    "level": "leaf",
+    "category": "PC周辺機器",
+    "industry": "小売",
+    "deal_ids": [
+      "D001",
+      "D023",
+      "D042",
+      "D046",
+      "D093",
+      "D145",
+      "D160",
+      "D171",
+      "D186",
+      "D217",
+      "D250",
+      "D283",
+      "D284",
+      "D285",
+      "D292",
+      "D329",
+      "D339",
+      "D353",
+      "D370",
+      "D386",
+      "D461",
+      "D486"
+    ],
+    "n_deals": 22,
+    "n_won": 15,
+    "n_lost": 2,
+    "n_open": 5,
+    "win_rate": 0.882,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 15
+      },
+      {
+        "flag": "missing_fields",
+        "count": 10
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器×小売】案件22件（成約15・失注2、勝率88%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=飲食",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "飲食",
+    "deal_ids": [
+      "D064",
+      "D079",
+      "D081",
+      "D144",
+      "D159",
+      "D172",
+      "D183",
+      "D206",
+      "D208",
+      "D223",
+      "D260",
+      "D263",
+      "D344",
+      "D350",
+      "D358",
+      "D387",
+      "D406",
+      "D407",
+      "D448",
+      "D459",
+      "D468",
+      "D514"
+    ],
+    "n_deals": 22,
+    "n_won": 15,
+    "n_lost": 4,
+    "n_open": 3,
+    "win_rate": 0.789,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 4
+      },
+      {
+        "signal": "rank_age",
+        "count": 4
+      },
+      {
+        "signal": "rank_regression",
+        "count": 4
+      },
+      {
+        "signal": "stall_language",
+        "count": 3
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 16
+      },
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ソフトウェア×飲食】案件22件（成約15・失注4、勝率79%）。失注の主因は「接触の停滞」（4件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=IT",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "IT",
+    "deal_ids": [
+      "D010",
+      "D060",
+      "D077",
+      "D097",
+      "D110",
+      "D153",
+      "D162",
+      "D181",
+      "D241",
+      "D257",
+      "D332",
+      "D367",
+      "D381",
+      "D421",
+      "D427",
+      "D443",
+      "D464",
+      "D465"
+    ],
+    "n_deals": 18,
+    "n_won": 8,
+    "n_lost": 5,
+    "n_open": 5,
+    "win_rate": 0.615,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 5
+      },
+      {
+        "signal": "rank_age",
+        "count": 5
+      },
+      {
+        "signal": "rank_regression",
+        "count": 5
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 9
+      },
+      {
+        "flag": "missing_fields",
+        "count": 8
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 2
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×IT】案件18件（成約8・失注5、勝率62%）。失注の主因は「接触の停滞」（5件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=飲食",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "飲食",
+    "deal_ids": [
+      "D024",
+      "D033",
+      "D035",
+      "D047",
+      "D098",
+      "D114",
+      "D147",
+      "D166",
+      "D205",
+      "D209",
+      "D251",
+      "D266",
+      "D439",
+      "D440",
+      "D453",
+      "D495",
+      "D520"
+    ],
+    "n_deals": 17,
+    "n_won": 6,
+    "n_lost": 5,
+    "n_open": 6,
+    "win_rate": 0.545,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 5
+      },
+      {
+        "signal": "rank_age",
+        "count": 5
+      },
+      {
+        "signal": "rank_regression",
+        "count": 5
+      },
+      {
+        "signal": "stall_language",
+        "count": 3
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 9
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 8
+      },
+      {
+        "flag": "stale_active",
+        "count": 3
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 3
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×飲食】案件17件（成約6・失注5、勝率55%）。失注の主因は「接触の停滞」（5件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=小売",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "小売",
+    "deal_ids": [
+      "D014",
+      "D026",
+      "D062",
+      "D092",
+      "D142",
+      "D168",
+      "D193",
+      "D216",
+      "D246",
+      "D319",
+      "D347",
+      "D382",
+      "D414",
+      "D472",
+      "D492",
+      "D501"
+    ],
+    "n_deals": 16,
+    "n_won": 9,
+    "n_lost": 3,
+    "n_open": 4,
+    "win_rate": 0.75,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 13
+      },
+      {
+        "flag": "missing_fields",
+        "count": 8
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ソフトウェア×小売】案件16件（成約9・失注3、勝率75%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=小売",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "小売",
+    "deal_ids": [
+      "D004",
+      "D108",
+      "D173",
+      "D215",
+      "D267",
+      "D271",
+      "D297",
+      "D318",
+      "D369",
+      "D374",
+      "D399",
+      "D415",
+      "D417",
+      "D454",
+      "D471"
+    ],
+    "n_deals": 15,
+    "n_won": 11,
+    "n_lost": 2,
+    "n_open": 2,
+    "win_rate": 0.846,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 11
+      },
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×小売】案件15件（成約11・失注2、勝率85%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=不動産",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "不動産",
+    "deal_ids": [
+      "D017",
+      "D028",
+      "D052",
+      "D089",
+      "D103",
+      "D122",
+      "D156",
+      "D180",
+      "D221",
+      "D293",
+      "D389",
+      "D392",
+      "D470",
+      "D482",
+      "D515"
+    ],
+    "n_deals": 15,
+    "n_won": 6,
+    "n_lost": 3,
+    "n_open": 6,
+    "win_rate": 0.667,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 10
+      },
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×不動産】案件15件（成約6・失注3、勝率67%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=飲食",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "飲食",
+    "deal_ids": [
+      "D034",
+      "D038",
+      "D041",
+      "D083",
+      "D091",
+      "D104",
+      "D170",
+      "D192",
+      "D234",
+      "D301",
+      "D356",
+      "D363",
+      "D390",
+      "D455",
+      "D510"
+    ],
+    "n_deals": 15,
+    "n_won": 7,
+    "n_lost": 2,
+    "n_open": 6,
+    "win_rate": 0.778,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 11
+      },
+      {
+        "flag": "missing_fields",
+        "count": 5
+      },
+      {
+        "flag": "stale_active",
+        "count": 3
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×飲食】案件15件（成約7・失注2、勝率78%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器|ind=飲食",
+    "level": "leaf",
+    "category": "PC周辺機器",
+    "industry": "飲食",
+    "deal_ids": [
+      "D039",
+      "D121",
+      "D178",
+      "D248",
+      "D279",
+      "D290",
+      "D295",
+      "D300",
+      "D316",
+      "D317",
+      "D349",
+      "D403",
+      "D410",
+      "D431"
+    ],
+    "n_deals": 14,
+    "n_won": 11,
+    "n_lost": 1,
+    "n_open": 2,
+    "win_rate": 0.917,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 1
+      },
+      {
+        "signal": "rank_age",
+        "count": 1
+      },
+      {
+        "signal": "rank_regression",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 9
+      },
+      {
+        "flag": "missing_fields",
+        "count": 5
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器×飲食】案件14件（成約11・失注1、勝率92%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=士業",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "士業",
+    "deal_ids": [
+      "D005",
+      "D029",
+      "D031",
+      "D076",
+      "D119",
+      "D128",
+      "D187",
+      "D203",
+      "D213",
+      "D294",
+      "D397",
+      "D419",
+      "D450"
+    ],
+    "n_deals": 13,
+    "n_won": 6,
+    "n_lost": 1,
+    "n_open": 6,
+    "win_rate": 0.857,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 1
+      },
+      {
+        "signal": "rank_age",
+        "count": 1
+      },
+      {
+        "signal": "rank_regression",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 4
+      },
+      {
+        "flag": "missing_fields",
+        "count": 2
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ソフトウェア×士業】案件13件（成約6・失注1、勝率86%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=士業",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "士業",
+    "deal_ids": [
+      "D006",
+      "D018",
+      "D078",
+      "D090",
+      "D150",
+      "D289",
+      "D335",
+      "D383",
+      "D400",
+      "D404",
+      "D447",
+      "D451",
+      "D466"
+    ],
+    "n_deals": 13,
+    "n_won": 6,
+    "n_lost": 3,
+    "n_open": 4,
+    "win_rate": 0.667,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 10
+      },
+      {
+        "flag": "missing_fields",
+        "count": 5
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×士業】案件13件（成約6・失注3、勝率67%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=小売",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "小売",
+    "deal_ids": [
+      "D053",
+      "D069",
+      "D099",
+      "D169",
+      "D227",
+      "D228",
+      "D287",
+      "D326",
+      "D376",
+      "D420",
+      "D424",
+      "D432",
+      "D474"
+    ],
+    "n_deals": 13,
+    "n_won": 7,
+    "n_lost": 3,
+    "n_open": 3,
+    "win_rate": 0.7,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 8
+      },
+      {
+        "flag": "missing_fields",
+        "count": 7
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×小売】案件13件（成約7・失注3、勝率70%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器|ind=不動産",
+    "level": "leaf",
+    "category": "PC周辺機器",
+    "industry": "不動産",
+    "deal_ids": [
+      "D002",
+      "D044",
+      "D118",
+      "D179",
+      "D226",
+      "D242",
+      "D278",
+      "D333",
+      "D411",
+      "D505",
+      "D519"
+    ],
+    "n_deals": 11,
+    "n_won": 6,
+    "n_lost": 2,
+    "n_open": 3,
+    "win_rate": 0.75,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 7
+      },
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器×不動産】案件11件（成約6・失注2、勝率75%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=IT",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "IT",
+    "deal_ids": [
+      "D012",
+      "D058",
+      "D095",
+      "D117",
+      "D157",
+      "D252",
+      "D303",
+      "D309",
+      "D401",
+      "D416",
+      "D504"
+    ],
+    "n_deals": 11,
+    "n_won": 6,
+    "n_lost": 1,
+    "n_open": 4,
+    "win_rate": 0.857,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 1
+      },
+      {
+        "signal": "rank_age",
+        "count": 1
+      },
+      {
+        "signal": "rank_regression",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 4
+      },
+      {
+        "flag": "stale_active",
+        "count": 3
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ソフトウェア×IT】案件11件（成約6・失注1、勝率86%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=建設",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "建設",
+    "deal_ids": [
+      "D030",
+      "D085",
+      "D149",
+      "D175",
+      "D196",
+      "D224",
+      "D232",
+      "D296",
+      "D311",
+      "D345",
+      "D357"
+    ],
+    "n_deals": 11,
+    "n_won": 9,
+    "n_lost": 0,
+    "n_open": 2,
+    "win_rate": 1.0,
+    "top_failure_signals": [],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 7
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      },
+      {
+        "flag": "missing_fields",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [],
+    "narrative_ja": "【ソフトウェア×建設】案件11件（成約9・失注0、勝率100%）。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=士業",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "士業",
+    "deal_ids": [
+      "D008",
+      "D146",
+      "D161",
+      "D212",
+      "D286",
+      "D331",
+      "D373",
+      "D380",
+      "D489",
+      "D497"
+    ],
+    "n_deals": 10,
+    "n_won": 7,
+    "n_lost": 2,
+    "n_open": 1,
+    "win_rate": 0.778,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×士業】案件10件（成約7・失注2、勝率78%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=役務|ind=小売",
+    "level": "leaf",
+    "category": "役務",
+    "industry": "小売",
+    "deal_ids": [
+      "D020",
+      "D032",
+      "D137",
+      "D222",
+      "D299",
+      "D324",
+      "D346",
+      "D371",
+      "D433",
+      "D496"
+    ],
+    "n_deals": 10,
+    "n_won": 5,
+    "n_lost": 2,
+    "n_open": 3,
+    "win_rate": 0.714,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 9
+      },
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【役務×小売】案件10件（成約5・失注2、勝率71%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=不動産",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "不動産",
+    "deal_ids": [
+      "D027",
+      "D116",
+      "D134",
+      "D201",
+      "D274",
+      "D321",
+      "D388",
+      "D460",
+      "D483",
+      "D507"
+    ],
+    "n_deals": 10,
+    "n_won": 4,
+    "n_lost": 3,
+    "n_open": 3,
+    "win_rate": 0.571,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 5
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 4
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×不動産】案件10件（成約4・失注3、勝率57%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=教育",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "教育",
+    "deal_ids": [
+      "D059",
+      "D073",
+      "D141",
+      "D158",
+      "D199",
+      "D239",
+      "D281",
+      "D320",
+      "D323",
+      "D402"
+    ],
+    "n_deals": 10,
+    "n_won": 8,
+    "n_lost": 0,
+    "n_open": 2,
+    "win_rate": 1.0,
+    "top_failure_signals": [],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 4
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 4
+      },
+      {
+        "flag": "stale_active",
+        "count": 2
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [],
+    "narrative_ja": "【ソフトウェア×教育】案件10件（成約8・失注0、勝率100%）。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器|ind=士業",
+    "level": "leaf",
+    "category": "PC周辺機器",
+    "industry": "士業",
+    "deal_ids": [
+      "D007",
+      "D009",
+      "D025",
+      "D050",
+      "D154",
+      "D229",
+      "D244",
+      "D480",
+      "D506"
+    ],
+    "n_deals": 9,
+    "n_won": 3,
+    "n_lost": 2,
+    "n_open": 4,
+    "win_rate": 0.6,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 3
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 3
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器×士業】案件9件（成約3・失注2、勝率60%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=役務|ind=IT",
+    "level": "leaf",
+    "category": "役務",
+    "industry": "IT",
+    "deal_ids": [
+      "D013",
+      "D037",
+      "D075",
+      "D151",
+      "D182",
+      "D249",
+      "D288",
+      "D463",
+      "D511"
+    ],
+    "n_deals": 9,
+    "n_won": 4,
+    "n_lost": 2,
+    "n_open": 3,
+    "win_rate": 0.667,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 4
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【役務×IT】案件9件（成約4・失注2、勝率67%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ストレージ|ind=小売",
+    "level": "leaf",
+    "category": "ストレージ",
+    "industry": "小売",
+    "deal_ids": [
+      "D022",
+      "D080",
+      "D164",
+      "D189",
+      "D190",
+      "D202",
+      "D442",
+      "D445",
+      "D488"
+    ],
+    "n_deals": 9,
+    "n_won": 4,
+    "n_lost": 3,
+    "n_open": 2,
+    "win_rate": 0.571,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 7
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ストレージ×小売】案件9件（成約4・失注3、勝率57%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=建設",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "建設",
+    "deal_ids": [
+      "D051",
+      "D071",
+      "D074",
+      "D107",
+      "D174",
+      "D176",
+      "D305",
+      "D516",
+      "D518"
+    ],
+    "n_deals": 9,
+    "n_won": 3,
+    "n_lost": 2,
+    "n_open": 4,
+    "win_rate": 0.6,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 2
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×建設】案件9件（成約3・失注2、勝率60%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器|ind=建設",
+    "level": "leaf",
+    "category": "PC周辺機器",
+    "industry": "建設",
+    "deal_ids": [
+      "D063",
+      "D120",
+      "D140",
+      "D231",
+      "D277",
+      "D307",
+      "D343",
+      "D452",
+      "D509"
+    ],
+    "n_deals": 9,
+    "n_won": 4,
+    "n_lost": 2,
+    "n_open": 3,
+    "win_rate": 0.667,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 7
+      },
+      {
+        "flag": "missing_fields",
+        "count": 4
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器×建設】案件9件（成約4・失注2、勝率67%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ソフトウェア|ind=不動産",
+    "level": "leaf",
+    "category": "ソフトウェア",
+    "industry": "不動産",
+    "deal_ids": [
+      "D105",
+      "D109",
+      "D204",
+      "D236",
+      "D268",
+      "D272",
+      "D355",
+      "D462",
+      "D490"
+    ],
+    "n_deals": 9,
+    "n_won": 5,
+    "n_lost": 2,
+    "n_open": 2,
+    "win_rate": 0.714,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 5
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 5
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ソフトウェア×不動産】案件9件（成約5・失注2、勝率71%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=医療",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "医療",
+    "deal_ids": [
+      "D003",
+      "D139",
+      "D275",
+      "D362",
+      "D405",
+      "D413",
+      "D425",
+      "D503"
+    ],
+    "n_deals": 8,
+    "n_won": 4,
+    "n_lost": 2,
+    "n_open": 2,
+    "win_rate": 0.667,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 5
+      },
+      {
+        "flag": "missing_fields",
+        "count": 4
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×医療】案件8件（成約4・失注2、勝率67%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=建設",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "建設",
+    "deal_ids": [
+      "D011",
+      "D055",
+      "D070",
+      "D148",
+      "D177",
+      "D418",
+      "D438",
+      "D499"
+    ],
+    "n_deals": 8,
+    "n_won": 3,
+    "n_lost": 2,
+    "n_open": 3,
+    "win_rate": 0.6,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 5
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×建設】案件8件（成約3・失注2、勝率60%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=医療",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "医療",
+    "deal_ids": [
+      "D057",
+      "D138",
+      "D143",
+      "D214",
+      "D265",
+      "D325",
+      "D337",
+      "D340"
+    ],
+    "n_deals": 8,
+    "n_won": 6,
+    "n_lost": 0,
+    "n_open": 2,
+    "win_rate": 1.0,
+    "top_failure_signals": [],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [],
+    "narrative_ja": "【OA機器×医療】案件8件（成約6・失注0、勝率100%）。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=役務|ind=飲食",
+    "level": "leaf",
+    "category": "役務",
+    "industry": "飲食",
+    "deal_ids": [
+      "D106",
+      "D155",
+      "D259",
+      "D308",
+      "D475",
+      "D481",
+      "D513",
+      "D517"
+    ],
+    "n_deals": 8,
+    "n_won": 3,
+    "n_lost": 4,
+    "n_open": 1,
+    "win_rate": 0.429,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 4
+      },
+      {
+        "signal": "rank_age",
+        "count": 4
+      },
+      {
+        "signal": "rank_regression",
+        "count": 4
+      },
+      {
+        "signal": "stall_language",
+        "count": 3
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 4
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      },
+      {
+        "flag": "optimism_mismatch",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【役務×飲食】案件8件（成約3・失注4、勝率43%）。失注の主因は「接触の停滞」（4件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=教育",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "教育",
+    "deal_ids": [
+      "D112",
+      "D184",
+      "D191",
+      "D280",
+      "D304",
+      "D306",
+      "D395"
+    ],
+    "n_deals": 7,
+    "n_won": 6,
+    "n_lost": 0,
+    "n_open": 1,
+    "win_rate": 1.0,
+    "top_failure_signals": [],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 5
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      },
+      {
+        "flag": "stale_active",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [],
+    "narrative_ja": "【ネットワーク機器×教育】案件7件（成約6・失注0、勝率100%）。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=PC周辺機器|ind=医療",
+    "level": "leaf",
+    "category": "PC周辺機器",
+    "industry": "医療",
+    "deal_ids": [
+      "D194",
+      "D240",
+      "D330",
+      "D342",
+      "D351",
+      "D467",
+      "D473"
+    ],
+    "n_deals": 7,
+    "n_won": 5,
+    "n_lost": 2,
+    "n_open": 0,
+    "win_rate": 0.714,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 6
+      },
+      {
+        "flag": "missing_fields",
+        "count": 4
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【PC周辺機器×医療】案件7件（成約5・失注2、勝率71%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=サーバー|ind=飲食",
+    "level": "leaf",
+    "category": "サーバー",
+    "industry": "飲食",
+    "deal_ids": [
+      "D233",
+      "D255",
+      "D313",
+      "D348",
+      "D375",
+      "D435",
+      "D436"
+    ],
+    "n_deals": 7,
+    "n_won": 5,
+    "n_lost": 2,
+    "n_open": 0,
+    "win_rate": 0.714,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 2
+      },
+      {
+        "signal": "rank_age",
+        "count": 2
+      },
+      {
+        "signal": "rank_regression",
+        "count": 2
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "missing_fields",
+        "count": 6
+      },
+      {
+        "flag": "unsupported_rank",
+        "count": 4
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【サーバー×飲食】案件7件（成約5・失注2、勝率71%）。失注の主因は「接触の停滞」（2件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=物流",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "物流",
+    "deal_ids": [
+      "D049",
+      "D220",
+      "D360",
+      "D361",
+      "D412",
+      "D493"
+    ],
+    "n_deals": 6,
+    "n_won": 4,
+    "n_lost": 1,
+    "n_open": 1,
+    "win_rate": 0.8,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 1
+      },
+      {
+        "signal": "rank_age",
+        "count": 1
+      },
+      {
+        "signal": "rank_regression",
+        "count": 1
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 5
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      },
+      {
+        "flag": "close_date_passed",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【OA機器×物流】案件6件（成約4・失注1、勝率80%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ストレージ|ind=士業",
+    "level": "leaf",
+    "category": "ストレージ",
+    "industry": "士業",
+    "deal_ids": [
+      "D167",
+      "D235",
+      "D291",
+      "D394",
+      "D457"
+    ],
+    "n_deals": 5,
+    "n_won": 4,
+    "n_lost": 1,
+    "n_open": 0,
+    "win_rate": 0.8,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 1
+      },
+      {
+        "signal": "rank_age",
+        "count": 1
+      },
+      {
+        "signal": "rank_regression",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 4
+      },
+      {
+        "flag": "missing_fields",
+        "count": 3
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ストレージ×士業】案件5件（成約4・失注1、勝率80%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=OA機器|ind=製造",
+    "level": "leaf",
+    "category": "OA機器",
+    "industry": "製造",
+    "deal_ids": [
+      "D200",
+      "D230",
+      "D269",
+      "D314",
+      "D396"
+    ],
+    "n_deals": 5,
+    "n_won": 5,
+    "n_lost": 0,
+    "n_open": 0,
+    "win_rate": 1.0,
+    "top_failure_signals": [],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 4
+      }
+    ],
+    "recommended_principle_ids": [],
+    "narrative_ja": "【OA機器×製造】案件5件（成約5・失注0、勝率100%）。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=製造",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "製造",
+    "deal_ids": [
+      "D211",
+      "D243",
+      "D328",
+      "D338",
+      "D449"
+    ],
+    "n_deals": 5,
+    "n_won": 4,
+    "n_lost": 1,
+    "n_open": 0,
+    "win_rate": 0.8,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 1
+      },
+      {
+        "signal": "rank_age",
+        "count": 1
+      },
+      {
+        "signal": "rank_regression",
+        "count": 1
+      },
+      {
+        "signal": "stall_language",
+        "count": 1
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 3
+      },
+      {
+        "flag": "missing_fields",
+        "count": 1
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×製造】案件5件（成約4・失注1、勝率80%）。失注の主因は「接触の停滞」（1件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  },
+  {
+    "id": "cat=ネットワーク機器|ind=IT",
+    "level": "leaf",
+    "category": "ネットワーク機器",
+    "industry": "IT",
+    "deal_ids": [
+      "D261",
+      "D354",
+      "D476",
+      "D491",
+      "D500"
+    ],
+    "n_deals": 5,
+    "n_won": 2,
+    "n_lost": 3,
+    "n_open": 0,
+    "win_rate": 0.4,
+    "top_failure_signals": [
+      {
+        "signal": "staleness",
+        "count": 3
+      },
+      {
+        "signal": "rank_age",
+        "count": 3
+      },
+      {
+        "signal": "rank_regression",
+        "count": 3
+      },
+      {
+        "signal": "stall_language",
+        "count": 2
+      }
+    ],
+    "top_flags": [
+      {
+        "flag": "unsupported_rank",
+        "count": 3
+      },
+      {
+        "flag": "missing_fields",
+        "count": 2
+      }
+    ],
+    "recommended_principle_ids": [
+      "P001"
+    ],
+    "narrative_ja": "【ネットワーク機器×IT】案件5件（成約2・失注3、勝率40%）。失注の主因は「接触の停滞」（3件）。推奨原則: P001。",
+    "narrative_source": "template",
+    "grounded": true
+  }
+]

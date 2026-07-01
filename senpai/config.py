@@ -139,6 +139,15 @@ COACH_USE_CORPUS = os.environ.get("SENPAI_COACH_CORPUS", "1").lower() not in ("0
 PKG_DIR = Path(__file__).resolve().parent
 SEED_DIR = PKG_DIR / "data" / "seed"
 INDEX_DIR = PKG_DIR / "data" / "index"   # committed dense-embedding vectors (build_index.py)
+# Committed Segment-Intelligence community reports (build_communities.py). Like the
+# dense index, this is a committed build artifact so the runtime is GPU-free — the
+# deterministic stats can always be recomputed, and the optional LLM narratives ride
+# along. Missing file → senpai.graph.communities rebuilds deterministically in-memory.
+COMMUNITIES_PATH = INDEX_DIR / "communities.json"
+# A category×industry leaf segment is only emitted as its own report when it has at
+# least this many CLOSED deals (won+lost); thinner leaves are represented by their
+# parent category rollup, which always aggregates every deal in the category.
+SEGMENT_MIN_DEALS = _env_int("SENPAI_SEGMENT_MIN_DEALS", 5)
 # Sidecar dir for runtime-ingested rows (daily reports, etc.). Gitignored and
 # loaded as an OVERLAY on top of SEED_DIR by senpai.data.store — the committed
 # seed stays canonical/byte-stable; ingested data is demo-only and never merged.

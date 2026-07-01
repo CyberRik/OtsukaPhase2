@@ -58,6 +58,7 @@ HIGH_REASONING_TOOLS: frozenset[str] = frozenset({
     "team_report_digest",       # cross-report synthesis
     "rep_coaching_focus",       # multi-signal judgement
     "find_similar_deals",       # reasoning by analogy
+    "segment_intelligence",     # cross-segment sensemaking (failure modes, win rates)
 })
 
 # Tools that just surface grounded records — restating them needs no reasoning.
