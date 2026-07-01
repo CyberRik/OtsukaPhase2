@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, FileUp, Loader2, Save, Upload } from "lucide-react";
 import { api } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { useSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import type { ActivityDraft, DealRow, GrowthData } from "@/lib/types";
 
@@ -28,6 +29,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function JuniorIngestionPage() {
   const { t } = useT();
+  const { employeeId: sessionEmp } = useSession();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [deals, setDeals] = useState<DealRow[]>([]);
@@ -45,11 +47,13 @@ export default function JuniorIngestionPage() {
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
-    Promise.all([api.dashboard(), api.growth()]).then(([db, gr]) => {
+    // Saved activity is attributed to the logged-in junior's adopted rep; fall
+    // back to the growth default only when there's no session (offline demo).
+    Promise.all([api.dashboard(), api.growth(sessionEmp ?? undefined)]).then(([db, gr]) => {
       setDeals(db.data.deals);
-      setEmployeeId(gr.data.growth.rep.employee_id);
+      setEmployeeId(sessionEmp ?? gr.data.growth.rep.employee_id);
     });
-  }, []);
+  }, [sessionEmp]);
 
   // Unique customers, derived from the rep's pipeline deals (the picker options).
   const customers = useMemo<Customer[]>(() => {

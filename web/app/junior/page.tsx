@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { currentEmployeeId } from "@/lib/server-session";
 import { CommandCenter } from "@/components/workspace/command-center";
 import { ContextPane } from "@/components/workspace/context-pane";
 
@@ -8,11 +9,12 @@ export const dynamic = "force-dynamic";
 // the left, the Copilot (Workspace) on the right. Same server-side fetch the
 // standalone Workspace page used.
 export default async function JuniorHome() {
+  const eid = await currentEmployeeId();
   const [{ data: ex }, { data: db }, { data: pr }, { data: gr }] = await Promise.all([
     api.coachExamples(),
     api.dashboard(),
     api.principles(),
-    api.growth(),
+    api.growth(eid),
   ]);
 
   return (

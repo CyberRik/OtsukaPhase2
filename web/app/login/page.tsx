@@ -25,10 +25,11 @@ function LoginForm() {
   const Icon = role === "manager" ? LayoutDashboard : UserRound;
   const accent = role === "manager" ? "text-navy" : "text-primary";
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (login(role, username, password)) {
-      router.replace(role === "manager" ? "/manager" : "/junior");
+    const resolved = await login(role, username, password);
+    if (resolved) {
+      router.replace(resolved === "manager" ? "/manager" : "/junior");
     } else {
       setError(true);
     }
@@ -100,6 +101,13 @@ function LoginForm() {
                 {creds.username} / {creds.password}
               </div>
             </div>
+
+            <p className="mt-5 text-center text-[12px] text-muted-foreground">
+              {t("login.noAccount")}{" "}
+              <Link href={`/signup?role=${role}`} className="font-medium text-primary hover:underline">
+                {t("login.createAccount")}
+              </Link>
+            </p>
           </div>
         </div>
       </main>

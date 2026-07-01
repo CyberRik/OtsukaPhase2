@@ -34,6 +34,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 from senpai import config
+from senpai.api import auth
 from senpai.coach.cases import find_similar_cases
 from senpai.coach.context import build_commentary_context
 from senpai.coaching import coaching_workspace
@@ -228,6 +229,77 @@ def _item_payload(it) -> dict:
 def health():
     return {"status": "ok", "today": _today().isoformat(),
             "pinned": bool(os.environ.get("SENPAI_TODAY"))}
+
+
+# ---------------------------------------------------------------------------
+# auth — simple demo signup/login (persisted, hashed accounts; see senpai.api.auth)
+# ---------------------------------------------------------------------------
+class SignupRequest(BaseModel):
+    username: str
+    password: str
+    role: Literal["junior", "manager"] = "junior"
+    # Which seed rep a junior signs up AS (adopts). Required for juniors so the
+    # dashboard resolves to a real, populated identity; ignored for managers.
+    employee_id: str | None = None
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+@app.get("/api/reps/juniors")
+def reps_juniors():
+    """The junior roster for the signup rep-picker: which salesperson am I?"""
+    return {"juniors": [{"employee_id": r["employee_id"], "name": r["name"]}
+                        for r in junior_reps()]}
+
+
+@app.post("/api/auth/signup")
+def auth_signup(req: SignupRequest):
+    """Create an account. 400 if the username is taken, inputs are blank, or a
+    junior didn't pick a valid rep. Returns a session token plus the account's
+    username, role, and employee_id."""
+    employee_id: str | None = None
+    if req.role == "junior":
+        valid = {r["employee_id"] for r in junior_reps()}
+        if req.employee_id not in valid:
+            raise HTTPException(400, "choose which sales rep you are")
+        employee_id = req.employee_id
+    try:
+        user = auth.create_user(req.username, req.password, req.role,
+                                employee_id=employee_id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return {"token": auth.issue_token(), **user}
+
+
+@app.post("/api/auth/login")
+def auth_login(req: LoginRequest):
+    """Authenticate. 401 on bad credentials. Returns a session token plus the
+    account's username, role, and employee_id (role picks the experience; the
+    employee_id scopes a junior's data to their adopted rep)."""
+    user = auth.verify_user(req.username, req.password)
+    if user is None:
+        raise HTTPException(401, "invalid username or password")
+    return {"token": auth.issue_token(), **user}
+
+
+# The two classic demo accounts, seeded through the real auth path so they keep
+# working (junior adopts the first seed junior rep). Idempotent — skips any that
+# already exist (including real signups that claimed the name).
+def _seed_demo_users() -> None:
+    juniors = junior_reps()
+    first_junior = juniors[0]["employee_id"] if juniors else None
+    for username, role, eid in (("junior", "junior", first_junior),
+                                ("manager", "manager", None)):
+        try:
+            auth.create_user(username, "demo123", role, employee_id=eid)
+        except ValueError:
+            pass  # already seeded (or claimed) — leave it
+
+
+_seed_demo_users()
 
 
 # ---------------------------------------------------------------------------

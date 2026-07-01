@@ -77,7 +77,57 @@ async function post<T>(path: string, body: unknown, fallback: T): Promise<Fetche
   }
 }
 
+// --- auth --------------------------------------------------------------------
+// Signup/login hit the bridge directly. Unlike the read endpoints there's no
+// fixture fallback — auth must be real — so failures surface as { ok:false }.
+export interface AuthResult {
+  ok: boolean;
+  token?: string;
+  username?: string;
+  role?: "junior" | "manager";
+  employee_id?: string | null;
+  error?: string;
+}
+
+async function authPost(path: string, body: unknown): Promise<AuthResult> {
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!res.ok) {
+      return { ok: false, error: (data.detail as string) ?? `http_${res.status}` };
+    }
+    return {
+      ok: true,
+      token: data.token as string,
+      username: data.username as string,
+      role: data.role as "junior" | "manager",
+      employee_id: (data.employee_id as string | null) ?? null,
+    };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
 export const api = {
+  // The junior roster for the signup rep-picker ("which salesperson am I?").
+  juniorReps: () =>
+    get<{ juniors: { employee_id: string; name: string }[] }>(
+      "/api/reps/juniors",
+      { juniors: [] },
+    ),
+  signup: (
+    username: string,
+    password: string,
+    role: "junior" | "manager",
+    employeeId?: string,
+  ) => authPost("/api/auth/signup", { username, password, role, employee_id: employeeId }),
+  login: (username: string, password: string) =>
+    authPost("/api/auth/login", { username, password }),
   dashboard: (rep?: string) =>
     get<DashboardData>(
       `/api/dashboard${rep && rep !== "(all)" ? `?rep=${encodeURIComponent(rep)}` : ""}`,
