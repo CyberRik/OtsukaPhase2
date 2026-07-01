@@ -223,14 +223,14 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
         try:
             resp = client.chat.completions.create(
                 model=config.MODEL, messages=convo, tools=tools,
-                tool_choice="auto", temperature=0.0, **_gen_kwargs(True),
+                tool_choice="auto", temperature=0.1, **_gen_kwargs(True),
             )
         except Exception as e:
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
                     model=config.FALLBACK_MODEL, messages=convo, tools=tools,
-                    tool_choice="auto", temperature=0.0, **_gen_kwargs(True),
+                    tool_choice="auto", temperature=0.1, **_gen_kwargs(True),
                 )
             except Exception as fe:
                 answer = f"⚠️ サーバーエラー: {e} (Fallback: {fe})"
@@ -397,14 +397,14 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         try:
             resp = client.chat.completions.create(
                 model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
-                tool_choice="required", temperature=0.0, **_gen_kwargs(True),
+                tool_choice="required", temperature=0.1, **_gen_kwargs(True),
             )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
                     model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
-                    tool_choice="required", temperature=0.0, **_gen_kwargs(True),
+                    tool_choice="required", temperature=0.1, **_gen_kwargs(True),
                 )
             except Exception as fe:  # noqa: BLE001
                 yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}

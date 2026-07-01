@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from senpai.graph.visualization import get_hub
+from senpai.graph import query_instrumented
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,28 @@ def create_app() -> FastAPI:
         """Clear the event history."""
         hub.event_history.clear()
         return {"status": "cleared"}
+
+    # Query endpoints run the instrumented queries in this same process,
+    # so events reach the hub the websocket clients are subscribed to.
+    @app.post("/api/query/reps_who_win")
+    def run_reps_who_win(category: str = "", industry: str = "",
+                         after_activity_type: str = "", min_deals: int = 1):
+        return query_instrumented.reps_who_win_viz(
+            category=category, industry=industry,
+            after_activity_type=after_activity_type, min_deals=min_deals,
+        )
+
+    @app.post("/api/query/account_graph")
+    def run_account_graph(customer: str):
+        return query_instrumented.account_graph_viz(customer=customer)
+
+    @app.post("/api/query/connections")
+    def run_connections(entity_a: str, entity_b: str):
+        return query_instrumented.connections_viz(entity_a=entity_a, entity_b=entity_b)
+
+    @app.post("/api/query/similar_by_graph")
+    def run_similar_by_graph(deal_id: str, limit: int = 5):
+        return query_instrumented.similar_by_graph_viz(deal_id=deal_id, limit=limit)
 
     return app
 
