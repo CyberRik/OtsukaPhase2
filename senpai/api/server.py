@@ -2202,3 +2202,373 @@ def ingest_save(req: SaveActivityRequest):
     from senpai.ingestion import persist
     record = persist.save_activity(req.draft, req.customer_id, req.deal_id, req.employee_id)
     return {"saved": True, "activity": record}
+
+
+# ===========================================================================
+# ADMIN PORTAL  (internal-only; NO auth by design — see the plan's caveat).
+# Read-only reshapes over existing engines + one reassignment write + the
+# Graph-RAG showcase feed. Kept in this flat file to match the rest of the API.
+# ===========================================================================
+_MANAGER_ROLES = ("senior", "expert")
+
+
+def _is_manager(rep: dict) -> bool:
+    return rep.get("role") in _MANAGER_ROLES
+
+
+def _account_emp_ids() -> set[str]:
+    """Employee ids that have a login account."""
+    return {u.get("employee_id") for u in auth.list_users() if u.get("employee_id")}
+
+
+def _open_deal_count(employee_id: str) -> int:
+    return sum(1 for d in store.deals_for_rep(employee_id)
+               if config.is_open_rank(d.get("order_rank")))
+
+
+def _direct_reports(manager_id: str) -> list[dict]:
+    """The canonical org chart the admin portal manages: reps whose reports_to is
+    this manager. reports_to is the single editable source of truth here (see the
+    plan) — distinct from store.team_of, which unions coaching threads for the
+    product's coaching views."""
+    return [r for r in store.all_reps() if r.get("reports_to") == manager_id]
+
+
+def _rep_row(rep: dict, accounts: set[str]) -> dict:
+    """A rep enriched for the admin tables: manager name, team size, login flag."""
+    eid = rep.get("employee_id", "")
+    mgr_id = rep.get("reports_to") or ""
+    mgr = store.get_rep(mgr_id) if mgr_id else None
+    return {
+        "employee_id": eid,
+        "name": rep.get("name", eid),
+        "role": rep.get("role", ""),
+        "department": rep.get("department", ""),
+        "division": rep.get("division", ""),
+        "reports_to": mgr_id,
+        "manager_name": (mgr or {}).get("name", "") if mgr else "",
+        "is_manager": _is_manager(rep),
+        "team_size": len(_direct_reports(eid)) if _is_manager(rep) else 0,
+        "has_account": eid in accounts,
+        "open_deals": _open_deal_count(eid),
+        "is_top_performer": bool(rep.get("is_top_performer")),
+    }
+
+
+@app.get("/api/admin/overview")
+def admin_overview():
+    """Headline counts + health for the admin home."""
+    from senpai.graph import communities as _comm
+    from senpai.knowledge import store as _kstore
+    reps = store.all_reps()
+    managers = [r for r in reps if _is_manager(r)]
+    juniors = [r for r in reps if r.get("role") == "junior"]
+    accounts = auth.list_users()
+    try:
+        pending = max(len(_kstore.all_items()) - len(_kstore.approved_items()), 0)
+    except Exception:  # noqa: BLE001
+        pending = 0
+    usage_totals = _usage_summary()["totals"]
+    return {
+        "reps": len(reps),
+        "managers": len(managers),
+        "juniors": len(juniors),
+        "accounts": len(accounts),
+        "deals": len(store.all_deals()),
+        "open_deals": len(store.open_deals()),
+        "communities": len(_comm.load_reports()),
+        "knowledge_pending": pending,
+        "tokens_total": usage_totals["total_tokens"],
+        "llm_calls": usage_totals["calls"],
+    }
+
+
+@app.get("/api/admin/reps")
+def admin_reps():
+    """Every rep (seed + overlay), enriched — the People table."""
+    accounts = _account_emp_ids()
+    rows = [_rep_row(r, accounts) for r in store.all_reps()]
+    rows.sort(key=lambda r: (not r["is_manager"], r["employee_id"]))
+    return {"reps": rows, "managers": [
+        {"employee_id": r["employee_id"], "name": r["name"]}
+        for r in rows if r["is_manager"]]}
+
+
+@app.get("/api/admin/org")
+def admin_org():
+    """Managers with their teams + an Unassigned bucket — the org/assignment view."""
+    accounts = _account_emp_ids()
+    reps = store.all_reps()
+    managers = [r for r in reps if _is_manager(r)]
+    placed: set[str] = set()
+    groups = []
+    for m in sorted(managers, key=lambda r: r["employee_id"]):
+        mid = m["employee_id"]
+        team_rows = sorted(_direct_reports(mid), key=lambda r: r.get("employee_id", ""))
+        placed.update(r["employee_id"] for r in team_rows)
+        groups.append({
+            "manager": _rep_row(m, accounts),
+            "team": [_rep_row(r, accounts) for r in team_rows],
+        })
+    unassigned = [_rep_row(r, accounts) for r in reps
+                  if not r.get("reports_to") and not _is_manager(r)]
+    unassigned.sort(key=lambda r: r["employee_id"])
+    return {"groups": groups, "unassigned": unassigned,
+            "manager_pool": [{"employee_id": m["employee_id"], "name": m.get("name", "")}
+                             for m in managers]}
+
+
+class ReassignRequest(BaseModel):
+    manager_id: str
+
+
+@app.post("/api/admin/reps/{employee_id}/reassign")
+def admin_reassign(employee_id: str, req: ReassignRequest):
+    """Move a rep under a manager by rewriting reports_to (see store.set_reports_to)."""
+    try:
+        store.set_reports_to(employee_id, req.manager_id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return {"rep": _rep_row(store.get_rep(employee_id) or {}, _account_emp_ids())}
+
+
+@app.get("/api/admin/activity")
+def admin_activity(limit: int = 100):
+    """Reverse-chronological system activity: latest coaching-thread messages and
+    daily reports. Best-effort, capped."""
+    events: list[dict] = []
+    for t in store.all_coaching_threads():
+        msgs = t.get("messages") or []
+        if not msgs:
+            continue
+        last = msgs[-1]
+        events.append({
+            "type": "coaching",
+            "date": last.get("date", ""),
+            "rep": t.get("employee_id", ""),
+            "manager": t.get("manager_id", ""),
+            "deal": t.get("deal_id", ""),
+            "text": (last.get("text", "") or "")[:200],
+        })
+    for rep in store.all_reps():
+        eid = rep.get("employee_id", "")
+        for dr in store.daily_reports_for_rep(eid)[-3:]:
+            events.append({
+                "type": "daily_report",
+                "date": dr.get("activity_date", ""),
+                "rep": eid,
+                "customer": dr.get("customer_id", ""),
+                "deal": dr.get("deal_id", ""),
+                "text": (dr.get("daily_report", "") or "")[:200],
+            })
+    events.sort(key=lambda e: e.get("date", ""), reverse=True)
+    return {"events": events[:limit]}
+
+
+@app.get("/api/admin/accounts")
+def admin_accounts():
+    """Login accounts (public shape) joined to rep names — who can sign in."""
+    out = []
+    for u in auth.list_users():
+        eid = u.get("employee_id")
+        rep = store.get_rep(eid) if eid else None
+        out.append({**u, "rep_name": (rep or {}).get("name", "")})
+    return {"accounts": out}
+
+
+@app.get("/api/admin/pipeline-health")
+def admin_pipeline_health():
+    """System-wide deal health from the grounded community layer: where the
+    business is losing (lowest win-rate leaves) and the failure-signal mix."""
+    from collections import Counter
+    from senpai.graph import communities as _comm
+    reports = _comm.load_reports()
+    leaves = [r for r in reports if r.get("level") == "leaf"]
+    signals: Counter = Counter()
+    for r in leaves:
+        for s in r.get("top_failure_signals", []):
+            name = s.get("signal") if isinstance(s, dict) else s
+            count = s.get("count", 1) if isinstance(s, dict) else 1
+            if name:
+                signals[name] += count
+    segments = sorted(
+        [{"category": r.get("category", ""), "industry": r.get("industry", ""),
+          "n_deals": r.get("n_deals", 0), "n_won": r.get("n_won", 0),
+          "n_lost": r.get("n_lost", 0), "n_open": r.get("n_open", 0),
+          "win_rate": r.get("win_rate", 0.0),
+          "top_failure_signals": r.get("top_failure_signals", [])}
+         for r in leaves],
+        key=lambda s: (s["win_rate"], -s["n_lost"]))
+    totals = {
+        "n_deals": sum(r.get("n_deals", 0) for r in leaves),
+        "n_won": sum(r.get("n_won", 0) for r in leaves),
+        "n_lost": sum(r.get("n_lost", 0) for r in leaves),
+        "n_open": sum(r.get("n_open", 0) for r in leaves),
+    }
+    return {"totals": totals,
+            "failure_signals": [{"signal": k, "count": v} for k, v in signals.most_common()],
+            "lowest_win_segments": segments[:10]}
+
+
+@app.get("/api/admin/system-status")
+def admin_system_status():
+    """Operational snapshot for 'is the demo healthy'."""
+    from senpai.retrieval import semantic as _sem
+    try:
+        retrieval_mode = _sem.mode()
+    except Exception:  # noqa: BLE001
+        retrieval_mode = "unknown"
+    ingested = config.INGESTED_DIR
+    overlays = sorted(p.name for p in ingested.glob("*.json")) if ingested.exists() else []
+    return {
+        "use_llm": USE_LLM,
+        "today": str(_today()),
+        "retrieval_mode": retrieval_mode,
+        "endpoints": {
+            "primary": {"base_url": config.BASE_URL, "model": config.MODEL},
+            "fallback": {"base_url": config.FALLBACK_BASE_URL, "model": config.FALLBACK_MODEL},
+        },
+        "flags": {
+            "FAST_SYNTH_FALLBACK": config.FAST_SYNTH_FALLBACK,
+            "SYNTH_ALL_FALLBACK": config.SYNTH_ALL_FALLBACK,
+        },
+        "data": {"reps": len(store.all_reps()), "deals": len(store.all_deals()),
+                 "overlays": overlays},
+    }
+
+
+def _usage_summary() -> dict:
+    from senpai.llm import usage as _u
+    return _u.summary()
+
+
+@app.get("/api/admin/usage")
+def admin_usage():
+    """LLM token accounting: totals, per-day, by model, by feature, recent calls."""
+    return _usage_summary()
+
+
+# --- Visualization (Graph-RAG showcase) ------------------------------------
+def _node_label(nid: str, data: dict) -> str:
+    kind = data.get("kind", "")
+    if kind in ("category", "industry", "acttype") and ":" in nid:
+        return nid.split(":", 1)[-1]
+    return data.get("name") or nid
+
+
+@app.get("/api/admin/graph")
+def admin_graph(kind: str | None = None):
+    """The real NetworkX graph serialized for react-force-graph. Optional ?kind=
+    filters to one node kind (edges kept only between surviving nodes)."""
+    from senpai.graph import build as _build
+    G = _build.graph()
+    nodes = []
+    for nid, data in G.nodes(data=True):
+        k = data.get("kind", "")
+        if kind and k != kind:
+            continue
+        nodes.append({"id": nid, "kind": k, "label": _node_label(nid, data),
+                      "degree": G.degree(nid), "outcome": data.get("outcome"),
+                      "category": data.get("category"), "industry": data.get("industry")})
+    keep = {n["id"] for n in nodes}
+    links = [{"source": u, "target": v, "rel": d.get("rel", "")}
+             for u, v, d in G.edges(data=True) if u in keep and v in keep]
+    return {"nodes": nodes, "links": links, "stats": _build.stats()}
+
+
+@app.get("/api/admin/communities")
+def admin_communities():
+    """The 44 grounded communities (7 category rollups + 37 thick leaves)."""
+    from senpai.graph import communities as _comm
+    return {"communities": [dict(r) for r in _comm.load_reports()]}
+
+
+def _est_tokens(text: str) -> int:
+    """One consistent token estimate applied to BOTH pipelines in the head-to-head,
+    so the comparison is a measured ratio of measured quantities."""
+    from senpai.llm import usage as _u
+    return _u._estimate_tokens(text)
+
+
+def _run_graph_rag_stream(query: str):
+    """SSE generator: animate the graph query, stream the real retrieval trace,
+    and end with a MEASURED (never fabricated) Graph-RAG-vs-traditional scorecard."""
+    import time
+    from senpai.graph import query as _gq
+    from senpai.graph import communities as _comm
+    from senpai.retrieval import semantic as _sem
+    from senpai.retrieval import trace as _trace
+
+    yield _sse({"type": "start", "query": query})
+
+    # --- Graph side: community selection + a representative graph query --------
+    _trace.start()
+    t0 = time.perf_counter()
+    segments = _comm.select(query, limit=5)
+    reps_rows = _gq.reps_who_win(min_deals=2)[:5]
+    graph_ms = (time.perf_counter() - t0) * 1000.0
+    graph_ctx = "\n\n".join(_comm.format_report(s) for s in segments)
+
+    # Emit the nodes the graph actually consulted (honest: these are the segments
+    # and the reps/deals behind the answer), so the UI can light them up.
+    for s in segments:
+        yield _sse({"type": "node_visited", "kind": "community",
+                    "label": f'{s.get("category","")} × {s.get("industry","") or "—"}',
+                    "n_deals": s.get("n_deals", 0), "win_rate": s.get("win_rate", 0.0)})
+    for row in reps_rows:
+        rep_id = row.get("rep") or row.get("employee_id") or "?"
+        yield _sse({"type": "node_visited", "kind": "rep", "label": rep_id,
+                    "won": row.get("won", 0), "closed": row.get("closed", 0)})
+        for did in (row.get("deals") or [])[:3]:
+            yield _sse({"type": "edge_traversed", "source": rep_id, "target": did,
+                        "rel": "OWNS"})
+
+    trace_items = _trace.drain()
+    for ev in trace_items:
+        yield _sse({"type": "retrieved", **ev})
+
+    # --- Traditional side: the real hybrid retriever on the SAME query ---------
+    t0 = time.perf_counter()
+    trad = _sem.semantic_search(query, corpus="activities", limit=8)
+    trad_ms = (time.perf_counter() - t0) * 1000.0
+    trad_ctx = "\n\n".join(x.get("text", "") or x.get("snippet", "") for x in trad)
+    try:
+        trad_mode = _sem.mode()
+    except Exception:  # noqa: BLE001
+        trad_mode = "hybrid"
+
+    graph_sample = [{"label": f'{s.get("category","")} × {s.get("industry","") or "—"}',
+                     "n_deals": s.get("n_deals", 0), "win_rate": s.get("win_rate", 0.0)}
+                    for s in segments]
+    trad_sample = [{"customer": x.get("customer_id", ""), "deal": x.get("deal_id", ""),
+                    "score": round(x.get("score", 0.0), 3),
+                    "snippet": (x.get("snippet") or x.get("text", ""))[:80]}
+                   for x in trad[:6]]
+    yield _sse({"type": "comparison", "measured": True, "query": query,
+                "graph": {"label": "Graph RAG (communities + graph)",
+                          "chunks": len(segments),
+                          "context_chars": len(graph_ctx),
+                          "context_tokens": _est_tokens(graph_ctx),
+                          "latency_ms": round(graph_ms, 1),
+                          "note": f"grounded over {len(_comm.load_reports())} communities",
+                          "sample": graph_sample},
+                "traditional": {"label": f"Traditional retrieval ({trad_mode})",
+                                "chunks": len(trad),
+                                "context_chars": len(trad_ctx),
+                                "context_tokens": _est_tokens(trad_ctx),
+                                "latency_ms": round(trad_ms, 1),
+                                "note": "raw daily-report chunks",
+                                "sample": trad_sample}})
+    yield _sse({"type": "done"})
+
+
+class GraphRagRequest(BaseModel):
+    query: str
+
+
+@app.post("/api/admin/graph-rag/run")
+def admin_graph_rag_run(req: GraphRagRequest):
+    """Stream a live Graph-RAG run (SSE): graph traversal, real retrieval trace,
+    and a measured head-to-head vs traditional retrieval."""
+    return StreamingResponse(_run_graph_rag_stream(req.query or ""),
+                             media_type="text/event-stream")

@@ -16,6 +16,7 @@ from collections.abc import Iterator
 from openai import OpenAI
 
 from senpai import config
+from senpai.llm import usage as _usage
 from senpai.tools.impl import dispatch
 from senpai.tools import conversation as _conversation
 from senpai.orchestration.scheduler import AdaptiveScheduler, ToolCall as SchedToolCall
@@ -112,9 +113,28 @@ def _prep(messages: list[dict], no_think: bool) -> list[dict]:
     return messages
 
 
+def _record_stream_usage(usage_obj, msgs: list[dict], output: str, *,
+                         model: str, endpoint: str, label: str) -> None:
+    """Record token usage for a streamed call: measured from the server's
+    usage-only final chunk when present, else a clearly-flagged estimate over the
+    prompt + accumulated output."""
+    if usage_obj is not None:
+        _usage.record(model, endpoint,
+                      getattr(usage_obj, "prompt_tokens", 0) or 0,
+                      getattr(usage_obj, "completion_tokens", 0) or 0,
+                      label=label, streamed=True)
+        return
+    prompt_text = "\n".join(str(m.get("content", "")) for m in msgs)
+    _usage.record(model, endpoint,
+                  _usage._estimate_tokens(prompt_text),
+                  _usage._estimate_tokens(output),
+                  label=label, streamed=True, estimated=True)
+
+
 def simple_complete(messages: list[dict], temperature: float = 0.3,
                     max_tokens: int | None = None, *, no_think: bool = False,
-                    allow_fallback: bool = True, fast_decomp: bool = False) -> str:
+                    allow_fallback: bool = True, fast_decomp: bool = False,
+                    label: str = "complete") -> str:
     """One plain completion, no tools. Raises on transport error so callers
     (e.g. narration) can fall back to a templated string. Strips any
     `<think>...</think>` reasoning span (the served model is a reasoning
@@ -129,6 +149,7 @@ def simple_complete(messages: list[dict], temperature: float = 0.3,
             model=primary_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, **_gen_kwargs(no_think),
         )
+        _usage.record_response(resp, model=primary_m, endpoint="primary", label=label)
     except Exception as e:
         if not allow_fallback:
             raise
@@ -137,6 +158,7 @@ def simple_complete(messages: list[dict], temperature: float = 0.3,
             model=alt_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, **_gen_kwargs(no_think),
         )
+        _usage.record_response(resp, model=alt_m, endpoint="fallback", label=label)
     content = resp.choices[0].message.content or ""
     content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
     return content.strip()
@@ -158,7 +180,8 @@ def _delta_reasoning(delta) -> str | None:
 
 def stream_complete(messages: list[dict], temperature: float = 0.3,
                     max_tokens: int | None = None, *, no_think: bool = False,
-                    allow_fallback: bool = True, fast_decomp: bool = False) -> Iterator[str]:
+                    allow_fallback: bool = True, fast_decomp: bool = False,
+                    label: str = "stream") -> Iterator[str]:
     """Stream a completion token-by-token from the OpenAI-compatible server.
     Yields a `<think>…</think>` reasoning span (when the backend emits one)
     followed by the answer deltas — a single text stream callers can split on
@@ -175,23 +198,32 @@ def stream_complete(messages: list[dict], temperature: float = 0.3,
     msgs = _prep(messages, no_think)
     primary_c, primary_m, alt_c, alt_m = (
         _synth_route(no_think) if fast_decomp else (client, config.MODEL, fallback_client, config.FALLBACK_MODEL))
+    # include_usage asks the server for a final usage-only chunk so token
+    # accounting on the streaming path is measured, not estimated.
+    _opts = {"stream_options": {"include_usage": True}}
+    used_model, used_endpoint = primary_m, "primary"
     try:
         stream = primary_c.chat.completions.create(
             model=primary_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
-            **_gen_kwargs(no_think),
+            **_opts, **_gen_kwargs(no_think),
         )
     except Exception as e:
         if not allow_fallback:
             raise
         print(f"⚠️ Synthesis server {primary_m} failed ({e}). Trying {alt_m}...")
+        used_model, used_endpoint = alt_m, "fallback"
         stream = alt_c.chat.completions.create(
             model=alt_m, messages=msgs, temperature=temperature,
             max_tokens=max_tokens or config.LLM_MAX_TOKENS, stream=True,
-            **_gen_kwargs(no_think),
+            **_opts, **_gen_kwargs(no_think),
         )
     think_open = think_closed = False
+    _usage_obj = None
+    _out_chars: list[str] = []
     for chunk in stream:
+        if getattr(chunk, "usage", None):
+            _usage_obj = chunk.usage
         if not chunk.choices:
             continue
         delta = chunk.choices[0].delta
@@ -199,15 +231,19 @@ def stream_complete(messages: list[dict], temperature: float = 0.3,
             continue
         reasoning = _delta_reasoning(delta)
         if reasoning:
+            _out_chars.append(reasoning)
             if not think_open:
                 think_open = True
                 yield "<think>"
             yield reasoning
         if delta.content:
+            _out_chars.append(delta.content)
             if think_open and not think_closed:
                 think_closed = True
                 yield "</think>"
             yield delta.content
+    _record_stream_usage(_usage_obj, msgs, "".join(_out_chars),
+                         model=used_model, endpoint=used_endpoint, label=label)
 
 
 def stream_turn(convo: list[dict], tools: list[dict] | None = None):
@@ -225,6 +261,7 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
                 model=config.MODEL, messages=convo, tools=tools,
                 tool_choice="auto", temperature=0.1, **_gen_kwargs(True),
             )
+            _usage.record_response(resp, model=config.MODEL, endpoint="primary", label="tool_loop")
         except Exception as e:
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
@@ -232,6 +269,7 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
                     model=config.FALLBACK_MODEL, messages=convo, tools=tools,
                     tool_choice="auto", temperature=0.1, **_gen_kwargs(True),
                 )
+                _usage.record_response(resp, model=config.FALLBACK_MODEL, endpoint="fallback", label="tool_loop")
             except Exception as fe:
                 answer = f"⚠️ サーバーエラー: {e} (Fallback: {fe})"
                 break
@@ -399,6 +437,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
                 tool_choice="required", temperature=0.1, **_gen_kwargs(True),
             )
+            _usage.record_response(resp, model=config.MODEL, endpoint="primary", label="tool_loop")
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
@@ -406,6 +445,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                     model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
                     tool_choice="required", temperature=0.1, **_gen_kwargs(True),
                 )
+                _usage.record_response(resp, model=config.FALLBACK_MODEL, endpoint="fallback", label="tool_loop")
             except Exception as fe:  # noqa: BLE001
                 yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
                 return
@@ -555,7 +595,8 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
 
 
 def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
-                         no_think: bool = False, fallback_text: str = ""):
+                         no_think: bool = False, fallback_text: str = "",
+                         label: str = "synthesis"):
     """Stream one tool-free completion as the answer, stripping any reasoning.
     Emits `delta` events live and a terminal `answer` with the full text.
     `no_think` prefills an empty think block so the reasoning distill skips its
@@ -566,7 +607,8 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
     try:
         stream = synth_c.chat.completions.create(
             model=synth_m, messages=msgs, temperature=config.SYNTH_TEMPERATURE,
-            max_tokens=config.LLM_MAX_TOKENS, stream=True, **_gen_kwargs(no_think),
+            max_tokens=config.LLM_MAX_TOKENS, stream=True,
+            stream_options={"include_usage": True}, **_gen_kwargs(no_think),
         )
     except Exception:  # noqa: BLE001 — fall back to a single blocking answer
         try:
@@ -574,6 +616,7 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
                 model=alt_m, messages=msgs, temperature=config.SYNTH_TEMPERATURE,
                 max_tokens=config.LLM_MAX_TOKENS, **_gen_kwargs(no_think),
             )
+            _usage.record_response(resp, model=alt_m, endpoint="fallback", label=label)
             text = re.sub(r"<think>.*?</think>", "",
                           resp.choices[0].message.content or "", flags=re.DOTALL).strip()
             yield {"type": "answer", "text": text or "(no response)"}
@@ -581,7 +624,10 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
             yield {"type": "answer", "text": f"⚠️ サーバーエラー: {fe}"}
         return
 
+    _usage_obj = None
     for chunk in stream:
+        if getattr(chunk, "usage", None):
+            _usage_obj = chunk.usage
         if not chunk.choices:
             continue
         delta = chunk.choices[0].delta
@@ -601,6 +647,8 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
             emitted += len(new)
             yield {"type": "delta", "text": new}
 
+    _record_stream_usage(_usage_obj, msgs, full,
+                         model=synth_m, endpoint="primary", label=label)
     final = re.sub(r"<think>.*?</think>", "", full, flags=re.DOTALL).strip()
     if final:
         yield {"type": "answer", "text": final}

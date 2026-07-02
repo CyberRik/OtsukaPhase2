@@ -34,7 +34,16 @@ def _load() -> dict[str, list[dict]]:
         if over.exists():
             extra = json.loads(over.read_text(encoding="utf-8"))
             if isinstance(extra, list):
-                rows = rows + extra
+                # reps overlay UPSERTS by employee_id: an overlay row replaces the
+                # seed row of the same id (so an admin can edit reports_to on an
+                # existing seed rep), and new ids (signups) append. Every other
+                # table stays purely additive. Seed on disk is never mutated.
+                if name == "reps":
+                    by_id = {r.get("employee_id"): r for r in extra}
+                    rows = [by_id.pop(r.get("employee_id"), r) for r in rows]
+                    rows = rows + [r for r in extra if r.get("employee_id") in by_id]
+                else:
+                    rows = rows + extra
         data[name] = rows
     return data
 
@@ -72,6 +81,38 @@ def append_rep(record: dict) -> None:
     path.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n",
                     encoding="utf-8")
     reload()
+
+
+def set_reports_to(employee_id: str, manager_id: str) -> dict:
+    """Reassign a rep to a manager by writing reports_to into the gitignored reps
+    overlay, then dropping the cache. Works for seed reps too: the overlay upserts
+    by employee_id (see _load), so writing a row for R05 replaces the seed R05 on
+    read without duplicating it or touching committed seed. Returns the updated
+    rep. Raises ValueError if the rep is unknown or the target is not a
+    senior/expert (only they can be managers — mirrors signup's _manager_pool)."""
+    rep = get_rep(employee_id)
+    if rep is None:
+        raise ValueError(f"unknown rep {employee_id}")
+    manager = get_rep(manager_id)
+    if manager is None or manager.get("role") not in ("senior", "expert"):
+        raise ValueError(f"{manager_id} is not an assignable manager")
+    if manager_id == employee_id:
+        raise ValueError("a rep cannot report to themselves")
+
+    config.INGESTED_DIR.mkdir(parents=True, exist_ok=True)
+    path = config.INGESTED_DIR / "reps.json"
+    rows = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+    updated = {**rep, "reports_to": manager_id}
+    for i, r in enumerate(rows):
+        if r.get("employee_id") == employee_id:
+            rows[i] = updated
+            break
+    else:
+        rows.append(updated)
+    path.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8")
+    reload()
+    return updated
 
 
 @lru_cache(maxsize=1)
