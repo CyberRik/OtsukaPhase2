@@ -17,7 +17,7 @@ const CANNED = [
 interface VisitLog { kind: string; label: string; detail?: string }
 
 export default function LivePage() {
-  const { data: graph } = useFetched(api.adminGraph, { nodes: [], links: [], stats: {} });
+  const { data: graph } = useFetched(api.adminGraph, { nodes: [], links: [], stats: {} }, 0);
   const [query, setQuery] = useState(CANNED[0]);
   const [running, setRunning] = useState(false);
   const [visits, setVisits] = useState<VisitLog[]>([]);
