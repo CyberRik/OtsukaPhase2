@@ -911,8 +911,28 @@ _FILE_SCOPE_RE = re.compile(
 )
 
 
+# Analytical / ranking intent — questions that need CRM + scoring, not a file read.
+# When present, we do NOT lock the turn to workspace-only even if it mentions "files":
+# "best performing company among my files" wants analysis (deal health / SPR), which
+# the local notes don't contain. Leaving file-scope off keeps ALL tools available
+# (workspace AND CRM), so the model can ground on files yet still rank via CRM,
+# instead of spinning on filename-only search over notes that hold no metrics.
+_ANALYTICAL_RE = re.compile(
+    r"\b(?:best|top|worst|highest|lowest|rank(?:ing|ed)?|compare|comparison|"
+    r"which\s+(?:is|are|one|deal|company|customer)|best[- ]performing|"
+    r"performance|revenue|win\s*rate|pipeline)\b|"
+    r"(?:一番|最も|最高|最良|最悪|ランキング|比較|順位|パフォーマンス|業績|勝率|売上|"
+    r"どれが|どちらが|どの(?:案件|会社|顧客))",
+    re.IGNORECASE,
+)
+
+
 def _is_file_scoped(message: str) -> bool:
-    return bool(_FILE_SCOPE_RE.search(message or ""))
+    msg = message or ""
+    # Ranking/performance intent overrides file-scope: it needs CRM, not just files.
+    if _ANALYTICAL_RE.search(msg):
+        return False
+    return bool(_FILE_SCOPE_RE.search(msg))
 
 
 # Planner intent → the LLMPlanner (capability graph), not the ReAct loop. Covers

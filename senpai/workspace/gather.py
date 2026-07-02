@@ -43,8 +43,12 @@ def workspace_evidence(query: str = "", *, limit: int | None = None,
         documents.append({k: ev.data.get(k) for k in
                           ("name", "rel", "ext", "text", "chars", "truncated")})
     documents.sort(key=lambda d: d["rel"])
+    # Did the query actually match any filename, or did `find` fall back to recency?
+    # Surfacing this lets the chat loop tell the model "nothing matched — these are
+    # just the most recent files", so it answers instead of rephrasing endlessly.
+    matched = bool(find.data.get("matched")) if find else False
     return {
-        "root": root, "available": available, "query": query,
+        "root": root, "available": available, "query": query, "matched": matched,
         "found": found, "documents": documents,
         "citations": [f"file://{d['rel']}" for d in documents],
     }
@@ -57,7 +61,16 @@ def _format(res: dict) -> str:
         if not res["available"]:
             return "ワークスペースに参照可能な文書がありません。"
         return f"「{res['query']}」に関連する文書は見つかりませんでした（全{res['available']}件）。"
-    header = f"ワークスペース文書 {len(docs)}件（全{res['available']}件中）:"
+    q = str(res.get("query", "")).strip()
+    if q and not res.get("matched"):
+        # No filename matched — `find` fell back to most-recent. Tell the model plainly
+        # so it stops rephrasing (filename-only search → synonyms give the SAME set)
+        # and answers from what's here (or says the info isn't in the files).
+        header = (f"注: 「{q}」に一致するファイル名はありませんでした。ファイル名検索のため、"
+                  f"別の言葉で再検索しても結果は同じです。代わりに最近の文書 {len(docs)}件"
+                  f"（全{res['available']}件中）を表示します。関連情報がなければ、その旨を述べてください:")
+    else:
+        header = f"ワークスペース文書 {len(docs)}件（全{res['available']}件中）:"
     blocks = []
     for d in docs:
         trunc = "（一部）" if d.get("truncated") else ""

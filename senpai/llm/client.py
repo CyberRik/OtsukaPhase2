@@ -465,6 +465,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     # `substantive` keeps the best real tool output so a turn can always answer.
     executed: dict[tuple[str, str], str] = {}
     tool_unproductive: dict[str, int] = {}
+    tool_total_rounds: dict[str, int] = {}
     substantive: list[tuple[str, str]] = []   # (tool_name, result) worth answering from
     from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
@@ -574,7 +575,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             # D168 across rounds) keeps returning real data, so it never trips the cap;
             # a rephrasing spiral (search X→Y→Z, all empty) trips it after two dry rounds.
             # Multiple calls of the same tool WITHIN one round all pass (fan-out intact).
-            if key not in executed and tool_unproductive.get(name, 0) < _TOOL_ROUND_CAP:
+            if key not in executed and tool_unproductive.get(name, 0) < _TOOL_ROUND_CAP and tool_total_rounds.get(name, 0) < 4:
                 fresh.append((cid, name, args))
                 fresh_ids.add(cid)
 
@@ -676,6 +677,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # spiral), never productive multi-entity fan-out.
         for name in ran_fresh:
             tool_unproductive[name] = 0 if name in productive_fresh else tool_unproductive.get(name, 0) + 1
+            tool_total_rounds[name] = tool_total_rounds.get(name, 0) + 1
 
         # Every call this round was a repeat → the model is spinning. Stop looping
         # and synthesize from what we already gathered instead of burning rounds.
