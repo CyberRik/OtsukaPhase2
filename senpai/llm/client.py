@@ -279,6 +279,58 @@ def _fallback_answer(substantive: list[tuple[str, str]]) -> str:
     return substantive[-1][1] if substantive else ""
 
 
+_ENTITY_DEAL_RE = re.compile(r"\bD\d{3,}\b")
+_ENTITY_CUST_RE = re.compile(r"\bC\d{2,}\b")
+
+
+def _multi_entity_gather_calls(user_msg: str) -> list[tuple[str, str, str]]:
+    """Deterministic fan-out for 'compare A, B, C' turns. If the user's message names
+    ≥2 DISTINCT, KNOWN entity ids (deals D### / customers C##, validated against the
+    store — same id discipline as SessionFocus), return the full gather bundle for all
+    of them so the scheduler runs it in a SINGLE parallel round. The served model emits
+    only one tool_call per response under the full prompt (verified), so it can't batch
+    these itself.
+
+    The bundle is grouped by tool — every deal's `score_deal_health`, then every deal's
+    `query_spr`, then each standalone customer's `query_spr` — but since all are
+    parallel-safe reads they execute concurrently in one round (no need to phase health
+    before records: there is no dependency between them). Customers get records only
+    (deal health needs a deal id).
+
+    Returns [] when the pattern doesn't apply → the normal loop runs unchanged. Scoped
+    intentionally narrow: explicit ids only, the compare pattern only."""
+    if not user_msg:
+        return []
+    from senpai.data import store  # lazy
+    used: set[str] = set()
+    deal_ids: list[str] = []
+    cust_ids: list[str] = []
+    for did in _ENTITY_DEAL_RE.findall(user_msg):
+        if did not in used and store.get_deal(did):
+            used.add(did)
+            deal_ids.append(did)
+    for cid in _ENTITY_CUST_RE.findall(user_msg):
+        if cid not in used and store.get_customer(cid):
+            used.add(cid)
+            cust_ids.append(cid)
+    if len(used) < 2:   # threshold is DISTINCT entities, not calls
+        return []
+    gathers: list[tuple[str, dict]] = []
+    gathers += [("score_deal_health", {"deal_id": d}) for d in deal_ids]  # all health, grouped
+    gathers += [("query_spr", {"deal_id": d}) for d in deal_ids]          # then all deal records
+    gathers += [("query_spr", {"customer": c}) for c in cust_ids]         # then customer records
+    return [(f"exp_{i}", name, json.dumps(args, ensure_ascii=False))
+            for i, (name, args) in enumerate(gathers)]
+
+
+def _is_substantive(result: str) -> bool:
+    """True when a tool result carries usable info (not an error / not-found). Drives
+    both the answer fallback and the unproductive-round spiral guard — so a tool that
+    keeps returning real data (multi-entity fan-out) is never mistaken for a spiral."""
+    return not (result.startswith("[error]") or "見つかりません" in result
+                or "ありません" in result[:20])
+
+
 def _route_final_answer(convo, tools, tool_log, role, fallback_text: str = ""):
     """Decide FAST vs REASONING for the synthesis round via the ReasoningRouter,
     emit a `routing` event (observability), then stream the answer. Tool-selection
@@ -366,14 +418,15 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     is stripped so only the user-facing answer streams. `role` feeds the router."""
     tools = tools if tools is not None else TOOLS
     tool_log: list[tuple[str, str, str]] = []
-    # Loop-intelligence bookkeeping (per turn): the results already gathered, keyed
-    # by (name, canonical-args), plus how many ROUNDS each tool has run in. Counting
-    # rounds (not calls) is deliberate — a single round may fan out 4 parallel
-    # web_searches (fine), but a tool reappearing across many rounds is the rephrasing
-    # spiral that overflows synthesis and yields a blank answer. `substantive` keeps
-    # the best real tool output so a turn can always answer, even if synthesis fails.
+    # Loop-intelligence bookkeeping (per turn): the results already gathered, keyed by
+    # (name, canonical-args), plus each tool's count of consecutive UNPRODUCTIVE rounds
+    # (ran but returned nothing substantive). Capping unproductive rounds — not total
+    # rounds — is deliberate: a tool fetching distinct entities (query_spr for D133,
+    # D012, D168) keeps returning real data so it never trips the cap, while a
+    # rephrasing spiral (search X→Y→Z, all empty) trips it after two dry rounds.
+    # `substantive` keeps the best real tool output so a turn can always answer.
     executed: dict[tuple[str, str], str] = {}
-    tool_rounds: dict[str, int] = {}
+    tool_unproductive: dict[str, int] = {}
     substantive: list[tuple[str, str]] = []   # (tool_name, result) worth answering from
     from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
@@ -392,45 +445,58 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     # real tools; calling it (or emitting no real tool) ends the loop → synthesis.
     sel_tools = [*tools, _FINISH_TOOL]
     sel_msgs = lambda: _prep(convo, False)
+    user_msg = next((m.get("content") for m in reversed(convo)
+                     if m.get("role") == "user" and m.get("content")), "")
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
-        # tool_choice: FORCE a tool on the first round (the model must gather before it
-        # can answer, and must not burn a round writing a throwaway answer). Once we
-        # have evidence, relax to "auto" so the model can cleanly STOP — forcing
-        # "required" every round is what makes it contort its final answer into a bogus
-        # tool argument (the answer-as-arg leak) instead of just finishing.
-        #
-        # NB: parallel tool calls need "auto"+thinking-off (verified: "required" applies
-        # XGrammar structural enforcement that caps output at ONE <tool_call>). But the
-        # full operational system prompt suppresses batching regardless (a minimal prompt
-        # fans out; this one emits one call even with an explicit batch instruction), so
-        # keeping round-0 "required" costs no parallelism we'd otherwise get, and buys
-        # the gather guarantee. Deterministic fan-out lives in the orchestration path.
-        tool_choice = "required" if not tool_log else "auto"
-        try:
-            resp = client.chat.completions.create(
-                model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
-                tool_choice=tool_choice, temperature=0.1, **_gen_kwargs(True),
-            )
-        except Exception as e:  # noqa: BLE001
-            print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
+
+        # Deterministic multi-entity fan-out: on the FIRST round, if the user named ≥2
+        # known entities ("compare D133, D012, D168"), issue the gather reads ourselves
+        # in ONE parallel round rather than letting the model dribble them out one per
+        # round (it emits a single tool_call per response under the full prompt). The
+        # scheduler runs them concurrently; the loop then proceeds normally.
+        expanded = _multi_entity_gather_calls(user_msg) if round_i == 0 else []
+        if expanded:
+            calls = expanded
+        else:
+            # tool_choice: FORCE a tool on the first round (the model must gather before
+            # it can answer, and must not burn a round writing a throwaway answer). Once
+            # we have evidence, relax to "auto" so the model can cleanly STOP — forcing
+            # "required" every round is what makes it contort its final answer into a
+            # bogus tool argument (the answer-as-arg leak) instead of just finishing.
+            #
+            # NB: parallel tool calls need "auto"+thinking-off (verified: "required"
+            # applies XGrammar structural enforcement that caps output at ONE
+            # <tool_call>). But the full operational system prompt suppresses batching
+            # regardless (a minimal prompt fans out; this one emits one call even with an
+            # explicit batch instruction), so keeping round-0 "required" costs no
+            # parallelism we'd otherwise get, and buys the gather guarantee. Deterministic
+            # fan-out for the compare pattern is handled by the expander above.
+            tool_choice = "required" if not tool_log else "auto"
             try:
-                resp = fallback_client.chat.completions.create(
-                    model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
+                resp = client.chat.completions.create(
+                    model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
                     tool_choice=tool_choice, temperature=0.1, **_gen_kwargs(True),
                 )
-            except Exception as fe:  # noqa: BLE001
-                yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
-                return
+            except Exception as e:  # noqa: BLE001
+                print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
+                try:
+                    resp = fallback_client.chat.completions.create(
+                        model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
+                        tool_choice=tool_choice, temperature=0.1, **_gen_kwargs(True),
+                    )
+                except Exception as fe:  # noqa: BLE001
+                    yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
+                    return
 
-        msg = resp.choices[0].message
-        if msg.tool_calls:
-            calls = [(tc.id, tc.function.name, tc.function.arguments)
-                     for tc in msg.tool_calls]
-        else:
-            parsed = _parse_xlam(msg.content)
-            calls = [(f"call_{len(tool_log) + i}", name, json.dumps(args))
-                     for i, (name, args) in enumerate(parsed)] if parsed else []
+            msg = resp.choices[0].message
+            if msg.tool_calls:
+                calls = [(tc.id, tc.function.name, tc.function.arguments)
+                         for tc in msg.tool_calls]
+            else:
+                parsed = _parse_xlam(msg.content)
+                calls = [(f"call_{len(tool_log) + i}", name, json.dumps(args))
+                         for i, (name, args) in enumerate(parsed)] if parsed else []
 
         # Drop the `finish` sentinel — it is never dispatched. The model is done when
         # it calls finish (or emits no real tool) → hand to the routed synthesis round
@@ -464,14 +530,15 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         fresh, fresh_ids = [], set()
         for cid, name, args in real_calls:
             key = (name, _canon_args(args))
-            # Round-based cap: a call is fresh if not an exact repeat AND this tool
-            # hasn't already run in _TOOL_ROUND_CAP prior rounds. Multiple calls of
-            # the same tool WITHIN this round all pass (parallel fan-out stays intact).
-            if key not in executed and tool_rounds.get(name, 0) < _TOOL_ROUND_CAP:
+            # Freshness: not an exact repeat (dedup) AND this tool hasn't spiraled —
+            # i.e. it hasn't run _TOOL_ROUND_CAP consecutive rounds WITHOUT producing
+            # anything substantive. Distinct-entity fan-out (query_spr for D133/D012/
+            # D168 across rounds) keeps returning real data, so it never trips the cap;
+            # a rephrasing spiral (search X→Y→Z, all empty) trips it after two dry rounds.
+            # Multiple calls of the same tool WITHIN one round all pass (fan-out intact).
+            if key not in executed and tool_unproductive.get(name, 0) < _TOOL_ROUND_CAP:
                 fresh.append((cid, name, args))
                 fresh_ids.add(cid)
-        for name in {n for _c, n, _a in fresh}:   # one increment per tool per round
-            tool_rounds[name] = tool_rounds.get(name, 0) + 1
 
         sched_calls = [SchedToolCall(id=cid, name=name, arguments=args) for cid, name, args in fresh]
         plan = _SCHEDULER.schedule(sched_calls)
@@ -504,6 +571,10 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # We preserve the order of `real_calls`.
         batch_id = f"batch_{id(plan)}" if len(fresh) > 1 else None
 
+        # Per-round productivity, to update the unproductive-round spiral guard below.
+        ran_fresh: set[str] = set()
+        productive_fresh: set[str] = set()
+
         for cid, name, args in real_calls:
             key = (name, _canon_args(args))
             if cid not in fresh_ids:
@@ -525,9 +596,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 result = _truncate_on_boundary(result, 1500) + "\n... [truncated for length]"
             executed[key] = result
             # Remember genuinely informative results so the turn can always answer,
-            # even if the synthesis round comes back empty (see _route_final_answer).
-            if not (result.startswith("[error]") or "見つかりません" in result
-                    or "ありません" in result[:20]):
+            # even if the synthesis round comes back empty (see _route_final_answer),
+            # and track per-round productivity for the spiral guard.
+            ran_fresh.add(name)
+            if _is_substantive(result):
+                productive_fresh.add(name)
                 substantive.append((name, result))
 
             tool_log.append((name, _fmt_args(args), result))
@@ -558,6 +631,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 # produce duplicates — and skip the redundant synthesis round.
                 yield {"type": "answer", "text": result}
                 return
+
+        # Spiral-guard bookkeeping: a tool that produced something substantive this
+        # round resets to 0; one that ran but produced nothing counts an unproductive
+        # round. The cap then short-circuits only sustained DRY repetition (a rephrasing
+        # spiral), never productive multi-entity fan-out.
+        for name in ran_fresh:
+            tool_unproductive[name] = 0 if name in productive_fresh else tool_unproductive.get(name, 0) + 1
 
         # Every call this round was a repeat → the model is spinning. Stop looping
         # and synthesize from what we already gathered instead of burning rounds.
