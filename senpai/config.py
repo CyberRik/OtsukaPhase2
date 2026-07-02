@@ -157,6 +157,14 @@ INGESTED_DIR = PKG_DIR / "data" / "ingested"
 # created on first write. The committed seed is never touched by document generation.
 GENERATED_DIR = PKG_DIR / "data" / "generated"
 
+# Cross-chat memory: durable, entity-anchored Observations (the judgments a chat
+# reached, NOT transcripts), keyed by Subject so a later chat about the same deal can
+# reason from them. Gitignored and demo-only. The JSONL file is a storage STUB behind
+# the ObservationStore seam (senpai.orchestration.memory); the persistence layer's DB
+# is just another implementation of that interface and replaces this file wholesale.
+MEMORY_DIR = PKG_DIR / "data" / "memory"
+OBSERVATIONS_PATH = MEMORY_DIR / "observations.jsonl"
+
 # --- Workspace (sandboxed local document access) ----------------------------
 # The Workspace capability reaches OUTSIDE the seed DB — it finds and reads real
 # local documents (PDF/DOCX/PPTX/XLSX/TXT/MD) and returns structured evidence into

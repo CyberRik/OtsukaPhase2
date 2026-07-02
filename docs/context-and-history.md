@@ -49,3 +49,33 @@ It is keyed off the **unambiguous IDs that real tool results emitted** (`D001` d
 
 ### 3b. Boundary-aware truncation (`_truncate_on_boundary`)
 Both the conversation grounding (4000-char budget) and each parallel tool result fed back to the model (`client.py`, 1500-char cap) are trimmed on a **natural boundary** — snippet break → paragraph → line → sentence → word — rather than a blind `text[:limit]`. A mid-string cut can drop the second half of a company name or a quote figure (`¥204,000`), handing the model half a fact; boundary trimming keeps facts intact and marks the elision with `…`.
+
+---
+
+## 4. Cross-chat memory (`senpai/orchestration/memory.py`)
+Everything in §§1–3 is **same-chat** context: it lives only as long as the `convo` object. Cross-chat memory answers the other question — *"what do we already know about this deal from earlier sessions?"* — and it deliberately does **not** persist transcripts.
+
+### 4a. What we persist: Observations, not history
+The unit of cross-chat memory is the **`Observation`** (`senpai/orchestration/reason.py`) — a judgment the Reasoner already reached (`{claim, kind, materiality, citations, confidence}`), not a turn of dialogue. Persisting judgments instead of transcripts is the token-cheap form of memory: a later chat rehydrates a handful of compact, cited conclusions rather than whole histories (which is also what keeps the admin token dashboard's curve flat). Raw phrasing/chit-chat — 90% of a transcript — is never stored.
+
+### 4b. The cross-chat spine: `EntityRef` + `as_of`
+An observation is only cross-chat-useful if it is addressable by **what it is about** and **when it was reached**. So `Observation` carries:
+- **`subject: EntityRef`** — `{type, id, display}` for a deal/account/contact/product, resolved to a **real id** (the same discipline as [SessionFocus](#3c-sessionfocus--the-resolved-entity-senpaitoolsfocuspy): ids from tool results, never fuzzy names). `subject.key` (e.g. `deal:D001`) is the stable lookup handle a store indexes on. An unanchored observation is not stored — there is nothing to key on.
+- **`as_of`** — ISO-8601 UTC, stamped on persist if unset. This is the temporal spine: an account timeline is just *observations for subject X ordered by `as_of`*.
+
+Retrieval keys off the entity already resolved for the turn — `SessionFocus.deal_id → store.by_subject(...)` — so pulling prior context is a structured lookup, not a semantic search, for the common in-focus case.
+
+### 4c. The storage **seam** (`ObservationStore`) and its JSONL stub
+`memory.py` defines the **interface**, not the storage:
+```python
+class ObservationStore(Protocol):
+    def put(self, obs: Observation) -> None: ...
+    def by_subject(self, subject: EntityRef, *, limit: int = 20) -> list[Observation]: ...
+```
+`JsonlObservationStore` is a working **stub** behind that seam: append-one-line-per-observation, `by_subject` scans + filters by `subject.key` newest-first. It is unindexed and intentionally minimal — **no dedup, no supersession** (those belong in the real backend, and adding them to a flat file would only be rewritten). It is thread-safe (the engine fans tools across worker threads) and tolerant of partial/malformed lines (a crash mid-write must not poison the store).
+
+The point of the seam: it gives real cross-chat memory **today** — an observation written in chat A about `D001` is read back in chat B after a restart (`test_persists_across_store_instances`) — while the persistence layer's database becomes *just another `ObservationStore` implementation*. Callers hold the Protocol, so swapping the JSONL stub for the DB changes nothing upstream. `default_store()` is the lazy process-wide instance at `config.OBSERVATIONS_PATH` (gitignored, demo-only).
+
+> **Not yet wired.** This PR ships the anchor + seam + stub with a round-trip test only. Writing observations after synthesis, and injecting `by_subject` results into grounding (router-gated, token-capped, with an injected/dropped log for the dashboard), are the follow-up PRs.
+
+> **Design note.** `ReasonerView` (`EvidenceBundle.to_reasoner_view`) stays a *derived, disposable* projection — it is never the persisted object. The durable objects are Evidence, Observations, and Artifacts, anchored by `subject`/`as_of`. Long-term, the same `ReasonerView` shape should be producible from **both** a live bundle and a store query over `(subject, time)`, so memory plugs in without changing the reasoning architecture.
