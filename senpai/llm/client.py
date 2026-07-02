@@ -16,8 +16,8 @@ from collections.abc import Iterator
 from openai import OpenAI
 
 from senpai import config
-from senpai.tools.impl import dispatch, _truncate_on_boundary
 from senpai.llm import usage as _usage
+from senpai.tools.impl import dispatch, _truncate_on_boundary
 from senpai.tools import conversation as _conversation
 from senpai.orchestration.scheduler import AdaptiveScheduler, ToolCall as SchedToolCall
 from senpai.orchestration.engine import ExecutionEngine
