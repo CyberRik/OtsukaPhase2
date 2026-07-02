@@ -698,7 +698,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
 
 def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
                          no_think: bool = False, fallback_text: str = "",
-                         label: str = "synthesis"):
+                         label: str = "synthesis", _retry: bool = False):
     """Stream one tool-free completion as the answer, stripping any reasoning.
     Emits `delta` events live and a terminal `answer` with the full text.
     `no_think` prefills an empty think block so the reasoning distill skips its
@@ -755,13 +755,12 @@ def _stream_final_answer(convo: list[dict], tools: list[dict] | None, *,
     if final:
         yield {"type": "answer", "text": final}
         return
-    # Empty answer — the reasoning phase ate the whole token budget before it wrote
-    # anything (an unclosed <think>, common after a large tool context). Retry ONCE
-    # with thinking disabled so the model answers immediately, rather than showing a
-    # blank "(no response)" turn.
-    if not no_think:
-        yield from _stream_final_answer(convo, tools, no_think=True,
-                                        fallback_text=fallback_text)
+    # Empty answer — the reasoning phase ate the whole token budget, OR disabled
+    # thinking broke the generation on this specific prompt (Atlas anomaly).
+    # Retry ONCE with the INVERTED thinking mode.
+    if not _retry:
+        yield from _stream_final_answer(convo, tools, no_think=not no_think,
+                                        fallback_text=fallback_text, _retry=True)
         return
     # Still empty even without thinking → surface the gathered evidence directly
     # rather than a blank turn. Only fall back to "(no response)" when we truly have
