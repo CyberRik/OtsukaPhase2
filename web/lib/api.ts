@@ -38,6 +38,20 @@ import type {
   Source,
 } from "./types";
 import type { ArtifactKind, EntityRef } from "./artifacts";
+import type {
+  AdminOverview,
+  AdminRep,
+  ManagerRef,
+  AdminOrg,
+  AdminActivityEvent,
+  AdminAccount,
+  AdminPipelineHealth,
+  AdminSystemStatus,
+  AdminUsage,
+  AdminGraph,
+  Community,
+  GraphRagEvent,
+} from "./admin-types";
 
 const BASE =
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "http://localhost:8000";
@@ -268,6 +282,43 @@ export const api = {
   // Persist a reviewed daily-report draft as a real sales_activities row.
   saveActivity: (body: SaveActivityRequest) =>
     post<SaveActivityResult>("/api/ingest/save", body, { saved: false, activity: null }),
+
+  // --- admin portal (internal-only; see senpai/api/server.py) ----------------
+  adminOverview: () =>
+    get<AdminOverview>("/api/admin/overview", {
+      reps: 0, managers: 0, juniors: 0, accounts: 0, deals: 0, open_deals: 0,
+      communities: 0, knowledge_pending: 0, tokens_total: 0, llm_calls: 0,
+    }),
+  adminReps: () =>
+    get<{ reps: AdminRep[]; managers: ManagerRef[] }>("/api/admin/reps", { reps: [], managers: [] }),
+  adminOrg: () =>
+    get<AdminOrg>("/api/admin/org", { groups: [], unassigned: [], manager_pool: [] }),
+  adminActivity: () =>
+    get<{ events: AdminActivityEvent[] }>("/api/admin/activity", { events: [] }),
+  adminAccounts: () =>
+    get<{ accounts: AdminAccount[] }>("/api/admin/accounts", { accounts: [] }),
+  adminPipelineHealth: () =>
+    get<AdminPipelineHealth>("/api/admin/pipeline-health", {
+      totals: { n_deals: 0, n_won: 0, n_lost: 0, n_open: 0 },
+      failure_signals: [], lowest_win_segments: [],
+    }),
+  adminSystemStatus: () =>
+    get<AdminSystemStatus>("/api/admin/system-status", {
+      use_llm: false, today: "", retrieval_mode: "unknown",
+      endpoints: { primary: { base_url: "", model: "" }, fallback: { base_url: "", model: "" } },
+      flags: {}, data: { reps: 0, deals: 0, overlays: [] },
+    }),
+  adminUsage: () =>
+    get<AdminUsage>("/api/admin/usage", {
+      totals: { calls: 0, prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, estimated_calls: 0, est_cost: 0 },
+      cost_per_1k: 0, by_day: [], by_model: [], by_label: [], recent: [],
+    }),
+  adminGraph: (kind?: string) =>
+    get<AdminGraph>(`/api/admin/graph${kind ? `?kind=${encodeURIComponent(kind)}` : ""}`, { nodes: [], links: [], stats: {} }),
+  adminCommunities: () =>
+    get<{ communities: Community[] }>("/api/admin/communities", { communities: [] }),
+  adminReassign: (employeeId: string, managerId: string) =>
+    post<{ rep: AdminRep | null }>(`/api/admin/reps/${employeeId}/reassign`, { manager_id: managerId }, { rep: null }),
 };
 
 // --- Streaming senior commentary (SSE from the vLLM-backed bridge) ----------
@@ -461,6 +512,36 @@ export async function crewStream(
   }
   await readSSE(res, (obj) => onEvent(obj as CrewEvent), () =>
     onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+/** INTERNAL admin demo: stream a live Graph-RAG run — graph traversal events, the
+ *  real retrieval trace, and a MEASURED head-to-head vs traditional retrieval.
+ *  Never throws; transport failures surface as a synthetic `done`. */
+export async function graphRagStream(
+  query: string,
+  onEvent: (e: GraphRagEvent) => void,
+  opts?: { signal?: AbortSignal },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/admin/graph-rag/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+      cache: "no-store",
+      signal: opts?.signal,
+    });
+  } catch {
+    onEvent({ type: "done" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    onEvent({ type: "done" });
+    return;
+  }
+  await readSSE(res, (obj) => onEvent(obj as GraphRagEvent), () =>
+    onEvent({ type: "done" }),
   );
 }
 

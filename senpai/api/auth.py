@@ -61,6 +61,12 @@ def _public(rec: dict) -> dict:
     }
 
 
+def list_users() -> list[dict]:
+    """Every account in public shape (no password material) — for the admin
+    portal's account listing."""
+    return [_public(rec) for rec in _load().values()]
+
+
 def username_exists(username: str) -> bool:
     """Whether an account with this username already exists (case-insensitive).
     Used to pre-check a signup before creating a rep, so a taken username can't

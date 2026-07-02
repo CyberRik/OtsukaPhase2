@@ -24,6 +24,7 @@
     "next": "^15.5.19",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-force-graph-2d": "^1.29.1",
     "tailwind-merge": "^2.6.0",
     "write-excel-file": "^4.1.1",
     "xlsx": "^0.18.5"
