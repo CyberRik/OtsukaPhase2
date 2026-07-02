@@ -399,6 +399,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # have evidence, relax to "auto" so the model can cleanly STOP — forcing
         # "required" every round is what makes it contort its final answer into a bogus
         # tool argument (the answer-as-arg leak) instead of just finishing.
+        #
+        # NB: parallel tool calls need "auto"+thinking-off (verified: "required" applies
+        # XGrammar structural enforcement that caps output at ONE <tool_call>). But the
+        # full operational system prompt suppresses batching regardless (a minimal prompt
+        # fans out; this one emits one call even with an explicit batch instruction), so
+        # keeping round-0 "required" costs no parallelism we'd otherwise get, and buys
+        # the gather guarantee. Deterministic fan-out lives in the orchestration path.
         tool_choice = "required" if not tool_log else "auto"
         try:
             resp = client.chat.completions.create(

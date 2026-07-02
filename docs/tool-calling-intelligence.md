@@ -12,10 +12,10 @@ Typically, if a model wants to stop using tools, it generates a plain text answe
 **How we solve this:**
 We inject a sentinel tool called `finish` and force a tool call on the **first** round.
 - On the first round `tool_choice="required"` — the model *must* gather before it can answer, and can't burn the round on a throwaway reply.
-- When it has enough information, it calls `finish`.
+- When it has enough information, it calls `finish` (or, on later rounds, simply emits no tool call).
 - We intercept `finish` (it is never dispatched to the engine) and instantly break the loop, advancing to the final synthesis round. This saves the latency and context of a "dummy" turn.
 
-> **Once evidence exists, `tool_choice` relaxes to `"auto"`** (`tool_choice = "required" if not tool_log else "auto"`). Forcing `required` on *every* round is what makes the model contort its final answer into a bogus tool argument instead of finishing cleanly — see §6.
+> **Once evidence exists, `tool_choice` relaxes to `"auto"`** (`tool_choice = "required" if not tool_log else "auto"`). Forcing `required` on *every* round is what pressures the model into contorting its final answer into a bogus tool argument instead of finishing cleanly — see §6. Round-0 stays `"required"` for the gather guarantee; the parallelism this costs is not real here anyway (see §7).
 
 ## 2. Anti-Spiraling (`_TOOL_ROUND_CAP`)
 A model might search for `X`, not find it, and try searching for `Y`, `Z`, `W` across multiple rounds. This burns through the 10-call limit quickly.
@@ -51,11 +51,27 @@ Under forced `tool_choice="required"`, a reasoning-distill model that is *ready 
 - Relaxing `tool_choice` to `"auto"` after the first round (§1) removes most of the pressure that causes the leak — the model can just stop.
 - As a belt-and-braces guard, `_is_finish_leak(name, args)` drops any call whose arguments carry a stray finish/think/tool_call marker (`function=finish`, `<tool_call>`, `</think>`, `</function>`) or an answer-sized argument blob (>600 chars; real args like `{"deal_id":"D016"}` are tiny). If nothing real remains after filtering, the model is effectively done → the loop routes to **one clean synthesis** instead of a wasted round plus a double generation.
 
-## 7. Parallel Fan-Out — capability, model limit, and where it actually pays off
+## 7. Parallel Fan-Out — capability, prompt suppression, and where it actually pays off
 Parallelism exists in the infrastructure: the `AdaptiveScheduler` builds a DAG where every `parallel_safe` **read** runs concurrently and only WRITE/EXTERNAL tools serialize behind a barrier (`senpai/orchestration/scheduler.py`), and the engine fans out all fresh calls from a round in one plan. This helps *only* when the model emits several `tool_calls` **in a single response**.
 
-**Measured constraint (atlas-35b):** the current served model emits **one `tool_call` per response**, verified directly — even when explicitly forced (`tool_choice="required"`) and instructed to call both tools together, and with the thinking phase both on and off, it returns a single call. So in free-form chat, independent lookups (e.g. `deal_health` for D016 and D100) run across **separate rounds** no matter what the prompt says; there is nothing for the scheduler to parallelize. This is a **serving/model capability**, not a prompt problem. The real fix is serving-side: a backend/chat-template that emits parallel tool calls (OpenAI's API already models multiple `tool_calls`; the server has to produce them).
+**The model *can* batch — in isolation (measured).** A direct probe of atlas-35b on an explicit "call BOTH D016 and D100 now":
 
-**What we ship anyway:** `_PARALLEL_TOOL_HINT` is appended to every chat role's system prompt at the chat entry point, instructing the model to batch independent lookups into one turn. It is a zero-cost, **forward-compatible** nudge — inert on atlas today (which won't batch), but correct the moment a multi-tool-call-capable backend is served. It applies to all read tools, not just one.
+| `tool_choice` | thinking | tool_calls returned |
+| :-- | :-- | :-- |
+| `auto` | off | **2** (D016 + D100) |
+| `auto` | on | 1 |
+| `required` | off | 1 |
+| `required` | on | 1 |
 
-**Where deterministic parallelism is available today:** the orchestration / LLM-planner path, not the chat ReAct loop. A plan can declare multiple independent tasks up front, which the engine runs concurrently — bypassing the one-call-per-turn model limit entirely. Structured multi-entity workflows (e.g. account intelligence comparing several deals) should go through that path when fan-out latency matters; free-form chat remains bound by the model's single-call behavior.
+So batching needs `tool_choice="auto"` + thinking-off; `required` triggers XGrammar structural enforcement that caps output at a single `<tool_call>`.
+
+**But the full operational prompt suppresses it — and that's decisive.** Mirroring the real round-0 request (same query, `auto`, thinking-off) but varying the system prompt:
+
+| system prompt | tool_calls |
+| :-- | :-- |
+| minimal | **2** |
+| full `_junior_system()` | **1** |
+
+The junior prompt *already contains* an explicit "batch independent lookups in one turn" instruction, and adding a stronger one changed nothing — the weight of the full grounding-first prompt makes the model emit one call regardless. Batching only reappears if you strip the prompt down, which would sacrifice the gather/grounding guarantees the prompt exists to enforce. **That trade — gutting a correctness-critical prompt to save ~1 round — is not worth it**, so we do not chase in-chat batching. (This is also why round-0 stays `"required"`: the parallelism it "costs" isn't obtainable here anyway.)
+
+**Where deterministic parallelism is available today:** the orchestration / LLM-planner path, not the chat ReAct loop. A plan can declare multiple independent tasks up front, which the engine runs concurrently — independent of the model's in-chat batching behavior. Structured multi-entity workflows (e.g. account intelligence comparing several deals) should go through that path when fan-out latency matters.
