@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Iterator, Protocol
+from typing import Callable, Iterator, Protocol
 
 
 class Reasoner(Protocol):
@@ -212,12 +212,18 @@ class LLMReasoner:
 
     def __init__(self, *, no_think: bool = True, max_tokens: int = 1200,
                  temperature: float = 0.3, observe: bool = True,
-                 max_observations: int = 12) -> None:
+                 max_observations: int = 12,
+                 on_observations: "Callable[[list[Observation]], None] | None" = None) -> None:
         self.no_think = no_think
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.observe = observe
         self.max_observations = max_observations
+        # Write-side hook (dependency-injected so reason.py stays free of tools/memory):
+        # called with the observations Compose extracted, so cross-chat persistence
+        # rides the interpret pass at zero extra LLM cost. A route wires this to
+        # `senpai.orchestration.memory.remember_observations`.
+        self.on_observations = on_observations
 
     def interpret(self, view: dict) -> list[Observation]:
         """Pass A: evidence view → cited, ranked observations. Deterministic (temp 0)
@@ -243,6 +249,11 @@ class LLMReasoner:
         from senpai.llm.client import stream_complete  # lazy
 
         observations = self.interpret(view) if self.observe else []
+        if observations and self.on_observations is not None:
+            try:
+                self.on_observations(observations)  # persist to cross-chat memory
+            except Exception:
+                pass  # persistence must never break synthesis
         if observations:
             # Compose from the ranked judgments; keep the raw evidence available so
             # exact figures and citation handles are quoted, not paraphrased.

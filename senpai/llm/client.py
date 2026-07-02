@@ -394,17 +394,23 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     sel_msgs = lambda: _prep(convo, False)
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
+        # tool_choice: FORCE a tool on the first round (the model must gather before it
+        # can answer, and must not burn a round writing a throwaway answer). Once we
+        # have evidence, relax to "auto" so the model can cleanly STOP — forcing
+        # "required" every round is what makes it contort its final answer into a bogus
+        # tool argument (the answer-as-arg leak) instead of just finishing.
+        tool_choice = "required" if not tool_log else "auto"
         try:
             resp = client.chat.completions.create(
                 model=config.MODEL, messages=sel_msgs(), tools=sel_tools,
-                tool_choice="required", temperature=0.1, **_gen_kwargs(True),
+                tool_choice=tool_choice, temperature=0.1, **_gen_kwargs(True),
             )
         except Exception as e:  # noqa: BLE001
             print(f"⚠️ Primary server failed in tool loop ({e}). Trying fallback...")
             try:
                 resp = fallback_client.chat.completions.create(
                     model=config.FALLBACK_MODEL, messages=sel_msgs(), tools=sel_tools,
-                    tool_choice="required", temperature=0.1, **_gen_kwargs(True),
+                    tool_choice=tool_choice, temperature=0.1, **_gen_kwargs(True),
                 )
             except Exception as fe:  # noqa: BLE001
                 yield {"type": "answer", "text": f"⚠️ サーバーエラー: {e} (Fallback: {fe})"}
@@ -423,6 +429,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # it calls finish (or emits no real tool) → hand to the routed synthesis round
         # (FAST→8B / THINK→27B), which generates the answer ONCE, streamed.
         real_calls = [(cid, name, args) for cid, name, args in calls if name != "finish"]
+        # Guard the answer-as-arg leak: under forced tool_choice the model sometimes
+        # packs its whole final answer (plus a stray <function=finish>/<tool_call> tag)
+        # into a tool ARGUMENT instead of finishing. Dispatching that runs a bogus
+        # query AND makes the turn generate the answer twice. Drop such calls; if
+        # nothing real remains the model is effectively done → clean synthesis below.
+        real_calls = [(cid, name, args) for cid, name, args in real_calls
+                      if not _is_finish_leak(name, args)]
         if not real_calls:
             if tool_log:
                 last_name, _, last_result = tool_log[-1]
@@ -627,6 +640,24 @@ def _fmt_args(arguments) -> str:
         return ", ".join(f"{k}={v!r}" for k, v in d.items())
     except Exception:
         return str(arguments)
+
+
+_FINISH_LEAK_MARKERS = ("function=finish", "<tool_call>", "</think>", "</function>")
+# Real tool args are short ({"deal_id":"D016"}, {"customer":"豊田製作所"}). An argument
+# blob far larger than that is the model dumping its prose answer into a field.
+_LEAK_ARG_LEN = 600
+
+
+def _is_finish_leak(name: str, arguments) -> bool:
+    """True when the model packed its final answer / a finish sentinel into a tool
+    ARGUMENT instead of finishing cleanly (a `tool_choice=required` contortion). Such a
+    call must not be dispatched — it runs a bogus query and double-generates the answer.
+    Detected by a stray finish/think/tool_call marker or an answer-sized arg blob."""
+    args = arguments if isinstance(arguments, str) else json.dumps(arguments or {}, ensure_ascii=False)
+    low = args.lower()
+    if any(mark in low for mark in _FINISH_LEAK_MARKERS):
+        return True
+    return len(args) > _LEAK_ARG_LEN
 
 
 def _canon_args(arguments) -> str:

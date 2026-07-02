@@ -99,3 +99,47 @@ def default_store() -> ObservationStore:
     if _DEFAULT is None:
         _DEFAULT = JsonlObservationStore(config.OBSERVATIONS_PATH)
     return _DEFAULT
+
+
+# --- write-side: anchor this turn's observations to the entity in focus --------
+
+def subject_from_focus(focus) -> EntityRef | None:
+    """Turn the session's resolved entity ([[SessionFocus]]) into an observation
+    anchor. Prefer the deal (most specific — it also carries its customer); fall back
+    to a standalone account. A bare quote with no entity id can't anchor → None, so
+    the observation stays unstored rather than being filed under nothing."""
+    if focus is None:
+        return None
+    if getattr(focus, "deal_id", None):
+        return EntityRef(type="deal", id=focus.deal_id,
+                         display=focus.customer_name or "")
+    if getattr(focus, "customer_id", None):
+        return EntityRef(type="account", id=focus.customer_id,
+                         display=focus.customer_name or "")
+    return None
+
+
+def remember_observations(observations, *, subject: EntityRef | None = None,
+                          store: ObservationStore | None = None) -> int:
+    """Persist a turn's observations to cross-chat memory, anchored to `subject`.
+
+    The write hook the Reasoner calls with the observations it *already* extracted for
+    Compose — so persistence adds no extra LLM call. When `subject` is omitted it is
+    derived from the live conversation via [[SessionFocus]] (lazy import: keeps this
+    module free of a tools dependency). No subject → nothing is addressable, so we
+    skip (returns 0) rather than filing unanchored judgments. Already-anchored
+    observations keep their own subject. Returns the number persisted."""
+    if not observations:
+        return 0
+    if subject is None:
+        from senpai.tools.focus import session_focus  # lazy: avoid orchestration→tools coupling at import
+        subject = subject_from_focus(session_focus())
+    if subject is None:
+        return 0
+    store = store or default_store()
+    n = 0
+    for obs in observations:
+        anchored = obs if obs.subject is not None else replace(obs, subject=subject)
+        store.put(anchored)
+        n += 1
+    return n

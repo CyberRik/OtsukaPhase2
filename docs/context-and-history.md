@@ -76,6 +76,16 @@ class ObservationStore(Protocol):
 
 The point of the seam: it gives real cross-chat memory **today** — an observation written in chat A about `D001` is read back in chat B after a restart (`test_persists_across_store_instances`) — while the persistence layer's database becomes *just another `ObservationStore` implementation*. Callers hold the Protocol, so swapping the JSONL stub for the DB changes nothing upstream. `default_store()` is the lazy process-wide instance at `config.OBSERVATIONS_PATH` (gitignored, demo-only).
 
-> **Not yet wired.** This PR ships the anchor + seam + stub with a round-trip test only. Writing observations after synthesis, and injecting `by_subject` results into grounding (router-gated, token-capped, with an injected/dropped log for the dashboard), are the follow-up PRs.
+### 4d. Write-side: filling memory as a byproduct of reasoning
+Observations are produced in exactly one place — the Reasoner's interpret pass (`LLMReasoner.interpret`, §on the Observation layer). So that is where they are persisted, at **zero extra model cost**: `LLMReasoner` takes an injected `on_observations` hook and calls it with the observations Compose already extracted. `reason.py` stays free of any tools/memory import — the hook is dependency-injected — so the orchestration layer never depends on `senpai.tools`.
+
+A route wires the hook to `memory.remember_observations`, which:
+- derives the turn's anchor from [SessionFocus](#3c-sessionfocus--the-resolved-entity-senpaitoolsfocuspy) via `subject_from_focus` (deal → account → None), so the same id discipline that grounds documents also keys memory;
+- anchors each unanchored observation to that subject and `put`s it (an observation that already carries its own subject keeps it);
+- **skips entirely when no entity is in focus** — an unanchored judgment has nothing to be recalled by, so it is not filed under nothing.
+
+Persistence can never break a turn: the hook is wrapped so a store fault is swallowed after synthesis has already streamed.
+
+> **Not yet wired (read-side).** This PR ships the anchor + seam + stub + the write hook. Still to come: routing `LLMReasoner` into the live workflows with `on_observations=remember_observations` (the M1 wiring), then injecting `by_subject` results into grounding (router-gated, token-capped, with an injected/dropped log for the dashboard).
 
 > **Design note.** `ReasonerView` (`EvidenceBundle.to_reasoner_view`) stays a *derived, disposable* projection — it is never the persisted object. The durable objects are Evidence, Observations, and Artifacts, anchored by `subject`/`as_of`. Long-term, the same `ReasonerView` shape should be producible from **both** a live bundle and a store query over `(subject, time)`, so memory plugs in without changing the reasoning architecture.
