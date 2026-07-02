@@ -19,6 +19,7 @@ import {
   ChevronRight,
   CornerDownLeft,
   GraduationCap,
+  History,
   Loader2,
   Mic,
   Paperclip,
@@ -34,7 +35,9 @@ import { assembleReviewArtifact, assembleAccountArtifact, assembleResearchArtifa
 import type { CoachExample, DealRow, Principle } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { customerText, coachExampleText } from "@/lib/content-i18n";
-import { useCachedState, useCachedConversationId, getCached, useWorkspaceFocus } from "@/lib/chat-store";
+import { useCachedState, useCachedConversationId, getCached, useWorkspaceFocus, snapshotByPrefix, restoreCached, type WorkspaceFocus } from "@/lib/chat-store";
+import { useSession } from "@/lib/session";
+import { HistoryDrawer } from "./history-drawer";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +61,18 @@ type WMsg =
   | { id: number; role: "skill"; kind: "account_brief"; customerId: string; artifact: Artifact }
   | { id: number; role: "skill"; kind: "research"; query: string; entity?: EntityRef; artifact: Artifact }
   | { id: number; role: "crew"; mode: "deal" | "team"; query?: string; label?: string };
+
+// The serialized shape persisted per conversation (the opaque `blob` the backend
+// round-trips). It carries the transcript array PLUS the separately-cached streamed
+// strings (assistant text, artifact narration, crew contributions) and the id
+// counter, so a reopened chat rehydrates full-fidelity without re-streaming.
+type StoredThread = {
+  version: 1;
+  messages: WMsg[];
+  cache: Record<string, unknown>;
+  nextId: number;
+  focus?: WorkspaceFocus;
+};
 
 function Avatar({ who }: { who: "senpai" | "user" }) {
   return who === "senpai" ? (
@@ -809,6 +824,12 @@ export function Workspace({
   const [transcribing, setTranscribing] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const thread = useCachedConversationId(`workspace:${role}:thread:id`);
+  // Persistent chat history: the acting user (for per-user storage), the History
+  // drawer's open state, and a tick bumped after each autosave so an open drawer
+  // refreshes to show the live conversation.
+  const { employeeId } = useSession();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [savedTick, setSavedTick] = useState(0);
 
   // Shared focus from the Command Center's Context pane. When the rep clicks a
   // deal on the left, that deal becomes the grounding for the next turn — they
@@ -828,6 +849,96 @@ export function Workspace({
   const idRef = useRef<number>(-1);
   if (idRef.current < 0) idRef.current = messages.reduce((mx, m) => Math.max(mx, m.id), 0) + 1;
   const nextId = () => idRef.current++;
+
+  // --- Persistent chat history -------------------------------------------------
+  const histRole: "junior" | "manager" = role === "manager" ? "manager" : "junior";
+
+  // Serialize the whole conversation into the opaque blob the backend stores: the
+  // transcript array plus every per-turn cache entry (streamed assistant text under
+  // ws:chat:<cid>:, crew contributions under ws:crew:<cid>:, and each skill card's
+  // artifact narration under ws:art:<artifactId>:) so a reopened chat rehydrates
+  // full-fidelity. See the cache-key sites at workspace.tsx (ArtifactCard) and
+  // crew-turn.tsx.
+  function serializeThread(): string {
+    const cid = thread.current;
+    const prefixes = [`ws:chat:${cid}:`, `ws:crew:${cid}:`];
+    for (const m of messages) {
+      if (m.role === "skill" && m.artifact) prefixes.push(`ws:art:${m.artifact.id}:`);
+    }
+    const payload: StoredThread = {
+      version: 1,
+      messages,
+      cache: snapshotByPrefix(prefixes),
+      nextId: idRef.current,
+      focus,
+    };
+    return JSON.stringify(payload);
+  }
+
+  function deriveTitle(): string {
+    const first = messages.find((m) => m.role === "user") as { text?: string } | undefined;
+    const text = (first?.text ?? "").trim().replace(/\s+/g, " ");
+    if (!text) return lang === "ja" ? "無題のチャット" : "New chat";
+    return text.length > 60 ? `${text.slice(0, 60)}…` : text;
+  }
+
+  // Autosave (debounced) after each completed turn. Skips while a turn is streaming
+  // (busy) and skips transcripts without a real exchange. Failures are swallowed —
+  // if the backend is down the chat still works ephemerally, just isn't persisted.
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!employeeId || busy) return;
+    const hasUser = messages.some((m) => m.role === "user");
+    const hasReply = messages.some(
+      (m) => m.role === "assistant" || m.role === "skill" || m.role === "crew",
+    );
+    if (!hasUser || !hasReply) return;
+    const cid = thread.current;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      api
+        .saveConversation(cid, {
+          employee_id: employeeId,
+          role: histRole,
+          title: deriveTitle(),
+          blob: serializeThread(),
+          message_count: messages.length,
+        })
+        .then(({ live }) => {
+          if (live) setSavedTick((n) => n + 1);
+        });
+    }, 800);
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, busy, employeeId, histRole]);
+
+  // Reopen a saved conversation: rehydrate the transcript + all cached streamed
+  // strings, adopt its id, and restore the id counter and focus.
+  async function loadConversation(id: string) {
+    if (busy) return;
+    const { data } = await api.getConversation(id);
+    if (!data) return;
+    let parsed: StoredThread;
+    try {
+      parsed = JSON.parse(data.blob) as StoredThread;
+    } catch {
+      return;
+    }
+    if (!parsed || parsed.version !== 1) return;
+    restoreCached(parsed.cache ?? {});
+    thread.set(id);
+    idRef.current =
+      typeof parsed.nextId === "number"
+        ? parsed.nextId
+        : (parsed.messages ?? []).reduce((mx, m) => Math.max(mx, m.id), 0) + 1;
+    setMessages(parsed.messages ?? []);
+    setFocus(parsed.focus ?? {});
+    setInput("");
+    setDealId("");
+    setHistoryOpen(false);
+  }
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -1521,15 +1632,23 @@ export function Workspace({
                   {attaching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
                   <span className="hidden sm:inline">{t("attach.short")}</span>
                 </button>
+                <button
+                  onClick={() => setHistoryOpen(true)}
+                  title={lang === "ja" ? "チャット履歴" : "Chat history"}
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+                >
+                  <History className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{lang === "ja" ? "履歴" : "History"}</span>
+                </button>
                 {messages.length > 0 && (
                   <button
                     onClick={clearThread}
                     disabled={busy}
-                    title={lang === "ja" ? "会話をクリア" : "Clear conversation"}
+                    title={lang === "ja" ? "新しい会話" : "New chat"}
                     className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{lang === "ja" ? "クリア" : "Clear"}</span>
+                    <span className="hidden sm:inline">{lang === "ja" ? "新規" : "New chat"}</span>
                   </button>
                 )}
                 <Button variant="seal" size="sm" disabled={busy || !input.trim()} onClick={() => submit(input, dealId)} className="gap-1.5">
@@ -1540,6 +1659,17 @@ export function Workspace({
           </div>
         </div>
       </div>
+
+      <HistoryDrawer
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        employeeId={employeeId}
+        role={histRole}
+        activeId={thread.current}
+        reloadSignal={savedTick}
+        onSelect={loadConversation}
+        onDeletedActive={clearThread}
+      />
     </div>
   );
 }

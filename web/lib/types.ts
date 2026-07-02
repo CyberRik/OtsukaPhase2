@@ -446,6 +446,25 @@ export interface CoachingThread {
   messages: CoachingThreadMessage[];
 }
 
+// --- Persistent copilot chat history (`/api/chat/history`) ------------------
+// A saved Senpai Workspace conversation. The header is what the server stores in
+// queryable columns (for the history list); `blob` is an opaque, client-owned JSON
+// transcript (a serialized `StoredThread`) the server never parses — it round-trips
+// verbatim so a reopened chat rehydrates full-fidelity, skill/artifact cards and all.
+export interface ConversationHeader {
+  conversation_id: string;
+  employee_id: string;
+  role: "junior" | "manager";
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface ConversationDetail extends ConversationHeader {
+  blob: string;
+}
+
 // --- Multimodal ingestion (`POST /api/ingest`) -----------------------------
 // Editable draft matching the sales_activities schema. See
 // senpai/ingestion/multimodal.py:ActivityExtraction.

@@ -50,6 +50,7 @@ from senpai.coach.review import (
     review_note,
 )
 from senpai.data import store
+from senpai.data import chat_store
 from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
 from senpai.knowledge import generate as kgen
@@ -1502,6 +1503,74 @@ def chat(req: ChatRequest):
     )
 
 
+# --- Persistent chat history ------------------------------------------------
+# Durable copilot transcripts so a rep can close the tab and resume a past chat.
+# The frontend owns the transcript (it's the only place the full-fidelity WMsg[]
+# and skill/artifact cards exist), so it POSTs an opaque JSON `blob` here after each
+# completed turn; the server only reads the small header fields for listing. Storage
+# is SQLite via senpai.data.chat_store — separate from the seed/overlay `store`.
+# Identity is passed explicitly as employee_id (like /api/coach/rep-profile/{id});
+# the streaming /api/chat endpoint above is intentionally left untouched.
+class SaveConversationRequest(BaseModel):
+    employee_id: str
+    role: str = "junior"
+    title: str
+    blob: str
+    message_count: int = 0
+
+
+class RenameConversationRequest(BaseModel):
+    title: str
+
+
+@app.get("/api/chat/history")
+def chat_history_list(employee_id: str, role: str = "junior"):
+    """List one user's saved conversations (headers only), newest first."""
+    return {"conversations": chat_store.list_conversations(employee_id, role)}
+
+
+@app.get("/api/chat/history/{conversation_id}")
+def chat_history_get(conversation_id: str):
+    """Fetch one full conversation (header + opaque blob) for resume."""
+    convo = chat_store.get_conversation(conversation_id)
+    if convo is None:
+        raise HTTPException(404, f"conversation {conversation_id} not found")
+    return convo
+
+
+@app.put("/api/chat/history/{conversation_id}")
+def chat_history_save(conversation_id: str, req: SaveConversationRequest):
+    """Create or update a conversation (autosaved after each turn). Returns header."""
+    title = req.title.strip() or "Untitled chat"
+    return chat_store.upsert_conversation(
+        conversation_id=conversation_id,
+        employee_id=req.employee_id,
+        role=req.role,
+        title=title,
+        blob=req.blob,
+        message_count=req.message_count,
+    )
+
+
+@app.patch("/api/chat/history/{conversation_id}")
+def chat_history_rename(conversation_id: str, req: RenameConversationRequest):
+    """Rename a conversation."""
+    title = req.title.strip()
+    if not title:
+        raise HTTPException(400, "title is required")
+    if not chat_store.rename_conversation(conversation_id, title):
+        raise HTTPException(404, f"conversation {conversation_id} not found")
+    return {"ok": True, "conversation_id": conversation_id, "title": title}
+
+
+@app.delete("/api/chat/history/{conversation_id}")
+def chat_history_delete(conversation_id: str):
+    """Delete a conversation."""
+    if not chat_store.delete_conversation(conversation_id):
+        raise HTTPException(404, f"conversation {conversation_id} not found")
+    return {"ok": True, "conversation_id": conversation_id}
+
+
 # --- LLMPlanner: goal -> capability graph -> document ------------------------
 # The minimal planner surface (milestone 1: document generation). Unlike /api/chat
 # (a ReAct tool loop), this translates ONE goal into a static capability plan, runs
@@ -2529,13 +2598,16 @@ def _run_graph_rag_stream(query: str):
         yield _sse({"type": "node_visited", "kind": "community",
                     "label": f'{s.get("category","")} × {s.get("industry","") or "—"}',
                     "n_deals": s.get("n_deals", 0), "win_rate": s.get("win_rate", 0.0)})
+        time.sleep(0.4)  # Visual delay to animate traversal
     for row in reps_rows:
-        rep_id = row.get("rep") or row.get("employee_id") or "?"
+        rep_id = row.get("rep_id") or row.get("rep") or row.get("employee_id") or "?"
         yield _sse({"type": "node_visited", "kind": "rep", "label": rep_id,
                     "won": row.get("won", 0), "closed": row.get("closed", 0)})
-        for did in (row.get("deals") or [])[:3]:
+        time.sleep(0.3)
+        for did in (row.get("example_deal_ids") or row.get("deals") or [])[:3]:
             yield _sse({"type": "edge_traversed", "source": rep_id, "target": did,
                         "rel": "OWNS"})
+            time.sleep(0.2)
 
     trace_items = _trace.drain()
     for ev in trace_items:

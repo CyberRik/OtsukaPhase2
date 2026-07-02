@@ -29,6 +29,8 @@ import type {
   RepProgress,
   AddPrincipleRequest,
   CoachingThread,
+  ConversationHeader,
+  ConversationDetail,
   ExtractResult,
   GeneratedDocument,
   IngestResult,
@@ -82,6 +84,26 @@ async function post<T>(path: string, body: unknown, fallback: T): Promise<Fetche
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`${res.status}`);
+    return { data: (await res.json()) as T, live: true };
+  } catch {
+    return { data: fallback, live: false };
+  }
+}
+
+async function send<T>(
+  path: string,
+  method: "PUT" | "PATCH" | "DELETE",
+  body: unknown,
+  fallback: T,
+): Promise<Fetched<T>> {
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
     });
     if (!res.ok) throw new Error(`${res.status}`);
@@ -226,6 +248,46 @@ export const api = {
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
     return get<{ threads: CoachingThread[] }>(`/api/coach/threads${suffix}`, { threads: [] });
   },
+
+  // --- persistent copilot chat history ---
+  // List a user's saved conversations (headers only), newest first. API-down
+  // returns an empty list with live:false so the History drawer degrades quietly.
+  listConversations: (employeeId: string, role: "junior" | "manager") =>
+    get<{ conversations: ConversationHeader[] }>(
+      `/api/chat/history?employee_id=${encodeURIComponent(employeeId)}&role=${role}`,
+      { conversations: [] },
+    ),
+  // Fetch one full conversation (header + opaque blob) to resume it.
+  getConversation: (conversationId: string) =>
+    get<ConversationDetail | null>(
+      `/api/chat/history/${encodeURIComponent(conversationId)}`,
+      null,
+    ),
+  // Upsert (autosave). `blob` is the serialized StoredThread the client owns.
+  saveConversation: (
+    conversationId: string,
+    payload: { employee_id: string; role: "junior" | "manager"; title: string; blob: string; message_count: number },
+  ) =>
+    send<ConversationHeader | null>(
+      `/api/chat/history/${encodeURIComponent(conversationId)}`,
+      "PUT",
+      payload,
+      null,
+    ),
+  renameConversation: (conversationId: string, title: string) =>
+    send<{ ok: boolean } | null>(
+      `/api/chat/history/${encodeURIComponent(conversationId)}`,
+      "PATCH",
+      { title },
+      null,
+    ),
+  deleteConversation: (conversationId: string) =>
+    send<{ ok: boolean } | null>(
+      `/api/chat/history/${encodeURIComponent(conversationId)}`,
+      "DELETE",
+      undefined,
+      null,
+    ),
   account: (customerId: string) =>
     get<AccountSummary | null>(`/api/account/${encodeURIComponent(customerId)}`, null),
   resolveCustomer: (q: string) =>

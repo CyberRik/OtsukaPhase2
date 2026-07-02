@@ -165,6 +165,14 @@ GENERATED_DIR = PKG_DIR / "data" / "generated"
 MEMORY_DIR = PKG_DIR / "data" / "memory"
 OBSERVATIONS_PATH = MEMORY_DIR / "observations.jsonl"
 
+# Persistent copilot chat history: durable, per-user conversation transcripts so a
+# rep can close the tab and resume a past chat exactly where it left off. A single
+# SQLite file (stdlib sqlite3, WAL mode) keyed by conversation_id — deliberately
+# SEPARATE from senpai.data.store's seed/overlay tables so chat writes never drop
+# store's lru_cache. Gitignored and demo-only, like INGESTED_DIR; created on first
+# use. The stored blob is an opaque client-owned transcript the server never parses.
+CHAT_DB_PATH = INGESTED_DIR / "chat_history.db"
+
 # --- Workspace (sandboxed local document access) ----------------------------
 # The Workspace capability reaches OUTSIDE the seed DB — it finds and reads real
 # local documents (PDF/DOCX/PPTX/XLSX/TXT/MD) and returns structured evidence into

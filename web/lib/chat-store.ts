@@ -49,6 +49,29 @@ export function clearCached(key: string): void {
 }
 
 /**
+ * Snapshot every store entry whose key starts with any of the given prefixes.
+ * Used to serialize a whole conversation: the transcript array plus the
+ * separately-cached streamed strings (assistant text, artifact narration, crew
+ * contributions) that live under per-turn keys — so a reopened chat rehydrates
+ * full-fidelity instead of re-streaming.
+ */
+export function snapshotByPrefix(prefixes: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of values) {
+    if (prefixes.some((p) => k.startsWith(p))) out[k] = v;
+  }
+  return out;
+}
+
+/** Restore a batch of entries (from a saved conversation blob) into the store. */
+export function restoreCached(entries: Record<string, unknown>): void {
+  for (const [k, v] of Object.entries(entries)) {
+    values.set(k, v);
+    emit(k);
+  }
+}
+
+/**
  * Like `useState`, but the value lives in the keyed external store, so it is
  * shared across every mount that uses the same `key` — and survives unmount
  * (navigation). The setter notifies subscribers, so a write from a still-running
@@ -86,9 +109,12 @@ export function useCachedState<T>(
 
 /**
  * A stable conversation id that persists across remounts (so the backend keeps
- * the same conversation cache). `reset()` mints a fresh one (e.g. on "Clear").
+ * the same conversation cache). `reset()` mints a fresh one (e.g. on "Clear");
+ * `set(id)` adopts an existing id (e.g. when reopening a saved conversation).
  */
-export function useCachedConversationId(key: string): { current: string; reset: () => string } {
+export function useCachedConversationId(
+  key: string,
+): { current: string; reset: () => string; set: (id: string) => void } {
   const ref = useRef<string>("");
   if (!ref.current) {
     ref.current = getCached<string>(key) ?? makeId();
@@ -102,6 +128,10 @@ export function useCachedConversationId(key: string): { current: string; reset: 
       ref.current = makeId();
       setCached(key, ref.current);
       return ref.current;
+    },
+    set(id: string) {
+      ref.current = id;
+      setCached(key, id);
     },
   };
 }
