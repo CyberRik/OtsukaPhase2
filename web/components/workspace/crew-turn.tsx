@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Building2, UserSearch } from "lucide-react";
+import { Building2, UserSearch, GraduationCap, Briefcase } from "lucide-react";
 import { crewStream, teamStream, type CrewEvent, type ResolveCandidate } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useCachedState } from "@/lib/chat-store";
@@ -147,11 +147,42 @@ export function CrewTurn({
 
   const picking = candidates.length > 0 && phases.length === 0;
 
-  return (
-    <div className="flex w-full flex-col gap-3 py-0.5">
+  const activePhase = phases.find((p) => p.status === "running") || phases.find((p) => p.status === "pending") || phases[phases.length - 1];
+  
+  const AGENT_NAMES_EN: Record<string, string> = {
+    researcher: "RESEARCHER",
+    coach: "COACH",
+    strategist: "STRATEGIST",
+    team_lead: "TEAM LEAD",
+    analyst: "ANALYST",
+  };
 
-      {/* Ambiguous customer picker (compact, list-based) */}
-      {picking && (
+  let activeAgentName = mode === "team" ? "SENPAI MANAGER" : "SENPAI COACH";
+  if (activePhase) {
+    if (lang === "en" && AGENT_NAMES_EN[activePhase.id]) {
+      activeAgentName = AGENT_NAMES_EN[activePhase.id];
+    } else {
+      activeAgentName = activePhase.label;
+    }
+  }
+
+  return (
+    <div className="flex gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy text-white">
+        {mode === "team" ? (
+          <Briefcase className="h-[18px] w-[18px]" />
+        ) : (
+          <GraduationCap className="h-[18px] w-[18px]" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+          {activeAgentName}
+        </div>
+        
+        <div className="flex w-full flex-col gap-3 py-0.5">
+          {/* Ambiguous customer picker (compact, list-based) */}
+          {picking && (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_4px_20px_-10px_rgba(16,24,40,0.2)]">
           <div className="flex items-center gap-1.5 border-b border-border px-3 py-2 text-[12px] font-medium text-muted-foreground">
             <UserSearch className="h-3.5 w-3.5" />
@@ -186,24 +217,26 @@ export function CrewTurn({
         </p>
       )}
 
-      {/* Hierarchical execution timeline */}
-      {phases.length > 0 && (
-        <ExecutionTimeline
-          phases={phases}
-          collapsed={collapsed}
-          onToggle={() => setCollapsed((v) => !v)}
-          lang={lang}
-        />
-      )}
+          {/* Hierarchical execution timeline */}
+          {phases.length > 0 && (
+            <ExecutionTimeline
+              phases={phases}
+              collapsed={collapsed}
+              onToggle={() => setCollapsed((v) => !v)}
+              lang={lang}
+            />
+          )}
 
-      {/* Final artifact — the hero; appears once all work finishes */}
-      {brief && status === "done" && showArtifact && (
-        <div className="mt-5 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
-          <div className="mb-5 h-px w-8 bg-border" />
-          <p className="eyebrow mb-4">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
-          <AnswerMd text={brief} />
+          {/* Final artifact — the hero; appears once all work finishes */}
+          {brief && status === "done" && showArtifact && (
+            <div className="mt-5 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
+              <div className="mb-5 h-px w-8 bg-border" />
+              <p className="eyebrow mb-4">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
+              <AnswerMd text={brief} />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -9,23 +9,33 @@ import type { Fetched } from "@/lib/api";
 // (English labels, no i18n) — this is an internal ops surface, not the product.
 
 /** Fetch an api.* method that returns Fetched<T>; expose data + live + loading +
- *  a refetch. Keeps the offline-fixture story (live=false → LiveBadge greys). */
-export function useFetched<T>(fn: () => Promise<Fetched<T>>, initial: T) {
+ *  a refetch. Polls every `intervalMs` (default 5s) so a page left open reflects new
+ *  activity — e.g. LLM usage rows written as you chat — without a manual reload; pass
+ *  intervalMs=0 to fetch once (used by the force-graph views, which must not re-layout
+ *  on a poll). Keeps the offline-fixture story (live=false → LiveBadge greys). */
+export function useFetched<T>(fn: () => Promise<Fetched<T>>, initial: T, intervalMs = 5000) {
   const [data, setData] = useState<T>(initial);
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(true);
-  const load = useCallback(() => {
-    let alive = true;
-    setLoading(true);
-    fn().then((r) => {
-      if (!alive) return;
+  // Manual refetch (e.g. after an admin edit) — sets state directly.
+  const load = useCallback(async () => {
+    const r = await fn();
+    setData(r.data);
+    setLive(r.live);
+    setLoading(false);
+  }, [fn]);
+  useEffect(() => {
+    let alive = true;               // one guard for the initial fetch + every poll tick
+    const tick = () => fn().then((r) => {
+      if (!alive) return;           // don't setState after unmount / dep change
       setData(r.data);
       setLive(r.live);
       setLoading(false);
     });
-    return () => { alive = false; };
-  }, [fn]);
-  useEffect(() => load(), [load]);
+    tick();                          // fetch immediately on mount (no wait for first interval)
+    const id = intervalMs > 0 ? setInterval(tick, intervalMs) : undefined;
+    return () => { alive = false; if (id) clearInterval(id); };
+  }, [fn, intervalMs]);
   return { data, live, loading, refetch: load };
 }
 

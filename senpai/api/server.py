@@ -682,20 +682,6 @@ def coach_narrate(req: CoachRequest):
 from senpai.tools.schemas import JUNIOR_TOOLS, MANAGER_TOOLS, RESEARCH_TOOLS
 
 
-# Nudge the model to batch independent lookups into ONE turn. The scheduler already
-# runs parallel-safe reads concurrently (senpai/orchestration/scheduler.py), but that
-# only helps when the model emits the calls together — reasoning models default to one
-# tool per round, which serializes them behind a think-heavy selection pass each time.
-# Applies to every read tool (deal_health, query_spr, search_notes, web_search, …),
-# not just one; appended once for all roles at the chat entry point.
-_PARALLEL_TOOL_HINT = (
-    "\n\n【ツール呼び出しの効率】複数の独立した情報が必要なとき"
-    "（例: 複数の案件・顧客を比較する、複数のトピックを調べる）は、"
-    "ツールを1つずつ順番に呼ばず、同じターンで一度にまとめて呼び出すこと。"
-    "独立した読み取りは並列実行されるため、応答が大幅に速くなる。"
-)
-
-
 # Concise system prompts (mirror senpai/apps/*_chat.py; inlined so we don't import
 # gradio). today() is read per-request so a pinned SENPAI_TODAY is respected.
 def _junior_system() -> str:
@@ -926,8 +912,28 @@ _FILE_SCOPE_RE = re.compile(
 )
 
 
+# Analytical / ranking intent — questions that need CRM + scoring, not a file read.
+# When present, we do NOT lock the turn to workspace-only even if it mentions "files":
+# "best performing company among my files" wants analysis (deal health / SPR), which
+# the local notes don't contain. Leaving file-scope off keeps ALL tools available
+# (workspace AND CRM), so the model can ground on files yet still rank via CRM,
+# instead of spinning on filename-only search over notes that hold no metrics.
+_ANALYTICAL_RE = re.compile(
+    r"\b(?:best|top|worst|highest|lowest|rank(?:ing|ed)?|compare|comparison|"
+    r"which\s+(?:is|are|one|deal|company|customer)|best[- ]performing|"
+    r"performance|revenue|win\s*rate|pipeline)\b|"
+    r"(?:一番|最も|最高|最良|最悪|ランキング|比較|順位|パフォーマンス|業績|勝率|売上|"
+    r"どれが|どちらが|どの(?:案件|会社|顧客))",
+    re.IGNORECASE,
+)
+
+
 def _is_file_scoped(message: str) -> bool:
-    return bool(_FILE_SCOPE_RE.search(message or ""))
+    msg = message or ""
+    # Ranking/performance intent overrides file-scope: it needs CRM, not just files.
+    if _ANALYTICAL_RE.search(msg):
+        return False
+    return bool(_FILE_SCOPE_RE.search(msg))
 
 
 # Planner intent → the LLMPlanner (capability graph), not the ReAct loop. Covers
@@ -1426,7 +1432,7 @@ def chat(req: ChatRequest):
                                    "name": c.get("name", ""),
                                    "deal_id": d["deal_id"] if d else None})
 
-    system = system_fn() + _PARALLEL_TOOL_HINT
+    system = system_fn()
     if active and active.get("customer"):
         focus = active["customer"] + (f"（案件 {active['deal_id']}）" if active.get("deal_id") else "")
         if selected_flag:

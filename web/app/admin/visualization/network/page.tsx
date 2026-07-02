@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 const KINDS = ["all", "rep", "customer", "deal", "product", "category", "industry"] as const;
 
 export default function NetworkPage() {
-  const { data, live } = useFetched(api.adminGraph, { nodes: [], links: [], stats: {} });
+  const { data, live } = useFetched(api.adminGraph, { nodes: [], links: [], stats: {} }, 0);
   const [filter, setFilter] = useState<(typeof KINDS)[number]>("all");
   const [selected, setSelected] = useState<FGNode | null>(null);
 

@@ -7,7 +7,7 @@ import type { Community } from "@/lib/admin-types";
 import { cn } from "@/lib/utils";
 
 export default function CommunitiesPage() {
-  const { data, live } = useFetched(api.adminCommunities, { communities: [] });
+  const { data, live } = useFetched(api.adminCommunities, { communities: [] }, 0);
   const [sel, setSel] = useState<Community | null>(null);
 
   const { categories, leavesByCat } = useMemo(() => {
@@ -85,11 +85,11 @@ export default function CommunitiesPage() {
                 ))}
               </div>
               <div className="text-center text-[13px] font-medium" style={{ color: winColor(sel.win_rate) }}>{pct(sel.win_rate)} win rate</div>
-              {sel.top_failure_signals?.length > 0 && (
+              {(sel.top_failure_signals?.length ?? 0) > 0 && (
                 <div>
                   <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Top failure signals</div>
                   <div className="flex flex-wrap gap-1">
-                    {sel.top_failure_signals.map((s, i) => (
+                    {sel.top_failure_signals?.map((s, i) => (
                       <span key={i} className="rounded-full bg-band-red/10 px-2 py-0.5 text-[11px] text-band-red">{s.signal} ({s.count})</span>
                     ))}
                   </div>
@@ -106,8 +106,8 @@ export default function CommunitiesPage() {
                   <p className="text-[12.5px] leading-relaxed text-foreground">{sel.narrative_ja}</p>
                 </div>
               )}
-              {sel.recommended_principle_ids?.length > 0 && (
-                <div className="text-[11.5px] text-muted-foreground">Principles: {sel.recommended_principle_ids.join(", ")}</div>
+              {(sel.recommended_principle_ids?.length ?? 0) > 0 && (
+                <div className="text-[11.5px] text-muted-foreground">Principles: {sel.recommended_principle_ids?.join(", ")}</div>
               )}
             </div>
           ) : (

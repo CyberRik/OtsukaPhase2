@@ -1464,9 +1464,7 @@ export function Workspace({
           }
           if (m.role === "crew") {
             return (
-              <Row key={m.id} who="senpai" name={assistantName}>
-                <CrewTurn turnId={m.id} conversationId={thread.current} mode={m.mode} query={m.query} label={m.label} />
-              </Row>
+              <CrewTurn key={m.id} turnId={m.id} conversationId={thread.current} mode={m.mode} query={m.query} label={m.label} />
             );
           }
           return null;
