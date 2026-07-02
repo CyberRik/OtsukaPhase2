@@ -47,9 +47,10 @@ _RINGISHO_RE = re.compile(r"稟議|ringisho", re.IGNORECASE)
 _ORGANIZE_RE = re.compile(
     r"\b(?:organi[sz]e|reorgani[sz]e|tidy(?:\s?up)?|clean\s?up|sort|file\s+away|declutter)\b"
     r".{0,30}?(?:files?|documents?|docs?|folder|workspace)|"
+    r"\b(?:put|move|place)\b.{1,40}?\b(?:in|into|under|to|inside)\b.{1,30}?(?:folder|directory)?|"
     r"(?:ファイル|資料|ドキュメント|文書|フォルダ|ワークスペース).{0,10}?"
-    r"(?:整理|片付け|仕分け|フォルダ分け|分類)|"
-    r"(?:整理|片付け|仕分け|フォルダ分け|分類)(?:して|する)?", re.IGNORECASE)
+    r"(?:整理|片付け|仕分け|フォルダ分け|分類|移動)|"
+    r"(?:整理|片付け|仕分け|フォルダ分け|分類|移動)(?:して|する)?", re.IGNORECASE)
 
 # NOTE: save/write a short text file INTO the workspace (not a generated artifact).
 _NOTE_RE = re.compile(
@@ -74,27 +75,31 @@ _AFFIRM_RE = re.compile(
 _ORGANIZE_PREVIEW_MARK = "【整理プレビュー"
 
 
-def _last_assistant_text(history: list | None) -> str:
-    """The most recent assistant message's text (skipping any trailing user turn), so
-    continuation detection works whether `history` is the prior turns (router) or the
-    full conversation incl. the current user message (selection)."""
+def _recent_assistant_texts(history: list | None, limit: int = 3) -> list[str]:
+    """The most recent assistant messages' texts, so continuation detection works
+    even if the model hallucinated a turn in between."""
     if not history:
-        return ""
+        return []
+    texts = []
     for item in reversed(history):
         role = getattr(item, "role", None)
         content = getattr(item, "content", None)
         if role is None and isinstance(item, dict):
             role, content = item.get("role"), item.get("content")
         if role == "assistant":
-            return content or ""
-    return ""
+            texts.append(content or "")
+            if len(texts) >= limit:
+                break
+    return texts
 
 
 def _organize_apply_continuation(message: str, history: list | None) -> bool:
     """True when the user is confirming a pending organize preview (an affirmation
-    immediately after the preview was shown)."""
-    return (bool(_AFFIRM_RE.search(message or ""))
-            and _ORGANIZE_PREVIEW_MARK in _last_assistant_text(history))
+    immediately after the preview was shown, checking up to 3 turns back)."""
+    if not bool(_AFFIRM_RE.search(message or "")):
+        return False
+    recent = _recent_assistant_texts(history, limit=3)
+    return any(_ORGANIZE_PREVIEW_MARK in text for text in recent)
 
 
 def is_organize_goal(message: str, history: list | None = None) -> bool:

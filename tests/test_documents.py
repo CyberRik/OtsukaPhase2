@@ -179,6 +179,77 @@ def test_gather_grounding_junk_gated_and_crm_fallback(tmp_path, monkeypatch):
     assert "【社内データ】" in g
 
 
+def test_gather_grounding_uses_session_focus(tmp_path, monkeypatch):
+    """'make a proposal' with no customer named, but a deal was looked up earlier this
+    session → grounding pulls that deal's CRM record via SessionFocus (a lookup off the
+    resolved id), not a fuzzy re-match. Hermetic empty workspace so ws never interferes."""
+    from senpai import config
+    from senpai.data import store
+    from senpai.tools import conversation as conv
+    from senpai.tools import impl
+
+    empty = tmp_path / "empty_ws"
+    empty.mkdir()
+    monkeypatch.setattr(config, "WORKSPACE_ROOT", empty)
+
+    deal = "D001"
+    cid = store.get_deal(deal)["customer_id"]
+    conv.set_conversation([
+        {"role": "user", "content": "この案件の状況は？"},
+        {"role": "tool", "content": f"{deal} 案件 / 受注ランクA / ¥204,000"},
+        {"role": "assistant", "content": "進行中です。"},
+        {"role": "user", "content": "提案書を作って"},
+    ])
+    try:
+        g = impl._gather_grounding("提案書を作って", customer="", use_web=False)
+    finally:
+        conv.set_conversation(None)
+    assert "【社内データ】" in g                     # CRM grounded off the deal in focus
+    assert store.customer_name(cid) in g            # the RIGHT customer, from the id
+
+
+def test_conversation_grounding_relevance_beats_recency():
+    """The entity in focus must survive even after several unrelated turns push it out
+    of the plain last-N window: relevance ranking pulls the older Murata fact back in,
+    while the recent off-topic chatter that a tail-only slice would have kept is
+    dropped as irrelevant to the current request."""
+    from senpai.tools import conversation as conv
+    from senpai.tools import impl
+
+    convo = [
+        {"role": "user", "content": "村田印刷にいくら見積もった？"},
+        {"role": "tool", "content": "ワークスペース文書: 有限会社村田印刷 27インチ×4 ¥204,000"},
+        {"role": "assistant", "content": "村田印刷への見積もりは¥204,000です。"},
+    ]
+    # Several intervening, unrelated turns — enough to push Murata past RECENT_FLOOR.
+    for q, a in [("今日の天気は？", "晴れです。"),
+                 ("会議は何時？", "15時からです。"),
+                 ("昼食のおすすめは？", "近くの蕎麦屋です。"),
+                 ("電車は動いてる？", "平常運転です。")]:
+        convo += [{"role": "user", "content": q}, {"role": "assistant", "content": a}]
+    convo.append({"role": "user", "content": "村田印刷の提案書を作って"})
+
+    conv.set_conversation(convo)
+    try:
+        g = impl._conversation_grounding("村田印刷の提案書を作って 村田印刷")
+    finally:
+        conv.set_conversation(None)
+    assert "204,000" in g          # the older on-topic fact was rescued by relevance
+    assert "蕎麦屋" not in g        # recent-but-irrelevant chatter was NOT padded in
+
+
+def test_truncate_on_boundary_does_not_sever_facts():
+    from senpai.tools import impl
+
+    text = "村田印刷への見積もり金額は¥204,000です。" + "あ" * 5000 + "末尾の重要な数値¥999"
+    out = impl._truncate_on_boundary(text, 1500)
+    assert len(out) <= 1500 + 2          # budget respected (+ elision marker)
+    assert out.endswith("…")             # marked as elided
+    assert "¥204,000" in out             # the leading fact is intact, not half-cut
+    # A string already within budget is returned unchanged (no marker).
+    assert impl._truncate_on_boundary("短い文。", 1500) == "短い文。"
+
+
 # --- registry + isolation ------------------------------------------------------
 def test_registry_records_for_download(_tmp_generated):
     dispatch("generate_proposal", {"deal_id": DEAL, "confirm": True})

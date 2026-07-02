@@ -166,7 +166,7 @@ GENERATED_DIR = PKG_DIR / "data" / "generated"
 # SENPAI_WORKSPACE_ROOT. list_documents() prunes VCS/build dirs and our own
 # `generated` output so machine artifacts don't feed back in as grounding.
 WORKSPACE_ROOT = Path(
-    os.environ.get("SENPAI_WORKSPACE_ROOT", r"E:\my_stuff\Otsuka")
+    os.environ.get("SENPAI_WORKSPACE_ROOT", r"E:\my_stuff\Otsuka_backup")
 ).resolve()
 # Extensions the Workspace will find/extract (read-only). Lowercase, with dot.
 WORKSPACE_EXTS = tuple(

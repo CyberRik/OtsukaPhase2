@@ -16,7 +16,7 @@ from collections.abc import Iterator
 from openai import OpenAI
 
 from senpai import config
-from senpai.tools.impl import dispatch
+from senpai.tools.impl import dispatch, _truncate_on_boundary
 from senpai.tools import conversation as _conversation
 from senpai.orchestration.scheduler import AdaptiveScheduler, ToolCall as SchedToolCall
 from senpai.orchestration.engine import ExecutionEngine
@@ -498,9 +498,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             ev_frag = bundle.get(cid) if bundle else None
             result = ev_frag.data.get("text", "[error] Missing execution result") if ev_frag else "[error] Task skipped"
 
-            # TRUNCATE IF MASSIVE (prevents parallel calls from blowing up context window)
+            # TRUNCATE IF MASSIVE (prevents parallel calls from blowing up context
+            # window). Cut on a natural boundary, not mid-string, so a fact — a company
+            # name, a quote figure — isn't severed where the model then reads half of it.
             if len(result) > 1500:
-                result = result[:1500] + "\n... [truncated for length]"
+                result = _truncate_on_boundary(result, 1500) + "\n... [truncated for length]"
             executed[key] = result
             # Remember genuinely informative results so the turn can always answer,
             # even if the synthesis round comes back empty (see _route_final_answer).
