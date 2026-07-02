@@ -47,9 +47,10 @@ _RINGISHO_RE = re.compile(r"稟議|ringisho", re.IGNORECASE)
 _ORGANIZE_RE = re.compile(
     r"\b(?:organi[sz]e|reorgani[sz]e|tidy(?:\s?up)?|clean\s?up|sort|file\s+away|declutter)\b"
     r".{0,30}?(?:files?|documents?|docs?|folder|workspace)|"
+    r"\b(?:put|move|place)\b.{1,40}?\b(?:in|into|under|to|inside)\b.{1,30}?(?:folder|directory)?|"
     r"(?:ファイル|資料|ドキュメント|文書|フォルダ|ワークスペース).{0,10}?"
-    r"(?:整理|片付け|仕分け|フォルダ分け|分類)|"
-    r"(?:整理|片付け|仕分け|フォルダ分け|分類)(?:して|する)?", re.IGNORECASE)
+    r"(?:整理|片付け|仕分け|フォルダ分け|分類|移動)|"
+    r"(?:整理|片付け|仕分け|フォルダ分け|分類|移動)(?:して|する)?", re.IGNORECASE)
 
 # NOTE: save/write a short text file INTO the workspace (not a generated artifact).
 _NOTE_RE = re.compile(
@@ -62,10 +63,48 @@ _NOTE_RE = re.compile(
 # Explicit "actually do it" for the destructive organize (otherwise preview only).
 _APPLY_RE = re.compile(r"\b(?:apply|do\s+it|go\s+ahead|confirm|execute)\b|実行|適用|やって",
                        re.IGNORECASE)
+# A broader affirmation, only ever consulted right after an organize PREVIEW (so a
+# bare "yes"/"go ahead"/"はい" continues and applies the pending reorganize).
+_AFFIRM_RE = re.compile(
+    r"\b(?:yes|yeah|yep|ok|okay|sure|go\s+ahead|do\s+it|apply|proceed|confirm|"
+    r"execute|please\s+do|go\s+for\s+it)\b|はい|お願い|やって|実行|適用|進めて|それで",
+    re.IGNORECASE)
+# The marker the organize PREVIEW writes into its assistant reply (see
+# WorkspaceOrganizeCapability); its presence in the last assistant turn is what makes
+# a following affirmation mean "apply the reorganize".
+_ORGANIZE_PREVIEW_MARK = "【整理プレビュー"
 
 
-def is_organize_goal(message: str) -> bool:
-    return bool(_ORGANIZE_RE.search(message or ""))
+def _recent_assistant_texts(history: list | None, limit: int = 3) -> list[str]:
+    """The most recent assistant messages' texts, so continuation detection works
+    even if the model hallucinated a turn in between."""
+    if not history:
+        return []
+    texts = []
+    for item in reversed(history):
+        role = getattr(item, "role", None)
+        content = getattr(item, "content", None)
+        if role is None and isinstance(item, dict):
+            role, content = item.get("role"), item.get("content")
+        if role == "assistant":
+            texts.append(content or "")
+            if len(texts) >= limit:
+                break
+    return texts
+
+
+def _organize_apply_continuation(message: str, history: list | None) -> bool:
+    """True when the user is confirming a pending organize preview (an affirmation
+    immediately after the preview was shown, checking up to 3 turns back)."""
+    if not bool(_AFFIRM_RE.search(message or "")):
+        return False
+    recent = _recent_assistant_texts(history, limit=3)
+    return any(_ORGANIZE_PREVIEW_MARK in text for text in recent)
+
+
+def is_organize_goal(message: str, history: list | None = None) -> bool:
+    return (bool(_ORGANIZE_RE.search(message or ""))
+            or _organize_apply_continuation(message, history))
 
 
 def is_note_goal(message: str) -> bool:
@@ -79,11 +118,11 @@ def is_document_goal(message: str) -> bool:
     return bool(_DOC_GOAL_RE.search(m))
 
 
-def is_planner_goal(message: str) -> bool:
+def is_planner_goal(message: str, history: list | None = None) -> bool:
     """Any goal the LLMPlanner owns: organize / note-write / document generation.
     Order matters — organize and note are checked first because their phrasings can
     also contain a document noun ('organize my documents')."""
-    return (is_organize_goal(message) or is_note_goal(message)
+    return (is_organize_goal(message, history) or is_note_goal(message)
             or is_document_goal(message))
 
 
@@ -137,10 +176,10 @@ def _resolve_entity(goal: str, deal_hint: str | None = None) -> tuple[str | None
     return deal_id, cid, cust.get("name", "")
 
 
-def _pick_doc_kind(goal: str, deal_id: str | None) -> str:
+def _pick_doc_kind(goal: str, deal_id: str | None, history: list | None = None) -> str:
     g = (goal or "")
     # Workspace ops win over document generation (their phrasing overlaps).
-    if is_organize_goal(g):
+    if is_organize_goal(g, history):
         return "organize"
     if is_note_goal(g):
         return "note"
@@ -157,20 +196,25 @@ def _lang_of(goal: str) -> str:
     return "ja" if re.search(r"[぀-ヿ一-鿿]", goal or "") else "ja"
 
 
-def heuristic_selection(goal: str, deal_hint: str | None = None) -> Selection:
+def heuristic_selection(goal: str, deal_hint: str | None = None, history: list | None = None) -> Selection:
     """Deterministic capability selection — the default, and the fallback whenever
     the LLM is off or returns junk. Always gathers conversation (session context);
     adds workspace (self-gated on a real file match), CRM when an entity resolved,
     knowledge for proposals (playbook grounding), and web for external/factual
     topics with no internal entity."""
     deal_id, customer_id, target = _resolve_entity(goal, deal_hint)
-    doc_kind = _pick_doc_kind(goal, deal_id)
+    doc_kind = _pick_doc_kind(goal, deal_id, history)
 
     # Organize is self-contained (it inspects the workspace itself) — no gather.
+    # Apply when the goal itself says so ("...and apply") OR when it's an affirmation
+    # confirming a pending preview ("go ahead"); otherwise preview (never move silently).
     if doc_kind == "organize":
+        confirm = (bool(_APPLY_RE.search(goal or ""))
+                   or _organize_apply_continuation(goal, history))
         return Selection(goal=goal, capabilities=(), doc_kind="organize",
-                         lang=_lang_of(goal), confirm=bool(_APPLY_RE.search(goal or "")),
-                         reason="heuristic: organize workspace")
+                         lang=_lang_of(goal), confirm=confirm,
+                         reason="heuristic: organize workspace ("
+                                + ("apply" if confirm else "preview") + ")")
 
     caps = ["conversation", "workspace"]
     if customer_id or deal_id:
@@ -189,14 +233,14 @@ def heuristic_selection(goal: str, deal_hint: str | None = None) -> Selection:
 
 
 def ground_selection(goal: str, caps, doc_kind: str, reason: str = "",
-                     deal_hint: str | None = None) -> Selection:
+                     deal_hint: str | None = None, history: list | None = None) -> Selection:
     """Build a Selection from an LLM-chosen capability set + doc_kind, but re-ground
     the entity/IDs deterministically and enforce invariants: conversation is always
     gathered; a `proposal` with no resolvable deal degrades to a free `pptx`; CRM is
     only kept when an entity actually resolved."""
     deal_id, customer_id, target = _resolve_entity(goal, deal_hint)
     if doc_kind not in DOC_KINDS:
-        doc_kind = _pick_doc_kind(goal, deal_id)
+        doc_kind = _pick_doc_kind(goal, deal_id, history)
     if doc_kind == "proposal" and not deal_id:
         doc_kind = "pptx"  # can't ground a proposal without a deal
 

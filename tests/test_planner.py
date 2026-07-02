@@ -192,12 +192,52 @@ def test_organize_previews_then_applies(tmp_path, monkeypatch):
     assert {p.name for p in ws.iterdir() if p.is_file()} == {
         "murata_見積書.txt", "yamato_proposal.md", "endo_議事録.md"}
 
-    # Apply buckets by topic and leaves only subfolders at the root.
+    # Apply files each loose doc into some topic subfolder, leaving nothing at the
+    # root. (Assert the behaviour, not specific folder names — the classifier's
+    # taxonomy is config that may be tuned.)
     run_document_goal("organize my files and apply")
-    assert (ws / "quotes" / "murata_見積書.txt").is_file()
-    assert (ws / "proposals" / "yamato_proposal.md").is_file()
-    assert (ws / "meeting-notes" / "endo_議事録.md").is_file()
-    assert not [p for p in ws.iterdir() if p.is_file()]  # nothing loose at the root
+    assert not [p for p in ws.iterdir() if p.is_file()]          # nothing loose at the root
+    moved = {q.name for sub in ws.iterdir() if sub.is_dir() for q in sub.iterdir()}
+    assert {"murata_見積書.txt", "yamato_proposal.md", "endo_議事録.md"} <= moved
+
+
+def test_organize_apply_continuation(tmp_path, monkeypatch):
+    """The confirm flow: 'organize my files' previews; a following affirmation ('go
+    ahead' / 'yes') with the preview in history APPLIES it — it must NOT be re-routed
+    to document generation (the docx-hallucination bug)."""
+    from senpai import config
+    from senpai.planner import run_document_goal
+    from senpai.planner.selection import is_planner_goal, heuristic_selection
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    (ws / "murata_quote.txt").write_text("q", encoding="utf-8")
+    monkeypatch.setattr(config, "WORKSPACE_ROOT", ws)
+    monkeypatch.setattr(config, "GENERATED_DIR", tmp_path / "gen")
+
+    r1 = run_document_goal("organize my files")
+    assert r1["selection"]["doc_kind"] == "organize"
+    assert not any(p.is_dir() for p in ws.iterdir())         # preview moved nothing
+
+    convo = [
+        {"role": "user", "content": "organize my files"},
+        {"role": "assistant", "content": r1["text"]},        # carries 【整理プレビュー
+        {"role": "user", "content": "go ahead"},
+    ]
+    # Router keeps it in the planner (prior turns end with the preview)...
+    assert is_planner_goal("go ahead", convo[:-1])
+    # ...and selection resolves to an organize APPLY, never a document.
+    sel = heuristic_selection("go ahead", history=convo)
+    assert sel.doc_kind == "organize" and sel.confirm is True
+
+    r2 = run_document_goal("go ahead", conversation=convo)
+    assert r2["selection"]["doc_kind"] == "organize"
+    assert r2["document"] is None                             # NOT a generated doc
+    assert not [p for p in ws.iterdir() if p.is_file()]       # the file was moved
+    assert any(p.is_dir() for p in ws.iterdir())
+
+    # A bare 'go ahead' with no pending preview must NOT hit the planner.
+    assert not is_planner_goal("go ahead", [])
 
 
 def test_organize_move_is_sandbox_safe_and_no_overwrite(tmp_path, monkeypatch):

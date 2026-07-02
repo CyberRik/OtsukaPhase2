@@ -17,6 +17,7 @@ from senpai.health.flags import deal_flags
 from senpai.health.scoring import score_deal
 from senpai.retrieval.knowledge import search_knowledge as _search_knowledge
 from senpai.retrieval.playbook import find_similar_deals, retrieve_playbook
+from senpai.tools.focus import session_focus
 from senpai.tools.web import web_search
 
 
@@ -786,36 +787,114 @@ def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
     return f"稟議書(DOCX)を生成しました: {rec['filename']}（{ctx.customer}様）。"
 
 
+# Conversation-grounding budget. RECENT_FLOOR snippets are always kept (immediate
+# context — the current request and the tool result that just landed); the remaining
+# slots up to MAX_SNIPPETS are filled by relevance to the request, not recency.
+_CONVO_BUDGET = 4000
+_CONVO_MAX_SNIPPETS = 8
+_CONVO_RECENT_FLOOR = 3
+
+
+def _truncate_on_boundary(text: str, limit: int) -> str:
+    """Trim `text` to <= `limit` chars, cutting at the nearest natural boundary
+    (snippet break → paragraph → line → sentence → word) instead of mid-string, so a
+    fact — a company name, a quote figure — is never severed in half. A blind
+    `text[:limit]` can drop the second half of '村田印刷' or '¥1,200,000'. Only honors
+    a boundary that still keeps most of the budget; adds an elision marker."""
+    if len(text) <= limit:
+        return text
+    head = text[:limit]
+    for sep in ("\n---\n", "\n\n", "\n", "。", ". ", "、", " "):
+        cut = head.rfind(sep)
+        if cut >= limit * 0.6:   # a break too early would waste most of the budget
+            return head[:cut].rstrip() + " …"
+    return head.rstrip() + " …"
+
+
+# Latin/number words and CJK character bigrams. A script-agnostic stand-in for word
+# segmentation so relevance scoring works WITHOUT a morphological analyzer (janome is
+# only an optional dep, and its whitespace fallback can't split Japanese, which has no
+# spaces). Bigrams give '村田印刷' the shared keys 村田/田印/印刷 across query & snippet.
+_LATIN_NUM_RE = re.compile(r"[a-z0-9](?:[a-z0-9,.]*[a-z0-9])?")
+_CJK_RUN_RE = re.compile(r"[぀-ヿ㐀-䶿一-鿿]+")
+
+
+def _relevance_tokens(text: str) -> set[str]:
+    text = (text or "").lower()
+    toks = set(_LATIN_NUM_RE.findall(text))
+    for run in _CJK_RUN_RE.findall(text):
+        if len(run) == 1:
+            toks.add(run)
+        else:
+            toks.update(run[i:i + 2] for i in range(len(run) - 1))
+    return toks
+
+
+def _snippet_relevance(query_tokens: set[str], text: str) -> float:
+    """Relevance of a snippet to the current request: fraction of the request's
+    content tokens it covers. 0.0 when there is no query signal or no overlap."""
+    if not query_tokens:
+        return 0.0
+    toks = _relevance_tokens(text)
+    if not toks:
+        return 0.0
+    return len(query_tokens & toks) / len(query_tokens)
+
+
 def _conversation_grounding(prompt: str) -> str:
     """Context already established in this session — prior tool results (e.g. a
     workspace file we read) and assistant answers — so a doc that references 'the
     company/quote we just discussed' grounds on it instead of being invented. Reads
     the live conversation the chat loop publishes (senpai.tools.conversation).
 
-    Kept compact and recent: the doc author only needs the entity in focus and the
-    facts around it, not the whole transcript. System messages and failed/empty tool
-    results are dropped; the current request is included so intent is explicit."""
+    Kept compact: the doc author only needs the entity in focus and the facts around
+    it, not the whole transcript. System messages and failed/empty tool results are
+    dropped; the current request is included so intent is explicit.
+
+    Selection is relevance-ranked, not just the tail — recency alone drops the entity
+    in focus once a few turns intervene (a side question, extra tool calls), which is
+    exactly the ungrounded-deck regression this grounding exists to prevent. The most
+    recent RECENT_FLOOR snippets are always kept (immediate context); the rest of the
+    budget goes to the OLDER snippets that best match the request. With no query
+    signal it degrades to pure recency (the prior behavior)."""
     from senpai.tools import conversation as _conv
     convo = _conv.conversation()
     if not convo:
         return ""
-    snippets: list[str] = []
-    for m in convo:
+    # (position, formatted-text), dropping system + failed/empty tool results.
+    snippets: list[tuple[int, str]] = []
+    for i, m in enumerate(convo):
         role, content = m.get("role"), m.get("content")
         if role == "system" or not isinstance(content, str) or not content.strip():
             continue
         if role == "tool":
             if content.startswith("[error]") or "見つかりません" in content:
                 continue
-            snippets.append(content.strip())
+            snippets.append((i, content.strip()))
         elif role == "assistant":
-            snippets.append(content.strip())
+            snippets.append((i, content.strip()))
         elif role == "user":
-            snippets.append(f"（依頼）{content.strip()}")
+            snippets.append((i, f"（依頼）{content.strip()}"))
     if not snippets:
         return ""
-    joined = "\n---\n".join(snippets[-8:])
-    return joined[:4000]
+
+    query_tokens = _relevance_tokens(prompt)
+    recent = {i for i, _ in snippets[-_CONVO_RECENT_FLOOR:]}
+    older = [(i, t) for i, t in snippets if i not in recent]
+    # Score each older snippet once; rank by relevance, then recency for ties.
+    scored = sorted(
+        ((_snippet_relevance(query_tokens, t), i, t) for i, t in older),
+        key=lambda s: (s[0], s[1]), reverse=True)
+    budget_n = max(0, _CONVO_MAX_SNIPPETS - len(recent))
+    # Keep only older snippets that actually match the request; with no query signal
+    # (query_tokens empty) fall back to recency so we never return nothing.
+    keep_older = [(i, t) for score, i, t in scored[:budget_n]
+                  if score > 0 or not query_tokens]
+    chosen = sorted(
+        [(i, t) for i, t in snippets if i in recent] + keep_older,
+        key=lambda it: it[0])
+    joined = "\n---\n".join(t for _, t in chosen)
+    return _truncate_on_boundary(joined, _CONVO_BUDGET)
 
 
 def _workspace_grounding(query: str) -> str:
@@ -859,15 +938,31 @@ def _gather_grounding(prompt: str, customer: str, use_web: bool) -> str:
     if ws:
         parts.append(f"【ローカル文書（あなたのファイル）】\n{ws}")
 
-    # CRM: an explicit customer is authoritative. Otherwise fall back to a fuzzy
-    # name match — but NOT when the entity clearly lives in the workspace: a
-    # local-file company must not pull an unrelated CRM customer, that mismatch is
-    # exactly what produced the wrong company name in the generated deck.
+    # CRM, in order of trust:
+    #   1. an explicit customer arg — authoritative.
+    #   2. the entity the conversation already RESOLVED (SessionFocus) — also
+    #      authoritative: it comes from ids real tool results emitted (a deal we
+    #      looked up, a customer we queried), so 'that company we discussed' is a
+    #      lookup, not a re-inference. A deal in focus grounds on that specific deal.
+    #   3. as a LAST resort, a fuzzy name match on the prompt — but only when the
+    #      workspace didn't already pin the entity, since a local-file company must
+    #      not pull an unrelated CRM customer (the wrong-company-name bug).
     cust = _resolve_customer(customer) if customer else None
-    if cust is None and not ws:
-        cust = store.match_customer_in_text(prompt)
+    crm = ""
     if cust:
-        parts.append(f"【社内データ】\n{query_spr(customer=cust['customer_id'])}")
+        crm = query_spr(customer=cust["customer_id"])
+    else:
+        focus = session_focus()
+        if focus.deal_id:
+            crm = query_spr(deal_id=focus.deal_id)
+        elif focus.customer_id:
+            crm = query_spr(customer=focus.customer_id)
+        elif not ws:
+            fuzzy = store.match_customer_in_text(prompt)
+            if fuzzy:
+                crm = query_spr(customer=fuzzy["customer_id"])
+    if crm:
+        parts.append(f"【社内データ】\n{crm}")
 
     if use_web:
         try:
@@ -1060,6 +1155,38 @@ def edit_workspace_document(path: str, content: str, confirm: bool = False) -> s
         return f"ファイルの保存中にエラーが発生しました: {e}"
 
 
+def move_workspace_document(src: str, dst: str, confirm: bool = False) -> str:
+    """Move or rename a local document in the workspace.
+    To prevent data loss, `confirm=True` must be explicitly passed to commit the move;
+    otherwise, a preview is returned for the user to review.
+    """
+    from senpai.workspace import sandbox
+    try:
+        s = sandbox.safe_path(src)
+        d = sandbox.safe_path(dst)
+    except sandbox.SandboxError as e:
+        return f"エラー: パスが無効または境界外です ({e})"
+    
+    if not s.exists():
+        return f"エラー: 移動元のファイルが存在しません: {src}"
+    
+    if not confirm:
+        return (f"【ファイル移動プレビュー（実行されていません）】\n"
+                f"移動元: {sandbox.rel(s)}\n"
+                f"移動先: {sandbox.rel(d)}\n\n"
+                f"よろしければ確認して「移動して」と指示してください（confirm=True を指定して再実行します）。")
+    
+    try:
+        new_path = sandbox.move_within(src, dst)
+        from senpai.retrieval import trace as _trace
+        _trace.record("workspace_move", scope="local_files",
+                      items=[{"id": new_path, "score": 1}],
+                      query=f"{src} -> {dst}", n=1)
+        return f"ファイルを移動しました: {sandbox.rel(s)} -> {new_path}"
+    except Exception as e:
+        return f"ファイルの移動中にエラーが発生しました: {e}"
+
+
 _DISPATCH = {
     "query_spr": query_spr,
     "find_deals": find_deals,
@@ -1093,6 +1220,7 @@ _DISPATCH = {
     "segment_intelligence": segment_intelligence,
     "search_workspace_documents": search_workspace_documents,
     "edit_workspace_document": edit_workspace_document,
+    "move_workspace_document": move_workspace_document,
     # Document generation (the chatbot's "do stuff" tools)
     "generate_proposal": generate_proposal,
     "generate_ringisho": generate_ringisho,

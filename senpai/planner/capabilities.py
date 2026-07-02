@@ -304,17 +304,52 @@ class WorkspaceOrganizeCapability:
     metadata = CapabilityMetadata(OperationKind.WRITE, parallel_safe=False,
                                   idempotent=False, retries=0)
 
+    def _llm_organize_bucket(self, names: list[str]) -> dict[str, str]:
+        from senpai.documents import author
+        import json, re
+        
+        if not author._use_llm() or not names:
+            return {n: _organize_bucket(n) for n in names}
+            
+        prompt = (
+            "You are an assistant organizing a user's files. "
+            "Given the list of filenames below, assign a single short folder name to each file based on its likely content. "
+            "Use standard categories like 'quotes', 'proposals', 'meeting-notes', 'reports', 'contracts', "
+            "or create custom descriptive ones like 'invoices', 'research', 'specs'. "
+            "Return strictly a JSON object mapping the exact filename to the folder name. No prose.\n\n"
+            "Files:\n" + "\n".join(f"- {n}" for n in names)
+        )
+        
+        try:
+            out = author._complete(prompt)
+            if out:
+                m = re.search(r"\{.*\}", out, re.DOTALL)
+                if m:
+                    mapping = json.loads(m.group(0))
+                    return {n: str(mapping.get(n, _organize_bucket(n))).strip("/") for n in names}
+        except Exception:
+            pass
+            
+        return {n: _organize_bucket(n) for n in names}
+
     def run(self, op: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
         from senpai.workspace import sandbox
         docs = sandbox.list_documents()
         root = sandbox.workspace_root()
+        
         # Only reorganize files sitting at the ROOT (don't churn already-filed docs).
+        root_files = [p for p in docs if "/" not in sandbox.rel(p) and "\\" not in sandbox.rel(p)]
+        
+        if root_files:
+            file_to_folder = self._llm_organize_bucket([p.name for p in root_files])
+        else:
+            file_to_folder = {}
+
         moves: list[tuple[str, str]] = []
-        for p in docs:
+        for p in root_files:
             rel = sandbox.rel(p)
-            if "/" in rel or "\\" in rel:
-                continue  # already in a subfolder
-            dest = f"{_organize_bucket(p.name)}/{p.name}"
+            folder = file_to_folder.get(p.name, _organize_bucket(p.name))
+            dest = f"{folder}/{p.name}"
             if dest != rel:
                 moves.append((rel, dest))
 

@@ -54,7 +54,7 @@ class LLMPlanner:
     # -- capability selection (the one decision) --------------------------------
     def select(self, goal: str, *, conversation: list[dict] | None = None,
                deal_id: str | None = None) -> Selection:
-        base = heuristic_selection(goal, deal_hint=deal_id)   # deterministic + ID grounding
+        base = heuristic_selection(goal, deal_hint=deal_id, history=conversation)   # deterministic + ID grounding
         # Workspace ops (organize / note) are clear from the phrasing — the LLM's
         # capability-selection is only for document GENERATION, so keep these
         # deterministic and skip the extra round-trip.
@@ -68,7 +68,7 @@ class LLMPlanner:
             return base
         caps, doc_kind = chosen
         return ground_selection(goal, caps, doc_kind, reason="llm-selected",
-                                deal_hint=deal_id)
+                                deal_hint=deal_id, history=conversation)
 
     def _llm_select(self, goal: str, conversation) -> tuple[list[str], str] | None:
         """Ask the model which capabilities to gather + the doc kind. Strict JSON;

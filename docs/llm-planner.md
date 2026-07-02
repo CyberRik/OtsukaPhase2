@@ -211,11 +211,18 @@ prompt. `senpai/api/server.py`'s `chat()` routes by intent:
   Organize and note are checked first (their phrasing can also contain a document noun).
   It stays tight so ordinary tool asks — "draft an email", "make a quote", "tell me about
   X", "D168 のリスクを教えて" — stay in the ReAct loop. `稟議` is excluded.
-- **Destructive ops are preview-first.** `organize` defaults to `op="plan"` (read-only —
-  it lists the moves it *would* make); it only performs moves when the goal carries an
-  explicit apply cue (apply / do it / 実行 / やって). So "organize my files" shows the
-  plan; "organize my files and apply" moves them. `move_within` never overwrites and
-  never leaves the sandbox root.
+- **Destructive ops are preview-first, with a two-turn confirm.** `organize` defaults to
+  `op="plan"` (read-only — it lists the moves it *would* make); it performs moves only
+  when the goal carries an explicit apply cue (apply / do it / 実行 / やって) **or** when
+  it's an affirmation confirming a pending preview. That second case is the natural chat
+  flow: "organize my files" → preview, then a bare "go ahead" / "yes" / "はい" → apply.
+  It works because both the router *and* the selection layer look at the **last assistant
+  message** (`_last_assistant_text`): if it carries the preview marker (`【整理プレビュー`)
+  and the new message is an affirmation, the turn is an organize-apply — not a fresh goal.
+  This is deliberate: without threading the preview context into *selection* (not just
+  routing), a bare "go ahead" would be re-classified from scratch and the LLM could
+  mis-pick `docx` and generate a stray document. `move_within` never overwrites and never
+  leaves the sandbox root, so even a mis-fire can't lose data.
 - **`_plan_stream(goal, convo, role, deal_id)`** is the shared SSE generator used by both
   the auto-routed chat turn and the dedicated `POST /api/plan`. It emits the **same event
   shapes the chat UI already renders** — `plan | context | tool | document | answer |
