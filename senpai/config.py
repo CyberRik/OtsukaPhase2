@@ -52,7 +52,7 @@ BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8765/v1")
 FALLBACK_BASE_URL = os.environ.get("FALLBACK_BASE_URL", "http://100.101.186.29:8766/v1")
 MODEL = os.environ.get("MODEL", "exp3")
 FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "toolmind_exp3_final")
-MAX_TOOL_ROUNDS = 10
+MAX_TOOL_ROUNDS = 15
 
 
 def _env_float(name: str, default: float) -> float:
