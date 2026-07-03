@@ -90,13 +90,18 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "search_notes",
-            "description": "Semantic search across daily reports (日報). Finds notes that "
-                           "mean the same thing as the query even when worded differently (e.g. "
-                           "'予算が理由で停滞' also surfaces 'コスト面で渋い'). ALWAYS pass `customer` "
-                           "(the account in focus) for any account-specific question — this "
-                           "restricts the search to that customer's own notes. Omit `customer` "
-                           "ONLY for deliberate cross-account research; results then span all "
-                           "customers and are labelled as such.",
+            "description": "Semantic search across CRM daily reports (日報) ONLY — not the "
+                           "user's local files. Finds notes that mean the same thing as the "
+                           "query even when worded differently (e.g. '予算が理由で停滞' also "
+                           "surfaces 'コスト面で渋い'). ALWAYS pass `customer` (the account in "
+                           "focus) for any account-specific question — this restricts the "
+                           "search to that customer's own notes. Omit `customer` ONLY for "
+                           "deliberate cross-account research; results then span all customers "
+                           "and are labelled as such. If this comes back thin/generic, or the "
+                           "user's phrasing could mean an actual document (e.g. names a file, "
+                           "says 'the notes', 'the doc', or asks to add/edit/apply something "
+                           "INTO them), also call search_workspace_documents — the real notes "
+                           "may live in a local file, not a daily report.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -654,6 +659,11 @@ TOOLS = [
         "function": {
             "name": "edit_workspace_document",
             "description": "Create or modify a local text document (e.g. .txt, .md, .csv, .json) in the user's workspace. "
+                           "This is the ONLY way to actually persist something into a local file — if the user asks to "
+                           "add/append/apply/update/edit/save/反映/追加/適用/編集 information INTO a file or notes you "
+                           "already found (e.g. via search_workspace_documents), you MUST call this tool with the full "
+                           "merged content, not just describe the merge in your chat answer — never claim something was "
+                           "saved or applied unless this tool actually ran. "
                            "You must pass confirm=False first to return a preview. Then ask the user to confirm. "
                            "If they confirm, run again with confirm=True to commit the write to disk.",
             "parameters": {

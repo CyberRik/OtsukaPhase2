@@ -38,19 +38,21 @@ export function ContextPane({
   const { t, lang } = useT();
   const { focus, setFocus } = useWorkspaceFocus(role);
   const [q, setQ] = useState("");
+  const [bandFilter, setBandFilter] = useState<Band | "all">("all");
   const [openAccount, setOpenAccount] = useState<{ id: string; name: string } | null>(null);
 
   const myDeals = useMemo(() => {
     const query = q.trim().toLowerCase();
     return deals
       .filter((d) => {
+        if (bandFilter !== "all" && d.band !== bandFilter) return false;
         if (!query) return true;
         const name = customerText(lang, d.customer).text.toLowerCase();
         return name.includes(query) || d.customer.toLowerCase().includes(query);
       })
       .slice()
       .sort((a, b) => BAND_ORDER[a.band] - BAND_ORDER[b.band] || b.amount - a.amount);
-  }, [deals, q, lang]);
+  }, [deals, q, bandFilter, lang]);
 
   return (
     <div className="space-y-4">
@@ -69,6 +71,35 @@ export function ContextPane({
           className="w-full bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
         />
       </label>
+
+      <div className="flex flex-wrap gap-1.5 pb-1">
+        <button
+          onClick={() => setBandFilter("all")}
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ring-1 ring-inset",
+            bandFilter === "all" 
+              ? "bg-primary text-primary-foreground ring-primary" 
+              : "bg-muted/50 text-muted-foreground ring-border hover:bg-muted"
+          )}
+        >
+          {lang === "ja" ? "すべて" : "All"}
+        </button>
+        {(["red", "yellow", "green"] as Band[]).map((b) => (
+          <button
+            key={b}
+            onClick={() => setBandFilter(b)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ring-1 ring-inset",
+              bandFilter === b
+                ? (b === "red" ? "bg-band-red text-white ring-band-red" : b === "yellow" ? "bg-band-yellow text-white ring-band-yellow" : "bg-band-green text-white ring-band-green")
+                : (b === "red" ? "bg-band-red/10 text-band-red ring-band-red/25 hover:bg-band-red/20" : b === "yellow" ? "bg-band-yellow/10 text-band-yellow ring-band-yellow/25 hover:bg-band-yellow/20" : "bg-band-green/10 text-band-green ring-band-green/25 hover:bg-band-green/20")
+            )}
+          >
+            <div className={cn("h-1.5 w-1.5 rounded-full", bandFilter === b ? "bg-white" : (b === "red" ? "bg-band-red" : b === "yellow" ? "bg-band-yellow" : "bg-band-green"))} />
+            {t(b === "red" ? "dash.atRisk" : b === "yellow" ? "dash.watch" : "dash.healthy")}
+          </button>
+        ))}
+      </div>
 
       <div className="space-y-2">
         {myDeals.length === 0 && (

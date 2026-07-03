@@ -286,7 +286,7 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
         if not calls:
             if tool_log:
                 last_name, _, last_result = tool_log[-1]
-                if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):
                     answer = last_result
                     break
             answer = (msg.content or "").strip() or "(no response)"
@@ -304,7 +304,7 @@ def stream_turn(convo: list[dict], tools: list[dict] | None = None):
     else:
         if tool_log:
             last_name, _, last_result = tool_log[-1]
-            if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+            if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):
                 answer = last_result
         answer = answer or "⚠️ ツール呼び出しの上限に達しました。"
     yield tool_log, answer
@@ -359,6 +359,66 @@ def _multi_entity_gather_calls(user_msg: str) -> list[tuple[str, str, str]]:
     gathers += [("query_spr", {"customer": c}) for c in cust_ids]         # then customer records
     return [(f"exp_{i}", name, json.dumps(args, ensure_ascii=False))
             for i, (name, args) in enumerate(gathers)]
+
+
+_WS_AFFIRM_RE = None  # lazy-loaded below (avoids import cost when unused)
+
+
+def _pending_workspace_edit_confirm(convo: list[dict]) -> tuple[str, str] | None:
+    """Deterministic confirm-continuation for a pending `edit_workspace_document`
+    preview (confirm=False). If the newest user message is a bare affirmation
+    ("apply", "保存して", "はい"...) and the most recent assistant tool call was an
+    unconfirmed edit_workspace_document, return (path, content) to re-commit with
+    confirm=True ourselves — never left to the model to remember or, worse, to
+    free-generate a "saved!" answer without ever calling the tool again (the exact
+    bug this closes: a write claimed in prose with no tool call behind it)."""
+    global _WS_AFFIRM_RE
+    if _WS_AFFIRM_RE is None:
+        from senpai.planner.selection import _AFFIRM_RE  # lazy: avoid import cycles
+        _WS_AFFIRM_RE = _AFFIRM_RE
+    user_msg = next((m.get("content") for m in reversed(convo)
+                     if m.get("role") == "user" and m.get("content")), "")
+    if not user_msg or not _WS_AFFIRM_RE.search(user_msg.strip()):
+        return None
+    for m in reversed(convo):
+        if m.get("role") != "assistant":
+            continue
+        calls = m.get("tool_calls") or []
+        edit_calls = [tc for tc in calls if tc["function"]["name"] == "edit_workspace_document"]
+        if not edit_calls:
+            continue  # nearest assistant tool turn wasn't an edit — nothing pending
+        try:
+            args = json.loads(edit_calls[-1]["function"]["arguments"])
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return None
+        if args.get("confirm"):
+            return None  # already committed — nothing left to confirm
+        path, content = args.get("path"), args.get("content")
+        return (path, content) if path and content else None
+    return None
+
+
+# Phrasing that signals "mutate a real local file" (apply/add/edit/update/save
+# against a file/note/doc) rather than just asking about its contents. Used to
+# nudge the model toward actually calling edit_workspace_document instead of
+# just describing the merge in prose with no write behind it.
+_WORKSPACE_WRITE_INTENT_RE = re.compile(
+    r"\b(?:apply|add|append|edit|update|save|write|put)\b.{0,40}\b(?:file|note|notes|doc|document)\b|"
+    r"\b(?:file|note|notes|doc|document)\b.{0,20}\b(?:apply|edit|update|add)\b|"
+    r"(?:ファイル|メモ|ノート|文書).{0,15}(?:追加|追記|編集|更新|保存|反映|適用)|"
+    r"(?:追加|追記|編集|更新|保存|反映|適用).{0,15}(?:ファイル|メモ|ノート|文書)",
+    re.IGNORECASE)
+
+_WORKSPACE_WRITE_NUDGE = (
+    "（システム注記：ユーザーはローカルファイルへの反映を求めています。まだ "
+    "edit_workspace_document が呼ばれていません。他のツールでの説明だけで終わらせず、"
+    "変更後の全文を content に入れて edit_workspace_document を confirm=False で呼び出し、"
+    "プレビューを提示してください。)"
+)
+
+
+def _wants_workspace_write(user_msg: str) -> bool:
+    return bool(user_msg) and bool(_WORKSPACE_WRITE_INTENT_RE.search(user_msg))
 
 
 def _is_substantive(result: str) -> bool:
@@ -420,21 +480,26 @@ _FINISH_TOOL = {
 }
 
 # Action tools that commit a side effect or produce a deliverable (a file, a booked
-# meeting, a quote/email draft) rather than retrieve facts.
-_ACTION_TOOLS = {"schedule_meeting", "create_quote", "send_email"}
+# meeting, a quote/email draft, a workspace file write/move) rather than retrieve facts.
+_ACTION_TOOLS = {"schedule_meeting", "create_quote", "send_email",
+                 "edit_workspace_document", "move_workspace_document"}
 
 
 def _is_terminal_action(name: str, result: str) -> bool:
     """True when an action tool actually COMMITTED (file generated, meeting booked,
-    draft produced) — meaning the turn is done and the model must not be allowed to
-    re-invoke it. A confirm=false PREVIEW (which asks the rep to confirm first) and a
-    failed call are NOT terminal, so the loop keeps going in those cases.
+    draft produced, workspace file written) — meaning the turn is done and the model
+    must not be allowed to re-invoke it. A confirm=false PREVIEW (which asks the rep
+    to confirm first) and a failed call are NOT terminal, so the loop keeps going in
+    those cases.
 
-    This is what stops the model from re-calling generate_pptx every round and
-    emitting duplicate files: once the deck is built, the turn ends on that result."""
+    This is what stops the model from re-calling generate_pptx (or re-writing a
+    workspace file) every round and emitting duplicates: once the deliverable is
+    committed, the turn ends on that result — the tool's own grounded text becomes
+    the answer, leaving no room for the model to embellish or fabricate on top of it
+    (the earlier bug: claiming a save happened with no commit behind it at all)."""
     if not (name in _ACTION_TOOLS or name.startswith("generate_")):
         return False
-    if "confirm=true" in result or "【プレビュー】" in result:
+    if "プレビュー" in result or "confirm=true" in result.lower():
         return False  # a preview/draft awaiting the rep's confirmation
     if result.startswith("[error]") or "見つかりません" in result:
         return False  # a failed call — let the model recover
@@ -486,16 +551,30 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     sel_msgs = lambda: _prep(convo, False)
     user_msg = next((m.get("content") for m in reversed(convo)
                      if m.get("role") == "user" and m.get("content")), "")
+    # One-shot guard for the write-intent nudge below — fires at most once per
+    # turn so a model that still won't call edit_workspace_document can't loop
+    # forever; it falls through to a normal (honest, tool-free) answer instead.
+    write_nudge_used = False
     for round_i in range(config.MAX_TOOL_ROUNDS):
         last_round = round_i == config.MAX_TOOL_ROUNDS - 1
 
+        # Deterministic confirm-continuation: a bare "apply"/"保存して"/"はい" right
+        # after a pending edit_workspace_document preview re-commits that EXACT write
+        # ourselves, with confirm=True — the model never gets a chance to skip the
+        # call and free-generate a "saved!" answer instead (see _pending_workspace_edit_confirm).
+        pending_edit = _pending_workspace_edit_confirm(convo) if round_i == 0 else None
         # Deterministic multi-entity fan-out: on the FIRST round, if the user named ≥2
         # known entities ("compare D133, D012, D168"), issue the gather reads ourselves
         # in ONE parallel round rather than letting the model dribble them out one per
         # round (it emits a single tool_call per response under the full prompt). The
         # scheduler runs them concurrently; the loop then proceeds normally.
-        expanded = _multi_entity_gather_calls(user_msg) if round_i == 0 else []
-        if expanded:
+        expanded = [] if pending_edit else (_multi_entity_gather_calls(user_msg) if round_i == 0 else [])
+        if pending_edit:
+            path, content = pending_edit
+            calls = [("confirm_edit_0", "edit_workspace_document",
+                      json.dumps({"path": path, "content": content, "confirm": True},
+                                ensure_ascii=False))]
+        elif expanded:
             calls = expanded
         else:
             # tool_choice: FORCE a tool on the first round (the model must gather before
@@ -551,9 +630,19 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         if not real_calls:
             if tool_log:
                 last_name, _, last_result = tool_log[-1]
-                if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):
                     yield {"type": "answer", "text": last_result}
                     return
+            # The model thinks it's done (finish / no tool), but the user actually
+            # asked to mutate a real file and no edit_workspace_document call has
+            # happened yet this turn — that combination is exactly the bug where the
+            # model free-generates a "saved!" answer with no write behind it. Nudge
+            # once instead of letting it finalize.
+            if (not write_nudge_used and _wants_workspace_write(user_msg)
+                    and not any(name == "edit_workspace_document" for name, _, _ in tool_log)):
+                write_nudge_used = True
+                convo.append({"role": "system", "content": _WORKSPACE_WRITE_NUDGE})
+                continue
             yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return
 
@@ -682,6 +771,11 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # Every call this round was a repeat → the model is spinning. Stop looping
         # and synthesize from what we already gathered instead of burning rounds.
         if not fresh:
+            if (not write_nudge_used and _wants_workspace_write(user_msg)
+                    and not any(name == "edit_workspace_document" for name, _, _ in tool_log)):
+                write_nudge_used = True
+                convo.append({"role": "system", "content": _WORKSPACE_WRITE_NUDGE})
+                continue
             yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return
 
@@ -689,7 +783,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             # Hit the tool budget — force a final answer from what we have.
             if tool_log:
                 last_name, _, last_result = tool_log[-1]
-                if last_name in {"schedule_meeting", "create_quote", "send_email"} or last_name.startswith("generate_"):
+                if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):
                     yield {"type": "answer", "text": last_result}
                     return
             yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
