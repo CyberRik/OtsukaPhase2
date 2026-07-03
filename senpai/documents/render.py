@@ -62,7 +62,10 @@ def render_pptx(deck_spec: dict, path: Path) -> Path:
     blank default if the template is missing (e.g. in CI without the asset).
     """
     from pptx import Presentation
-    from pptx.util import Pt
+    from pptx.util import Pt, Inches
+    from pptx.enum.chart import XL_CHART_TYPE
+    from pptx.chart.data import CategoryChartData
+    from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
     tmpl = config.PPTX_TEMPLATE_PATH
     prs = Presentation(str(tmpl)) if tmpl.exists() else Presentation()
@@ -87,6 +90,75 @@ def render_pptx(deck_spec: dict, path: Path) -> Path:
                 if ph.placeholder_format.idx == 1:
                     ph.text = str(spec.get("subtitle", ""))
                     break
+            continue
+
+        is_table = spec.get("layout") == "table"
+        is_chart = spec.get("layout") == "chart"
+
+        if is_table or is_chart:
+            # Remove the body placeholder to avoid "Click to add text" prompt
+            for shape in list(slide.shapes):
+                if shape.is_placeholder and shape.placeholder_format.idx == 1:
+                    sp = shape._sp
+                    sp.getparent().remove(sp)
+            
+            # Use typical positioning for content
+            x, y, cx, cy = Inches(1), Inches(1.5), Inches(8), Inches(4.5)
+
+            if is_table:
+                table_data = spec.get("table", {})
+                headers = table_data.get("headers", [])
+                rows = table_data.get("rows", [])
+                num_rows = len(rows) + (1 if headers else 0)
+                num_cols = max(len(headers), max((len(r) for r in rows), default=0)) if headers or rows else 1
+                
+                if num_rows > 0 and num_cols > 0:
+                    table_shape = slide.shapes.add_table(num_rows, num_cols, x, y, cx, cy)
+                    table = table_shape.table
+                    
+                    row_idx = 0
+                    if headers:
+                        for col_idx, header in enumerate(headers):
+                            cell = table.cell(row_idx, col_idx)
+                            cell.text = str(header)
+                            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+                            # Make header bold
+                            for paragraph in cell.text_frame.paragraphs:
+                                for run in paragraph.runs:
+                                    run.font.bold = True
+                        row_idx += 1
+                    
+                    for row in rows:
+                        for col_idx, item in enumerate(row):
+                            if col_idx < num_cols:
+                                cell = table.cell(row_idx, col_idx)
+                                cell.text = str(item)
+                                cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+                        row_idx += 1
+
+            elif is_chart:
+                chart_data_spec = spec.get("chart", {})
+                chart_data = CategoryChartData()
+                chart_data.categories = chart_data_spec.get("categories", [])
+                for series in chart_data_spec.get("series", []):
+                    chart_data.add_series(series.get("name", ""), series.get("values", []))
+                
+                # Assume bar chart for now
+                chart = slide.shapes.add_chart(
+                    XL_CHART_TYPE.COLUMN_CLUSTERED, x, y, cx, cy, chart_data
+                ).chart
+                
+                # Add data labels
+                plot = chart.plots[0]
+                plot.has_data_labels = True
+                for series in plot.series:
+                    for point in series.points:
+                        point.data_label.has_text_frame = True
+            
+            # If notes exist, add them
+            notes = str(spec.get("notes", "") or "").strip()
+            if notes:
+                slide.notes_slide.notes_text_frame.text = notes
             continue
 
         bullets = [str(b) for b in (spec.get("bullets") or []) if str(b).strip()]

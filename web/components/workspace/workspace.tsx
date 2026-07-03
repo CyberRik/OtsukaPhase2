@@ -624,7 +624,7 @@ function ChatTurn({
         case "tool":
           patch((m) => ({
             ...m,
-            tools: [...m.tools, { name: e.name, args: e.args, result: e.result, document: e.document, batchId: e.batchId, intent: e.intent }],
+            tools: [...m.tools, { name: e.name, args: e.args, result: e.result, document: e.document, batchId: e.batchId, intent: e.intent, outline: e.outline, internal: e.internal }],
             retrieval: e.retrieval ? [...(m.retrieval ?? []), ...e.retrieval] : m.retrieval,
           }));
           break;

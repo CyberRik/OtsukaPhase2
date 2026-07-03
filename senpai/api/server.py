@@ -1589,19 +1589,31 @@ class PlanRequest(BaseModel):
     conversation_id: str | None = None
 
 
-# Grounding-capability display labels for the planner's per-source tool cards.
-_CAP_TOOL_LABEL = {
-    "conversation": "会話の文脈", "workspace": "ローカル文書", "crm": "社内記録(SPR)",
-    "knowledge": "社内ナレッジ", "web": "Web検索",
-}
+# Which gather capabilities count as "internal company data" for the UI's
+# grounding badge — mirrors TOOL_LABEL's `internal` flag in the frontend
+# (web/components/assistant/message.tsx), which the badge is computed from.
+_CAP_INTERNAL = {"crm": True, "knowledge": True, "conversation": False,
+                 "workspace": False, "web": False}
 
 
 def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = None):
     """Shared planner SSE generator: goal → capability graph → engine → artifact.
     Emits the same `plan | tool | document | answer | done` events used by /api/chat,
     so both the dedicated /api/plan surface and the auto-routed chat turn render
-    identically. `deal_id` (selector pick) is authoritative when provided."""
+    identically. `deal_id` (selector pick) is authoritative when provided.
+
+    Tool cards stream LIVE as each capability finishes (via `run_document_goal`'s
+    `emit` callback, drained off a queue exactly like the /crew researcher/coach
+    lanes) rather than all landing in one burst after the whole plan has already
+    finished — otherwise the turn reads as the answer/file appearing before any
+    tool was actually called, when in fact they ran first; the UI just never saw
+    them until everything was already done."""
+    import queue
+    import threading
+
+    from senpai.orchestration import events as oevents
     from senpai.planner import run_document_goal
+
     yield _sse({"type": "start", "model": config.MODEL,
                 "endpoint": config.BASE_URL, "role": role, "surface": "planner"})
 
@@ -1623,36 +1635,81 @@ def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = 
                         "query": goal, "candidates": amb_candidates})
             yield _sse({"type": "done", "model": config.MODEL})
             return
-    try:
-        result = run_document_goal(goal, conversation=convo, role=role, deal_id=deal_id)
-    except Exception as e:  # noqa: BLE001 — never crash the stream
-        yield _sse({"type": "error", "reason": str(e)})
+
+    q: "queue.Queue" = queue.Queue()
+    box: dict = {}
+
+    def worker() -> None:
+        try:
+            box["result"] = run_document_goal(
+                goal, conversation=convo, role=role, deal_id=deal_id,
+                emit=lambda ev: q.put(ev))
+        except Exception as e:  # noqa: BLE001 — never crash the stream
+            box["error"] = str(e)
+        finally:
+            q.put({"type": "_worker_done"})
+
+    threading.Thread(target=worker, daemon=True).start()
+
+    doc_kind = "pptx"
+    while True:
+        ev = q.get()
+        etype = ev.get("type")
+        if etype == "_worker_done":
+            break
+        if etype == "selection.ready":
+            sel = ev["selection"]
+            doc_kind = sel["doc_kind"]
+            # The capability graph the planner chose (the UI may render it; unknown
+            # to the current chat handler, which safely ignores it).
+            yield _sse({"type": "plan", "goal": goal, "doc_kind": sel["doc_kind"],
+                        "capabilities": sel["capabilities"], "reason": sel.get("reason", ""),
+                        "target": sel.get("target"), "deal_id": sel.get("deal_id"),
+                        "tasks": ev["plan"]})
+            # Focus chip: the resolved entity, so the account context stays visible.
+            if sel.get("target") or sel.get("deal_id"):
+                yield _sse({"type": "context", "status": "active",
+                            "customer": sel.get("target"), "deal_id": sel.get("deal_id"),
+                            "cached": False})
+        elif etype == oevents.TASK_COMPLETED:
+            tid = ev.get("task_id", "")
+            if ev.get("status") not in ("ok", "partial"):
+                continue
+            data = ev.get("data") or {}
+            if tid in _CAP_INTERNAL:
+                if not data.get("text"):
+                    continue  # gathered nothing — no card, same as before
+                # `name` is the stable capability id, not a pre-baked Japanese
+                # string — the frontend's TOOL_LABEL picks ja/en the same way it
+                # already does for every ReAct-loop tool, so this reads in
+                # whichever language the UI is set to, not Japanese-only.
+                yield _sse({"type": "tool", "name": tid, "args": f"「{goal}」",
+                            "result": "根拠を収集しました。",
+                            "internal": _CAP_INTERNAL.get(tid, False)})
+            elif tid == "documents" and data.get("document"):
+                # A "proposal" is deal-grounded (real CRM financials/products/
+                # comparables); pptx/docx are free-authored — same internal/
+                # general split as generate_proposal vs generate_pptx/docx.
+                yield _sse({"type": "tool", "name": "documents",
+                            "args": f"kind={doc_kind}", "result": data.get("text", ""),
+                            "document": data["document"],
+                            "outline": data.get("outline") or [],
+                            "internal": doc_kind == "proposal"})
+
+    result = box.get("result")
+    if result is None:
+        yield _sse({"type": "error", "reason": box.get("error", "planner failed")})
         yield _sse({"type": "done", "model": config.MODEL})
         return
 
-    sel = result["selection"]
-    # The capability graph the planner chose (the UI may render it; unknown to the
-    # current chat handler, which safely ignores it).
-    yield _sse({"type": "plan", "goal": result["goal"], "doc_kind": sel["doc_kind"],
-                "capabilities": result["capabilities"], "reason": sel.get("reason", ""),
-                "target": sel.get("target"), "deal_id": sel.get("deal_id"),
-                "tasks": result["plan"]})
-    # Focus chip: the resolved entity, so the account context stays visible.
-    if sel.get("target") or sel.get("deal_id"):
-        yield _sse({"type": "context", "status": "active",
-                    "customer": sel.get("target"), "deal_id": sel.get("deal_id"),
-                    "cached": False})
-    # One tool card per capability that actually contributed grounding.
-    for cap in result.get("grounded_on", []):
-        yield _sse({"type": "tool", "name": _CAP_TOOL_LABEL.get(cap, cap),
-                    "args": f"「{goal}」", "result": "根拠を収集しました。"})
-    text = result.get("text", "")
-    if result.get("document"):
-        yield _sse({"type": "tool", "name": "資料生成",
-                    "args": f"kind={sel['doc_kind']}", "result": text,
-                    "document": result["document"],
-                    "outline": result.get("outline") or []})
-    yield _sse({"type": "answer", "text": text or "資料を生成できませんでした。"})
+    text = result.get("text", "") or "資料を生成できませんでした。"
+    outline = result.get("outline") or []
+    if outline:
+        titles = "\n".join(f"{i}. {s.get('title', '')}" for i, s in enumerate(outline, 1)
+                           if s.get("title"))
+        if titles:
+            text = f"{text}\n\n構成:\n{titles}"
+    yield _sse({"type": "answer", "text": text})
     yield _sse({"type": "done", "model": config.MODEL})
 
 

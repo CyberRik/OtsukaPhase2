@@ -24,6 +24,12 @@ DOC_KINDS = ("proposal", "pptx", "docx", "note", "organize")
 
 _DEAL_ID_RE = re.compile(r"\bD\d{3}\b", re.IGNORECASE)
 _PROPOSAL_CUES = ("提案", "proposal", "提案書")
+# "cover every deal for this customer" — a proposal grounded in ALL of a resolved
+# customer's deals (merged financials/products/comparables), not just the biggest
+# one. Independent of doc_kind/deal-status routing; see _wants_all_deals.
+_ALL_DEALS_RE = re.compile(
+    r"\ball\s+(?:the\s+)?deals\b|\bevery\s+deal\b|\beach\s+deal\b|"
+    r"全て?の案件|全案件|各案件", re.IGNORECASE)
 # 稟議 (ringisho) is intentionally NOT here: it has its own dedicated template/tool
 # (generate_ringisho) and is routed to the ReAct loop, not the planner.
 _DOCX_CUES = ("文書", "報告書", "レポート", "docx", "document", "report")
@@ -141,10 +147,15 @@ class Selection:
     reason: str = ""                       # why these capabilities (observability)
     confirm: bool = False                  # apply a destructive op (organize); else preview
     path: str = ""                         # target file for a note write (optional)
+    all_deals: bool = False                # proposal: merge ALL of the customer's deals
 
     def with_capabilities(self, caps) -> "Selection":
         ordered = tuple(c for c in GATHER_CAPABILITIES if c in set(caps))
         return replace(self, capabilities=ordered)
+
+
+def _wants_all_deals(goal: str) -> bool:
+    return bool(_ALL_DEALS_RE.search(goal or ""))
 
 
 def _resolve_entity(goal: str, deal_hint: str | None = None) -> tuple[str | None, str | None, str]:
@@ -169,10 +180,15 @@ def _resolve_entity(goal: str, deal_hint: str | None = None) -> tuple[str | None
     if not cust:
         return None, None, ""
     cid = cust["customer_id"]
-    open_deals = [d for d in store.deals_for_customer(cid)
-                  if config.is_open_rank(d.get("order_rank"))]
-    open_deals.sort(key=lambda d: d.get("total_order_amount", 0), reverse=True)
-    deal_id = open_deals[0]["deal_id"] if open_deals else None
+    deals = store.deals_for_customer(cid)
+    open_deals = [d for d in deals if config.is_open_rank(d.get("order_rank"))]
+    # Prefer an open deal (the live pipeline); but a customer whose deals are all
+    # Confirmed/Lost is still a real account with real history to ground a proposal
+    # on — falling all the way to None here is what silently degraded these to
+    # ungrounded free decks. Ground on the best deal on file either way.
+    pool = open_deals or deals
+    pool = sorted(pool, key=lambda d: d.get("total_order_amount", 0), reverse=True)
+    deal_id = pool[0]["deal_id"] if pool else None
     return deal_id, cid, cust.get("name", "")
 
 
@@ -227,7 +243,7 @@ def heuristic_selection(goal: str, deal_hint: str | None = None, history: list |
     return Selection(
         goal=goal, capabilities=tuple(caps), doc_kind=doc_kind,
         deal_id=deal_id, customer_id=customer_id, target=target,
-        lang=_lang_of(goal),
+        lang=_lang_of(goal), all_deals=_wants_all_deals(goal),
         reason="heuristic: " + ("entity in CRM" if (customer_id or deal_id)
                                 else "no CRM entity — workspace/conversation grounded"))
 
@@ -241,6 +257,12 @@ def ground_selection(goal: str, caps, doc_kind: str, reason: str = "",
     deal_id, customer_id, target = _resolve_entity(goal, deal_hint)
     if doc_kind not in DOC_KINDS:
         doc_kind = _pick_doc_kind(goal, deal_id, history)
+    # IDs/routing are never trusted to the model (see module docstring) — a
+    # deterministically resolved deal always grounds a proposal, regardless of
+    # what the LLM guessed for doc_kind. Only an explicit docx/note ask is left as
+    # the model chose it (those aren't deal-shaped documents).
+    if deal_id and doc_kind not in ("docx", "note"):
+        doc_kind = "proposal"
     if doc_kind == "proposal" and not deal_id:
         doc_kind = "pptx"  # can't ground a proposal without a deal
 
@@ -254,4 +276,5 @@ def ground_selection(goal: str, caps, doc_kind: str, reason: str = "",
     return Selection(
         goal=goal, capabilities=tuple(c for c in GATHER_CAPABILITIES if c in chosen),
         doc_kind=doc_kind, deal_id=deal_id, customer_id=customer_id, target=target,
-        lang=_lang_of(goal), reason=reason or "llm-selected")
+        lang=_lang_of(goal), all_deals=_wants_all_deals(goal),
+        reason=reason or "llm-selected")
