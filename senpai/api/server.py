@@ -1604,6 +1604,25 @@ def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = 
     from senpai.planner import run_document_goal
     yield _sse({"type": "start", "model": config.MODEL,
                 "endpoint": config.BASE_URL, "role": role, "surface": "planner"})
+
+    # An ambiguous customer stem in the goal (e.g. "matsuda" → several 松田
+    # companies) and no selector-picked deal to override it → surface the picker
+    # and STOP, exactly like /api/chat and /api/agent/crew do. Otherwise the
+    # planner silently falls through to an ungrounded free deck (no CRM entity),
+    # which reads as the model hallucinating instead of asking which company.
+    if not deal_id and not store.match_customer_in_text(goal):
+        amb_candidates = []
+        for c in store.ambiguous_match_in_text(goal):
+            d = next((x for x in store.deals_for_customer(c["customer_id"])
+                      if config.is_open_rank(x.get("order_rank"))), None)
+            amb_candidates.append({"customer_id": c["customer_id"],
+                                   "name": c.get("name", ""),
+                                   "deal_id": d["deal_id"] if d else None})
+        if amb_candidates:
+            yield _sse({"type": "resolve", "status": "ambiguous",
+                        "query": goal, "candidates": amb_candidates})
+            yield _sse({"type": "done", "model": config.MODEL})
+            return
     try:
         result = run_document_goal(goal, conversation=convo, role=role, deal_id=deal_id)
     except Exception as e:  # noqa: BLE001 — never crash the stream
@@ -1631,7 +1650,8 @@ def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = 
     if result.get("document"):
         yield _sse({"type": "tool", "name": "資料生成",
                     "args": f"kind={sel['doc_kind']}", "result": text,
-                    "document": result["document"]})
+                    "document": result["document"],
+                    "outline": result.get("outline") or []})
     yield _sse({"type": "answer", "text": text or "資料を生成できませんでした。"})
     yield _sse({"type": "done", "model": config.MODEL})
 

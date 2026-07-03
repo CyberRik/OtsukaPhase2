@@ -67,6 +67,7 @@ def document_plan(sel: Selection) -> ExecutionPlan:
         terminal = Task(
             id="documents", capability="documents", op=sel.doc_kind,
             inputs={"goal": query, "prompt": query, "deal_id": sel.deal_id or "",
+                    "customer_id": sel.customer_id or "",
                     "target": sel.target, "lang": sel.lang, "title": sel.title},
             depends_on=deps,
             # A WRITE deliverable: never auto-repeat, run after the grounding is in.

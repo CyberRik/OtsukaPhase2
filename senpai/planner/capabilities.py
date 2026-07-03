@@ -74,6 +74,7 @@ class CRMCapability:
     metadata = CapabilityMetadata(OperationKind.READ, cacheable=True)
 
     def run(self, op: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
+        from senpai.data import store
         from senpai.tools.impl import query_spr
         deal_id = str(inputs.get("deal_id") or "")
         customer_id = str(inputs.get("customer_id") or "")
@@ -81,6 +82,17 @@ class CRMCapability:
             text, cite = query_spr(deal_id=deal_id), f"SPR {deal_id}"
         elif customer_id:
             text, cite = query_spr(customer=customer_id), f"SPR {customer_id}"
+            # query_spr's customer branch is a summary line per deal only — unlike
+            # its deal_id branch, it never includes activity/daily-report history.
+            # Without an open deal_id (the common case for a closed-won/lost
+            # account), that history is the only place a real win/loss reason
+            # ("competitor comparison", "budget on hold") lives — pull it directly
+            # so authoring doesn't have to guess a cause.
+            acts = store.activities_for_customer(customer_id)[:5]
+            if acts:
+                text += "\n直近の活動:\n" + "\n".join(
+                    f"  ・{a['activity_date']} {a['deal_id']} [{a['activity_type']}] {a['daily_report']}"
+                    for a in acts)
         else:
             return Evidence.empty(provenance={"capability": "crm"})
         ctx.emit("社内記録を取得")
@@ -167,8 +179,10 @@ class DocumentsCapability:
         path, _pctx, spec = res
         rec = registry.register("proposal", path, deal_id=deal_id)
         ctx.emit(f"提案書を生成: {rec['filename']}")
+        outline = [{"title": s.get("title", "")} for s in spec.get("slides", [])]
         return self._artifact_evidence(rec, ctx,
-                                       f"提案書(PPTX)を生成しました: {rec['filename']}")
+                                       f"提案書(PPTX)を生成しました: {rec['filename']}",
+                                       outline=outline)
 
     # -- pptx/docx: free-prompt, authored over the gathered grounding -----------
     def _authored(self, kind: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
@@ -176,6 +190,9 @@ class DocumentsCapability:
         from senpai.documents.render import output_path, render_docx, render_pptx
         goal = str(inputs.get("goal") or inputs.get("prompt") or "")
         lang = str(inputs.get("lang", "ja"))
+        # Whether a CRM customer resolved — independent of deal status, this alone
+        # decides the sales-pitch voice (see playbook.deck_style_guide).
+        customer_scoped = bool(inputs.get("customer_id"))
         grounding = self._grounding(ctx)
         if not author._use_llm():
             return Evidence.error("model required for pptx/docx authoring",
@@ -190,8 +207,10 @@ class DocumentsCapability:
             rec = registry.register("docx", path)
             n = len(spec.get("sections", []))
             msg = f"文書(DOCX)を生成しました: {rec['filename']}（{n}セクション）。"
+            outline = [{"title": s.get("heading", "")} for s in spec.get("sections", [])]
         else:
-            spec = author.author_deck(goal, grounding=grounding, lang=lang)
+            spec = author.author_deck(goal, grounding=grounding, lang=lang,
+                                      customer_scoped=customer_scoped)
             if spec is None:
                 return Evidence.error("author unavailable",
                                       provenance={"capability": "documents"})
@@ -200,17 +219,22 @@ class DocumentsCapability:
             rec = registry.register("pptx", path)
             n = len(spec.get("slides", []))
             msg = f"プレゼン(PPTX)を生成しました: {rec['filename']}（{n}スライド）。"
+            outline = [{"title": s.get("title", "")} for s in spec.get("slides", [])
+                      if s.get("layout") != "title"]
         ctx.emit(f"資料を生成: {rec['filename']}")
-        return self._artifact_evidence(rec, ctx, msg)
+        return self._artifact_evidence(rec, ctx, msg, outline=outline)
 
-    def _artifact_evidence(self, rec: dict, ctx: ExecContext, msg: str) -> Evidence:
+    def _artifact_evidence(self, rec: dict, ctx: ExecContext, msg: str,
+                           outline: list | None = None) -> Evidence:
         document = {"doc_id": rec["doc_id"], "kind": rec["kind"],
                     "filename": rec["filename"], "download_url": rec["download_url"]}
+        data = {"text": msg, "document": document, "grounded_on": sorted(
+                    ev.capability for ev in ctx.deps.values()
+                    if ev.status in ("ok", "partial") and ev.data.get("text"))}
+        if outline:
+            data["outline"] = outline
         return Evidence.ok(
-            {"text": msg, "document": document, "grounded_on": sorted(
-                ev.capability for ev in ctx.deps.values()
-                if ev.status in ("ok", "partial") and ev.data.get("text"))},
-            citations=[*self._citations(ctx), f"doc://{rec['doc_id']}"], status="ok")
+            data, citations=[*self._citations(ctx), f"doc://{rec['doc_id']}"], status="ok")
 
 
 # --- workspace WRITE terminals: note (create a text file) + organize (tidy) --------

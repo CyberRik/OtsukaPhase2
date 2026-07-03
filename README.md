@@ -41,7 +41,7 @@ cd web; npm install; cd ..
 # Terminal 1 — Backend bridge (FastAPI) → <http://localhost:8000>
 
 $env:SENPAI_USE_LLM = '1'
-$env:SENPAI_TODAY   = '2026-07-02'        # pin scoring's "today" to the seed anchor
+$env:SENPAI_TODAY   = '2026-07-03'        # pin scoring's "today" to the seed anchor
 .\.venv\Scripts\python.exe -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
 
 # Terminal 2 — Frontend (Next.js) → <http://localhost:3000>   (defaults to the :8000 backend)

@@ -60,9 +60,13 @@ def _grounding_block(grounding: str) -> str:
 
 
 # --- PPTX -----------------------------------------------------------------------
-def author_deck(prompt: str, grounding: str = "", lang: str = "ja") -> dict | None:
+def author_deck(prompt: str, grounding: str = "", lang: str = "ja",
+                customer_scoped: bool = False) -> dict | None:
     """Author a render-ready deck spec from a free prompt. None when the LLM is
-    unavailable (tool surfaces a 'needs model' message)."""
+    unavailable (tool surfaces a 'needs model' message). `customer_scoped` is True
+    when the deck is grounded on a resolved CRM customer — it picks the sales-pitch
+    style guide regardless of that customer's current deal status (see
+    playbook.deck_style_guide)."""
     if not _use_llm():
         return None
     instr = (
@@ -72,7 +76,7 @@ def author_deck(prompt: str, grounding: str = "", lang: str = "ja") -> dict | No
         '"slides": [{"title": str, "bullets": [str, ...]}, ...]}. '
         f"Use 4-{MAX_SLIDES} content slides, 3-6 concise bullets each. "
         f"Write in {'Japanese' if lang == 'ja' else 'English'}.\n"
-        f"{playbook.deck_style_guide()}\n"
+        f"{playbook.deck_style_guide(customer_scoped)}\n"
         f"Topic / request: {prompt}\n"
         f"{_grounding_block(grounding)}")
     obj = _extract_json(_complete(instr) or "")
