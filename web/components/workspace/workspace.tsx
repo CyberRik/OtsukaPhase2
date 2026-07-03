@@ -1316,7 +1316,31 @@ export function Workspace({
 
   return (
     <div className={cn("mx-auto flex h-full w-full flex-col min-h-0", wide ? "max-w-5xl" : "max-w-3xl")}>
-      <div className="flex-1 overflow-y-auto space-y-8 pb-6 pr-1 pt-3 min-h-0">
+      {/* Conversation controls pinned to the top-right of the chat pane, where
+          they are immediately discoverable — instead of being buried inside the
+          composer toolbar next to Mic/Attach/Send. */}
+      <div className="flex items-center justify-end gap-1.5 shrink-0 pt-3 pb-2 pr-1">
+        <button
+          onClick={() => setHistoryOpen(true)}
+          title={lang === "ja" ? "チャット履歴" : "Chat history"}
+          className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <History className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">{lang === "ja" ? "履歴" : "History"}</span>
+        </button>
+        {messages.length > 0 && (
+          <button
+            onClick={clearThread}
+            disabled={busy}
+            title={lang === "ja" ? "新しい会話" : "New chat"}
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{lang === "ja" ? "新規" : "New chat"}</span>
+          </button>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto space-y-8 pb-6 pr-1 pt-1 min-h-0">
         {messages.length === 0 && (
           <div className="pt-1.5 pb-6">
             <p className="text-[15px] font-medium tracking-tight text-foreground">
@@ -1630,25 +1654,6 @@ export function Workspace({
                   {attaching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
                   <span className="hidden sm:inline">{t("attach.short")}</span>
                 </button>
-                <button
-                  onClick={() => setHistoryOpen(true)}
-                  title={lang === "ja" ? "チャット履歴" : "Chat history"}
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-                >
-                  <History className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{lang === "ja" ? "履歴" : "History"}</span>
-                </button>
-                {messages.length > 0 && (
-                  <button
-                    onClick={clearThread}
-                    disabled={busy}
-                    title={lang === "ja" ? "新しい会話" : "New chat"}
-                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-card px-2.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{lang === "ja" ? "新規" : "New chat"}</span>
-                  </button>
-                )}
                 <Button variant="seal" size="sm" disabled={busy || !input.trim()} onClick={() => submit(input, dealId)} className="gap-1.5">
                   {t(role === "manager" ? "chat.send.manager" : "chat.send")} <CornerDownLeft className="h-3.5 w-3.5" />
                 </Button>
