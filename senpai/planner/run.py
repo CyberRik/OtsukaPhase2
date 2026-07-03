@@ -55,10 +55,12 @@ def run_document_goal(goal: str, *, conversation: list[dict] | None = None,
     document = None
     text = ""
     grounded_on: list[str] = []
+    outline: list = []
     if doc is not None and doc.status in ("ok", "partial"):
         document = doc.data.get("document")
         text = doc.data.get("text", "")
         grounded_on = list(doc.data.get("grounded_on", []))
+        outline = list(doc.data.get("outline", []))
     elif doc is not None:  # error fragment
         text = str(doc.provenance.get("error", "document generation failed"))
 
@@ -74,6 +76,7 @@ def run_document_goal(goal: str, *, conversation: list[dict] | None = None,
         "document": document,
         "text": text,
         "grounded_on": grounded_on,
+        "outline": outline,
         "citations": list(doc.citations) if doc else [],
     }
 
