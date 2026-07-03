@@ -31,7 +31,9 @@ export function ContextPane({
 }: {
   deals: DealRow[];
   role: Role;
-  profile: GrowthData;
+  // Junior passes its growth profile; the manager surface has no single-rep
+  // profile, so this is optional. Currently informational only.
+  profile?: GrowthData;
 }) {
   const { t, lang } = useT();
   const { focus, setFocus } = useWorkspaceFocus(role);

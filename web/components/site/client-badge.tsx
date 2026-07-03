@@ -20,7 +20,7 @@ export function ClientBadge({ className }: { className?: string }) {
         width={783}
         height={203}
         priority
-        className="h-[28px] w-auto opacity-90"
+        className="h-[58px] w-auto opacity-90"
       />
     </div>
   );

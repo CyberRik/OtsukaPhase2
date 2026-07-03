@@ -1,24 +1,29 @@
 import { api } from "@/lib/api";
 import { currentEmployeeId } from "@/lib/server-session";
-import { PageHeader } from "@/components/site/page-header";
-import { Workspace } from "@/components/workspace/workspace";
+import { CommandCenter } from "@/components/workspace/command-center";
+import { ContextPane } from "@/components/workspace/context-pane";
 
 export const dynamic = "force-dynamic";
 
-// The Copilot tab — the full-width unified surface (chat + skills) running the
-// manager tool-loop. Reached from the nav, or from a deal's "Ask the Copilot"
-// action which grounds it on that deal first.
+// The Copilot tab — the same unified Command Center the Junior home uses: live
+// deal/account context on the left, the Copilot (Workspace) on the right. Here
+// the context pane is scoped to the manager's coachees. Reached from the nav,
+// or from a deal's "Ask the Copilot" action which grounds it on that deal first.
 export default async function ManagerCopilotPage() {
+  const eid = await currentEmployeeId();
   const [{ data: ex }, { data: db }, { data: pr }] = await Promise.all([
     api.coachExamples(),
-    api.dashboard(undefined, await currentEmployeeId()),
+    api.dashboard(undefined, eid),
     api.principles(),
   ]);
 
   return (
-    <div className="space-y-8">
-      <PageHeader eyebrowKey="nav.copilot" titleKey="assistant.title.manager" leadKey="assistant.lead.manager" />
-      <Workspace examples={ex.examples} deals={db.deals} principles={pr.principles} role="manager" />
-    </div>
+    <CommandCenter
+      examples={ex.examples}
+      deals={db.deals}
+      principles={pr.principles}
+      role="manager"
+      contextSlot={<ContextPane key="manager-context" deals={db.deals} role="manager" />}
+    />
   );
 }
