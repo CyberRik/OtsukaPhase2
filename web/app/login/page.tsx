@@ -7,6 +7,7 @@ import { ArrowLeft, KeyRound, LayoutDashboard, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { demoCreds, useSession, type Role } from "@/lib/session";
 import { Brand } from "@/components/site/brand";
+import { ClientBadge } from "@/components/site/client-badge";
 import { LangToggle } from "@/components/site/lang-toggle";
 import { Button } from "@/components/ui/button";
 
@@ -39,7 +40,11 @@ function LoginForm() {
     <div className="hero-wash flex min-h-screen flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-5">
         <Brand fullMark tagline={t("app.tagline")} />
-        <LangToggle />
+        <div className="flex items-center gap-3 sm:gap-4">
+          <ClientBadge />
+          <div className="hidden h-5 w-px bg-border sm:block" />
+          <LangToggle />
+        </div>
       </header>
 
       <main className="flex flex-1 items-center justify-center px-6 pb-16">

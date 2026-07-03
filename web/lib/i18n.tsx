@@ -15,6 +15,7 @@ const ja: Dict = {
   // common
   "app.name": "Senpai",
   "app.tagline": "営業ナレッジ＆オンボーディング",
+  "app.builtFor": "提供先",
   "common.signOut": "ログアウト",
   "common.search": "検索…",
   "common.tryOne": "例を試す",
@@ -40,7 +41,7 @@ const ja: Dict = {
 
   // landing
   "landing.eyebrow": "営業チームのためのナレッジ移転プラットフォーム",
-  "landing.title": "先輩の判断を、チーム全員の力に。",
+  "landing.title": "熟練営業の判断を、チーム全体の標準に。",
   "landing.subtitle": "経験豊富な営業の「考え方」を新人へ。実際のインタビューに基づき、出典と確度を明示。チームの案件健全度はマネージャーが一目で把握。",
   "landing.who": "どちらでログインしますか？",
   "landing.junior.title": "新人営業",
@@ -564,6 +565,7 @@ const ja: Dict = {
 const en: Dict = {
   "app.name": "Senpai",
   "app.tagline": "Sales Knowledge & Onboarding",
+  "app.builtFor": "Built for",
   "common.signOut": "Sign out",
   "common.search": "Search…",
   "common.tryOne": "Try one",
@@ -587,7 +589,7 @@ const en: Dict = {
   "role.manager.short": "Manager",
 
   "landing.eyebrow": "Knowledge-transfer platform for sales teams",
-  "landing.title": "Turn one senior's judgment into the whole team's instinct.",
+  "landing.title": "Scale your most experienced reps' judgment across the team.",
   "landing.subtitle": "Teach new reps how experienced salespeople think — grounded in real interviews, with provenance and confidence on every claim. Managers see team deal-health at a glance.",
   "landing.who": "Who are you?",
   "landing.junior.title": "Junior Sales Rep",
