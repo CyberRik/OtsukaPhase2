@@ -9,7 +9,7 @@
 // bare (no-slash) turn becomes general chat. Until then, a bare turn defaults to
 // /review (this is the surface being dogfooded against the standalone Coach).
 
-export const SKILLS = ["review", "account", "research", "crew", "team"] as const;
+export const SKILLS = ["review", "account", "research", "crew", "team", "intel"] as const;
 export type SkillName = (typeof SKILLS)[number];
 
 export interface ParsedInput {
