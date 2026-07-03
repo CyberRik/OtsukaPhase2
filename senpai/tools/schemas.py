@@ -341,6 +341,33 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_research",
+            "description": "Research the open web by ACTUALLY VISITING pages (a real crawler), then "
+                           "answer grounded in what was on them. Auto-routes on the input: (a) a "
+                           "website URL or bare domain → crawls that site and returns a pre-call "
+                           "intel brief (company overview, products, recent news, IR/財務 docs, "
+                           "talking points); (b) a question with no URL (e.g. '築地の営業会社トップ5') "
+                           "→ web-searches it, crawls the top result sites, and answers with source "
+                           "URLs. Every claim carries a source link. Prefer this over web_search "
+                           "when the user pastes a URL or wants real page content, not just snippets.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "input": {"type": "string",
+                              "description": "A website URL (e.g. 'https://www.example.co.jp') OR a "
+                                             "research question (e.g. '築地の営業支援会社を教えて')"},
+                    "max_pages": {"type": "integer",
+                                  "description": "Max pages per site to visit (default 6, capped at 12)"},
+                    "max_sites": {"type": "integer",
+                                  "description": "For a question: how many distinct sites to crawl (default 3, max 5)"},
+                },
+                "required": ["input"],
+            },
+        },
+    },
     # --- Knowledge RAG + sales-action tools (ported from demo/tools.py) -------
     {
         "type": "function",
@@ -707,7 +734,7 @@ JUNIOR_TOOLS = _pick(
     "search_notes", "lookup_customer_environment", "get_product_info", "search_products",
     "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
     "send_email", "get_calendar", "route_to_expert", "morning_briefing",
-    "get_seasonal_context", "web_search", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
+    "get_seasonal_context", "web_search", "web_research", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
 )
 
@@ -717,7 +744,7 @@ MANAGER_TOOLS = _pick(
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
     "search_knowledge", "search_notes", "query_graph", "segment_intelligence", "search_products",
     "create_quote", "schedule_meeting",
-    "send_email", "get_calendar", "draft_message", "web_search", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
+    "send_email", "get_calendar", "draft_message", "web_search", "web_research", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
     "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
 )
 
@@ -728,5 +755,5 @@ MANAGER_TOOLS = _pick(
 RESEARCH_TOOLS = _pick(
     "query_spr", "find_deals", "find_similar_deals", "score_deal_health", "search_notes",
     "lookup_customer_environment", "get_product_info", "segment_intelligence",
-    "get_seasonal_context", "web_search", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
+    "get_seasonal_context", "web_search", "web_research", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
 )

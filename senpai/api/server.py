@@ -1529,6 +1529,88 @@ class RenameConversationRequest(BaseModel):
     title: str
 
 
+# --- Live web-research / site-intel crawl (the /intel browser-sim feed) ------
+class IntelCrawlRequest(BaseModel):
+    input: str                 # a URL/bare-domain OR a research question
+    max_pages: int = 6
+    max_sites: int = 3
+
+
+def _intel_crawl_stream(req: IntelCrawlRequest):
+    """SSE generator for the live browser feed. Runs the crawler in a worker thread
+    (Playwright's sync API needs a thread with no event loop) and relays each page it
+    visits to the client in real time via a queue, then a final `intel` brief event.
+
+    Event types: start | research_plan | crawl_page | crawl_status | intel | error | done
+    """
+    import queue
+    import threading
+    from senpai.tools import crawl as _cr
+
+    text = (req.input or "").strip()
+    yield _sse({"type": "start", "input": text,
+                "mode": "site" if _cr.looks_like_url(text) else "question"})
+    if not text:
+        yield _sse({"type": "error", "reason": "empty_input"})
+        yield _sse({"type": "done"})
+        return
+
+    q: "queue.Queue[dict | None]" = queue.Queue(maxsize=64)
+
+    def emit(ev: dict) -> None:
+        try:
+            q.put(ev, timeout=1.0)
+        except Exception:
+            pass  # a slow/gone client must never wedge the crawl
+
+    def worker() -> None:
+        try:
+            mp = max(1, min(int(req.max_pages), 12))
+            if _cr.looks_like_url(text):
+                url = text if text.startswith(("http://", "https://")) else "https://" + text
+                if not _cr.is_safe_url(url):
+                    q.put({"type": "error", "reason": "unsafe_or_unreachable_url", "url": url})
+                    return
+                intel = _cr.crawl_site(url, max_pages=mp, max_depth=2, emit=emit)
+                if not intel.get("ok"):
+                    q.put({"type": "error", "reason": intel.get("reason", "no_pages")})
+                    return
+                brief = _cr.build_brief(intel, use_llm=USE_LLM, emit=emit)
+                q.put({"type": "intel", "markdown": brief["markdown"],
+                       "sources": brief["sources"], "backend": intel["backend"],
+                       "assets": {"products": len(intel["products"]),
+                                  "news": len(intel["news"]), "pdfs": len(intel["pdfs"])},
+                       "pdfs": intel["pdfs"][:12]})
+            else:
+                bundle = _cr.research_web(text, max_sites=max(1, min(int(req.max_sites), 5)),
+                                          max_pages_per_site=min(mp, 3), emit=emit)
+                answer = _cr._research_answer(bundle, use_llm=USE_LLM)
+                sources = [{"url": p["url"], "title": p["title"]}
+                           for c in bundle["crawls"] for p in c["pages"]]
+                q.put({"type": "intel", "markdown": answer, "sources": sources,
+                       "sites": bundle["sites"], "backend": "requests"})
+        except Exception as e:  # noqa: BLE001 — surface, never crash the stream
+            q.put({"type": "error", "reason": str(e)})
+        finally:
+            q.put(None)  # sentinel: worker done
+
+    threading.Thread(target=worker, daemon=True).start()
+    while True:
+        ev = q.get()
+        if ev is None:
+            break
+        yield _sse(ev)
+    yield _sse({"type": "done"})
+
+
+@app.post("/api/intel/crawl")
+def intel_crawl(req: IntelCrawlRequest):
+    """Stream a live website crawl → grounded intel brief (the /intel browser-sim)."""
+    return StreamingResponse(
+        _intel_crawl_stream(req), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
 @app.get("/api/chat/history")
 def chat_history_list(employee_id: str, role: str = "junior"):
     """List one user's saved conversations (headers only), newest first."""

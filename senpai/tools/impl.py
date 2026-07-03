@@ -19,6 +19,7 @@ from senpai.retrieval.knowledge import search_knowledge as _search_knowledge
 from senpai.retrieval.playbook import find_similar_deals, retrieve_playbook
 from senpai.tools.focus import session_focus
 from senpai.tools.web import web_search
+from senpai.tools.crawl import web_research
 
 
 def _score_open_deals(rep_id: str = ""):
@@ -1208,6 +1209,7 @@ _DISPATCH = {
     "rep_coaching_focus": rep_coaching_focus,
     "draft_message": draft_message,
     "web_search": web_search,
+    "web_research": web_research,
     # Sales demo tools (ported from demo/tools.py, re-grounded on the store)
     "search_products": search_products,
     "create_quote": create_quote,
