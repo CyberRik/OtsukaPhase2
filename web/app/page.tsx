@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, LayoutDashboard, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { Brand } from "@/components/site/brand";
+import { ClientBadge } from "@/components/site/client-badge";
 import { LangToggle } from "@/components/site/lang-toggle";
 
 export default function Landing() {
@@ -36,7 +37,11 @@ export default function Landing() {
     <div className="hero-wash min-h-screen">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
         <Brand fullMark tagline={t("app.tagline")} />
-        <LangToggle />
+        <div className="flex items-center gap-3 sm:gap-4">
+          <ClientBadge />
+          <div className="hidden h-5 w-px bg-border sm:block" />
+          <LangToggle />
+        </div>
       </header>
 
       <main className="mx-auto flex max-w-5xl flex-col items-center px-6 pb-20 pt-10 text-center md:pt-16">
