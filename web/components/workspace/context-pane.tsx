@@ -91,7 +91,7 @@ export function ContextPane({
               }}
               className={cn(
                 "cursor-pointer transition-colors",
-                active ? "ring-2 ring-primary/40" : "hover:border-primary/40",
+                active ? "border-primary ring-1 ring-inset ring-primary" : "hover:border-primary/40",
               )}
             >
               <CardContent className="flex items-center justify-between gap-3 p-3">

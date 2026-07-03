@@ -52,6 +52,7 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
         slides.append({
             "layout": "content",
             "title": "対象案件一覧",
+            "icon": "summary",
             "bullets": deal_lines,
             "notes": f"{len(ctx.deals)}件の案件を統合したご提案です。",
         })
@@ -60,6 +61,7 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     exec_summary_slide = {
         "layout": "content",
         "title": "提案のサマリー",
+        "icon": "summary",
         "bullets": ["本提案の目的と目指す姿", "主要なソリューション", "期待される効果と投資対効果"],
         "notes": "提案の全体像を簡潔に記載。",
     }
@@ -68,6 +70,7 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     background_slide = {
         "layout": "content",
         "title": "背景 — なぜ今、取り組むべきか",
+        "icon": "background",
         "bullets": prose["why_now"],
         "notes": "業界動向とタイミングの整理（顧客の課題に基づく framing）。",
     }
@@ -86,6 +89,7 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     assessment_slide = {
         "layout": "content",
         "title": "現状のIT環境とアセスメント",
+        "icon": "assessment",
         "bullets": env_bullets,
         "notes": "SPR/顧客マスタに登録されているIT環境や規模に基づく現状認識。",
     }
@@ -94,6 +98,7 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     challenge_slide = {
         "layout": "content",
         "title": "課題 — 現状のお困りごと",
+        "icon": "challenge",
         "bullets": prose["challenges"],
         "notes": "SPRの日報・customer_challengeから抽出した実際の課題を framing。",
     }
@@ -108,6 +113,7 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     solution_slide = {
         "layout": "table",
         "title": f"ソリューション — {ctx.product_category}",
+        "icon": "solution",
         "table": {
             "headers": solution_headers,
             "rows": solution_rows,
@@ -123,13 +129,13 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     chart_categories = []
     chart_values = []
     if quoted and standard and quoted != standard:
-        chart_categories = ["標準構成 (Standard)", "ご提案価格 (Proposed)"]
+        chart_categories = ["標準構成", "ご提案価格"]
         chart_values = [standard, quoted]
     elif quoted:
-        chart_categories = ["ご提案価格 (Proposed)"]
+        chart_categories = ["ご提案価格"]
         chart_values = [quoted]
     else:
-        chart_categories = ["投資額 (Investment)"]
+        chart_categories = ["投資額"]
         chart_values = [f.get('investment', 0)]
         
     roi_notes = "金額はすべてSPRの実データ。参考事例は同カテゴリの実案件（創作なし）。\n\n[Value / Comparables]:\n"
@@ -140,28 +146,44 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     roi_slide = {
         "layout": "chart",
         "title": "投資対効果",
+        "icon": "roi",
         "chart": {
+            "renderer": "mpl",
             "categories": chart_categories,
             "series": [{"name": "Amount", "values": chart_values}]
         },
         "notes": roi_notes.strip(),
     }
 
-    # Slide 8 (New) — 導入スケジュール (Table)
-    schedule_headers = ["フェーズ", "期間", "主な作業内容"]
-    schedule_rows = [
-        ["要件定義", "0.5〜1ヶ月", "要件の確認、仕様確定"],
-        ["機器手配・設定", "1〜1.5ヶ月", "ハードウェア/ライセンスの手配、キッティング"],
-        ["導入・テスト", "0.5〜1ヶ月", "現地設置、動作確認テスト"],
-        ["運用開始", "ー", "ユーザーへの引継ぎ、本番稼働"],
-    ]
+    # Slide 7b (quote-only) — 割引率 as a doughnut: a real, quoted discount is a
+    # customer-appropriate number to visualize (unlike an internal health score,
+    # which has no place in a customer-facing deck).
+    discount_slide = None
+    disc = f.get("discount_rate")
+    if quoted and standard and quoted != standard and disc:
+        discount_slide = {
+            "layout": "chart",
+            "title": "標準価格からの割引率",
+            "icon": "roi",
+            "chart": {
+                "type": "doughnut",
+                "categories": ["割引額", "ご提案価格"],
+                "series": [{"name": "構成比", "values": [disc, max(0, 100 - disc)]}],
+            },
+            "notes": f"標準 {_yen(standard)} → ご提案 {_yen(quoted)}（{disc}%割引）。SPRの見積実データ。",
+        }
+
+    # Slide 8 (New) — 導入スケジュール、接続された工程図として可視化
     schedule_slide = {
-        "layout": "table",
+        "layout": "timeline",
         "title": "導入スケジュール (標準モデル)",
-        "table": {
-            "headers": schedule_headers,
-            "rows": schedule_rows,
-        },
+        "icon": "schedule",
+        "phases": [
+            {"label": "要件定義", "duration": "0.5〜1ヶ月", "detail": "要件の確認、仕様確定"},
+            {"label": "機器手配・設定", "duration": "1〜1.5ヶ月", "detail": "手配・キッティング"},
+            {"label": "導入・テスト", "duration": "0.5〜1ヶ月", "detail": "現地設置、動作確認"},
+            {"label": "運用開始", "duration": "ー", "detail": "引継ぎ、本番稼働"},
+        ],
         "notes": "標準的な導入スケジュール。案件の実態に合わせて調整。",
     }
 
@@ -169,11 +191,16 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
     next_slide = {
         "layout": "content",
         "title": "次のステップ",
+        "icon": "next",
         "bullets": prose["next_steps"],
         "notes": "丁寧な依頼文体で次の一歩を提示。",
     }
 
-    slides += [exec_summary_slide, background_slide, assessment_slide, challenge_slide, solution_slide, roi_slide, schedule_slide, next_slide]
+    slides += [exec_summary_slide, background_slide, assessment_slide, challenge_slide,
+              solution_slide, roi_slide]
+    if discount_slide:
+        slides.append(discount_slide)
+    slides += [schedule_slide, next_slide]
     return {"slides": slides}
 
 

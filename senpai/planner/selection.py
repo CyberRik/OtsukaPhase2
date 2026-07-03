@@ -51,7 +51,7 @@ _RINGISHO_RE = re.compile(r"稟議|ringisho", re.IGNORECASE)
 
 # ORGANIZE: tidy/sort/reorganize the workspace on disk (a WRITE that moves files).
 _ORGANIZE_RE = re.compile(
-    r"\b(?:organi[sz]e|reorgani[sz]e|tidy(?:\s?up)?|clean\s?up|sort|file\s+away|declutter)\b"
+    r"\b(?:organi[sz]e|reorgani[sz]e|rearrange|tidy(?:\s?up)?|clean\s?up|sort|file\s+away|declutter)\b"
     r".{0,30}?(?:files?|documents?|docs?|folder|workspace)|"
     r"\b(?:put|move|place)\b.{1,40}?\b(?:in|into|under|to|inside)\b.{1,30}?(?:folder|directory)?|"
     r"(?:ファイル|資料|ドキュメント|文書|フォルダ|ワークスペース).{0,10}?"

@@ -12,7 +12,7 @@ import { useState } from "react";
 import {
   AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
   FileText, Globe, Layers, Loader2, Mail, Presentation, Receipt, Route, Search,
-  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, type LucideIcon,
+  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
 import { documentUrl, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
@@ -86,6 +86,8 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   // the event itself carries an explicit `internal` flag that overrides this
   // static default (see groundingBadge below).
   documents: { ja: "資料生成", en: "Document generation", icon: Presentation, internal: false },
+  workspace_organize: { ja: "フォルダ整理", en: "Workspace Organize", icon: FolderTree, internal: false },
+  workspace_write: { ja: "メモ保存", en: "Save Note", icon: FileText, internal: false },
 };
 
 function getToolHighlight(tool: ToolCall): string {

@@ -160,6 +160,60 @@ Key properties:
   goal → one static plan → one artifact. Meeting-prep and account-intelligence
   are the *same spine* plus a real Reasoner pass, next.
 
+### 2.1 Post-ship hardening: correctness, observability, and richer decks
+
+Dogfooding the planner against real customer names surfaced a class of bugs the
+parity suites couldn't catch (they diff evidence bundles, not judgment calls) —
+fixed the same day, all covered by direct re-verification against the live
+backend, not just unit tests:
+
+- **Ambiguous customers now surface a picker instead of guessing.** "matsuda" →
+  four different 松田 companies; the planner path had no ambiguity guard (chat
+  and `/crew` already did), so it silently ground on nothing and let the model
+  free-associate. Now short-circuits to the same candidate picker every other
+  surface uses.
+- **Deal-openness no longer dictates document *style*.** A customer whose deals
+  are all Confirmed/Lost (not "open") was silently downgraded from a sales
+  proposal to a generic analytical deck — and separately, the LLM's own
+  capability-selector could override a *correctly* resolved deal back to
+  `pptx`. Both fixed: a resolved deal always grounds `generate_proposal`,
+  regardless of rank; style (`playbook.deck_style_guide`) is now decided by
+  whether a customer resolved, not by deal stage.
+- **Deeper CRM grounding.** The customer-scoped path pulled a 5-field deal
+  summary only; the deal's actual activity/daily-report log (competitor
+  mentions, budget blockers, decision-maker status) was never fetched, so the
+  model *guessed* a plausible-sounding cause instead of citing the real one.
+  `CRMCapability` now includes it.
+- **The outline is no longer thrown away.** Both the deterministic
+  `generate_proposal` spec and the free-authored deck already computed their
+  slide list before rendering, but the capability discarded it after use — the
+  rep only ever saw a filename. It now rides in `Evidence.data` and surfaces
+  two ways: inline in the answer text ("構成: 1. … 2. …") and as a numbered
+  list in the tool card, both before the download link.
+- **Live tool-call streaming.** The planner ran the whole plan synchronously
+  and only synthesized tool-call cards from the final result — every card
+  landed in one burst *after* the file was already done, reading as if the
+  answer appeared before any tool ran. Now streams real `task.completed`
+  events off a background thread as they happen (same queue/thread pattern
+  `/crew` already used), one card at a time, live.
+- **Tool names now localize.** The planner baked Japanese labels directly into
+  the event instead of a stable id the frontend could translate — so the
+  language toggle did nothing for planner-generated cards, and the grounding
+  badge (which keys off the same lookup) always read "generic output," even
+  for a fully CRM-grounded proposal. Both now resolve through the same
+  `TOOL_LABEL` dictionary every other tool already uses.
+- **Multi-deal proposals.** `generate_proposal` was single-deal by
+  construction — "a proposal covering all of C33's deals" silently dropped
+  every deal but the largest. It now merges pain points, matched products,
+  comparables, and financials (summed) across every deal a rep names, with an
+  explicit "対象案件一覧" slide listing what's included.
+- **Richer proposal deck.** `generate_proposal` gained an executive-summary
+  slide, a real IT-environment/assessment slide (SPR `environment` record, not
+  invented), a **table** layout for the solution slide (product/code/price)
+  and a **chart** layout for the ROI slide (standard vs. proposed spend), plus
+  a standard implementation-schedule table — same deterministic-numbers
+  guarantee, just fewer walls of bullet text.
+
 ---
 
 ## 3. Local Workspace Agent (`senpai/workspace/` + `senpai/planner/`)
@@ -366,6 +420,9 @@ real app as **SSE**:
   tool logging in the Crew UI.
 - **Central config module** (`senpai/config.py`) — environment-based tunables for
   model, inference, and data paths, so nothing is hardcoded.
+- **ClientBadge & Profile UI integration** — added `ClientBadge` component, integrated it into Login and Landing pages, and made the profile optional in the ContextPane.
+- **Senpai backend bridge** — implemented a typed API client bridging the FastAPI backend and the frontend orchestration engine.
+- **Legacy auth cleanup** — removed the deprecated legacy authentication module (`senpai/apps/manager_dashboard.py`).
 
 ---
 
@@ -385,6 +442,8 @@ real app as **SSE**:
 
 Every engine migration was **zero-regression** — the parity suites confirmed
 identical behavior before any legacy path was retired.
+
+- **Synthesis benchmarking framework** (`scripts/bench_synth_prompt.py`, `senpai/llm/synth_style.py`) — introduced a framework to benchmark synthesis prompts and an optimization module to evaluate and improve output style.
 
 ---
 

@@ -187,7 +187,7 @@ WORKSPACE_ROOT = Path(
 # Extensions the Workspace will find/extract (read-only). Lowercase, with dot.
 WORKSPACE_EXTS = tuple(
     e.strip().lower() for e in os.environ.get(
-        "SENPAI_WORKSPACE_EXTS", ".pdf,.docx,.pptx,.xlsx,.txt,.md").split(",") if e.strip())
+        "SENPAI_WORKSPACE_EXTS", ".pdf,.docx,.pptx,.xlsx,.txt,.md,.png,.jpg,.jpeg,.gif").split(",") if e.strip())
 # Runtime fan-out cap: a `find` never expands into more than this many parallel
 # `extract` tasks, so one query can't read an unbounded tree.
 WORKSPACE_MAX_FILES = _env_int("SENPAI_WORKSPACE_MAX_FILES", 12)
@@ -320,11 +320,11 @@ DECISION_MAKER_TITLES = ["社長", "代表", "取締役", "役員", "本部長",
 OPTIMISTIC_RANKS = {"2_A+", "3_A"}
 
 # Japanese stall lexicon — phrases that, in the latest daily_report, signal a stall.
-STALL_LEXICON = ["検討します", "予算が", "時期を見て", "上と相談", "持ち帰り", "また連絡"]
+STALL_LEXICON = ["検討します", "予算が", "時期を見て", "上と相談", "持ち帰り", "また連絡", "見送り", "様子見"]
 
 # Words that, when present in a note, mean a competitor is in play (a *factor* the
 # rep should reason about, not a gap). Used by the Sales Review Coach.
-COMPETITION_LEXICON = ["競合", "他社", "相見積", "コンペ", "比較中", "比較検討"]
+COMPETITION_LEXICON = ["競合", "他社", "相見積", "コンペ", "比較中", "比較検討", "リプレイス", "切り替え"]
 
 # Risk-score band thresholds (score is 0–100, higher = worse).
 RED_THRESHOLD = 55      # score >= 55  → red
