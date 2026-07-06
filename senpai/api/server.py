@@ -1753,6 +1753,21 @@ def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = 
                 yield _sse({"type": "context", "status": "active",
                             "customer": sel.get("target"), "deal_id": sel.get("deal_id"),
                             "cached": False})
+        elif etype == oevents.TASK_STARTED:
+            # Fine-grained lane state for the execution-timeline UI — additive,
+            # existing `tool`/`plan` handling below is unaffected by this.
+            yield _sse({"type": "task_started", "task_id": ev.get("task_id", ""),
+                        "capability": ev.get("capability", ""), "op": ev.get("op", ""),
+                        "group": ev.get("group", ""), "summary": ev.get("summary", "")})
+        elif etype == oevents.TASK_PROGRESS:
+            yield _sse({"type": "task_progress", "task_id": ev.get("task_id", ""),
+                        "message": ev.get("message", "")})
+        elif etype == oevents.TASK_EVIDENCE:
+            yield _sse({"type": "task_evidence", "task_id": ev.get("task_id", ""),
+                        "status": ev.get("status", ""), "confidence": ev.get("confidence"),
+                        "citations": ev.get("citations") or []})
+        elif etype == oevents.GROUP_COMPLETED:
+            yield _sse({"type": "group_completed", "group": ev.get("group", "")})
         elif etype == oevents.TASK_COMPLETED:
             tid = ev.get("task_id", "")
             if ev.get("status") not in ("ok", "partial"):
