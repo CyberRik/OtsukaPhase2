@@ -1,0 +1,26 @@
+# Add patterns to ignore here, one per line
+# Example:
+# *.log
+# tmp/
+node_modules/
+.git/
+dist/
+build/
+coverage/
+.venv/
+venv/
+__pycache__/
+*.log
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.zip
+.env
+.env.*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+*.json
+*.jsonl

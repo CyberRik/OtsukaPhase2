@@ -466,7 +466,7 @@ export interface RetrievalTrace {
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
-  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean }
+  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; crawl?: CrawlPage[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean }
   | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }
@@ -580,6 +580,67 @@ export async function crewStream(
   }
   await readSSE(res, (obj) => onEvent(obj as CrewEvent), () =>
     onEvent({ type: "error", reason: "stream" }),
+  );
+}
+
+// --- Website Intel: live headless-browser crawl (the /intel browser-sim) -----
+/** One page the crawler visited. `screenshot_b64` is a base64 JPEG when the
+ *  headless browser rendered it (empty on the static `requests` backend). */
+export interface CrawlPage {
+  url: string;
+  title: string;
+  status: number;
+  depth: number;
+  index?: number;
+  snippet?: string;
+  ok: boolean;
+  screenshot_b64?: string;
+  found?: { products: number; news: number; pdfs: number };
+}
+
+export interface IntelSource { url: string; title: string }
+
+export type IntelCrawlEvent =
+  | { type: "start"; input: string; mode: "site" | "question" }
+  | { type: "research_plan"; query: string; sites: string[]; search_answer?: string; search_ok?: boolean }
+  | { type: "crawl_frame"; url: string; index: number; screenshot_b64: string }
+  | ({ type: "crawl_page" } & CrawlPage)
+  | { type: "crawl_status"; phase: string }
+  | { type: "intel"; markdown: string; sources: IntelSource[]; backend?: string;
+      assets?: { products: number; news: number; pdfs: number };
+      pdfs?: IntelSource[]; sites?: string[] }
+  | { type: "done" }
+  | { type: "error"; reason?: string; url?: string };
+
+/** Stream a live website crawl. `input` is a URL / bare domain (→ crawl that site
+ *  into a pre-call brief) or a question (→ web-search, crawl the top sites, answer
+ *  with citations). Each visited page arrives as a `crawl_page` event so the UI can
+ *  render the browse in real time; a final `intel` event carries the brief. Never
+ *  throws — transport failures surface as an `error` event. */
+export async function intelCrawlStream(
+  input: string,
+  onEvent: (e: IntelCrawlEvent) => void,
+  opts?: { maxPages?: number; maxSites?: number; signal?: AbortSignal },
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/intel/crawl`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input, max_pages: opts?.maxPages ?? 10, max_sites: opts?.maxSites ?? 3 }),
+      cache: "no-store",
+      signal: opts?.signal,
+    });
+  } catch {
+    console.error(`network error`); onEvent({ type: "error", reason: "network" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    console.error(`http error: ${res.status}`); onEvent({ type: "error", reason: `http_${res.status}` });
+    return;
+  }
+  await readSSE(res, (obj) => onEvent(obj as IntelCrawlEvent), () =>
+    onEvent({ type: "error", reason: "stream" })
   );
 }
 

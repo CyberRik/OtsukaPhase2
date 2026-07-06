@@ -534,8 +534,10 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     substantive: list[tuple[str, str]] = []   # (tool_name, result) worth answering from
     from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
+    from senpai.tools import crawl_trace as _crawl
     _trace.start()  # begin a retrieval trace for this turn (Retrieval Explorer)
     _docs.start()   # begin the per-turn generated-document buffer (download chips)
+    _crawl.start()  # begin the per-turn web-crawl trace (web_research browse feed)
 
     # Tool-selection rounds must KEEP the <think> phase: this reasoning-distill
     # needs to reason before it will emit a tool call. Prefilling an empty
@@ -674,6 +676,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # Drain any residual traces left over in the main thread before threading
         _trace.drain()
         _docs.drain()
+        _crawl.drain()
 
         # Run the ExecutionPlan in parallel via the Engine
         def _ignore_events(evt: dict) -> None:
@@ -742,6 +745,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             retrieval = _trace.drain()
             if retrieval:
                 ev["retrieval"] = retrieval
+            # Attach the pages web_research browsed this round (gated on the tool so
+            # crawl pages can't misattribute to a different tool in the batch). Powers
+            # the browser-sim replay on the tool card.
+            if name == "web_research":
+                crawled = _crawl.drain()
+                if crawled:
+                    ev["crawl"] = crawled
             # Attach the file this call produced. A generated document is a WRITE
             # deliverable (generate_*/action tools), which the scheduler runs
             # serially — so there is at most one per round, and the newest new id

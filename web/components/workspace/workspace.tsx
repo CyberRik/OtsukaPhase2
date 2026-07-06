@@ -47,6 +47,7 @@ import { ArtifactCard } from "./artifact-card";
 import { MessageBubble, type Msg } from "@/components/assistant/message";
 import { ExperiencePanel } from "@/components/coach/similar-cases";
 import { CrewTurn } from "./crew-turn";
+import { IntelTurn } from "./intel-turn";
 import { parseInput } from "@/components/workspace/slash";
 
 // --- thread model -----------------------------------------------------------
@@ -61,7 +62,8 @@ type WMsg =
   | { id: number; role: "skill"; kind: "review"; note: string; dealId?: string; artifact: Artifact }
   | { id: number; role: "skill"; kind: "account_brief"; customerId: string; artifact: Artifact }
   | { id: number; role: "skill"; kind: "research"; query: string; entity?: EntityRef; artifact: Artifact }
-  | { id: number; role: "crew"; mode: "deal" | "team"; query?: string; label?: string };
+  | { id: number; role: "crew"; mode: "deal" | "team"; query?: string; label?: string }
+  | { id: number; role: "intel"; query: string };
 
 // The serialized shape persisted per conversation (the opaque `blob` the backend
 // round-trips). It carries the transcript array PLUS the separately-cached streamed
@@ -141,6 +143,14 @@ const SLASH_COMMANDS = [
     labelJa: "エージェントで商談分析",
     descEn: "A Researcher, Coach & Strategist analyse a deal together",
     descJa: "リサーチャー・コーチ・ストラテジストが商談を分析",
+    managerOnly: false,
+  },
+  {
+    cmd: "/intel",
+    labelEn: "Website intel (crawl a site)",
+    labelJa: "サイトインテル（サイトを巡回）",
+    descEn: "Paste a company URL — watch it browse, get a pre-call brief",
+    descJa: "企業URLを貼り付け、巡回の様子を見て事前準備資料を取得",
     managerOnly: false,
   },
   {
@@ -862,7 +872,7 @@ export function Workspace({
   // crew-turn.tsx.
   function serializeThread(): string {
     const cid = thread.current;
-    const prefixes = [`ws:chat:${cid}:`, `ws:crew:${cid}:`];
+    const prefixes = [`ws:chat:${cid}:`, `ws:crew:${cid}:`, `ws:intel:${cid}:`];
     for (const m of messages) {
       if (m.role === "skill" && m.artifact) prefixes.push(`ws:art:${m.artifact.id}:`);
     }
@@ -891,7 +901,7 @@ export function Workspace({
     if (!employeeId || busy) return;
     const hasUser = messages.some((m) => m.role === "user");
     const hasReply = messages.some(
-      (m) => m.role === "assistant" || m.role === "skill" || m.role === "crew",
+      (m) => m.role === "assistant" || m.role === "skill" || m.role === "crew" || m.role === "intel",
     );
     if (!hasUser || !hasReply) return;
     const cid = thread.current;
@@ -1175,6 +1185,18 @@ export function Workspace({
     setDealId("");
   }
 
+  function runIntel(query: string) {
+    const clean = query.trim();
+    if (!clean || busy) return;
+    const id = nextId();
+    setMessages((m) => [
+      ...m,
+      { id: nextId(), role: "user", text: `/intel ${clean}` },
+      { id, role: "intel", query: clean },
+    ]);
+    setInput("");
+  }
+
   function runChat(text: string, deal?: string) {
      const clean = text.trim();
      if (!clean || busy) return;
@@ -1238,6 +1260,8 @@ export function Workspace({
       runCrew(p.body, deal);
     } else if (p.command === "team") {
       runTeam();
+    } else if (p.command === "intel") {
+      runIntel(p.body);
     } else {
       runChat(p.body || raw.trim(), deal);
     }
@@ -1492,6 +1516,11 @@ export function Workspace({
           if (m.role === "crew") {
             return (
               <CrewTurn key={m.id} turnId={m.id} conversationId={thread.current} mode={m.mode} query={m.query} label={m.label} />
+            );
+          }
+          if (m.role === "intel") {
+            return (
+              <IntelTurn key={m.id} turnId={m.id} conversationId={thread.current} query={m.query} />
             );
           }
           return null;
