@@ -478,7 +478,13 @@ export type ChatEvent =
   | { type: "answer"; text: string }
   | { type: "done"; model?: string }
   | { type: "unavailable"; reason?: string }
-  | { type: "error"; reason?: string };
+  | { type: "error"; reason?: string }
+  // Fine-grained execution-engine lifecycle - forwarded 1:1 from the real
+  // task DAG (senpai/orchestration/events.py), not synthesized for display.
+  | { type: "task_started"; task_id: string; capability: string; op: string; group: string; summary?: string }
+  | { type: "task_progress"; task_id: string; message: string }
+  | { type: "task_evidence"; task_id: string; status: string; confidence?: number; citations?: string[] }
+  | { type: "group_completed"; group: string };
 
 export interface ChatTurn {
   role: "user" | "assistant";

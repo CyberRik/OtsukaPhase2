@@ -205,25 +205,34 @@ class DocumentsCapability:
             if spec is None:
                 return Evidence.error("author unavailable",
                                       provenance={"capability": "documents"})
+            sections = spec.get("sections", [])
+            ctx.emit(f"アウトライン生成: {len(sections)}セクション")
+            for i, s in enumerate(sections, 1):
+                ctx.emit(f"セクション{i}: {s.get('heading', '')}")
+            ctx.emit("レンダリング中")
             path = output_path("docx", spec.get("_title") or goal[:30], "docx")
             render_docx(spec, path)
             rec = registry.register("docx", path)
-            n = len(spec.get("sections", []))
+            n = len(sections)
             msg = f"文書(DOCX)を生成しました: {rec['filename']}（{n}セクション）。"
-            outline = [{"title": s.get("heading", "")} for s in spec.get("sections", [])]
+            outline = [{"title": s.get("heading", "")} for s in sections]
         else:
             spec = author.author_deck(goal, grounding=grounding, lang=lang,
                                       customer_scoped=customer_scoped)
             if spec is None:
                 return Evidence.error("author unavailable",
                                       provenance={"capability": "documents"})
+            content_slides = [s for s in spec.get("slides", []) if s.get("layout") != "title"]
+            ctx.emit(f"アウトライン生成: {len(content_slides)}スライド")
+            for i, s in enumerate(content_slides, 1):
+                ctx.emit(f"スライド{i}: {s.get('title', '')}")
+            ctx.emit("レンダリング中")
             path = output_path("pptx", spec.get("_title") or goal[:30], "pptx")
             render_pptx(spec, path)
             rec = registry.register("pptx", path)
-            n = len(spec.get("slides", []))
+            n = len(content_slides)
             msg = f"プレゼン(PPTX)を生成しました: {rec['filename']}（{n}スライド）。"
-            outline = [{"title": s.get("title", "")} for s in spec.get("slides", [])
-                      if s.get("layout") != "title"]
+            outline = [{"title": s.get("title", "")} for s in content_slides]
         ctx.emit(f"資料を生成: {rec['filename']}")
         return self._artifact_evidence(rec, ctx, msg, outline=outline)
 
