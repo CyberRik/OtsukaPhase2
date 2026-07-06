@@ -396,6 +396,27 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "search_solutions",
+            "description": "Search Otsuka Shokai's real product/solution pages for what to offer "
+                           "a customer — named products/services with a short description, each "
+                           "cited by source URL. Use this for 'what should we propose/recommend' "
+                           "questions; prefer search_products instead when the rep needs a SKU "
+                           "price lookup, not a solution pitch.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string",
+                              "description": "The customer's need/problem or product category, in natural language"},
+                    "category": {"type": "string",
+                                 "description": "Optional: restrict to a URL-derived category substring (e.g. 'security', 'cad')"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "search_products",
             "description": "Search the Otsuka product catalog by category, price range, or keyword. "
                            "Returns matching products with code, name and unit price (JPY).",
@@ -723,6 +744,21 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "advise_solutions",
+            "description": "Recommend appropriate Otsuka solutions for a customer based on their context (expansion signals, environment gaps, and category). Use this when asked 'what should I propose?' or to generate a list of targeted solution recommendations.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "customer": {"type": "string", "description": "Customer name or ID to get recommendations for"},
+                    "deal_id": {"type": "string", "description": "Optional specific deal ID to focus recommendations around"},
+                },
+                "required": ["customer"],
+            },
+        },
+    },
 ]
 
 
@@ -741,21 +777,22 @@ def _pick(*names: str) -> list[dict]:
 #  coach experiment and is kept out of our chat surface for isolation.)
 JUNIOR_TOOLS = _pick(
     "query_spr", "find_deals", "find_similar_deals", "retrieve_playbook", "search_knowledge",
+    "search_solutions",
     "search_notes", "lookup_customer_environment", "get_product_info", "search_products",
     "create_quote", "score_deal_health", "draft_daily_report", "schedule_meeting",
     "send_email", "get_calendar", "route_to_expert", "morning_briefing",
     "get_seasonal_context", "web_search", "web_research", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
-    "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
+    "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx", "advise_solutions",
 )
 
 # Manager: team analytics + drill-down + drafting + semantic/graph search + web.
 MANAGER_TOOLS = _pick(
     "query_spr", "find_deals", "score_deal_health", "morning_briefing", "list_at_risk_deals",
     "team_pipeline_overview", "team_report_digest", "rep_coaching_focus",
-    "search_knowledge", "search_notes", "query_graph", "segment_intelligence", "search_products",
+    "search_knowledge", "search_solutions", "search_notes", "query_graph", "segment_intelligence", "search_products",
     "create_quote", "schedule_meeting",
     "send_email", "get_calendar", "draft_message", "web_search", "web_research", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
-    "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx",
+    "generate_proposal", "generate_ringisho", "generate_pptx", "generate_docx", "advise_solutions",
 )
 
 # Research assistant ("tell me about this customer"): read-only lookups, internal
@@ -764,6 +801,6 @@ MANAGER_TOOLS = _pick(
 # source priority (internal records → deal signals → web).
 RESEARCH_TOOLS = _pick(
     "query_spr", "find_deals", "find_similar_deals", "score_deal_health", "search_notes",
-    "lookup_customer_environment", "get_product_info", "segment_intelligence",
+    "lookup_customer_environment", "get_product_info", "search_solutions", "segment_intelligence",
     "get_seasonal_context", "web_search", "web_research", "search_workspace_documents", "edit_workspace_document", "move_workspace_document",
 )

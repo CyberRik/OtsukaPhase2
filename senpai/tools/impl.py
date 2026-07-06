@@ -587,6 +587,32 @@ def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:
     return "社内ナレッジ:\n- " + "\n- ".join(lines)
 
 
+def search_solutions(query: str = "", category: str = "", limit: int = 4) -> str:
+    """Search Otsuka Shokai's real product/solution pages for what to offer a
+    customer — named products/services (not internal category labels), each
+    cited with its source URL. Prefer this over search_products when the rep
+    needs a solution pitch/description, not a SKU price lookup."""
+    from senpai.retrieval.solution_knowledge import search_solution_knowledge
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 4
+    filters = {"category": category} if category else None
+    hits = search_solution_knowledge(query, filters=filters, limit=limit)
+    from senpai.retrieval import trace as _trace
+    _trace.record(
+        "solution_knowledge", scope="all", query=query,
+        items=[{"id": h["solution"]["category"], "customer": None,
+                "score": h["solution"]["relevance"], "text": h["solution"]["summary"]}
+               for h in hits])
+    if not hits:
+        return "該当するソリューション・製品情報が見つかりませんでした。"
+    lines = [f"[{h['solution']['category']}] {h['solution']['name']}: "
+             f"{h['solution']['summary']}（出典: {h['solution']['source']}）"
+             for h in hits]
+    return "ソリューション・製品情報:\n- " + "\n- ".join(lines)
+
+
 def search_notes(query: str = "", limit: int = 5, customer: str = "") -> str:
     """Semantic search over the field's daily reports (日報). Finds activities that
     *mean* the same thing as the query, not just share keywords — e.g. a search for
@@ -1188,6 +1214,42 @@ def move_workspace_document(src: str, dst: str, confirm: bool = False) -> str:
         return f"ファイルの移動中にエラーが発生しました: {e}"
 
 
+def advise_solutions(customer: str = "", deal_id: str = "") -> str:
+    """Recommend appropriate Otsuka solutions for a customer based on their context.
+    Uses expansion signals, environment gaps, and category matching to generate
+    deterministic candidates, then explains why they fit."""
+    from senpai.recommendation.run import run_solution_advisor
+    cid = ""
+    if customer:
+        c = _resolve_customer(customer)
+        if c:
+            cid = c["customer_id"]
+        else:
+            cid = customer
+            
+    recs = run_solution_advisor(cid, deal_id)
+    if not recs:
+        return "提案できるソリューションが見つかりませんでした。"
+        
+    lines = []
+    for r in recs:
+        lines.append(f"■ {r.solution_name} ({r.category}) - 適合度: {r.match_score:.2f}, 確信度: {r.confidence:.2f}")
+        lines.append(f"  理由: {r.why}")
+        if r.business_value:
+            lines.append(f"  価値: {r.business_value}")
+        if r.risks:
+            lines.append(f"  リスク: {', '.join(r.risks)}")
+        if r.complementary_solutions:
+            lines.append(f"  関連: {', '.join(r.complementary_solutions)}")
+        if r.product_pages:
+            pages = ", ".join(f"[{p.get('title')}]({p.get('url')})" for p in r.product_pages)
+            lines.append(f"  詳細: {pages}")
+        lines.append("")
+        
+    return "推奨ソリューション:\n\n" + "\n".join(lines)
+
+
+
 _DISPATCH = {
     "query_spr": query_spr,
     "find_deals": find_deals,
@@ -1217,6 +1279,7 @@ _DISPATCH = {
     "send_email": send_email,
     "get_calendar": get_calendar,
     "search_knowledge": search_knowledge,
+    "search_solutions": search_solutions,
     "search_notes": search_notes,
     "query_graph": query_graph,
     "segment_intelligence": segment_intelligence,
@@ -1228,6 +1291,7 @@ _DISPATCH = {
     "generate_ringisho": generate_ringisho,
     "generate_pptx": generate_pptx,
     "generate_docx": generate_docx,
+    "advise_solutions": advise_solutions,
 }
 
 

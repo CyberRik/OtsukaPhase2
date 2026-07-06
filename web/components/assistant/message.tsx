@@ -11,7 +11,7 @@
 import { useState } from "react";
 import {
   AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
-  FileText, Globe, Layers, Loader2, Mail, Presentation, Receipt, Route, Search,
+  FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
 import { documentUrl, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
@@ -48,6 +48,7 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   find_similar_deals: { ja: "類似案件", en: "Similar deals", icon: Layers, internal: true },
   retrieve_playbook: { ja: "プレイブック", en: "Playbook", icon: BookMarked, internal: true },
   search_knowledge: { ja: "社内ナレッジ照会", en: "Internal knowledge", icon: ShieldCheck, internal: true },
+  search_solutions: { ja: "ソリューション・製品情報", en: "Solution & product info", icon: Package, internal: true },
   lookup_customer_environment: { ja: "IT環境", en: "IT environment", icon: Building2, internal: true },
   get_product_info: { ja: "製品情報", en: "Product info", icon: BookMarked, internal: true },
   search_products: { ja: "製品検索", en: "Product search", icon: Search, internal: true },
@@ -81,6 +82,7 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   workspace: { ja: "ローカル文書", en: "Local documents", icon: FileText, internal: false },
   crm: { ja: "社内記録(SPR)", en: "Internal records (SPR)", icon: Database, internal: true },
   knowledge: { ja: "社内ナレッジ", en: "Internal knowledge", icon: ShieldCheck, internal: true },
+  solutions: { ja: "ソリューション・製品情報", en: "Solution & product info", icon: Package, internal: true },
   // `documents` (the planner's terminal artifact task) is proposal/pptx/docx
   // depending on the goal — its `internal` grounding actually varies per turn, so
   // the event itself carries an explicit `internal` flag that overrides this
@@ -119,6 +121,30 @@ function getToolHighlight(tool: ToolCall): string {
   }
 }
 
+// search_knowledge / search_solutions (and their planner-path equivalents,
+// same underlying formatter) return "- [kind] text（出典: ...）" lines — a real,
+// already-cited structure that was previously just dumped as one monospace
+// paragraph. Split it into {kind, text, url} so a citation can be an actual
+// link instead of dead text; returns null for any other tool's plain result,
+// which keeps rendering as before.
+function parseCitedLines(result: string): { kind: string; text: string; citation?: string; url?: string }[] | null {
+  const lines = (result || "").split("\n").map((l) => l.trim()).filter((l) => l.startsWith("- ["));
+  if (lines.length === 0) return null;
+  return lines.map((line) => {
+    const kindMatch = line.match(/^- \[(.+?)\]\s*/);
+    const kind = kindMatch ? kindMatch[1] : "";
+    let text = kindMatch ? line.slice(kindMatch[0].length) : line.replace(/^- /, "");
+    const citeMatch = text.match(/[（(]((?:出典|根拠)[:：].*?)[）)]\s*$/);
+    let citation: string | undefined;
+    if (citeMatch) {
+      citation = citeMatch[1];
+      text = text.slice(0, citeMatch.index).trim();
+    }
+    const urlMatch = citation?.match(/https?:\/\/\S+/);
+    return { kind, text, citation, url: urlMatch ? urlMatch[0] : undefined };
+  });
+}
+
 function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool: ToolCall, running: boolean, lang: "ja" | "en", isParallelItem?: boolean }) {
   const [open, setOpen] = useState(false);
   const meta = TOOL_LABEL[tool.name];
@@ -135,7 +161,8 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
   
   const displayLabel = highlight ? `${highlight} ${sourcesCount > 0 ? `(${sourcesCount} ${lang === "ja" ? "件" : "sources"})` : ""}` : baseLabel;
   const finalLabel = highlight ? `${displayLabel} — ${baseLabel}` : displayLabel;
-  
+  const citedLines = tool.result ? parseCitedLines(tool.result) : null;
+
   return (
     <div className={`flex flex-col gap-0.5 ${isParallelItem ? '' : 'rounded-md bg-card p-2'}`}>
       <div 
@@ -160,7 +187,39 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
           </div>
           <div>
             <div className="font-semibold text-foreground/80 mb-0.5">Result</div>
-            <div className="text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">{tool.result}</div>
+            {citedLines ? (
+              <ul className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto">
+                {citedLines.map((it, i) => (
+                  <li key={i} className="flex flex-col gap-0.5 rounded bg-muted/30 p-1.5">
+                    <div className="flex items-start gap-1.5">
+                      {it.kind && (
+                        <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                          {it.kind}
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">{it.text}</span>
+                    </div>
+                    {it.citation && (
+                      it.url ? (
+                        <a
+                          href={it.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-1 inline-flex w-fit items-center gap-1 text-[10.5px] text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {it.citation}
+                        </a>
+                      ) : (
+                        <span className="ml-1 text-[10.5px] text-muted-foreground/70">{it.citation}</span>
+                      )
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">{tool.result}</div>
+            )}
           </div>
           {tool.outline && tool.outline.length > 0 && (
             <div>

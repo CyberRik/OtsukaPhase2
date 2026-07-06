@@ -17,7 +17,7 @@ from senpai.data import store
 
 # The gather capabilities the planner may select from (documents is always the
 # terminal, so it is not part of the selectable gather set).
-GATHER_CAPABILITIES = ("conversation", "workspace", "crm", "knowledge", "web")
+GATHER_CAPABILITIES = ("conversation", "workspace", "crm", "knowledge", "solutions", "web")
 # What the terminal produces. proposal/pptx/docx = generate an artifact file; note =
 # write a text file into the workspace; organize = tidy the workspace on disk.
 DOC_KINDS = ("proposal", "pptx", "docx", "note", "organize")
@@ -237,6 +237,7 @@ def heuristic_selection(goal: str, deal_hint: str | None = None, history: list |
         caps.append("crm")
     if doc_kind == "proposal":
         caps.append("knowledge")
+        caps.append("solutions")
     if _auto_web(goal) and not (customer_id or deal_id):
         caps.append("web")
 
@@ -272,6 +273,7 @@ def ground_selection(goal: str, caps, doc_kind: str, reason: str = "",
         chosen.discard("crm")              # nothing for CRM to ground on
     if doc_kind == "proposal":
         chosen.add("knowledge")
+        chosen.add("solutions")
 
     return Selection(
         goal=goal, capabilities=tuple(c for c in GATHER_CAPABILITIES if c in chosen),

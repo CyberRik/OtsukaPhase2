@@ -9,6 +9,10 @@
     "playbook": {
       "count": 31,
       "hash": "9375d67c651a509ffec638ee7e12b4d90492c796b878cbf6118284047151a1cb"
+    },
+    "otsuka_kb": {
+      "count": 9826,
+      "hash": "5487e2f75c02ed43c55ce43a0b951acaa6be7e1280ac9362e28068b1b3ceedcd"
     }
   }
 }

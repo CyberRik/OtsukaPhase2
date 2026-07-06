@@ -3,7 +3,7 @@
 The graph is deliberately shallow (two levels), which is all document generation
 needs and keeps the first planner minimal:
 
-    Level 0 (parallel gather):  conversation / workspace / crm / knowledge / web
+    Level 0 (parallel gather):  conversation / workspace / crm / knowledge / solutions / web
     Level 1 (terminal):         documents  ── depends on every gather task
 
 Every gather task runs in parallel (they're independent READ/SEARCH); the single
@@ -50,6 +50,11 @@ def document_plan(sel: Selection) -> ExecutionPlan:
         gather.append(Task(id="knowledge", capability="knowledge",
                            inputs={"query": query}, group=_GATHER,
                            summary="社内ナレッジを照合"))
+    if "solutions" in sel.capabilities:
+        gather.append(Task(id="solutions", capability="solutions",
+                           inputs={"query": query, "deal_id": sel.deal_id or "",
+                                   "customer_id": sel.customer_id or ""},
+                           group=_GATHER, summary="関連するソリューション・製品情報を検索"))
     if "web" in sel.capabilities:
         gather.append(Task(id="web", capability="web",
                            inputs={"query": query}, group=_GATHER,

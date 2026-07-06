@@ -26,6 +26,7 @@ export interface ExecutionPhase {
   status: "pending" | "running" | "done";
   tools: PhaseTool[];
   resultHint?: string;
+  contribution?: string;
 }
 
 // ─── Narrative label maps ─────────────────────────────────────────────────────

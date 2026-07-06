@@ -17,6 +17,7 @@ from __future__ import annotations
 from senpai.data import store as dstore
 from senpai.knowledge import store as kstore
 from senpai.retrieval.playbook import retrieve_playbook
+from senpai.retrieval.semantic import semantic_search
 
 
 def _tokens(text: str) -> list[str]:
@@ -66,6 +67,17 @@ def search_knowledge(query: str = "", tags: list[str] | None = None,
     for e in retrieve_playbook(query=q, tags=tags):
         entry_id = e.get("entry_id", "Unknown")
         results.append((1, "プレイブック", f"{e['text']}（出典: Playbook {entry_id}）"))
+
+    # 4. Otsuka Shokai public-site facts (company/product/IR pages) — hybrid
+    # semantic search over the committed otsuka_kb index (senpai/retrieval/build_index.py).
+    if q:
+        for hit in semantic_search(q, corpus="otsuka_kb", limit=2):
+            snippet = (hit.get("snippet") or hit.get("text", "")).strip()
+            if not snippet:
+                continue
+            url = hit.get("url", "")
+            cite = f"（出典: 大塚商会公式サイト{f' / {url}' if url else ''}）"
+            results.append((2, "公式", f"{snippet}{cite}"))
 
     results.sort(key=lambda r: r[0], reverse=True)
     return results[:limit]

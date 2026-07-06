@@ -1,0 +1,14 @@
+[
+  {
+    "employee_id": "R05",
+    "name": "伊藤翔",
+    "role": "junior",
+    "department": "第一営業部",
+    "division": "法人2課",
+    "specialty_tags": [
+      "複合機"
+    ],
+    "is_top_performer": false,
+    "reports_to": "R08"
+  }
+]

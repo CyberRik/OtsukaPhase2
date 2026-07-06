@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Building2, UserSearch, GraduationCap, Briefcase } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Building2, UserSearch, GraduationCap, Briefcase, Search, Target, Users } from "lucide-react";
 import { crewStream, teamStream, type CrewEvent, type ResolveCandidate } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useCachedState } from "@/lib/chat-store";
@@ -96,7 +96,7 @@ export function CrewTurn({
             prev.map((p) => {
               if (p.id !== e.id) return p;
               if (e.status === "running") return { ...p, status: "running" };
-              if (e.status === "done")    return { ...p, status: "done", resultHint: hintFrom(e.contribution) };
+              if (e.status === "done")    return { ...p, status: "done", resultHint: hintFrom(e.contribution), contribution: e.contribution };
               if (e.status === "error")   return { ...p, status: "done" };
               return p;
             }),
@@ -166,6 +166,34 @@ export function CrewTurn({
     }
   }
 
+  const agentDisplayName = (p: ExecutionPhase) =>
+    lang === "en" && AGENT_NAMES_EN[p.id] ? AGENT_NAMES_EN[p.id] : p.label;
+
+  const AGENT_ICONS: Record<string, ReactNode> = {
+    researcher: <Search className="h-3.5 w-3.5" />,
+    coach: <Target className="h-3.5 w-3.5" />,
+    analyst: <Users className="h-3.5 w-3.5" />,
+  };
+
+  // The terminal synthesizer's contribution duplicates the final brief below,
+  // so only the upstream agents it reads (researcher/coach, or the analysts
+  // a team lead reads) render as conversation turns.
+  const conversation = phases.filter(
+    (p) => p.contribution && p.id !== "strategist" && p.id !== "team_lead",
+  );
+
+  const synthesizedFrom = () => {
+    const names = conversation.map(agentDisplayName);
+    if (names.length === 0) return "";
+    const joined =
+      lang === "ja"
+        ? names.join("、")
+        : names.length === 1
+          ? names[0]
+          : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
+    return lang === "ja" ? `${joined}の所見をもとに統合` : `Synthesized from ${joined}`;
+  };
+
   return (
     <div className="flex gap-3">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy text-white">
@@ -227,11 +255,38 @@ export function CrewTurn({
             />
           )}
 
+          {/* Agent conversation — each contributor's actual finding, in the order
+              it was produced. The terminal synthesizer reads these verbatim before
+              writing the brief below, so this is the real hand-off, not a mock. */}
+          {conversation.length > 0 && (
+            <div className="flex flex-col gap-2.5">
+              {conversation.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex animate-in fade-in slide-in-from-bottom-1 gap-2.5 rounded-xl border border-border bg-card/60 p-3.5 duration-500 fill-mode-both"
+                >
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                    {AGENT_ICONS[p.id] ?? <UserSearch className="h-3.5 w-3.5" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                      {agentDisplayName(p)}
+                    </div>
+                    <AnswerMd text={p.contribution!} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Final artifact — the hero; appears once all work finishes */}
           {brief && status === "done" && showArtifact && (
             <div className="mt-5 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
               <div className="mb-5 h-px w-8 bg-border" />
-              <p className="eyebrow mb-4">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
+              <p className="eyebrow mb-1">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
+              {conversation.length > 0 && (
+                <p className="mb-4 text-[11.5px] text-muted-foreground/70">{synthesizedFrom()}</p>
+              )}
               <AnswerMd text={brief} />
             </div>
           )}

@@ -1,0 +1,16 @@
+{
+  "junior": {
+    "username": "junior",
+    "role": "junior",
+    "employee_id": "R05",
+    "salt": "29a9c999cb1cca1225183e2cf9db1e27",
+    "password_hash": "387dafdec953b303b1db7665d344937d84a5bcef59847ac609b82d6297e3397c"
+  },
+  "manager": {
+    "username": "manager",
+    "role": "manager",
+    "employee_id": null,
+    "salt": "0bac2353ea1a6a252fffcd471fdf8067",
+    "password_hash": "f6c12f782dbfac573df43dd81d4bb9cd96b469f65a6e42ba2db4b7e7d7c5ced2"
+  }
+}

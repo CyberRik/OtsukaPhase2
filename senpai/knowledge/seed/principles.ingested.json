@@ -1,0 +1,18 @@
+[
+  {
+    "principle_id": "P012",
+    "statement": "identify the decision makers",
+    "support": [
+      {
+        "source_id": "M001",
+        "quote": "when price negotiation falls in a deal",
+        "location": ""
+      }
+    ],
+    "corroborating_surveys": [],
+    "tags": [],
+    "status": "candidate",
+    "added_by": "manager",
+    "added_at": "2026-06-26T08:07:16Z"
+  }
+]
