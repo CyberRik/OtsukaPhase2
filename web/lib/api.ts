@@ -597,6 +597,7 @@ export interface IntelSource { url: string; title: string }
 export type IntelCrawlEvent =
   | { type: "start"; input: string; mode: "site" | "question" }
   | { type: "research_plan"; query: string; sites: string[]; search_answer?: string; search_ok?: boolean }
+  | { type: "crawl_frame"; url: string; index: number; screenshot_b64: string }
   | ({ type: "crawl_page" } & CrawlPage)
   | { type: "crawl_status"; phase: string }
   | { type: "intel"; markdown: string; sources: IntelSource[]; backend?: string;

@@ -1555,7 +1555,7 @@ def _intel_crawl_stream(req: IntelCrawlRequest):
         yield _sse({"type": "done"})
         return
 
-    q: "queue.Queue[dict | None]" = queue.Queue(maxsize=64)
+    q: "queue.Queue[dict | None]" = queue.Queue(maxsize=256)  # room for scroll-frame bursts
 
     def emit(ev: dict) -> None:
         try:

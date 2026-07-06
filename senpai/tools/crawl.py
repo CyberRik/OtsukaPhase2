@@ -24,11 +24,13 @@ from __future__ import annotations
 
 import base64
 import ipaddress
+import json
 import os
 import re
 import socket
 import time
-from collections import deque
+from collections import deque, OrderedDict
+from functools import lru_cache
 from html import unescape
 from typing import Any, Callable
 from urllib import robotparser
@@ -41,11 +43,18 @@ _NOOP: Emit = lambda _ev: None
 # --- Bounds / politeness knobs ----------------------------------------------
 _DEFAULT_MAX_PAGES = 6
 _DEFAULT_MAX_DEPTH = 2
-_DEFAULT_BUDGET_S = 30.0        # hard ceiling on a whole crawl
+_DEFAULT_BUDGET_S = 48.0        # hard ceiling on a whole crawl (slow-scroll needs room)
 _PAGE_TIMEOUT_S = 8.0
 _MAX_BYTES = 2_000_000          # skip absurdly large responses
 _POLITE_DELAY_S = 0.4
 _UA = "senpai-siteintel/1.0 (+sales-copilot; respects robots.txt)"
+
+# Live browse feel: after a page loads, scroll it top→bottom capturing a frame at
+# each step so the client sees a real, moving browse instead of one static shot.
+# More steps + a longer pause = a slower, smoother human-like scroll.
+_SCROLL_STEPS = 7               # frames captured while scrolling down a tall page
+_SCROLL_SETTLE_MS = 500         # pause per step (paces the scroll + lets images paint)
+_FIRST_PAINT_MS = 500           # settle after load before the first frame
 
 
 def _use_llm() -> bool:
@@ -227,20 +236,73 @@ class _BrowserSession:
             self.close()
         return self
 
-    def fetch(self, url: str) -> dict[str, Any] | None:
-        """Render a page; return html + a downscaled JPEG screenshot (base64)."""
+    def fetch(self, url: str,
+              on_frame: Callable[[str], None] | None = None) -> dict[str, Any] | None:
+        """Render a page; stream scroll frames via `on_frame`, return html + final JPEG.
+
+        When `on_frame` is given the page is scrolled top→bottom and a base64 JPEG is
+        handed back at each step — that is what turns the client view into a live,
+        moving browse instead of a single frozen screenshot."""
         try:
             resp = self._page.goto(url, timeout=int(_PAGE_TIMEOUT_S * 1000),
                                    wait_until="domcontentloaded")
             if not is_safe_url(self._page.url):  # post-redirect SSRF re-check
                 return None
+            self._settle(_FIRST_PAINT_MS)       # let above-the-fold content paint
+            if on_frame is not None:
+                self._stream_scroll(on_frame)
             html = self._page.content()
-            shot = self._page.screenshot(type="jpeg", quality=55, full_page=False)
+            shot = self._shoot()
             return {"status": resp.status if resp else 200, "html": html,
                     "final_url": self._page.url,
-                    "screenshot_b64": base64.b64encode(shot).decode("ascii")}
+                    "screenshot_b64": base64.b64encode(shot).decode("ascii") if shot else ""}
         except Exception:
             return None
+
+    def _settle(self, ms: int) -> None:
+        try:
+            self._page.wait_for_timeout(ms)
+        except Exception:
+            pass
+
+    def _shoot(self) -> bytes | None:
+        try:
+            return self._page.screenshot(type="jpeg", quality=52, full_page=False)
+        except Exception:
+            return None
+
+    def _stream_scroll(self, on_frame: Callable[[str], None]) -> None:
+        """Walk the viewport top→bottom, emitting a JPEG frame per step. Short pages
+        (single viewport) emit just the top frame — the whole page is already shown."""
+        def frame() -> None:
+            shot = self._shoot()
+            if shot:
+                try:
+                    on_frame(base64.b64encode(shot).decode("ascii"))
+                except Exception:
+                    pass
+        frame()  # top of page
+        try:
+            height = int(self._page.evaluate("() => document.body.scrollHeight") or 0)
+        except Exception:
+            height = 0
+        vh = 800
+        if height <= vh + 80:
+            return  # fits one screen — nothing more to reveal
+        steps = min(_SCROLL_STEPS, max(1, (height - vh) // vh + 1))
+        for i in range(1, steps + 1):
+            y = int((height - vh) * i / steps)
+            try:
+                self._page.evaluate("(y) => window.scrollTo(0, y)", y)
+            except Exception:
+                pass
+            self._settle(_SCROLL_SETTLE_MS)
+            frame()
+        try:                                    # rewind for the archived screenshot
+            self._page.evaluate("() => window.scrollTo(0, 0)")
+        except Exception:
+            pass
+        self._settle(120)
 
     def close(self) -> None:
         for obj, meth in ((self._browser, "close"), (self._pw, "stop")):
@@ -291,7 +353,14 @@ def crawl_site(url: str, *, max_pages: int = _DEFAULT_MAX_PAGES,
             if rp is not None and not _robots_can_fetch(rp, cur):
                 continue
 
-            res = (sess.fetch(cur) if browser_ok else None) or _fetch_static(cur)
+            def _on_frame(b64: str, _url: str = cur, _n: int = len(pages) + 1) -> None:
+                # Stream live scroll frames for the browser-sim. `crawl_frame` is a
+                # visual-only event; metadata still rides the final `crawl_page`.
+                emit({"type": "crawl_frame", "url": _url, "index": _n,
+                      "screenshot_b64": b64})
+
+            res = (sess.fetch(cur, on_frame=_on_frame) if browser_ok else None) \
+                or _fetch_static(cur)
             if res is None:
                 emit({"type": "crawl_page", "url": cur, "status": 0, "title": "",
                       "depth": depth, "ok": False})
@@ -402,15 +471,54 @@ def _evidence_bundle(intel: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+@lru_cache(maxsize=1)
+def _otsuka_catalog() -> str:
+    """Compact, category-level summary of what Otsuka actually sells, injected into
+    the brief prompt so the sales-angle section proposes a concrete wedge grounded in
+    our real catalog instead of generic platitudes. Category-level (not per-SKU) keeps
+    the prompt tight. Never raises — a missing/broken file yields an empty string."""
+    try:
+        from senpai import config
+        rows = json.loads((config.SEED_DIR / "products.json").read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+    cats: "OrderedDict[str, list[str]]" = OrderedDict()
+    for r in rows if isinstance(rows, list) else []:
+        maj = str(r.get("major") or "").strip()
+        mid = str(r.get("mid") or "").strip()
+        if not maj:
+            continue
+        cats.setdefault(maj, [])
+        if mid and mid not in cats[maj]:
+            cats[maj].append(mid)
+    return "\n".join(f"- {maj}: {'、'.join(mids)}" for maj, mids in cats.items())
+
+
 def _llm_brief(intel: dict[str, Any]) -> str:
     from senpai.llm.client import simple_complete
+    catalog = _otsuka_catalog()
+    catalog_block = (
+        "\n\n【当社（Otsuka）取扱商材カテゴリ（切り口検討の参考）】\n"
+        "以下は当社の商材知識であり、対象企業に関する事実ではないため出典は不要。"
+        "切り口は、対象企業の状況（証拠）と当社商材の接点として具体的に述べること。\n"
+        + catalog
+    ) if catalog else ""
     prompt = (
-        "あなたはOtsukaの営業担当者を支援するリサーチアシスタントです。以下は、ある企業の"
-        "公式サイトをクロールして得た証拠です。証拠に書かれている事実のみを使い、訪問前ブリーフを"
-        "日本語で作成してください。推測や一般論で埋めないこと。各主張の末尾に出典URLを付けること。\n\n"
-        "構成:\n"
-        "1. 会社概要（事業・規模）\n2. 主要な製品・サービス\n3. 最近のニュース・動き\n"
-        "4. IR/財務資料（あれば）\n5. 商談での切り口・想定ニーズ（証拠に基づく）\n\n"
+        "あなたはOtsukaの法人営業を支援するリサーチアシスタントです。Otsukaは、OA機器・"
+        "PC/周辺機器・サーバー・ストレージ・ネットワーク機器・ソフトウェア/RPA・導入/保守"
+        "役務を扱う、法人向けITインフラの販売・構築会社です。\n"
+        "以下は対象企業の公式サイトをクロールして得た証拠です。対象企業に関する事実の主張は、"
+        "証拠に書かれている内容のみを使い、各主張の末尾に出典URLを付けてください。推測や一般論で"
+        "埋めないこと（当社商材との接点の提案は、証拠にある相手の状況を根拠にすること）。\n\n"
+        "訪問前ブリーフを日本語で、次の構成で作成してください:\n"
+        "0. 一言サマリー（3行以内）: なぜ今アプローチすべきか＋最も刺さる切り口\n"
+        "1. 商談の切り口・キーパーソン: 対象の状況（証拠）と当社商材の具体的な接点。"
+        "会うべき人物・部署が証拠にあれば明記\n"
+        "2. 会社概要（事業・規模）\n"
+        "3. 主要な製品・サービス\n"
+        "4. 最近のニュース・動き\n"
+        "5. IR/財務資料（あれば）"
+        f"{catalog_block}\n\n"
         f"【証拠】\n{_evidence_bundle(intel)}")
     return simple_complete(
         [{"role": "user", "content": prompt}], temperature=0.3, no_think=True,
