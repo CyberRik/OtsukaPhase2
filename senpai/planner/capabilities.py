@@ -172,17 +172,20 @@ class DocumentsCapability:
         if not deal_id:
             return Evidence.error("proposal requires a deal_id",
                                   provenance={"capability": "documents"})
-        res = proposal.generate(deal_id, lang=str(inputs.get("lang", "ja")))
+        deal_ids = [str(d) for d in (inputs.get("deal_ids") or [])]
+        res = proposal.generate(deal_id, lang=str(inputs.get("lang", "ja")),
+                                deal_ids=deal_ids or None)
         if res is None:
             return Evidence.error(f"deal {deal_id} not found",
                                   provenance={"capability": "documents"})
-        path, _pctx, spec = res
+        path, doc_ctx, spec = res
         rec = registry.register("proposal", path, deal_id=deal_id)
         ctx.emit(f"提案書を生成: {rec['filename']}")
         outline = [{"title": s.get("title", "")} for s in spec.get("slides", [])]
-        return self._artifact_evidence(rec, ctx,
-                                       f"提案書(PPTX)を生成しました: {rec['filename']}",
-                                       outline=outline)
+        n = len(doc_ctx.deals)
+        msg = (f"提案書(PPTX)を生成しました: {rec['filename']}（{n}件の案件を統合）"
+              if n > 1 else f"提案書(PPTX)を生成しました: {rec['filename']}")
+        return self._artifact_evidence(rec, ctx, msg, outline=outline)
 
     # -- pptx/docx: free-prompt, authored over the gathered grounding -----------
     def _authored(self, kind: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:

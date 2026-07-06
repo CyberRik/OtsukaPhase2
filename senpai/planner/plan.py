@@ -64,10 +64,18 @@ def document_plan(sel: Selection) -> ExecutionPlan:
             depends_on=deps, policy=TaskPolicy(retries=0, on_failure="skip"),
             group=_DOCS, summary="ノートを保存")
     else:
+        # "cover all of this customer's deals" (proposal only) — the deterministic
+        # generator merges every deal on file instead of silently grounding on
+        # just the biggest one.
+        deal_ids: list[str] = []
+        if sel.doc_kind == "proposal" and sel.all_deals and sel.customer_id:
+            from senpai.data import store as _store
+            deal_ids = [d["deal_id"] for d in _store.deals_for_customer(sel.customer_id)]
+
         terminal = Task(
             id="documents", capability="documents", op=sel.doc_kind,
             inputs={"goal": query, "prompt": query, "deal_id": sel.deal_id or "",
-                    "customer_id": sel.customer_id or "",
+                    "customer_id": sel.customer_id or "", "deal_ids": deal_ids,
                     "target": sel.target, "lang": sel.lang, "title": sel.title},
             depends_on=deps,
             # A WRITE deliverable: never auto-repeat, run after the grounding is in.

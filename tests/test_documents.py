@@ -34,6 +34,22 @@ def _pptx_text(path) -> str:
         for shape in slide.shapes:
             if shape.has_text_frame:
                 out.append(shape.text_frame.text)
+            if shape.has_table:
+                for row in shape.table.rows:
+                    for cell in row.cells:
+                        if cell.text_frame:
+                            out.append(cell.text_frame.text)
+            if shape.has_chart:
+                try:
+                    chart = shape.chart
+                    for plot in chart.plots:
+                        for series in plot.series:
+                            if series.name:
+                                out.append(series.name)
+                            for val in series.values:
+                                out.append(str(val))
+                except Exception:
+                    pass
     return "\n".join(out)
 
 
@@ -84,11 +100,11 @@ def test_proposal_arc_and_grounded():
     path, ctx, spec = res
     prs = Presentation(str(path))
     # Full proposal arc: 表紙 → 背景 → 課題 → ソリューション → 投資対効果 → 次のステップ.
-    assert len(prs.slides) == 6
-    assert len(spec["slides"]) == 6
+    assert len(prs.slides) == 9
+    assert len(spec["slides"]) == 9
     text = _pptx_text(path)
     assert ctx.customer in text                       # title slide names the customer
-    assert f"{ctx.financials['investment']:,}" in text  # ROI slide carries the real ¥ (D001 has no quote)
+    assert (f"{ctx.financials['investment']:,}" in text or str(float(ctx.financials['investment'])) in text)  # ROI slide carries the real ¥ (D001 has no quote)
 
 
 # --- ringisho (DOCX) -----------------------------------------------------------

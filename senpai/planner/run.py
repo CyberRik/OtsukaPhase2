@@ -44,8 +44,21 @@ def run_document_goal(goal: str, *, conversation: list[dict] | None = None,
     selection = planner.select(goal, conversation=conversation, deal_id=deal_id)
     plan = __import__("senpai.planner.plan", fromlist=["document_plan"]).document_plan(selection)
 
+    _emit = emit or _NOOP
+    # The capability graph is known before the engine runs a single task — surface
+    # it immediately (not only in the dict this function returns once everything is
+    # done), so a live SSE consumer can show the plan/focus chip right away instead
+    # of the whole turn appearing to complete in one silent burst at the end.
+    _emit({"type": "selection.ready",
+          "selection": {"doc_kind": selection.doc_kind, "deal_id": selection.deal_id,
+                        "customer_id": selection.customer_id, "target": selection.target,
+                        "capabilities": list(selection.capabilities),
+                        "reason": selection.reason},
+          "plan": [{"id": t.id, "capability": t.capability, "op": t.op,
+                    "depends_on": sorted(t.depends_on)} for t in plan.tasks]})
+
     bundle: EvidenceBundle = ExecutionEngine(registry or build_registry()).run(
-        plan, emit or _NOOP)
+        plan, _emit)
 
     # The terminal task is the one nothing else depends on (documents / workspace_write
     # / workspace_organize) — read its fragment as the artifact, whatever the kind.

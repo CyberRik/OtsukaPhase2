@@ -74,6 +74,7 @@ _LENS_QUESTION_EN: dict[str, str] = {
     "criteria": "What criteria will the customer use to evaluate options (price / support / track record)?",
     "next_step": "What is the agreed next step, and who owns it?",
     "budget": "Is a budget confirmed, and what is its scale?",
+    "challenge": "What is the customer's primary challenge or pain point they are trying to solve?",
 }
 _COMPETITION_Q = {
     "ja": "他社と比較されていますか？どこと、どの点で比べられていますか？",
@@ -85,6 +86,16 @@ _COMPETITION_Q = {
 # The senior's checklist — absence-based lenses
 # ---------------------------------------------------------------------------
 LENSES: list[Lens] = [
+    Lens(
+        name="challenge",
+        cues=["課題", "悩み", "問題", "困って", "懸念", "現状", "ネック", "背景"],
+        observation="顧客が何に困っているか(課題)が書かれていない",
+        missing="顧客の現状の課題・背景",
+        question="お客様が今一番困っていることや、解決したい課題は何ですか？",
+        risk="課題を把握せずに提案すると、刺さらない『製品説明』になってしまう",
+        factor="提案が顧客の課題解決に直結しているか",
+        tags=["課題把握", "提案"],
+    ),
     Lens(
         name="decision_maker",
         cues=["決裁", "決裁者", "決定権", "社長", "部長", "役員", "意思決定", "決める方", "稟議"],
@@ -98,7 +109,7 @@ LENSES: list[Lens] = [
     Lens(
         name="timeline",
         cues=["次回", "日程", "期限", "までに", "来週", "来月", "月末", "予定日",
-              "スケジュール", "いつ", "日に", "時頃"],
+              "スケジュール", "いつ", "日に", "時頃", "今年", "来年", "来期"],
         observation="次の打ち合わせや意思決定の時期が決まっていない",
         missing="次回接触日・意思決定の時期",
         question="社内でのご検討はいつ頃まとまりそうですか？次にお話しする日を今決めておけますか？",
@@ -247,6 +258,8 @@ def _next_actions(text: str, fired_tags: list[str]) -> list[str]:
     options — the right one depends on context the junior must read."""
     tags = set(fired_tags)
     actions: list[str] = []
+    if "課題把握" in tags:
+        actions.append("ソリューションを提案する前に、顧客が解決したい本当の課題を深堀りヒアリングする")
     if {"決定先延ばし", "クロージング"} & tags:
         actions.append("その場で次回の打ち合わせ日を仮押さえし、案件を宙に浮かせない")
     if {"決裁者未特定", "稟議"} & tags:

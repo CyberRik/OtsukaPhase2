@@ -156,8 +156,12 @@ class ExecutionEngine:
                     state[tid] = "failed" if ev.status == "error" else "done"
                     out(events.TASK_EVIDENCE, task_id=tid, status=ev.status,
                         confidence=ev.confidence, citations=list(ev.citations))
+                    # `data` rides along so a live SSE consumer can render this
+                    # task's result the moment it lands, instead of waiting for the
+                    # whole run to finish and re-deriving it from the final bundle
+                    # (Evidence.data is already documented as forward-able JSON).
                     out(events.TASK_COMPLETED, task_id=tid,
-                        duration=ev.timing.duration, status=ev.status)
+                        duration=ev.timing.duration, status=ev.status, data=dict(ev.data))
                     if ev.status == "error" and tasks[tid].policy.on_failure == "fail_run":
                         cancel.set()
                         out(events.TASK_FAILED, task_id=tid,

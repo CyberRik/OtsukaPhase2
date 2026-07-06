@@ -12,14 +12,14 @@ import { useState } from "react";
 import {
   AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
   FileText, Globe, Layers, Loader2, Mail, Presentation, Receipt, Route, Search,
-  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, type LucideIcon,
+  ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
 import { documentUrl, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; batchId?: string | null; intent?: string };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -73,6 +73,21 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   generate_pptx: { ja: "プレゼン(PPTX)生成", en: "Slides (PPTX)", icon: Presentation, internal: false },
   generate_docx: { ja: "文書(DOCX)生成", en: "Document (DOCX)", icon: FileText, internal: false },
   web_search: { ja: "Web検索", en: "Web search", icon: Globe, internal: false },
+  // The document PLANNER (senpai/planner) emits these stable capability ids as
+  // `name` (see _plan_stream in senpai/api/server.py) rather than baking a
+  // Japanese label in server-side — same reasoning as every ReAct-loop tool
+  // above: one lookup, ja/en picked by the existing `lang` switch, not hardcoded.
+  conversation: { ja: "会話の文脈", en: "Conversation context", icon: Sparkles, internal: false },
+  workspace: { ja: "ローカル文書", en: "Local documents", icon: FileText, internal: false },
+  crm: { ja: "社内記録(SPR)", en: "Internal records (SPR)", icon: Database, internal: true },
+  knowledge: { ja: "社内ナレッジ", en: "Internal knowledge", icon: ShieldCheck, internal: true },
+  // `documents` (the planner's terminal artifact task) is proposal/pptx/docx
+  // depending on the goal — its `internal` grounding actually varies per turn, so
+  // the event itself carries an explicit `internal` flag that overrides this
+  // static default (see groundingBadge below).
+  documents: { ja: "資料生成", en: "Document generation", icon: Presentation, internal: false },
+  workspace_organize: { ja: "フォルダ整理", en: "Workspace Organize", icon: FolderTree, internal: false },
+  workspace_write: { ja: "メモ保存", en: "Save Note", icon: FileText, internal: false },
 };
 
 function getToolHighlight(tool: ToolCall): string {
@@ -147,6 +162,18 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
             <div className="font-semibold text-foreground/80 mb-0.5">Result</div>
             <div className="text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">{tool.result}</div>
           </div>
+          {tool.outline && tool.outline.length > 0 && (
+            <div>
+              <div className="font-semibold text-foreground/80 mb-0.5">
+                {lang === "ja" ? "構成案" : "Outline"}
+              </div>
+              <ol className="list-decimal list-inside text-muted-foreground bg-muted/30 rounded p-1.5 space-y-0.5">
+                {tool.outline.map((s, i) => (
+                  <li key={i} className="truncate">{s.title || (lang === "ja" ? "(無題)" : "(untitled)")}</li>
+                ))}
+              </ol>
+            </div>
+          )}
           {tool.document && (
             <a
               href={documentUrl(tool.document.download_url)}
@@ -171,7 +198,13 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
 function groundingBadge(m: Msg, lang: "ja" | "en") {
   const names = m.tools.map((tl) => tl.name);
   const usedInternal =
+    // The ReAct chat loop's tools are keyed by function name (query_spr, ...) and
+    // classified via TOOL_LABEL; the planner (document generation) instead emits
+    // Japanese display labels as `name` with its own explicit `internal` flag per
+    // event — check both, since neither pipeline's tool names are in the other's
+    // lookup.
     names.some((n) => TOOL_LABEL[n]?.internal) ||
+    m.tools.some((tl) => tl.internal === true) ||
     (m.sources?.some((s) => s.status === "found") ?? false);
   const usedWeb = names.includes("web_search") || (m.webUrls?.length ?? 0) > 0;
 
