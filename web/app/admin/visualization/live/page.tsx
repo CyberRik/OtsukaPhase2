@@ -23,7 +23,7 @@ export default function LivePage() {
   const [visits, setVisits] = useState<VisitLog[]>([]);
   const [retrieved, setRetrieved] = useState<Record<string, unknown>[]>([]);
   const [highlight, setHighlight] = useState<Set<string>>(new Set());
-  const [comparison, setComparison] = useState<{ graph: ComparisonSide; traditional: ComparisonSide } | null>(null);
+  const [comparison, setComparison] = useState<{ graph: ComparisonSide; networkx: ComparisonSide; traditional: ComparisonSide } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const nodes: FGNode[] = useMemo(
@@ -52,7 +52,7 @@ export default function LivePage() {
       } else if (e.type === "retrieved") {
         setRetrieved((r) => [...r, e as Record<string, unknown>]);
       } else if (e.type === "comparison") {
-        setComparison({ graph: e.graph, traditional: e.traditional });
+        setComparison({ graph: e.graph, networkx: e.networkx, traditional: e.traditional });
       }
     }, { signal: ctrl.signal });
 
@@ -118,7 +118,7 @@ export default function LivePage() {
 
       {comparison && (
         <div className={cn("transition-opacity")}>
-          <ComparisonScorecard graph={comparison.graph} traditional={comparison.traditional} />
+          <ComparisonScorecard graph={comparison.graph} networkx={comparison.networkx} traditional={comparison.traditional} />
         </div>
       )}
     </div>
