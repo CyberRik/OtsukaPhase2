@@ -2755,9 +2755,103 @@ def _est_tokens(text: str) -> int:
     return _u._estimate_tokens(text)
 
 
+def _nx_seed_nodes(G, query: str) -> list[str]:
+    """Resolve a free-form query to seed graph nodes by substring-matching its text
+    against grouping-node keys (category/industry/acttype) and product/customer names.
+    Deliberately naive — this is the *ungrounded* baseline, not the curated selector."""
+    q = query or ""
+    seeds: list[str] = []
+    for n, a in G.nodes(data=True):
+        kind = a.get("kind") or ""
+        if kind in ("category", "industry", "acttype") and ":" in n:
+            key = n.split(":", 1)[1]
+        elif kind in ("product", "customer"):
+            key = a.get("name") or ""
+        else:
+            continue
+        if key and len(key) >= 2 and key in q:
+            seeds.append(n)
+    return seeds[:12]
+
+
+def _answer_for(query: str, context: str, *, label: str) -> dict:
+    """Generate an answer to `query` from ONLY the given retrieved `context`, so the
+    three methods are judged on the same generation step over their own evidence.
+    Measures generation latency and answer tokens. Never raises."""
+    import time
+    if not (context or "").strip():
+        return {"text": "(no context retrieved — nothing to answer from)",
+                "latency_ms": 0.0, "tokens": 0}
+    from senpai.llm.client import simple_complete
+    msgs = [
+        {"role": "system", "content": (
+            "You are a B2B sales-intelligence assistant. Answer the user's question "
+            "using ONLY the provided context. Be concise (3-4 sentences). If the "
+            "context does not contain the answer, say the context is insufficient.")},
+        {"role": "user", "content": f"Question: {query}\n\nContext:\n{context}"},
+    ]
+    t0 = time.perf_counter()
+    try:
+        text = simple_complete(msgs, temperature=0.2, no_think=True, label=f"versus:{label}")
+    except Exception:  # noqa: BLE001 — a failed generation must not break the demo
+        text = "(answer generation failed)"
+    gen_ms = (time.perf_counter() - t0) * 1000.0
+    return {"text": text, "latency_ms": round(gen_ms, 1), "tokens": _est_tokens(text)}
+
+
+def _run_networkx_baseline(query: str) -> tuple[dict, str]:
+    """A naive NetworkX graph-retrieval baseline: seed nodes from the query, expand
+    the one-hop ego neighborhood, rank it by degree centrality, and dump the raw
+    neighborhood as context. No curated community reports — the honest 'graph but
+    ungrounded' middle ground between vector RAG and grounded Graph RAG. Returns
+    (side, context). Never raises: on any failure it degrades to an empty-but-measured
+    side. Degree (not PageRank) so the baseline stays scipy-free and deterministic."""
+    import time
+    from senpai.graph.build import graph as _graph
+
+    t0 = time.perf_counter()
+    try:
+        G = _graph()
+        seeds = _nx_seed_nodes(G, query)
+        UG = G.to_undirected(as_view=True)
+        nbrs: set[str] = set(seeds)
+        for s in seeds:
+            nbrs.update(UG.neighbors(s))
+        sub = G.subgraph(nbrs) if nbrs else G.subgraph([])
+        deg = dict(sub.degree()) if sub.number_of_nodes() else {}
+        ranked = sorted(sub.nodes(data=True), key=lambda x: deg.get(x[0], 0), reverse=True)
+        # Raw neighborhood dump: every deal node reachable from the seeds, ungrounded.
+        deal_texts = [
+            f'{a.get("name","")} · {a.get("outcome","")} · {a.get("category","")} × '
+            f'{a.get("industry","")} · ¥{a.get("amount",0)}'
+            for _n, a in ranked if a.get("kind") == "deal"
+        ]
+        ctx = "\n\n".join(deal_texts)
+        nx_ms = (time.perf_counter() - t0) * 1000.0
+        sample = [
+            {"label": a.get("name") or n, "kind": a.get("kind", ""),
+             "score": deg.get(n, 0)}
+            for n, a in ranked[:6]
+        ]
+        side = {"label": "NetworkX (naive graph traversal)",
+                "chunks": len(deal_texts),
+                "context_chars": len(ctx),
+                "context_tokens": _est_tokens(ctx),
+                "latency_ms": round(nx_ms, 1),
+                "note": f"raw ego-graph neighborhood from {len(seeds)} seed nodes, ungrounded",
+                "sample": sample}
+        return side, ctx
+    except Exception:  # noqa: BLE001 — the baseline must never break the scorecard
+        nx_ms = (time.perf_counter() - t0) * 1000.0
+        return ({"label": "NetworkX (naive graph traversal)", "chunks": 0,
+                 "context_chars": 0, "context_tokens": 0, "latency_ms": round(nx_ms, 1),
+                 "note": "no seed nodes matched the query", "sample": []}, "")
+
+
 def _run_graph_rag_stream(query: str):
     """SSE generator: animate the graph query, stream the real retrieval trace,
-    and end with a MEASURED (never fabricated) Graph-RAG-vs-traditional scorecard."""
+    and end with a MEASURED (never fabricated) three-way scorecard —
+    grounded Graph RAG vs a naive NetworkX baseline vs traditional retrieval."""
     import time
     from senpai.graph import query as _gq
     from senpai.graph import communities as _comm
@@ -2805,6 +2899,9 @@ def _run_graph_rag_stream(query: str):
     except Exception:  # noqa: BLE001
         trad_mode = "hybrid"
 
+    # --- NetworkX side: naive ungrounded graph traversal on the SAME query -------
+    nx_side, nx_ctx = _run_networkx_baseline(query)
+
     graph_sample = [{"label": f'{s.get("category","")} × {s.get("industry","") or "—"}',
                      "n_deals": s.get("n_deals", 0), "win_rate": s.get("win_rate", 0.0)}
                     for s in segments]
@@ -2820,6 +2917,7 @@ def _run_graph_rag_stream(query: str):
                           "latency_ms": round(graph_ms, 1),
                           "note": f"grounded over {len(_comm.load_reports())} communities",
                           "sample": graph_sample},
+                "networkx": nx_side,
                 "traditional": {"label": f"Traditional retrieval ({trad_mode})",
                                 "chunks": len(trad),
                                 "context_chars": len(trad_ctx),
@@ -2827,6 +2925,15 @@ def _run_graph_rag_stream(query: str):
                                 "latency_ms": round(trad_ms, 1),
                                 "note": "raw daily-report chunks",
                                 "sample": trad_sample}})
+
+    # --- Generation: answer the SAME query from each method's own retrieved context.
+    # Streamed one at a time so the UI fills in progressively (3 LLM calls). This is
+    # what turns a retrieval scorecard into a real end-to-end quality comparison.
+    for method, ctx in (("graph", graph_ctx), ("networkx", nx_ctx), ("traditional", trad_ctx)):
+        ans = _answer_for(query, ctx, label=method)
+        yield _sse({"type": "answer", "method": method, "text": ans["text"],
+                    "latency_ms": ans["latency_ms"], "tokens": ans["tokens"]})
+
     yield _sse({"type": "done"})
 
 

@@ -317,6 +317,19 @@ def _fallback_answer(substantive: list[tuple[str, str]]) -> str:
     return substantive[-1][1] if substantive else ""
 
 
+def _downsample_frames(frames: list[dict], cap: int) -> list[dict]:
+    """Evenly thin a scroll-frame sequence down to at most `cap` frames so the chat
+    browser-replay animates smoothly without bloating the SSE event (and persisted
+    history) with every JPEG. Order is preserved."""
+    if len(frames) <= cap:
+        keep = frames
+    else:
+        step = len(frames) / cap
+        keep = [frames[int(i * step)] for i in range(cap)]
+    return [{"url": f.get("url", ""), "index": f.get("index", 0),
+             "screenshot_b64": f.get("screenshot_b64", "")} for f in keep]
+
+
 _ENTITY_DEAL_RE = re.compile(r"\bD\d{3,}\b")
 _ENTITY_CUST_RE = re.compile(r"\bC\d{2,}\b")
 
@@ -749,9 +762,19 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             # crawl pages can't misattribute to a different tool in the batch). Powers
             # the browser-sim replay on the tool card.
             if name == "web_research":
-                crawled = _crawl.drain()
-                if crawled:
-                    ev["crawl"] = crawled
+                drained = _crawl.drain()
+                if drained:
+                    pages = [d for d in drained if d.get("type") != "crawl_frame"]
+                    frames = [d for d in drained if d.get("type") == "crawl_frame"]
+                    if pages:
+                        # Metadata only — the scroll frames carry the visuals, so the
+                        # per-page screenshot is stripped to keep the event/history light.
+                        ev["crawl"] = [{k: v for k, v in p.items() if k != "screenshot_b64"}
+                                       for p in pages]
+                    if frames:
+                        # Thinned scroll sequence → an auto-playing browser replay on
+                        # the chat card (the /intel path streams these live instead).
+                        ev["crawlFrames"] = _downsample_frames(frames, 16)
             # Attach the file this call produced. A generated document is a WRITE
             # deliverable (generate_*/action tools), which the scheduler runs
             # serially — so there is at most one per round, and the newest new id

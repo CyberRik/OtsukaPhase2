@@ -571,7 +571,7 @@ def site_intel(url: str = "", max_pages: int = _DEFAULT_MAX_PAGES,
         intel = crawl_site(url, max_pages=max(1, min(int(max_pages), 12)),
                            max_depth=max(1, min(int(max_depth), 3)),
                            emit=lambda ev: crawl_trace.record(ev)
-                           if ev.get("type") == "crawl_page" else None)
+                           if ev.get("type") in ("crawl_page", "crawl_frame") else None)
     except Exception as e:  # noqa: BLE001 — the loop must never crash
         return f"[error] site_intel failed while crawling {url}: {e}"
 
@@ -670,7 +670,7 @@ def _research_query(query: str, *, max_sites: int = 3) -> str:
     try:
         bundle = research_web(query, max_sites=max(1, min(int(max_sites), 5)),
                               emit=lambda ev: crawl_trace.record(ev)
-                              if ev.get("type") == "crawl_page" else None)
+                              if ev.get("type") in ("crawl_page", "crawl_frame") else None)
     except Exception as e:  # noqa: BLE001 — the loop must never crash
         return f"[error] web_research failed for {query!r}: {e}"
     if not bundle.get("ok"):

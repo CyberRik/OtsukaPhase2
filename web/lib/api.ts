@@ -466,7 +466,7 @@ export interface RetrievalTrace {
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
-  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; crawl?: CrawlPage[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean }
+  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean }
   | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }
@@ -596,6 +596,11 @@ export interface CrawlPage {
   ok: boolean;
   screenshot_b64?: string;
   found?: { products: number; news: number; pdfs: number };
+}
+export interface CrawlFrame {
+  url: string;
+  index: number;
+  screenshot_b64: string;
 }
 
 export interface IntelSource { url: string; title: string }

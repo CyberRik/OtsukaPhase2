@@ -14,12 +14,13 @@ import {
   FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
-import { documentUrl, type ResolveCandidate, type RetrievalTrace } from "@/lib/api";
+import { documentUrl, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
+import { CrawlReplay } from "@/components/assistant/crawl-replay";
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -408,6 +409,15 @@ export function MessageBubble({ m, t, lang, onPick }: {
           </div>
         </details>
       )}
+
+      {/* Browser replay — when web_research crawled sites this turn, play back the
+          captured scroll feed (the /intel path streams the same frames live). */}
+      {(() => {
+        const frames = m.tools.flatMap((t) => t.crawlFrames ?? []);
+        const pages = m.tools.flatMap((t) => t.crawl ?? []);
+        if (frames.length === 0 && !pages.some((p) => p.screenshot_b64)) return null;
+        return <CrawlReplay frames={frames} pages={pages} lang={lang} />;
+      })()}
 
       {/* Research source ledger */}
       {m.research && m.sources && m.sources.length > 0 && (
