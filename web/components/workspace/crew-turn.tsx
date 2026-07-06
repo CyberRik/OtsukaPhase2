@@ -6,7 +6,8 @@ import { crewStream, teamStream, type CrewEvent, type ResolveCandidate } from "@
 import { useT } from "@/lib/i18n";
 import { useCachedState } from "@/lib/chat-store";
 import { AnswerMd } from "@/components/assistant/message";
-import { ExecutionTimeline, type ExecutionPhase } from "@/components/agent/agent-lane";
+import { translateToolSummary, type ExecutionPhase } from "@/components/agent/agent-lane";
+import { cn } from "@/lib/utils";
 
 // Inline multi-agent execution — triggered by /crew or /team.
 //
@@ -36,11 +37,9 @@ export function CrewTurn({
   const [pickQuery,    setPickQuery]     = useCachedState<string>(`${key}:pq`, "");
   const [status,       setStatus]        = useCachedState<"running" | "done" | "error">(`${key}:status`, "running");
   const [showArtifact, setShowArtifact]  = useCachedState<boolean>(`${key}:show`, false);
-  const [collapsed,    setCollapsed]     = useCachedState<boolean>(`${key}:collapsed`, false);
 
   const startedRef   = useRef(false);
   const ctrlRef      = useRef<AbortController | null>(null);
-  const collapseRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // First short, clean line of an agent's contribution → the collapsed summary.
   const hintFrom = (contribution?: string) =>
@@ -58,8 +57,6 @@ export function CrewTurn({
     setPhases([]);
     setBrief("");
     setShowArtifact(false);
-    setCollapsed(false);
-    if (collapseRef.current) clearTimeout(collapseRef.current);
 
     const ctrl = new AbortController();
     ctrlRef.current = ctrl;
@@ -123,8 +120,6 @@ export function CrewTurn({
       if (ctrlRef.current && !ctrlRef.current.signal.aborted) {
         // Artifact fades in after 300ms…
         setTimeout(() => setShowArtifact(true), 300);
-        // …then timeline collapses 800ms later so artifact dominates.
-        collapseRef.current = setTimeout(() => setCollapsed(true), 1100);
       }
     });
   };
@@ -136,9 +131,6 @@ export function CrewTurn({
     else start((on, o) => crewStream({ message: query }, on, o));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Cleanup collapse timer on unmount
-  useEffect(() => () => { if (collapseRef.current) clearTimeout(collapseRef.current); }, []);
 
   const pick = (c: ResolveCandidate) => {
     if (c.deal_id) start((on, o) => crewStream({ dealId: c.deal_id! }, on, o));
@@ -175,15 +167,12 @@ export function CrewTurn({
     analyst: <Users className="h-3.5 w-3.5" />,
   };
 
-  // The terminal synthesizer's contribution duplicates the final brief below,
-  // so only the upstream agents it reads (researcher/coach, or the analysts
-  // a team lead reads) render as conversation turns.
-  const conversation = phases.filter(
+  const conversationPhases = phases.filter(
     (p) => p.contribution && p.id !== "strategist" && p.id !== "team_lead",
   );
 
   const synthesizedFrom = () => {
-    const names = conversation.map(agentDisplayName);
+    const names = conversationPhases.map(agentDisplayName);
     if (names.length === 0) return "";
     const joined =
       lang === "ja"
@@ -192,6 +181,78 @@ export function CrewTurn({
           ? names[0]
           : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
     return lang === "ja" ? `${joined}の所見をもとに統合` : `Synthesized from ${joined}`;
+  };
+
+  const tier1Phases = phases.filter((p) => p.id !== "strategist" && p.id !== "team_lead");
+  const tier2Phases = phases.filter((p) => p.id === "strategist" || p.id === "team_lead");
+
+  const renderPhase = (p: ExecutionPhase) => {
+    const isPending = p.status === "pending";
+    const isRunning = p.status === "running";
+    
+    return (
+      <div
+        key={p.id}
+        className={cn(
+          "relative flex gap-3 duration-500 fill-mode-both",
+          isPending ? "opacity-50" : "animate-in fade-in slide-in-from-bottom-1"
+        )}
+      >
+        <div className={cn(
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border shadow-sm relative z-0 transition-colors duration-300",
+          isRunning ? "border-primary/50 bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+        )}>
+          {AGENT_ICONS[p.id] ?? <UserSearch className="h-3.5 w-3.5" />}
+        </div>
+        <div className="min-w-0 flex-1 rounded-xl border border-border bg-card/60 p-3.5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className={cn(
+              "text-[11px] font-semibold uppercase tracking-[0.06em]",
+              isRunning ? "text-primary" : "text-muted-foreground"
+            )}>
+              {agentDisplayName(p)}
+            </span>
+            {isRunning && <span className="execution-pulse inline-block h-1.5 w-1.5 rounded-full bg-primary/70 shrink-0" />}
+          </div>
+          
+          {/* Tool Steps */}
+          {!isPending && p.tools.length > 0 && (
+            <div className="flex flex-col gap-1.5 mt-2.5">
+              {p.tools.map((tl, i) => {
+                const isCurrentStep = isRunning && i === p.tools.length - 1;
+                return (
+                  <div key={`${tl.name}-${i}`} className="animate-in fade-in slide-in-from-top-1 flex items-baseline gap-2 duration-300">
+                    <span className={cn(
+                      "w-3 shrink-0 select-none text-center font-mono text-[10px] leading-none transition-colors duration-400",
+                      isCurrentStep ? "text-primary" : "text-muted-foreground/40"
+                    )}>
+                      {isCurrentStep ? (
+                        <span className="execution-pulse inline-block">●</span>
+                      ) : (
+                        <span className="animate-checkmark-pop inline-block">✓</span>
+                      )}
+                    </span>
+                    <span className={cn(
+                      "text-[12px] leading-snug transition-colors duration-400",
+                      isCurrentStep ? "text-foreground" : "text-muted-foreground/60"
+                    )}>
+                      {translateToolSummary(tl.summary || tl.name, lang)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Contribution */}
+          {p.contribution && p.id !== "strategist" && p.id !== "team_lead" && (
+            <div className={cn("mt-3.5 pt-3.5", p.tools.length > 0 && "border-t border-border/50")}>
+              <AnswerMd text={p.contribution} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -245,37 +306,20 @@ export function CrewTurn({
         </p>
       )}
 
-          {/* Hierarchical execution timeline */}
+          {/* Integrated Agent Phases */}
           {phases.length > 0 && (
-            <ExecutionTimeline
-              phases={phases}
-              collapsed={collapsed}
-              onToggle={() => setCollapsed((v) => !v)}
-              lang={lang}
-            />
-          )}
+            <div className="relative flex flex-col gap-4 py-2">
+              {/* Connecting line for data stream */}
+              <div className="absolute left-[13px] top-6 bottom-6 w-[2px] bg-border/40 overflow-hidden rounded-full z-0">
+                {tier2Phases.some(p => p.status === "running") && (
+                  <div 
+                    key="handoff-flash"
+                    className="absolute inset-x-0 -top-[30%] h-[30%] w-full bg-gradient-to-b from-transparent via-primary to-transparent animate-flash-down" 
+                  />
+                )}
+              </div>
 
-          {/* Agent conversation — each contributor's actual finding, in the order
-              it was produced. The terminal synthesizer reads these verbatim before
-              writing the brief below, so this is the real hand-off, not a mock. */}
-          {conversation.length > 0 && (
-            <div className="flex flex-col gap-2.5">
-              {conversation.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex animate-in fade-in slide-in-from-bottom-1 gap-2.5 rounded-xl border border-border bg-card/60 p-3.5 duration-500 fill-mode-both"
-                >
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    {AGENT_ICONS[p.id] ?? <UserSearch className="h-3.5 w-3.5" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                      {agentDisplayName(p)}
-                    </div>
-                    <AnswerMd text={p.contribution!} />
-                  </div>
-                </div>
-              ))}
+              {phases.map(renderPhase)}
             </div>
           )}
 
@@ -284,7 +328,7 @@ export function CrewTurn({
             <div className="mt-5 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
               <div className="mb-5 h-px w-8 bg-border" />
               <p className="eyebrow mb-1">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
-              {conversation.length > 0 && (
+              {conversationPhases.length > 0 && (
                 <p className="mb-4 text-[11.5px] text-muted-foreground/70">{synthesizedFrom()}</p>
               )}
               <AnswerMd text={brief} />

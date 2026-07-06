@@ -61,7 +61,7 @@ const TOOL_SUMMARY_EN: Record<string, string> = {
 };
 
 // Handles "D001 の案件サマリーと直近活動" → "Retrieved customer history"
-function translateToolSummary(summary: string, lang: "ja" | "en"): string {
+export function translateToolSummary(summary: string, lang: "ja" | "en"): string {
   if (lang === "ja") return summary;
   // Exact match first
   if (TOOL_SUMMARY_EN[summary]) return TOOL_SUMMARY_EN[summary];
