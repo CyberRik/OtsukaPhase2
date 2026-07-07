@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Building2, UserSearch, GraduationCap, Briefcase, Search, Target, Users } from "lucide-react";
+import { Building2, UserSearch, GraduationCap, Briefcase, Search, Target, Users, FileSpreadsheet, FileText } from "lucide-react";
 import { crewStream, teamStream, type CrewEvent, type ResolveCandidate } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useCachedState } from "@/lib/chat-store";
 import { AnswerMd } from "@/components/assistant/message";
+import { downloadMessageAsDocx, downloadMessageAsXlsx } from "@/lib/artifact-export";
 import { translateToolSummary, type ExecutionPhase } from "@/components/agent/agent-lane";
 import { cn } from "@/lib/utils";
 
@@ -327,7 +328,27 @@ export function CrewTurn({
           {brief && status === "done" && showArtifact && (
             <div className="mt-5 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
               <div className="mb-5 h-px w-8 bg-border" />
-              <p className="eyebrow mb-1">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <p className="eyebrow">{mode === "team" ? t("crew.team.brief") : t("crew.deal.brief")}</p>
+                <span className="flex items-center gap-2">
+                  <button
+                    onClick={() => { void downloadMessageAsXlsx(brief, lang, { slug: mode === "team" ? "team-brief" : "deal-brief" }); }}
+                    title={lang === "ja" ? "Excel (.xlsx) で書き出す" : "Export to Excel (.xlsx)"}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Excel
+                  </button>
+                  <button
+                    onClick={() => { void downloadMessageAsDocx(brief, lang, { slug: mode === "team" ? "team-brief" : "deal-brief" }); }}
+                    title={lang === "ja" ? "Word (.docx) で書き出す" : "Export to Word (.docx)"}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Word
+                  </button>
+                </span>
+              </div>
               {conversationPhases.length > 0 && (
                 <p className="mb-4 text-[11.5px] text-muted-foreground/70">{synthesizedFrom()}</p>
               )}

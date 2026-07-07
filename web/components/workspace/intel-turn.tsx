@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Globe, Lock, FileText, Newspaper, Package } from "lucide-react";
+import { Globe, Lock, FileText, Newspaper, Package, FileSpreadsheet } from "lucide-react";
 import { intelCrawlStream, type IntelCrawlEvent, type CrawlPage } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { useCachedState } from "@/lib/chat-store";
 import { AnswerMd } from "@/components/assistant/message";
+import { downloadMessageAsDocx, downloadMessageAsXlsx } from "@/lib/artifact-export";
 import { ExecutionTimeline, type ExecutionPhase } from "@/components/agent/agent-lane";
 
 type Found = { products: number; news: number; pdfs: number };
@@ -245,7 +246,27 @@ export function IntelTurn({
           {brief && status === "done" && showArtifact && (
             <div className="mt-5 animate-in fade-in duration-500 fill-mode-both slide-in-from-bottom-2">
               <div className="mb-5 h-px w-8 bg-border" />
-              <p className="eyebrow mb-4">{lang === "ja" ? "顧客ブリーフ" : "Customer Brief"}</p>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <p className="eyebrow">{lang === "ja" ? "顧客ブリーフ" : "Customer Brief"}</p>
+                <span className="flex items-center gap-2">
+                  <button
+                    onClick={() => { void downloadMessageAsXlsx(brief, lang, { slug: "intel-brief" }); }}
+                    title={lang === "ja" ? "Excel (.xlsx) で書き出す" : "Export to Excel (.xlsx)"}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Excel
+                  </button>
+                  <button
+                    onClick={() => { void downloadMessageAsDocx(brief, lang, { slug: "intel-brief" }); }}
+                    title={lang === "ja" ? "Word (.docx) で書き出す" : "Export to Word (.docx)"}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Word
+                  </button>
+                </span>
+              </div>
               <AnswerMd text={brief} />
             </div>
           )}

@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import {
   AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
-  FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
+  FileSpreadsheet, FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
 import { documentUrl, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
@@ -19,6 +19,7 @@ import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 import { CrawlReplay } from "@/components/assistant/crawl-replay";
+import { downloadMessageAsDocx, downloadMessageAsXlsx } from "@/lib/artifact-export";
 
 
 export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
@@ -282,6 +283,28 @@ export function MessageBubble({ m, t, lang, onPick }: {
         </div>
       ) : m.content ? (
         <div className="w-full pt-1.5">
+          {!running && (
+            <div className="mb-1.5 flex justify-end">
+              <span className="flex items-center gap-2">
+                <button
+                  onClick={() => { void downloadMessageAsXlsx(m.content, lang); }}
+                  title={lang === "ja" ? "Excel (.xlsx) で書き出す" : "Export to Excel (.xlsx)"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  Excel
+                </button>
+                <button
+                  onClick={() => { void downloadMessageAsDocx(m.content, lang); }}
+                  title={lang === "ja" ? "Word (.docx) で書き出す" : "Export to Word (.docx)"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Word
+                </button>
+              </span>
+            </div>
+          )}
           <AnswerMd text={m.content} />
           {running && <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-foreground/40 align-middle" />}
         </div>
