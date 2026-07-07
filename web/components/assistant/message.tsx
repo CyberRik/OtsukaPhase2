@@ -14,7 +14,7 @@ import {
   FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
-import { documentUrl, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
+import { documentUrl, exportMessageAsDocx, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
@@ -22,21 +22,7 @@ import { CrawlReplay } from "@/components/assistant/crawl-replay";
 import { ExecutionRail, ReasoningTicker } from "@/components/agent/execution-rail";
 import type { ExecutionPhase } from "@/components/agent/agent-lane";
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; documents?: GeneratedDocument[]; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
-
-// Short, human format tag for a generated-file download chip, from its extension.
-const DOC_FORMAT: Record<string, string> = {
-  pptx: "PowerPoint", pdf: "PDF", html: "HTML", docx: "Word", xlsx: "Excel",
-};
-function docFormat(filename: string): string {
-  const ext = (filename.split(".").pop() ?? "").toLowerCase();
-  return DOC_FORMAT[ext] ?? ext.toUpperCase();
-}
-// All downloadable files a tool call produced: the new `documents` list, or the legacy
-// singular `document`, deduped by doc_id.
-function toolDocs(tl: { document?: GeneratedDocument; documents?: GeneratedDocument[] }): GeneratedDocument[] {
-  return tl.documents && tl.documents.length > 0 ? tl.documents : tl.document ? [tl.document] : [];
-}
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -251,26 +237,64 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
               </ol>
             </div>
           )}
-          {toolDocs(tool).length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {toolDocs(tool).map((doc) => (
-                <a
-                  key={doc.doc_id}
-                  href={documentUrl(doc.download_url)}
-                  download={doc.filename}
-                  className="inline-flex w-fit items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  {docFormat(doc.filename)}
-                  <span className="font-mono text-[10px] text-muted-foreground">{doc.filename}</span>
-                </a>
-              ))}
-            </div>
+          {tool.document && (
+            <a
+              href={documentUrl(tool.document.download_url)}
+              download={tool.document.filename}
+              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {lang === "ja" ? "ダウンロード" : "Download"}
+              <span className="font-mono text-[10px] text-muted-foreground">{tool.document.filename}</span>
+            </a>
           )}
         </div>
       )}
     </div>
   );
+}
+
+// --- grounding badge --------------------------------------------------------
+// Honest, at-a-glance provenance for every answer: green when ≥1 internal tool
+// fired, web when the open web was consulted, neutral when the model answered
+// with no tools at all (the case you *want* visible).
+function groundingBadge(m: Msg, lang: "ja" | "en") {
+  const names = m.tools.map((tl) => tl.name);
+  const usedInternal =
+    // The ReAct chat loop's tools are keyed by function name (query_spr, ...) and
+    // classified via TOOL_LABEL; the planner (document generation) instead emits
+    // Japanese display labels as `name` with its own explicit `internal` flag per
+    // event — check both, since neither pipeline's tool names are in the other's
+    // lookup.
+    names.some((n) => TOOL_LABEL[n]?.internal) ||
+    m.tools.some((tl) => tl.internal === true) ||
+    (m.sources?.some((s) => s.status === "found") ?? false);
+  const usedWeb = names.includes("web_search") || (m.webUrls?.length ?? 0) > 0;
+
+  if (usedInternal) {
+    return {
+      icon: ShieldCheck,
+      text: lang === "ja" ? (usedWeb ? "社内データ＋外部情報" : "社内データに基づく") : (usedWeb ? "Internal data + web" : "Grounded in internal data"),
+      cls: "bg-conf-high/10 text-conf-high",
+    };
+  }
+  if (usedWeb) {
+    return {
+      icon: Globe,
+      text: lang === "ja" ? "外部情報（Web）" : "External (web)",
+      cls: "bg-band-yellow/10 text-band-yellow",
+    };
+  }
+  // A tool ran but none of them retrieve internal facts (e.g. a generic PPTX from
+  // a free prompt) → say so honestly instead of "no tools" or "internal data".
+  const ranTools = m.tools.length > 0;
+  return {
+    icon: Sparkles,
+    text: lang === "ja"
+      ? (ranTools ? "一般的な生成（社内データ非依存）" : "一般的な回答（ツール未使用）")
+      : (ranTools ? "General output (not internal data)" : "General answer (no tools)"),
+    cls: "bg-muted text-muted-foreground",
+  };
 }
 
 export function MessageBubble({ m, t, lang, onPick }: {
@@ -288,12 +312,14 @@ export function MessageBubble({ m, t, lang, onPick }: {
 
   const running = m.status === "running";
   const error = m.status === "error";
+  const badge = !error && (m.content || m.tools.length || m.sources?.length) ? groundingBadge(m, lang) : null;
   const hasRail = (m.executionLanes?.length ?? 0) > 0;
   const [railCollapsed, setRailCollapsed] = useState(false);
   useEffect(() => {
     if (hasRail && !running) setRailCollapsed(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
+  const [exportState, setExportState] = useState<{ status: "idle" | "loading" | "error"; doc?: GeneratedDocument }>({ status: "idle" });
 
   return (
     <div className="flex w-full flex-col items-start gap-1.5">
@@ -321,17 +347,57 @@ export function MessageBubble({ m, t, lang, onPick }: {
         </div>
       ) : null}
 
+      {/* 1a. Export as document — a literal, unmodified dump of this answer's
+           text into a .docx (like a CSV export), not a re-authored artifact.
+           Hidden once a real generated document already exists for this turn. */}
+      {!running && m.content && !m.tools.some((tl) => tl.document) && (
+        <div className="pt-1">
+          {exportState.doc ? (
+            <a
+              href={documentUrl(exportState.doc.download_url)}
+              download={exportState.doc.filename}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/[0.06] px-2.5 py-1.5 text-[12px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {lang === "ja" ? "ダウンロード" : "Download"}
+              <span className="font-mono text-[11px] text-muted-foreground">{exportState.doc.filename}</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled={exportState.status === "loading"}
+              onClick={async () => {
+                setExportState({ status: "loading" });
+                try {
+                  const doc = await exportMessageAsDocx(m.content, m.query || "");
+                  setExportState({ status: "idle", doc });
+                } catch {
+                  setExportState({ status: "error" });
+                }
+              }}
+              title={lang === "ja" ? "Word (.docx) で書き出す" : "Export to Word (.docx)"}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-60"
+            >
+              {exportState.status === "loading" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
+              {lang === "ja" ? "書き出し" : "Export"}
+            </button>
+          )}
+          {exportState.status === "error" && (
+            <span className="ml-2 text-[11px] text-destructive">
+              {lang === "ja" ? "エクスポートに失敗しました" : "Export failed"}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
            buried inside the collapsed tool card) so the deliverable is one click. */}
       {(() => {
-        // Flatten every file each tool call produced (dedupe by doc_id), so an export set
-        // like PPTX + PDF + HTML all surface as one-click chips at the response level.
-        const seen = new Set<string>();
-        const docs = m.tools.flatMap(toolDocs).filter((d) => {
-          if (seen.has(d.doc_id)) return false;
-          seen.add(d.doc_id);
-          return true;
-        });
+        const docs = m.tools.map((tl) => tl.document).filter(Boolean) as GeneratedDocument[];
         if (docs.length === 0) return null;
         return (
           <div className="flex w-full max-w-[88%] flex-wrap gap-2 pt-1">
@@ -343,7 +409,7 @@ export function MessageBubble({ m, t, lang, onPick }: {
                 className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/[0.06] px-3 py-2 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 <Download className="h-4 w-4 shrink-0" />
-                {docFormat(doc.filename)}
+                {lang === "ja" ? "ダウンロード" : "Download"}
                 <span className="font-mono text-[11px] text-muted-foreground">{doc.filename}</span>
               </a>
             ))}
@@ -467,8 +533,13 @@ export function MessageBubble({ m, t, lang, onPick }: {
       )}
 
       {/* Badges / Routing */}
-      {m.routing && !running && m.content && (
+      {(badge || m.routing) && !running && m.content && (
         <div className="mt-1 flex flex-wrap items-center gap-1.5 pt-1.5">
+          {badge && (
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold", badge.cls)}>
+              <badge.icon className="h-3 w-3" /> {badge.text}
+            </span>
+          )}
           {m.routing && (
             <span
               title={`${m.routing.reason} (${Math.round(m.routing.confidence * 100)}%)`}

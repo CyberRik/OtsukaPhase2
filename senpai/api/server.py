@@ -341,6 +341,22 @@ def download_document(doc_id: str):
     return FileResponse(rec["path"], filename=rec["filename"],
                         media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
 
+class ExportDocRequest(BaseModel):
+    text: str
+    title: str = ""
+    slug: str = ""
+
+
+@app.post("/api/documents/export")
+def export_document(req: ExportDocRequest):
+    """Turn an assistant message's raw text into a downloadable .docx, verbatim —
+    no LLM re-authoring, no re-gathering evidence. Same contract as a CSV export:
+    the file matches exactly what's already on screen, just in a different format."""
+    from senpai.documents.export import export_text_as_docx
+    if not (req.text or "").strip():
+        raise HTTPException(400, "text is empty")
+    rec = export_text_as_docx(req.text, title=req.title, slug=req.slug)
+    return {"document": rec}
 
 
 # ---------------------------------------------------------------------------

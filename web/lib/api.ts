@@ -68,6 +68,24 @@ export function documentUrl(downloadUrl: string): string {
   return downloadUrl.startsWith("http") ? downloadUrl : `${BASE}${downloadUrl}`;
 }
 
+// Literal export of an assistant message's raw text to a .docx — no LLM
+// re-authoring, no fixture fallback (a failure must surface, not silently
+// swallow like the read endpoints' offline fallback does).
+export async function exportMessageAsDocx(
+  text: string,
+  title = "",
+): Promise<GeneratedDocument> {
+  const res = await fetch(`${BASE}/api/documents/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, title }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`http_${res.status}`);
+  const data = (await res.json()) as { document: GeneratedDocument };
+  return data.document;
+}
+
 async function get<T>(path: string, fallback: T): Promise<Fetched<T>> {
   try {
     const res = await fetch(`${BASE}${path}`, { cache: "no-store" });
@@ -466,7 +484,7 @@ export interface RetrievalTrace {
 export type ChatEvent =
   | { type: "start"; model?: string; endpoint?: string; role?: ChatRole }
   | { type: "artifact_meta"; kind: ArtifactKind; entity_ref?: EntityRef }
-  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; documents?: GeneratedDocument[]; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean }
+  | { type: "tool"; name: string; args: string; result: string; retrieval?: RetrievalTrace[]; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean }
   | { type: "routing"; think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" }
   | { type: "resolve"; status: "resolved" | "ambiguous" | "not_found"; query: string; customer?: unknown; candidates?: ResolveCandidate[] }
   | { type: "context"; status: "active"; conversation_id?: string; deal_id?: string | null; customer?: unknown; cached?: boolean }
