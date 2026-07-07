@@ -313,13 +313,21 @@ export function MessageBubble({ m, t, lang, onPick }: {
       {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
            buried inside the collapsed tool card) so the deliverable is one click. */}
       {(() => {
-        const docs = m.tools.map((tl) => tl.document).filter(Boolean) as GeneratedDocument[];
+        const all = m.tools.map((tl) => tl.document).filter(Boolean) as GeneratedDocument[];
+        // Dedupe: several tool calls in one turn can reference the same document.
+        const seen = new Set<string>();
+        const docs = all.filter((doc) => {
+          const id = doc.doc_id ?? `${doc.filename}|${doc.download_url}`;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        });
         if (docs.length === 0) return null;
         return (
           <div className="flex w-full max-w-[88%] flex-wrap gap-2 pt-1">
             {docs.map((doc, i) => (
               <a
-                key={doc.doc_id ?? `${doc.filename}-${i}`}
+                key={`${doc.doc_id ?? doc.filename}-${i}`}
                 href={documentUrl(doc.download_url)}
                 download={doc.filename}
                 className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/[0.06] px-3 py-2 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary/10"
