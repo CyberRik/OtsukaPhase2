@@ -340,7 +340,9 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "The search query"},
+                    "query": {"type": "string", "description": "A short keyword search query (a few words, "
+                                                                "like a search-engine query) — NOT the user's "
+                                                                "full question or instructions verbatim."},
                 },
                 "required": ["query"],
             },

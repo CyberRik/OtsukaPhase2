@@ -8,10 +8,33 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.request
 from pathlib import Path
 
 _HTTP_TIMEOUT = 6  # seconds; short so a hang can't stall the chat
+
+# Search APIs (Tavily) rank/embed short keyword queries; a caller that hands back
+# an entire prompt/instruction block (a runaway tool-call arg, or `_gather_grounding`
+# passing a whole doc-authoring brief) gets noisy, off-topic results — which the
+# model then has to paper over, i.e. hallucinate on top of. Every query goes
+# through this single choke point so both `web_search` and `web_search_typed` are
+# protected the same way regardless of caller.
+_MAX_QUERY_WORDS = 12
+_MAX_QUERY_CHARS = 120
+
+
+def _condense_query(query: str) -> str:
+    q = " ".join((query or "").split())
+    if not q:
+        return q
+    # A multi-sentence/multi-line blob (numbered steps, a full user message) —
+    # keep only the first sentence/line, which is almost always the actual topic.
+    first = re.split(r"[。\n]", q, 1)[0]
+    words = first.split(" ")
+    if len(words) > _MAX_QUERY_WORDS:
+        first = " ".join(words[:_MAX_QUERY_WORDS])
+    return first[:_MAX_QUERY_CHARS].strip()
 
 
 def _load_dotenv() -> None:
@@ -66,6 +89,7 @@ def web_search_typed(query: str, max_results: int = 4) -> dict:
     Unlike the legacy chat tool below, this does not use canned fallback text:
     research needs explicit provenance or an explicit unavailable state.
     """
+    query = _condense_query(query)
     if not TAVILY_API_KEY:
         return {"status": "error", "query": query, "answer": "", "results": [],
                 "live": False, "reason": "missing_api_key"}
@@ -99,6 +123,7 @@ def web_search_typed(query: str, max_results: int = 4) -> dict:
 def web_search(query: str) -> str:
     """Search the web for a query. Uses Tavily when configured; falls back to
     canned results on missing key / network failure so the demo never breaks."""
+    query = _condense_query(query)
     if TAVILY_API_KEY:
         data = _post_json(
             "https://api.tavily.com/search",

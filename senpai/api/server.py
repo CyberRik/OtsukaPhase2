@@ -340,23 +340,6 @@ def download_document(doc_id: str):
                         media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
 
 
-class ExportDocRequest(BaseModel):
-    text: str
-    title: str = ""
-    slug: str = ""
-
-
-@app.post("/api/documents/export")
-def export_document(req: ExportDocRequest):
-    """Turn an assistant message's raw text into a downloadable .docx, verbatim —
-    no LLM re-authoring, no re-gathering evidence. Same contract as a CSV export:
-    the file matches exactly what's already on screen, just in a different format."""
-    from senpai.documents.export import export_text_as_docx
-    if not (req.text or "").strip():
-        raise HTTPException(400, "text is empty")
-    rec = export_text_as_docx(req.text, title=req.title, slug=req.slug)
-    return {"document": rec}
-
 
 # ---------------------------------------------------------------------------
 # dashboard
@@ -738,8 +721,7 @@ def _junior_system() -> str:
 
         "【文書作成（PPTX / DOCX）】\n"
         "提案書、稟議書、スライド(PPTX)、文書(DOCX)の作成を依頼されたら、"
-        "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
-        "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
+        "絶対に口頭で許可を求めたりプレビューを提示するのではなく、**直ちに該当ツールを `confirm=True` で呼び出し**、ファイルを即座に生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
 
         "【複数タスク】\n"
@@ -792,8 +774,7 @@ def _manager_system() -> str:
 
         "【文書作成（PPTX / DOCX）】\n"
         "提案書、稟議書、スライド(PPTX)、文書(DOCX)の作成を依頼されたら、"
-        "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
-        "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
+        "絶対に口頭で許可を求めたりプレビューを提示するのではなく、**直ちに該当ツールを `confirm=True` で呼び出し**、ファイルを即座に生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
 
         "【複数タスク】\n"
