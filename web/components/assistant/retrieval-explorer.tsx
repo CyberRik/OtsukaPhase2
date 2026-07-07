@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, FileSearch, GitGraph, ScanSearch, ShieldCheck, Globe2 } from "lucide-react";
+import { Database, FileSearch, GitGraph, ScanSearch, ShieldCheck, Globe2, Package } from "lucide-react";
 import type { RetrievalTrace } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 const SOURCE_META: Record<string, { ja: string; en: string; icon: typeof Database }> = {
   notes_semantic: { ja: "日報（意味検索）", en: "Notes (semantic)", icon: FileSearch },
   knowledge_keyword: { ja: "社内ナレッジ（キーワード）", en: "Knowledge (keyword)", icon: ShieldCheck },
+  solution_knowledge: { ja: "ソリューション・製品情報", en: "Solution & product info", icon: Package },
   graph: { ja: "関係グラフ", en: "Graph", icon: GitGraph },
 };
 
@@ -22,11 +23,13 @@ const SOURCE_META: Record<string, { ja: string; en: string; icon: typeof Databas
 const SOURCE_GROUP: Record<string, string> = {
   notes_semantic: "crm",
   knowledge_keyword: "knowledge",
+  solution_knowledge: "solutions",
   graph: "knowledge",
 };
 const GROUP_META: Record<string, { ja: string; en: string }> = {
   crm: { ja: "CRM", en: "CRM" },
   knowledge: { ja: "ナレッジ", en: "Knowledge" },
+  solutions: { ja: "ソリューション", en: "Solutions" },
 };
 
 function scopeAccountId(scope: string): string | null {

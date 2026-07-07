@@ -8,17 +8,19 @@
 // renderer, one trust surface: "grounded, not a chatbot" looks the same wherever
 // chat appears.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle, BookMarked, Brain, Building2, Calendar, Database, Download, ExternalLink,
-  FileText, Globe, Layers, Loader2, Mail, Presentation, Receipt, Route, Search,
+  FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
-import { documentUrl, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
+import { documentUrl, exportMessageAsDocx, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 import { CrawlReplay } from "@/components/assistant/crawl-replay";
+import { ExecutionRail, ReasoningTicker } from "@/components/agent/execution-rail";
+import type { ExecutionPhase } from "@/components/agent/agent-lane";
 
 export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; documents?: GeneratedDocument[]; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
 
@@ -53,6 +55,7 @@ export type Msg = {
   routing?: { think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" };
   candidates?: ResolveCandidate[]; // ambiguous customer — surfaced for the user to pick
   query?: string;                  // the original message, so a pick can re-ask scoped
+  executionLanes?: ExecutionPhase[]; // real task-DAG lanes (senpai/orchestration), when this turn ran the document planner
 };
 
 // Human labels + icons for each tool, so the grounding ledger reads like
@@ -63,6 +66,7 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   find_similar_deals: { ja: "類似案件", en: "Similar deals", icon: Layers, internal: true },
   retrieve_playbook: { ja: "プレイブック", en: "Playbook", icon: BookMarked, internal: true },
   search_knowledge: { ja: "社内ナレッジ照会", en: "Internal knowledge", icon: ShieldCheck, internal: true },
+  search_solutions: { ja: "ソリューション・製品情報", en: "Solution & product info", icon: Package, internal: true },
   lookup_customer_environment: { ja: "IT環境", en: "IT environment", icon: Building2, internal: true },
   get_product_info: { ja: "製品情報", en: "Product info", icon: BookMarked, internal: true },
   search_products: { ja: "製品検索", en: "Product search", icon: Search, internal: true },
@@ -96,6 +100,7 @@ export const TOOL_LABEL: Record<string, { ja: string; en: string; icon: LucideIc
   workspace: { ja: "ローカル文書", en: "Local documents", icon: FileText, internal: false },
   crm: { ja: "社内記録(SPR)", en: "Internal records (SPR)", icon: Database, internal: true },
   knowledge: { ja: "社内ナレッジ", en: "Internal knowledge", icon: ShieldCheck, internal: true },
+  solutions: { ja: "ソリューション・製品情報", en: "Solution & product info", icon: Package, internal: true },
   // `documents` (the planner's terminal artifact task) is proposal/pptx/docx
   // depending on the goal — its `internal` grounding actually varies per turn, so
   // the event itself carries an explicit `internal` flag that overrides this
@@ -134,6 +139,30 @@ function getToolHighlight(tool: ToolCall): string {
   }
 }
 
+// search_knowledge / search_solutions (and their planner-path equivalents,
+// same underlying formatter) return "- [kind] text（出典: ...）" lines — a real,
+// already-cited structure that was previously just dumped as one monospace
+// paragraph. Split it into {kind, text, url} so a citation can be an actual
+// link instead of dead text; returns null for any other tool's plain result,
+// which keeps rendering as before.
+function parseCitedLines(result: string): { kind: string; text: string; citation?: string; url?: string }[] | null {
+  const lines = (result || "").split("\n").map((l) => l.trim()).filter((l) => l.startsWith("- ["));
+  if (lines.length === 0) return null;
+  return lines.map((line) => {
+    const kindMatch = line.match(/^- \[(.+?)\]\s*/);
+    const kind = kindMatch ? kindMatch[1] : "";
+    let text = kindMatch ? line.slice(kindMatch[0].length) : line.replace(/^- /, "");
+    const citeMatch = text.match(/[（(]((?:出典|根拠)[:：].*?)[）)]\s*$/);
+    let citation: string | undefined;
+    if (citeMatch) {
+      citation = citeMatch[1];
+      text = text.slice(0, citeMatch.index).trim();
+    }
+    const urlMatch = citation?.match(/https?:\/\/\S+/);
+    return { kind, text, citation, url: urlMatch ? urlMatch[0] : undefined };
+  });
+}
+
 function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool: ToolCall, running: boolean, lang: "ja" | "en", isParallelItem?: boolean }) {
   const [open, setOpen] = useState(false);
   const meta = TOOL_LABEL[tool.name];
@@ -150,7 +179,8 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
   
   const displayLabel = highlight ? `${highlight} ${sourcesCount > 0 ? `(${sourcesCount} ${lang === "ja" ? "件" : "sources"})` : ""}` : baseLabel;
   const finalLabel = highlight ? `${displayLabel} — ${baseLabel}` : displayLabel;
-  
+  const citedLines = tool.result ? parseCitedLines(tool.result) : null;
+
   return (
     <div className={`flex flex-col gap-0.5 ${isParallelItem ? '' : 'rounded-md bg-card p-2'}`}>
       <div 
@@ -175,7 +205,39 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
           </div>
           <div>
             <div className="font-semibold text-foreground/80 mb-0.5">Result</div>
-            <div className="text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">{tool.result}</div>
+            {citedLines ? (
+              <ul className="flex flex-col gap-1.5 max-h-[300px] overflow-y-auto">
+                {citedLines.map((it, i) => (
+                  <li key={i} className="flex flex-col gap-0.5 rounded bg-muted/30 p-1.5">
+                    <div className="flex items-start gap-1.5">
+                      {it.kind && (
+                        <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                          {it.kind}
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">{it.text}</span>
+                    </div>
+                    {it.citation && (
+                      it.url ? (
+                        <a
+                          href={it.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-1 inline-flex w-fit items-center gap-1 text-[10.5px] text-primary hover:underline"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {it.citation}
+                        </a>
+                      ) : (
+                        <span className="ml-1 text-[10.5px] text-muted-foreground/70">{it.citation}</span>
+                      )
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-muted-foreground whitespace-pre-wrap max-h-[300px] overflow-y-auto">{tool.result}</div>
+            )}
           </div>
           {tool.outline && tool.outline.length > 0 && (
             <div>
@@ -270,6 +332,13 @@ export function MessageBubble({ m, t, lang, onPick }: {
   const running = m.status === "running";
   const error = m.status === "error";
   const badge = !error && (m.content || m.tools.length || m.sources?.length) ? groundingBadge(m, lang) : null;
+  const hasRail = (m.executionLanes?.length ?? 0) > 0;
+  const [railCollapsed, setRailCollapsed] = useState(false);
+  useEffect(() => {
+    if (hasRail && !running) setRailCollapsed(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [running]);
+  const [exportState, setExportState] = useState<{ status: "idle" | "loading" | "error"; doc?: GeneratedDocument }>({ status: "idle" });
 
   return (
     <div className="flex w-full flex-col items-start gap-1.5">
@@ -279,16 +348,70 @@ export function MessageBubble({ m, t, lang, onPick }: {
           {t("assistant.error")}
         </div>
       ) : running && !m.content ? (
-        <div className="inline-flex items-center gap-2 py-1 text-[13px] font-medium text-foreground">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> 
-          {lang === "ja" ? "考え中..." : "Thinking..."}
-        </div>
+        hasRail ? (
+          <div className="inline-flex items-center gap-2 py-1">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <ReasoningTicker phases={m.executionLanes!} composing={!!m.content} lang={lang} />
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 py-1 text-[13px] font-medium text-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            {lang === "ja" ? "考え中..." : "Thinking..."}
+          </div>
+        )
       ) : m.content ? (
         <div className="w-full pt-1.5">
           <AnswerMd text={m.content} />
           {running && <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-foreground/40 align-middle" />}
         </div>
       ) : null}
+
+      {/* 1a. Export as document — a literal, unmodified dump of this answer's
+           text into a .docx (like a CSV export), not a re-authored artifact.
+           Hidden once a real generated document already exists for this turn. */}
+      {!running && m.content && !m.tools.some((tl) => tl.document) && (
+        <div className="pt-1">
+          {exportState.doc ? (
+            <a
+              href={documentUrl(exportState.doc.download_url)}
+              download={exportState.doc.filename}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/[0.06] px-2.5 py-1.5 text-[12px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {lang === "ja" ? "ダウンロード" : "Download"}
+              <span className="font-mono text-[11px] text-muted-foreground">{exportState.doc.filename}</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled={exportState.status === "loading"}
+              onClick={async () => {
+                setExportState({ status: "loading" });
+                try {
+                  const doc = await exportMessageAsDocx(m.content, m.query || "");
+                  setExportState({ status: "idle", doc });
+                } catch {
+                  setExportState({ status: "error" });
+                }
+              }}
+              title={lang === "ja" ? "Word (.docx) で書き出す" : "Export to Word (.docx)"}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-60"
+            >
+              {exportState.status === "loading" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
+              {lang === "ja" ? "書き出し" : "Export"}
+            </button>
+          )}
+          {exportState.status === "error" && (
+            <span className="ml-2 text-[11px] text-destructive">
+              {lang === "ja" ? "エクスポートに失敗しました" : "Export failed"}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
            buried inside the collapsed tool card) so the deliverable is one click. */}
@@ -320,8 +443,22 @@ export function MessageBubble({ m, t, lang, onPick }: {
         );
       })()}
 
-      {/* 2. Execution Timeline (Level 2) */}
-      {m.tools.length > 0 && (
+      {/* 2. Execution rail — real task-DAG lanes (planner-driven turns only) */}
+      {hasRail && (
+        <div className="w-full max-w-[88%]">
+          <ExecutionRail
+            phases={m.executionLanes!}
+            lang={lang}
+            collapsed={railCollapsed}
+            onToggle={() => setRailCollapsed((v) => !v)}
+            document={m.tools.map((tl) => tl.document).find(Boolean)}
+          />
+        </div>
+      )}
+
+      {/* 2b. Execution Timeline (Level 2) — ReAct-loop turns only; planner-driven
+           turns use the rail above instead (no redundant second surface). */}
+      {m.tools.length > 0 && !hasRail && (
         <details open={running} className="w-full max-w-[88%] text-[12px] group">
           <summary className="flex cursor-pointer items-center gap-1.5 py-1.5 font-medium text-muted-foreground select-none hover:text-foreground transition-colors list-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-center w-4 h-4 shrink-0 transition-transform group-open:rotate-90">

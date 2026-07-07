@@ -8,6 +8,7 @@ their Evidence lands in one bundle; the Documents capability consumes that bundl
     workspace ────┤
     crm ──────────┼──►  documents   (depends on all gathered; authors the artifact)
     knowledge ────┤
+    solutions ────┤
     web ──────────┘
 
 Gather capabilities emit a uniform `{"text": <grounding>, "label": <section>}` so the
@@ -16,6 +17,7 @@ which were selected. All are READ/SEARCH and degrade to empty — never raise.
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping
 
 from senpai.orchestration import ExecContext
@@ -29,16 +31,29 @@ _LABELS = {
     "workspace": "ローカル文書（あなたのファイル）",
     "crm": "社内データ",
     "knowledge": "社内ナレッジ",
+    "solutions": "大塚商会ソリューション・製品情報",
     "web": "Web検索",
 }
+
+
+# workspace/knowledge/solutions already embed real provenance inline
+# ("出典: file://…", "出典: Playbook 123", "根拠: 先輩2名 / int001") but only CRM
+# passes an explicit `citations` list — without this, the evidence-count receipt
+# line always read 0 for them even when real grounding was retrieved.
+_CITATION_RE = re.compile(r"(?:出典|根拠):\s*([^\n）)]+)")
+
+
+def _extract_citations(text: str) -> list[str]:
+    return [m.strip() for m in _CITATION_RE.findall(text)]
 
 
 def _text_evidence(name: str, text: str, citations=()) -> Evidence:
     text = (text or "").strip()
     if not text:
         return Evidence.empty(provenance={"capability": name})
+    citations = tuple(citations) or tuple(_extract_citations(text))
     return Evidence.ok({"text": text, "label": _LABELS.get(name, name)},
-                       citations=tuple(citations), status="ok")
+                       citations=citations, status="ok")
 
 
 def _register_deck(registry, files: dict, *, primary_kind: str,
@@ -127,6 +142,44 @@ class KnowledgeCapability:
         return _text_evidence("knowledge", text)
 
 
+class SolutionsCapability:
+    """Real Otsuka Shokai product/solution pages for the goal — named products/
+    services to ground a pitch, not just an internal category label. Reuses
+    `impl.search_solutions` (attributed, cited snippets).
+
+    The raw goal text is usually an imperative ("make a proposal for D001"), not
+    a description of the customer's need — a bad query for the product corpus.
+    When a deal/customer resolved, its product_category/industry describe the
+    actual need and are folded into the query; the raw goal is kept too so a
+    free-form ask ("...for a paperless office push") still contributes signal."""
+    name = "solutions"
+    metadata = CapabilityMetadata(OperationKind.SEARCH, cacheable=True)
+
+    def run(self, op: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
+        from senpai.data import store
+        from senpai.tools.impl import search_solutions
+
+        goal = str(inputs.get("query", ""))
+        deal_id = str(inputs.get("deal_id") or "")
+        customer_id = str(inputs.get("customer_id") or "")
+        deal = store.get_deal(deal_id) if deal_id else None
+        category = (deal or {}).get("product_category", "")
+        if not customer_id and deal:
+            customer_id = deal.get("customer_id", "")
+        customer = store.get_customer(customer_id) if customer_id else None
+        industry = (customer or {}).get("industry", "")
+
+        query = " ".join(p for p in (category, industry, goal) if p)
+        if not query:
+            return Evidence.empty(provenance={"capability": "solutions"})
+
+        text = search_solutions(query=query, limit=3)
+        if "見つかりません" in text:
+            return Evidence.empty(provenance={"capability": "solutions"})
+        ctx.emit("ソリューション・製品情報を取得")
+        return _text_evidence("solutions", text)
+
+
 class WebCapability:
     """External web search for factual/current topics. Reuses `impl.web_search`."""
     name = "web"
@@ -143,7 +196,7 @@ class WebCapability:
 
 
 # Order gathered grounding lands in the document, most-specific first.
-_GATHER_ORDER = ("conversation", "workspace", "crm", "knowledge", "web")
+_GATHER_ORDER = ("conversation", "workspace", "crm", "knowledge", "solutions", "web")
 
 
 class DocumentsCapability:
@@ -460,7 +513,8 @@ def build_registry():
     from senpai.orchestration import CapabilityRegistry
     reg = CapabilityRegistry()
     for cap in (ConversationCapability(), WorkspaceCapability(), CRMCapability(),
-                KnowledgeCapability(), WebCapability(), DocumentsCapability(),
-                WorkspaceWriteCapability(), WorkspaceOrganizeCapability()):
+                KnowledgeCapability(), SolutionsCapability(), WebCapability(),
+                DocumentsCapability(), WorkspaceWriteCapability(),
+                WorkspaceOrganizeCapability()):
         reg.register(cap)
     return reg

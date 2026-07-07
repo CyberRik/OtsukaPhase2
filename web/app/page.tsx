@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, LayoutDashboard, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { ArrowRight, LayoutDashboard, Sparkles, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { Brand } from "@/components/site/brand";
 import { ClientBadge } from "@/components/site/client-badge";
@@ -84,11 +84,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="mt-12 flex items-center gap-2 text-[12px] text-muted-foreground">
-          <ShieldCheck className="h-4 w-4 text-conf-high" />
-          {t("diff.promise")}
-        </div>
-        <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-muted-foreground/80">{t("landing.footer")}</p>
+
       </main>
     </div>
   );

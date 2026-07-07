@@ -632,6 +632,50 @@ function ChatTurn({
         case "start":
           if (e.role === "research") patch((m) => ({ ...m, research: true, sources: [] }));
           break;
+        // Fine-grained task DAG lifecycle — forwarded 1:1 from the real
+        // orchestration engine (senpai/orchestration/events.py) whenever this
+        // turn ran the document planner. One ExecutionPhase per task_id (the
+        // task id IS the capability id, e.g. "crm"/"knowledge"/"documents" —
+        // same ids message.tsx's TOOL_LABEL and agent-lane's PHASE_LABELS key
+        // off), grouped by `group` ("gather" tasks run in parallel, then the
+        // terminal "documents"/"workspace_write"/"workspace_organize" task).
+        case "task_started":
+          patch((m) => {
+            const lanes = m.executionLanes ?? [];
+            if (lanes.some((p) => p.id === e.task_id)) return m;
+            const phase: ExecutionPhase = {
+              id: e.task_id, label: e.summary || e.capability, emoji: "",
+              status: "running", tools: [], group: e.group, startedAt: Date.now(),
+            };
+            return { ...m, executionLanes: [...lanes, phase] };
+          });
+          break;
+        case "task_progress":
+          patch((m) => ({
+            ...m,
+            executionLanes: (m.executionLanes ?? []).map((p) =>
+              p.id === e.task_id ? { ...p, tools: [...p.tools, { name: e.task_id, summary: e.message }] } : p),
+          }));
+          break;
+        case "task_evidence":
+          patch((m) => ({
+            ...m,
+            executionLanes: (m.executionLanes ?? []).map((p) =>
+              p.id === e.task_id
+                ? { ...p, citationCount: e.citations?.length ?? 0,
+                    resultHint: e.citations?.length ? `${e.citations.length}` : undefined }
+                : p),
+          }));
+          break;
+        case "group_completed":
+          patch((m) => ({
+            ...m,
+            executionLanes: (m.executionLanes ?? []).map((p) =>
+              p.group === e.group && p.status !== "done"
+                ? { ...p, status: "done", endedAt: Date.now() }
+                : p),
+          }));
+          break;
         case "tool":
           patch((m) => ({
             ...m,
@@ -691,7 +735,7 @@ function ChatTurn({
   const stop = () => { abortedRef.current = true; ctrlRef.current?.abort(); };
   const running = msg.status === "running";
 
-  if (!msg.content && !msg.tools.length && !msg.sources?.length && running) {
+  if (!msg.content && !msg.tools.length && !msg.sources?.length && !msg.executionLanes?.length && running) {
     return (
       <div className="flex items-center gap-2">
         <div className="inline-flex items-center gap-2 rounded-xl rounded-tl-sm border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground shadow-[0_1px_2px_rgba(16,24,40,0.04)]">

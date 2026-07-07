@@ -116,3 +116,35 @@
 .animate-checkmark-pop {
   animation: checkmark-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
+@keyframes flash-down {
+  0% { transform: translateY(-100%); opacity: 1; }
+  100% { transform: translateY(400%); opacity: 0; }
+}
+.animate-flash-down {
+  animation: flash-down 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Execution rail — a running capability card gets a slow diagonal light sweep
+   (opacity/position only, no scale/spin) — "alive," not decorative. */
+@keyframes rail-shimmer {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+.rail-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent, hsl(var(--primary) / 0.10), transparent);
+  animation: rail-shimmer 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Ambient container pulse while ANY lane is running — opacity-only border glow,
+   matching execution-pulse's restraint (no color shift, no scale). */
+@keyframes rail-glow {
+  0%, 100% { box-shadow: 0 0 0 1px hsl(var(--primary) / 0.08); }
+  50%      { box-shadow: 0 0 0 1px hsl(var(--primary) / 0.22); }
+}
+.rail-glow {
+  animation: rail-glow 2s ease-in-out infinite;
+}

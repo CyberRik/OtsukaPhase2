@@ -64,6 +64,23 @@ def available_corpora() -> list[str]:
     return sorted(p.name[:-len(".meta.json")] for p in config.INDEX_DIR.glob("*.meta.json"))
 
 
+def lexical_support_urls(query: str, corpus: str) -> set[str] | None:
+    """URLs where BM25 finds at least one literal query token — a TRUE zero
+    baseline, unlike dense cosine similarity (which is anisotropic and stays
+    well above zero even for unrelated text on this embedding model). Callers
+    use this as a floor to reject dense-only "coincidental" matches on abstract
+    or out-of-corpus queries. Returns None when BM25 is unavailable (caller
+    should skip the floor and degrade to dense/keyword ranking only, same
+    graceful-degrade rule as the rest of this module)."""
+    bm = _bm25_for(corpus)
+    if bm is None:
+        return None
+    bm25, _ = bm
+    meta = _load_meta(corpus)
+    scores = bm25.get_scores(_tokenize(query))
+    return {meta[i].get("url", "") for i, s in enumerate(scores) if s > 0}
+
+
 # --- Japanese tokenization + BM25 ------------------------------------------
 @lru_cache(maxsize=1)
 def _tokenizer():

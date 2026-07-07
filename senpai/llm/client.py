@@ -545,6 +545,9 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     tool_unproductive: dict[str, int] = {}
     tool_total_rounds: dict[str, int] = {}
     substantive: list[tuple[str, str]] = []   # (tool_name, result) worth answering from
+    # Multi-action tracking: committed deliverables (file generated, meeting booked, etc.)
+    # so the loop can continue for additional tasks instead of hard-exiting after the first.
+    committed_actions: list[tuple[str, str]] = []   # (tool_name, result) of completed actions
     from senpai.documents import registry as _docs
     from senpai.retrieval import trace as _trace
     from senpai.tools import crawl_trace as _crawl
@@ -643,6 +646,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         real_calls = [(cid, name, args) for cid, name, args in real_calls
                       if not _is_finish_leak(name, args)]
         if not real_calls:
+            if committed_actions:
+                # The model is done (called finish) and we have committed deliverables.
+                # Route through synthesis so the model writes a coherent summary
+                # incorporating all committed results, or fall back to concatenation.
+                fallback = "\n\n".join(r for _, r in committed_actions)
+                yield from _route_final_answer(convo, tools, tool_log, role, fallback)
+                return
             if tool_log:
                 last_name, _, last_result = tool_log[-1]
                 if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):
@@ -794,10 +804,15 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
 
             if _is_terminal_action(name, result):
                 # The deliverable is done (file built / meeting booked / draft made).
-                # End the turn on its result so the model can't re-invoke it and
-                # produce duplicates — and skip the redundant synthesis round.
-                yield {"type": "answer", "text": result}
-                return
+                # Track it so re-invocation of the SAME tool is suppressed (anti-
+                # duplicate), but do NOT exit the loop — the user may have asked
+                # for multiple deliverables (e.g. proposal + ringisho) in one turn.
+                committed_actions.append((name, result))
+                if not last_round:
+                    convo.append({"role": "system", "content":
+                        f"✅ {name} が正常に完了しました。ユーザーの元のリクエストを確認してください。"
+                        f"依頼されたタスクがすべて完了しましたか？ まだ残っている場合は次のツールを"
+                        f"呼び出してください。すべて完了した場合は finish を呼んでください。"})
 
         # Spiral-guard bookkeeping: a tool that produced something substantive this
         # round resets to 0; one that ran but produced nothing counts an unproductive
@@ -820,6 +835,10 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
 
         if last_round:
             # Hit the tool budget — force a final answer from what we have.
+            if committed_actions:
+                fallback = "\n\n".join(r for _, r in committed_actions)
+                yield from _route_final_answer(convo, tools, tool_log, role, fallback)
+                return
             if tool_log:
                 last_name, _, last_result = tool_log[-1]
                 if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):

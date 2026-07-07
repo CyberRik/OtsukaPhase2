@@ -26,24 +26,69 @@ export interface ExecutionPhase {
   status: "pending" | "running" | "done";
   tools: PhaseTool[];
   resultHint?: string;
+  contribution?: string;
+  group?: string;          // task DAG group (e.g. "gather" | "documents") — which lanes ran in parallel
+  citationCount?: number;  // real evidence citation count for this phase, for the receipt line / bundle node
+  startedAt?: number;      // Date.now() when the phase started — client-received, honest elapsed-time proxy
+  endedAt?: number;        // Date.now() when the phase settled to "done"
+}
+
+// "アウトライン生成: N枚" | "スライドN: title" | "セクションN: title" | "レンダリング中"
+// → a structured step, so the document-generation hero can render a real
+// slide/section list instead of re-parsing the Japanese progress string itself.
+export type DocumentProgressStep =
+  | { kind: "outline"; total: number }
+  | { kind: "slide" | "section"; index: number; title: string }
+  | { kind: "rendering" }
+  | { kind: "other"; text: string };
+
+export function parseDocumentProgress(summary: string): DocumentProgressStep {
+  let m = summary.match(/^アウトライン生成:\s*(\d+)枚/);
+  if (m) return { kind: "outline", total: Number(m[1]) };
+  m = summary.match(/^スライド(\d+):\s*(.*)$/);
+  if (m) return { kind: "slide", index: Number(m[1]), title: m[2] };
+  m = summary.match(/^セクション(\d+):\s*(.*)$/);
+  if (m) return { kind: "section", index: Number(m[1]), title: m[2] };
+  if (/^レンダリング中/.test(summary)) return { kind: "rendering" };
+  return { kind: "other", text: summary };
 }
 
 // ─── Narrative label maps ─────────────────────────────────────────────────────
 // Maps backend agent ids → user-centric language.
 // The backend labels stay stable; the FE owns the story.
-const PHASE_LABELS_EN: Record<string, string> = {
+export const PHASE_LABELS_EN: Record<string, string> = {
   researcher:  "Understanding the account",
   coach:       "Reviewing deal dynamics",
   strategist:  "Building recommendations",
   analyst:     "Analysing representative",
   team_lead:   "Synthesising team view",
+  // Document-planner capability ids (senpai/planner/capabilities.py _GATHER_ORDER
+  // + terminal tasks) — same ids TOOL_LABEL already keys off in message.tsx.
+  conversation: "Reading conversation context",
+  workspace:    "Checking local documents",
+  crm:          "Checking internal records",
+  knowledge:    "Searching internal knowledge",
+  solutions:    "Searching solutions & products",
+  web:          "Searching the web",
+  documents:    "Generating document",
+  workspace_write:    "Saving note",
+  workspace_organize: "Organizing workspace",
 };
-const PHASE_LABELS_JA: Record<string, string> = {
+export const PHASE_LABELS_JA: Record<string, string> = {
   researcher:  "アカウントを調査中",
   coach:       "商談を評価中",
   strategist:  "戦略を立案中",
   analyst:     "担当者を分析中",
   team_lead:   "チームを俯瞰中",
+  conversation: "会話の文脈を確認中",
+  workspace:    "ローカル文書を確認中",
+  crm:          "社内記録を確認中",
+  knowledge:    "社内ナレッジを検索中",
+  solutions:    "ソリューション・製品情報を検索中",
+  web:          "Web検索中",
+  documents:    "資料を生成中",
+  workspace_write:    "メモを保存中",
+  workspace_organize: "フォルダを整理中",
 };
 
 // ─── Tool summary translations ────────────────────────────────────────────────
@@ -60,7 +105,7 @@ const TOOL_SUMMARY_EN: Record<string, string> = {
 };
 
 // Handles "D001 の案件サマリーと直近活動" → "Retrieved customer history"
-function translateToolSummary(summary: string, lang: "ja" | "en"): string {
+export function translateToolSummary(summary: string, lang: "ja" | "en"): string {
   if (lang === "ja") return summary;
   // Exact match first
   if (TOOL_SUMMARY_EN[summary]) return TOOL_SUMMARY_EN[summary];
@@ -71,7 +116,7 @@ function translateToolSummary(summary: string, lang: "ja" | "en"): string {
   return summary;
 }
 
-function phaseLabel(phase: ExecutionPhase, lang: "ja" | "en"): string {
+export function phaseLabel(phase: ExecutionPhase, lang: "ja" | "en"): string {
   const map = lang === "ja" ? PHASE_LABELS_JA : PHASE_LABELS_EN;
   return map[phase.id] ?? phase.label;
 }

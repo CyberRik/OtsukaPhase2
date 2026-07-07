@@ -1,0 +1,20 @@
+1. お客様のC01について、最近ネットが遅くて業務に支障が出ていると相談を受けました。また、PCもWindows 8時代のもので古いです。予算にはシビアです。どのような提案をすべきですか？ (product)
+
+2. 
+
+I am conducting a massive quarterly pipeline audit and need you to gather an immense amount of data across various sectors, accounts, and historical strategies. Do not answer until you have executed all of the following research steps:
+1. Look up the SPR pipelines for three specific reps: 'R01', 'R05', and 'R12'.
+2. Query the exact current deal status for the following three customers individually: 'アクメ商事', 'グローバルテック', and '未来工業'.
+3. Perform a semantic note search for EACH of those three customers looking for the phrase "budget slashed" or "予算削減". 
+4. Find similar comparable deals for 'アクメ商事' (in the '製造' industry) and for 'グローバルテック' (in the 'IT' industry) to see how we've handled them in the past.
+5. Run four separate faceted searches for past deals:
+   - 'サーバー' deals in '製造' that were 'won'.
+   - 'ソフトウェア' deals in '医療' that were 'lost'.
+   - 'ネットワーク機器' deals in '金融' that were 'open' with an amount over 10,000,000 JPY.
+   - Any deals containing the product code 'MON27'.
+6. Check our playbook for four different tactical scenarios individually:
+   - Scenario 1: '決定先延ばし' (decision postponed)
+   - Scenario 2: '値引き' (discounting)
+   - Scenario 3: '競合優位' (competitor advantage)
+   - Scenario 4: '担当者変更' (change in point of contact)
+Only once you have successfully pulled all of this data from the tools, synthesize it into a massive, heavily detailed quarterly review report. (20 tools)

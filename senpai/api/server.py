@@ -24,9 +24,19 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Literal
+
+# Windows' console defaults to the system codepage (cp1252), not UTF-8 — any
+# print/log of Japanese text (customer names, deal summaries, LLM output)
+# crashes the whole request with `'charmap' codec can't encode characters`.
+# Reconfigure unconditionally so this can't bite regardless of how the process
+# was launched (a dev's plain `uvicorn ...` with no PYTHONIOENCODING set).
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -330,6 +340,24 @@ def download_document(doc_id: str):
     ext = os.path.splitext(rec["filename"])[1].lower()
     return FileResponse(rec["path"], filename=rec["filename"],
                         media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
+
+
+class ExportDocRequest(BaseModel):
+    text: str
+    title: str = ""
+    slug: str = ""
+
+
+@app.post("/api/documents/export")
+def export_document(req: ExportDocRequest):
+    """Turn an assistant message's raw text into a downloadable .docx, verbatim —
+    no LLM re-authoring, no re-gathering evidence. Same contract as a CSV export:
+    the file matches exactly what's already on screen, just in a different format."""
+    from senpai.documents.export import export_text_as_docx
+    if not (req.text or "").strip():
+        raise HTTPException(400, "text is empty")
+    rec = export_text_as_docx(req.text, title=req.title, slug=req.slug)
+    return {"document": rec}
 
 
 # ---------------------------------------------------------------------------
@@ -698,6 +726,7 @@ def _junior_system() -> str:
         "(先輩の原則・承認済み事例・プレイブック)を引き、指定された構造化出典ID（例: Playbook PB12）を"
         "そのまま添えること。顧客・会社・製品・案件に関する質問は、回答前に必ず query_spr / "
         "search_knowledge / search_products のいずれかを呼び出して確認すること。"
+        "また、特定の顧客に対して『何を提案すべきか』『推奨ソリューションは何か』と問われた場合は、必ず advise_solutions ツールを呼び出して推奨製品を取得すること。"
         "ツールを呼ばずに『社内データに無い』と述べてはいけません。"
         "社内の数値は与えられたものだけを使い、人名や提供者名は絶対に推測・生成しないこと。"
         "製品の相談には search_products / create_quote、訪問調整には schedule_meeting、"
@@ -714,6 +743,12 @@ def _junior_system() -> str:
         "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
         "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
+
+        "【複数タスク】\n"
+        "ユーザーが1つのメッセージで複数の作業（例: 提案書と稟議書の両方を作成、または"
+        "調査してから文書を作成）を依頼した場合、最初のタスクが完了しても"
+        "**残りのタスクを忘れずに順番に実行**すること。"
+        "全てのタスクが完了してから最終回答をまとめること。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
@@ -747,6 +782,7 @@ def _manager_system() -> str:
         "数字は与えられたものだけを使い、創作しないこと。コーチングの根拠は "
         "search_knowledge で社内ナレッジ(先輩の原則・承認済み事例・プレイブック)を引き、"
         "指定された構造化出典ID（例: Playbook PB12）をそのまま添えて示すこと。"
+        "特定の顧客に対して『何を提案すべきか』と問われた場合は、必ず advise_solutions ツールを呼び出して推奨製品を取得すること。"
         "絶対に人名や提供者名を推測・生成しないでください。"
         "製品の確認や見積例には search_products / create_quote、"
         "調整や連絡文の準備には schedule_meeting / send_email を使えます"
@@ -761,6 +797,12 @@ def _manager_system() -> str:
         "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
         "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
+
+        "【複数タスク】\n"
+        "ユーザーが1つのメッセージで複数の作業（例: 提案書と稟議書の両方を作成、または"
+        "調査してから文書を作成）を依頼した場合、最初のタスクが完了しても"
+        "**残りのタスクを忘れずに順番に実行**すること。"
+        "全てのタスクが完了してから最終回答をまとめること。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"

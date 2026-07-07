@@ -88,10 +88,41 @@ def _corpus_playbook() -> list[dict]:
     return docs
 
 
+# Repo-root data/ (outside the package) — company-facts corpora staged there,
+# distinct from PKG_DIR/data (seed/index/generated build artifacts).
+_REPO_DATA_DIR = config.PKG_DIR.parent / "data"
+
+
+def _corpus_otsuka_kb() -> list[dict]:
+    """Otsuka Shokai public-website facts (company/product/IR pages), pre-filtered
+    for quality by an LLM pass. See data/otsuka_4_pretrain_cleaned.jsonl — each row
+    already carries a quality_evaluation.score and its source url."""
+    path = _REPO_DATA_DIR / "otsuka_4_pretrain_cleaned.jsonl"
+    if not path.exists():
+        return []
+    docs = []
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            text = (row.get("text") or "").strip()
+            if not text:
+                continue
+            docs.append({
+                "text": text,
+                "url": row.get("url", ""),
+                "quality_score": (row.get("quality_evaluation") or {}).get("score"),
+            })
+    return docs
+
+
 # Registry: corpus name -> builder. semantic.py loads whatever exists here.
 CORPORA = {
     "activities": _corpus_activities,
     "playbook": _corpus_playbook,
+    "otsuka_kb": _corpus_otsuka_kb,
 }
 
 
