@@ -19,8 +19,7 @@ import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 import { CrawlReplay } from "@/components/assistant/crawl-replay";
-import { ExecutionRail, ReasoningTicker } from "@/components/agent/execution-rail";
-import type { ExecutionPhase } from "@/components/agent/agent-lane";
+
 
 export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
 export type SourceState = {
@@ -41,7 +40,6 @@ export type Msg = {
   routing?: { think: boolean; reason: string; confidence: number; mode: "reasoning" | "fast" };
   candidates?: ResolveCandidate[]; // ambiguous customer — surfaced for the user to pick
   query?: string;                  // the original message, so a pick can re-ask scoped
-  executionLanes?: ExecutionPhase[]; // real task-DAG lanes (senpai/orchestration), when this turn ran the document planner
 };
 
 // Human labels + icons for each tool, so the grounding ledger reads like
@@ -269,12 +267,7 @@ export function MessageBubble({ m, t, lang, onPick }: {
 
   const running = m.status === "running";
   const error = m.status === "error";
-  const hasRail = (m.executionLanes?.length ?? 0) > 0;
-  const [railCollapsed, setRailCollapsed] = useState(false);
-  useEffect(() => {
-    if (hasRail && !running) setRailCollapsed(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running]);
+  const badge = !error && (m.content || m.tools.length || m.sources?.length) ? groundingBadge(m, lang) : null;
 
   return (
     <div className="flex w-full flex-col items-start gap-1.5">
@@ -284,17 +277,10 @@ export function MessageBubble({ m, t, lang, onPick }: {
           {t("assistant.error")}
         </div>
       ) : running && !m.content ? (
-        hasRail ? (
-          <div className="inline-flex items-center gap-2 py-1">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <ReasoningTicker phases={m.executionLanes!} composing={!!m.content} lang={lang} />
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-2 py-1 text-[13px] font-medium text-foreground">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            {lang === "ja" ? "考え中..." : "Thinking..."}
-          </div>
-        )
+        <div className="inline-flex items-center gap-2 py-1 text-[13px] font-medium text-foreground">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> 
+          {lang === "ja" ? "考え中..." : "Thinking..."}
+        </div>
       ) : m.content ? (
         <div className="w-full pt-1.5">
           <AnswerMd text={m.content} />
@@ -325,22 +311,8 @@ export function MessageBubble({ m, t, lang, onPick }: {
         );
       })()}
 
-      {/* 2. Execution rail — real task-DAG lanes (planner-driven turns only) */}
-      {hasRail && (
-        <div className="w-full max-w-[88%]">
-          <ExecutionRail
-            phases={m.executionLanes!}
-            lang={lang}
-            collapsed={railCollapsed}
-            onToggle={() => setRailCollapsed((v) => !v)}
-            document={m.tools.map((tl) => tl.document).find(Boolean)}
-          />
-        </div>
-      )}
-
-      {/* 2b. Execution Timeline (Level 2) — ReAct-loop turns only; planner-driven
-           turns use the rail above instead (no redundant second surface). */}
-      {m.tools.length > 0 && !hasRail && (
+      {/* 2. Execution Timeline (Level 2) */}
+      {m.tools.length > 0 && (
         <details open={running} className="w-full max-w-[88%] text-[12px] group">
           <summary className="flex cursor-pointer items-center gap-1.5 py-1.5 font-medium text-muted-foreground select-none hover:text-foreground transition-colors list-none [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-center w-4 h-4 shrink-0 transition-transform group-open:rotate-90">
