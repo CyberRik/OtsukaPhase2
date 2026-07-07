@@ -214,26 +214,37 @@ def _llm_classify_route(message: str) -> bool | None:
     if not isinstance(obj, dict):
         return None
     route = obj.get("route")
-    if route not in ("planner", "chat"):
+    if not isinstance(route, str):
         return None
-    return route == "planner"
+    if route.lower() not in ("planner", "chat"):
+        return None
+    return route.lower() == "planner"
 
 
 def _wants_multiple_deliverable_kinds(message: str, history: list | None = None) -> bool:
     """True when the message asks for more than one DISTINCT kind of planner
-    deliverable (organize + note + document, in any combination). The planner's
-    ExecutionPlan has exactly one terminal task (see plan.py's module docstring) —
-    it physically cannot save a note AND organize files AND generate a proposal
-    in the same turn. `_pick_doc_kind`'s priority order silently picks one and the
-    other asks vanish with no acknowledgment at all. The ReAct loop has no such
-    ceiling (it already runs an arbitrary number of distinct tool calls per turn,
-    with an explicit system-prompt rule to not forget the rest), so route there
-    instead whenever more than one kind is being asked for."""
-    return sum((
+    deliverable (organize + note + document, in any combination), OR multiple
+    distinct documents (e.g., both a PPTX and a DOCX). The planner's ExecutionPlan
+    has exactly one terminal task (see plan.py's module docstring) — it physically
+    cannot save a note AND organize files AND generate a proposal in the same turn.
+    `_pick_doc_kind`'s priority order silently picks one and the other asks vanish.
+    The ReAct loop has no such ceiling, so route there instead whenever multiple
+    deliverables are being asked for."""
+    kinds = sum((
         is_organize_goal(message, history),
         is_note_goal(message),
         is_document_goal(message),
-    )) > 1
+    ))
+    if kinds > 1:
+        return True
+        
+    # If it's a document goal, check if there are multiple document creation verbs
+    # which usually implies multiple distinct documents (e.g. "make a pptx and draft a docx")
+    if is_document_goal(message):
+        if len(_DOC_GOAL_RE.findall(message or "")) > 1:
+            return True
+            
+    return False
 
 
 def resolve_route(message: str, history: list | None = None) -> bool:
