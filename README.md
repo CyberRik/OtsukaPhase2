@@ -42,7 +42,7 @@ cd web; npm install; cd ..
 
 $env:SENPAI_USE_LLM = '1'
 $env:SENPAI_TODAY   = '2026-07-03'        # pin scoring's "today" to the seed anchor
-.\.venv\Scripts\python.exe -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
+.\.venv\Scripts\python.exe -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1 --reload
 
 # Terminal 2 — Frontend (Next.js) → <http://localhost:3000>   (defaults to the :8000 backend)
 
@@ -60,7 +60,7 @@ cd web; npm run dev
 # Terminal 1 — Backend bridge (FastAPI) → http://localhost:8000
 export SENPAI_USE_LLM=1
 export SENPAI_TODAY=2026-06-16            # pin scoring's "today" to the seed anchor
-.venv/bin/python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
+.venv/bin/python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1 --reload
 
 # Terminal 2 — Frontend (Next.js) → http://localhost:3000   (defaults to the :8000 backend)
 cd web && npm run dev
@@ -130,20 +130,19 @@ Check it's alive on the box: `ssh team-a@100.101.186.29 'pgrep -af llama-server'
 # PowerShell (Windows)
 $env:SENPAI_USE_LLM = '1'        # ← switches live commentary ON (default '0' = deterministic only)
 $env:SENPAI_TODAY   = '2026-07-07'   # pin scoring's "today" to the seed anchor
-python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
+python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1 --reload
 ```
 
 ```bash
 # bash / macOS / Linux
 export SENPAI_USE_LLM=1
 export SENPAI_TODAY=2026-06-16
-.venv/bin/python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
+.venv/bin/python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1 --reload
 ```
 
 - **`SENPAI_USE_LLM=1` is the on/off switch.** Without it, `/api/coach/narrate` returns
   `unavailable: llm_disabled` and the UI shows *"Couldn't reach the explanation model…"*.
-- The bridge has **no `--reload`**: after editing `.env` (or any Python), **restart it** to pick
-  up the change.
+- The bridge **uses `--reload`**: after editing Python files, the server will restart automatically. (For `.env` changes, you may still need to restart it manually.)
 - Verify: `curl http://localhost:8000/api/health` → `{"status":"ok", …}`.
 
 ### 3. Frontend (Next.js) — `:3000`
