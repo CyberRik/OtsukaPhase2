@@ -324,6 +324,8 @@ def auth_login(req: LoginRequest):
 _DOC_MEDIA = {
     ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pdf": "application/pdf",
+    ".html": "text/html; charset=utf-8",
 }
 
 
@@ -1827,6 +1829,7 @@ def _plan_stream(goal: str, convo: list[dict], role: str, deal_id: str | None = 
                 yield _sse({"type": "tool", "name": "documents",
                             "args": f"kind={doc_kind}", "result": data.get("text", ""),
                             "document": data["document"],
+                            "documents": data.get("documents") or [data["document"]],
                             "outline": data.get("outline") or [],
                             "internal": doc_kind == "proposal"})
 

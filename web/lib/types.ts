@@ -10,7 +10,7 @@ export type ItemStatus = "draft" | "approved" | "needs_edit" | "rejected";
 // GET /api/documents/{doc_id}.
 export interface GeneratedDocument {
   doc_id: string;
-  kind: string;       // "proposal" | "ringisho" | "pptx" | "docx"
+  kind: string;       // "proposal" | "ringisho" | "pptx" | "docx" | "pdf" | "html"
   filename: string;
   download_url: string;
 }

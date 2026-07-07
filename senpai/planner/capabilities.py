@@ -56,6 +56,19 @@ def _text_evidence(name: str, text: str, citations=()) -> Evidence:
                        citations=citations, status="ok")
 
 
+def _register_deck(registry, files: dict, *, primary_kind: str,
+                   deal_id: str | None = None) -> list[dict]:
+    """Register a deck's export set (from export.render_deck) for download — the editable
+    office file first (primary), then PDF, then source HTML — and return the records, with
+    the primary at index 0. Mirrors impl._register_deck_files for the planner path."""
+    recs = [registry.register(primary_kind, files["pptx"], deal_id=deal_id)]
+    if files.get("pdf"):
+        recs.append(registry.register("pdf", files["pdf"], deal_id=deal_id))
+    if files.get("html"):
+        recs.append(registry.register("html", files["html"], deal_id=deal_id))
+    return recs
+
+
 class ConversationCapability:
     """Grounding from the live session — a company/quote/deal already discussed.
     Reuses the doc tools' own `_conversation_grounding` over the published convo."""
@@ -231,19 +244,20 @@ class DocumentsCapability:
         if res is None:
             return Evidence.error(f"deal {deal_id} not found",
                                   provenance={"capability": "documents"})
-        path, doc_ctx, spec = res
-        rec = registry.register("proposal", path, deal_id=deal_id)
+        files, doc_ctx, spec = res
+        recs = _register_deck(registry, files, primary_kind="proposal", deal_id=deal_id)
+        rec = recs[0]
         ctx.emit(f"提案書を生成: {rec['filename']}")
         outline = [{"title": s.get("title", "")} for s in spec.get("slides", [])]
         n = len(doc_ctx.deals)
         msg = (f"提案書(PPTX)を生成しました: {rec['filename']}（{n}件の案件を統合）"
               if n > 1 else f"提案書(PPTX)を生成しました: {rec['filename']}")
-        return self._artifact_evidence(rec, ctx, msg, outline=outline)
+        return self._artifact_evidence(rec, ctx, msg, outline=outline, recs=recs)
 
     # -- pptx/docx: free-prompt, authored over the gathered grounding -----------
     def _authored(self, kind: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
         from senpai.documents import author, registry
-        from senpai.documents.render import output_path, render_docx, render_pptx
+        from senpai.documents.render import output_path, render_docx
         goal = str(inputs.get("goal") or inputs.get("prompt") or "")
         lang = str(inputs.get("lang", "ja"))
         # Whether a CRM customer resolved — independent of deal status, this alone
@@ -280,20 +294,31 @@ class DocumentsCapability:
             for i, s in enumerate(content_slides, 1):
                 ctx.emit(f"スライド{i}: {s.get('title', '')}")
             ctx.emit("レンダリング中")
-            path = output_path("pptx", spec.get("_title") or goal[:30], "pptx")
-            render_pptx(spec, path)
-            rec = registry.register("pptx", path)
+            # HTML-first pipeline (editable PPTX + PDF + HTML); native fallback if no browser.
+            from senpai.documents import export
+            files = export.render_deck(spec, kind="pptx",
+                                       slug=spec.get("_title") or goal[:30], lang=lang)
+            recs = _register_deck(registry, files, primary_kind="pptx")
+            rec = recs[0]
             n = len(content_slides)
             msg = f"プレゼン(PPTX)を生成しました: {rec['filename']}（{n}スライド）。"
             outline = [{"title": s.get("title", "")} for s in content_slides]
+            ctx.emit(f"資料を生成: {rec['filename']}")
+            return self._artifact_evidence(rec, ctx, msg, outline=outline, recs=recs)
         ctx.emit(f"資料を生成: {rec['filename']}")
         return self._artifact_evidence(rec, ctx, msg, outline=outline)
 
     def _artifact_evidence(self, rec: dict, ctx: ExecContext, msg: str,
-                           outline: list | None = None) -> Evidence:
-        document = {"doc_id": rec["doc_id"], "kind": rec["kind"],
-                    "filename": rec["filename"], "download_url": rec["download_url"]}
-        data = {"text": msg, "document": document, "grounded_on": sorted(
+                           outline: list | None = None,
+                           recs: list[dict] | None = None) -> Evidence:
+        def _doc(r: dict) -> dict:
+            return {"doc_id": r["doc_id"], "kind": r["kind"],
+                    "filename": r["filename"], "download_url": r["download_url"]}
+        # `document` (singular) stays the primary editable file; `documents` carries the
+        # whole export set (PPTX + PDF + HTML) so all surface as download chips.
+        data = {"text": msg, "document": _doc(rec),
+                "documents": [_doc(r) for r in (recs or [rec])],
+                "grounded_on": sorted(
                     ev.capability for ev in ctx.deps.values()
                     if ev.status in ("ok", "partial") and ev.data.get("text"))}
         if outline:

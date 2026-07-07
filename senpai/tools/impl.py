@@ -779,12 +779,20 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
     res = proposal.generate(deal_id, lang=lang)
     if res is None:
         return f"案件 {deal_id} は見つかりません。"
-    path, _ctx, spec = res
-    rec = registry.register("proposal", path, deal_id=deal_id)
+    files, _ctx, spec = res
+    # Register the editable proposal PPTX (deal-scoped) plus its PDF and source HTML.
+    registry.register("proposal", files["pptx"], deal_id=deal_id)
+    formats = ["PPTX"]
+    if files.get("pdf"):
+        registry.register("pdf", files["pdf"], deal_id=deal_id)
+        formats.append("PDF")
+    if files.get("html"):
+        registry.register("html", files["html"], deal_id=deal_id)
+        formats.append("HTML")
     slides = spec.get("slides", [])
     outline = _deck_outline(slides)
-    return (f"提案書(PPTX・{len(slides)}スライド)を生成しました: {rec['filename']}（{ctx.customer}様）。\n"
-            f"構成:\n{outline}")
+    return (f"提案書({len(slides)}スライド、形式: {' / '.join(formats)})を生成しました"
+            f"（{ctx.customer}様）。PowerPointで直接編集できます。\n構成:\n{outline}")
 
 
 def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
@@ -1058,8 +1066,7 @@ def generate_pptx(prompt: str = "", title: str = "", use_web=None,
     Builds directly (no confirmation step) — the call commits the file in one round.
     Grounding is automatic: external/factual topics are web-grounded by default; a
     named customer grounds it in internal records. Needs the model."""
-    from senpai.documents import author, registry
-    from senpai.documents.render import output_path, render_pptx
+    from senpai.documents import author, export, registry
     if not (prompt or "").strip():
         return "[error] プレゼンの主題(prompt)を指定してください。"
     if not author._use_llm():
@@ -1070,12 +1077,33 @@ def generate_pptx(prompt: str = "", title: str = "", use_web=None,
     slides = spec.get("slides", [])
     if title and slides:
         slides[0]["title"] = title
-    path = output_path("pptx", title or spec.get("_title") or prompt[:30], "pptx")
-    render_pptx(spec, path)
-    rec = registry.register("pptx", path)
+    slug = title or spec.get("_title") or prompt[:30]
+
+    # HTML-first pipeline: build the deck as one self-contained HTML file (the visual
+    # source of truth), then render a pixel-perfect PDF and an editable-text PPTX from it
+    # with headless Chromium (native python-pptx fallback if the browser is unavailable).
+    files = export.render_deck(spec, kind="pptx", slug=slug, lang=lang)
+    formats = _register_deck_files(registry, files, primary_kind="pptx")
+
     outline = _deck_outline(slides)
-    return (f"プレゼン(PPTX)を生成しました: {rec['filename']}（{len(slides)}スライド）。\n"
-            f"構成:\n{outline}")
+    return (f"プレゼンを生成しました（{len(slides)}スライド、形式: {' / '.join(formats)}）。\n"
+            f"PowerPointで直接編集できます。\n構成:\n{outline}")
+
+
+def _register_deck_files(registry, files: dict, *, primary_kind: str) -> list[str]:
+    """Register a deck's export set for download in a stable order — the editable office
+    file first (the primary deliverable), then PDF, then the source HTML — so the primary
+    is the one legacy single-document consumers pick up. Returns the format labels shown
+    to the user (e.g. ['PPTX', 'PDF', 'HTML'])."""
+    registry.register(primary_kind, files["pptx"])
+    formats = [primary_kind.upper() if primary_kind in ("pptx", "docx") else "PPTX"]
+    if files.get("pdf"):
+        registry.register("pdf", files["pdf"])
+        formats.append("PDF")
+    if files.get("html"):
+        registry.register("html", files["html"])
+        formats.append("HTML")
+    return formats
 
 
 def generate_docx(prompt: str = "", title: str = "", use_web=None,
