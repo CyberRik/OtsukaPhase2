@@ -24,9 +24,19 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Literal
+
+# Windows' console defaults to the system codepage (cp1252), not UTF-8 — any
+# print/log of Japanese text (customer names, deal summaries, LLM output)
+# crashes the whole request with `'charmap' codec can't encode characters`.
+# Reconfigure unconditionally so this can't bite regardless of how the process
+# was launched (a dev's plain `uvicorn ...` with no PYTHONIOENCODING set).
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
