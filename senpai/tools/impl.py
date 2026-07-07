@@ -559,9 +559,20 @@ _CALENDAR_CANNED = [
 
 
 def get_calendar(day: str = "today") -> str:
-    """Today's (or a given day's) schedule. Simulated demo data."""
+    """Today's (or a given day's) schedule. Reads the real Google Calendar when
+    auth/creds are available; otherwise degrades to simulated demo data."""
     d = config.today().isoformat() if str(day).lower() in ("today", "") else day
-    return f"{d} の予定:\n- " + "\n- ".join(_CALENDAR_CANNED)
+    try:
+        from senpai.tools import gcal  # lazy: a missing google lib must not break import
+        ok, events = gcal.list_events(d)
+        if ok:
+            if not events:
+                return f"{d} の予定はありません。"
+            return f"{d} の予定:\n- " + "\n- ".join(
+                f"{e['start']} {e['summary']}" for e in events)
+    except Exception:  # noqa: BLE001 — fall back to simulated data
+        pass
+    return f"{d} の予定（シミュレーション）:\n- " + "\n- ".join(_CALENDAR_CANNED)
 
 
 def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:

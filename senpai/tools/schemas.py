@@ -512,7 +512,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "get_calendar",
-            "description": "Get the schedule for a given day (YYYY-MM-DD or 'today'). Simulated demo data.",
+            "description": "Get the schedule for a given day (YYYY-MM-DD or 'today') from the real Google Calendar (falls back to simulated data if calendar auth is unavailable).",
             "parameters": {
                 "type": "object",
                 "properties": {

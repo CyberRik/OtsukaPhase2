@@ -38,8 +38,11 @@ def _get_credentials():
     if creds and creds.valid:
         return creds
     if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
+        try:
+            creds.refresh(Request())
+        except Exception:  # noqa: BLE001 — token revoked/expired: redo consent
+            creds = None
+    if not (creds and creds.valid):
         if not _CREDENTIALS.exists():
             raise FileNotFoundError(
                 f"missing {_CREDENTIALS} (Google OAuth client). See demo/demo_script.md.")
@@ -77,3 +80,41 @@ def create_event(title: str, date: str, start_time: str, duration_hours: float =
         return True, link
     except Exception as e:  # noqa: BLE001 — caller falls back to a simulated booking
         return False, f"calendar unavailable: {e}"
+
+
+def list_events(date: str, tz: str = "Asia/Tokyo") -> tuple[bool, list[dict]]:
+    """List the day's events from the primary Google Calendar.
+
+    Returns (ok, events) where each event is {"start": "HH:MM" | "終日",
+    "summary": str}. On any failure returns (False, []) and the caller falls
+    back to simulated data, mirroring create_event's contract.
+    """
+    try:
+        from googleapiclient.discovery import build
+
+        day = datetime.strptime(date, "%Y-%m-%d")
+        # Day bounds expressed in the target timezone (JST has no DST).
+        offset = "+09:00" if tz == "Asia/Tokyo" else "Z"
+        time_min = day.strftime(f"%Y-%m-%dT00:00:00{offset}")
+        time_max = (day + timedelta(days=1)).strftime(f"%Y-%m-%dT00:00:00{offset}")
+
+        service = build("calendar", "v3", credentials=_get_credentials(),
+                        cache_discovery=False)
+        resp = service.events().list(
+            calendarId="primary", timeMin=time_min, timeMax=time_max,
+            singleEvents=True, orderBy="startTime", timeZone=tz,
+            maxResults=25,
+        ).execute()
+
+        events = []
+        for item in resp.get("items", []):
+            start = item.get("start", {})
+            if "dateTime" in start:
+                # e.g. 2026-07-07T10:00:00+09:00 -> 10:00
+                when = start["dateTime"][11:16]
+            else:
+                when = "終日"  # all-day event
+            events.append({"start": when, "summary": item.get("summary", "(無題)")})
+        return True, events
+    except Exception:  # noqa: BLE001 — caller falls back to simulated data
+        return False, []
