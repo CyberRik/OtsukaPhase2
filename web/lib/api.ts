@@ -68,6 +68,19 @@ export function documentUrl(downloadUrl: string): string {
   return downloadUrl.startsWith("http") ? downloadUrl : `${BASE}${downloadUrl}`;
 }
 
+/** Turn on-screen assistant text into a downloadable .docx (verbatim, no re-authoring). */
+export async function exportMessageAsDocx(text: string, slug: string): Promise<GeneratedDocument> {
+  const res = await fetch(`${BASE}/api/documents/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, title: slug, slug }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  const data = (await res.json()) as { document: GeneratedDocument };
+  return data.document;
+}
+
 async function get<T>(path: string, fallback: T): Promise<Fetched<T>> {
   try {
     const res = await fetch(`${BASE}${path}`, { cache: "no-store" });
