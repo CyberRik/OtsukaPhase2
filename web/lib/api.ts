@@ -27,6 +27,8 @@ import type {
   RepProfile,
   RepProfileRow,
   RepProgress,
+  RingiDraft,
+  RingiEvent,
   AddPrincipleRequest,
   CoachingThread,
   ConversationHeader,
@@ -789,4 +791,37 @@ async function readSSE(
   } catch {
     onFail();
   }
+}
+
+// --- Ringi Boardroom Simulation ------------------------------------------- //
+// Streams the deterministic consensus-theater debate. `overlay` carries sandbox
+// drafts for the re-run loop (undefined for the first, at-risk run).
+export async function ringiStream(
+  dealId: string,
+  overlay: RingiDraft[] | undefined,
+  onEvent: (e: RingiEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/api/training/ringi/stream`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deal_id: dealId, overlay: overlay ?? null }),
+      cache: "no-store",
+      signal,
+    });
+  } catch {
+    onEvent({ type: "error", reason: "network" });
+    return;
+  }
+  if (!res.ok || !res.body) {
+    onEvent({ type: "error", reason: `http_${res.status}` });
+    return;
+  }
+  await readSSE(
+    res,
+    (obj) => onEvent(obj as RingiEvent),
+    () => onEvent({ type: "error", reason: "stream" }),
+  );
 }

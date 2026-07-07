@@ -705,6 +705,121 @@ def coach_narrate(req: CoachRequest):
 
 
 # ---------------------------------------------------------------------------
+# Ringi Boardroom Simulation — the Consensus Training Theater (稟議攻略シアター)
+# ---------------------------------------------------------------------------
+# Streams a deterministic multi-persona boardroom debate. simulate_ringi() decides
+# EVERYTHING that matters — who speaks (課長/部長/社長), which objections fire, and
+# every approval-meter delta — from the same engines the dashboard uses. The served
+# model only rephrases each beat's Japanese for fluidity; if it's unreachable we
+# stream the beat's deterministic text verbatim, so the theater never stalls.
+class RingiRequest(BaseModel):
+    deal_id: str
+    overlay: list[dict] | None = None  # session-scoped sandbox drafts (re-run loop)
+
+
+# How to voice each persona when the model polishes a beat's phrasing.
+_RINGI_PERSONA_BRIEF = {
+    "shacho": "最終決裁権を持つ社長(厳格で結論を急ぐ)",
+    "bucho": "予算と決裁を握る部長(投資対効果と決裁者の所在に厳しい)",
+    "kacho": "現場を仕切る課長(仕様・運用・情報の精度にこだわる)",
+    "senpai": "若手を導く営業の先輩(冷静で的確、比喩がうまい)",
+}
+
+
+def _ringi_beat_messages(deal_name: str, customer: str, persona: str, text: str) -> list[dict]:
+    """One-line brief: rephrase this exact objection in the persona's voice. The
+    model only polishes — the meaning, facts, and numbers are already fixed."""
+    role = _RINGI_PERSONA_BRIEF.get(persona, "会議の参加者")
+    prompt = (
+        f"あなたは日本企業の稟議(意思決定会議)に出席する{role}です。"
+        f"取引先『{customer}』の案件『{deal_name}』について、次の主旨を"
+        "あなたの立場と口調で1〜2文の自然な日本語の発言に言い換えてください。"
+        "主旨・事実・数字は変えないこと。新しい数字の創作は禁止。"
+        "前置きや解説は書かず、発言そのものだけを返してください。\n"
+        f"主旨: {text}"
+    )
+    return [{"role": "user", "content": prompt}]
+
+
+@app.post("/api/training/ringi/stream")
+def ringi_stream(req: RingiRequest):
+    """Stream the deterministic Ringi boardroom debate as SSE frames.
+
+    Frames: meta → (speaker_start → delta* → speaker_end)* → intervention? → done.
+    """
+    from senpai.ingestion.persist import build_activity_record
+    from senpai.simulation.ringi import simulate_ringi
+
+    deal = store.get_deal(req.deal_id)
+    if not deal:
+        raise HTTPException(status_code=404, detail=f"Unknown deal_id: {req.deal_id}")
+
+    # Sandbox drafts → seed-shaped activities IN MEMORY (build_activity_record stamps
+    # activity_date=today and never persists here; no store mutation, no disk write).
+    overlay_acts: list[dict] = []
+    for draft in (req.overlay or []):
+        if isinstance(draft, dict):
+            overlay_acts.append(build_activity_record(
+                draft, deal["customer_id"], req.deal_id, store.deal_rep_id(deal)))
+
+    script = simulate_ringi(req.deal_id, overlay_activities=overlay_acts, today=_today())
+
+    def gen():
+        from senpai.llm import client
+
+        yield _sse({"type": "meta", "deal_id": script.deal_id,
+                    "deal_name": script.deal_name, "customer": script.customer,
+                    "base_approval": script.base_approval,
+                    "final_approval": script.final_approval,
+                    "band": script.band, "issues": script.issues})
+
+        approval = 100  # rep's optimistic starting view; objections tick it to base_approval
+        for i, beat in enumerate(script.beats):
+            yield _sse({"type": "speaker_start", "index": i,
+                        "persona": beat.persona, "issue": beat.issue})
+            streamed = ""
+            if USE_LLM:
+                try:
+                    full, emitted = "", 0
+                    for piece in client.stream_complete(
+                        _ringi_beat_messages(script.deal_name, script.customer,
+                                             beat.persona, beat.text),
+                        temperature=config.SYNTH_TEMPERATURE, max_tokens=160,
+                        no_think=True, allow_fallback=False, label="ringi",
+                    ):
+                        full += piece
+                        ans = _strip_reasoning(full)
+                        new = ans[emitted:] if ans else ""
+                        if new:
+                            emitted += len(new)
+                            streamed += new
+                            yield _sse({"type": "delta", "index": i, "text": new})
+                except Exception:  # noqa: BLE001 — model down/timeout; use the template
+                    streamed = ""
+            if not streamed.strip():
+                # Deterministic fallback — stream the beat's own Japanese verbatim.
+                streamed = beat.text
+                yield _sse({"type": "delta", "index": i, "text": beat.text})
+
+            approval += beat.approval_delta
+            yield _sse({"type": "speaker_end", "index": i, "persona": beat.persona,
+                        "approval_delta": beat.approval_delta, "approval_now": approval,
+                        "whisper": beat.whisper, "issue": beat.issue,
+                        "text": streamed.strip()})
+
+        if script.intervention:
+            yield _sse({"type": "intervention", **script.intervention})
+        yield _sse({"type": "done", "final_approval": script.final_approval,
+                    "band": script.band, "model": config.MODEL})
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# ---------------------------------------------------------------------------
 # chat — the tool-calling assistant (junior / manager), streamed over SSE
 # ---------------------------------------------------------------------------
 # This exposes the SAME tool loop the Streamlit/Gradio chats use (stream_turn +

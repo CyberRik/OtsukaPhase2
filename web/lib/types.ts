@@ -5,6 +5,32 @@ export type Band = "red" | "yellow" | "green";
 export type Confidence = "high" | "medium" | "low" | "unverified";
 export type ItemStatus = "draft" | "approved" | "needs_edit" | "rejected";
 
+// --- Ringi Boardroom Simulation (稟議攻略シアター) ---------------------------
+// SSE contract for POST /api/training/ringi/stream. The backend decides every
+// persona, objection and approval delta deterministically; the model only
+// rephrases each beat's Japanese. Keep in sync with senpai/simulation/ringi.py.
+export type RingiPersona = "kacho" | "bucho" | "shacho" | "senpai";
+
+// A session-scoped sandbox draft — turned into a seed-shaped activity server-side
+// and layered on the deal's real history for the re-run (no store mutation).
+export interface RingiDraft {
+  business_card_info?: string;
+  daily_report?: string;
+  customer_challenge?: string;
+  activity_type?: string;
+}
+
+export type RingiEvent =
+  | { type: "meta"; deal_id: string; deal_name: string; customer: string;
+      base_approval: number; final_approval: number; band: Band; issues: string[] }
+  | { type: "speaker_start"; index: number; persona: RingiPersona; issue: string | null }
+  | { type: "delta"; index: number; text: string }
+  | { type: "speaker_end"; index: number; persona: RingiPersona; approval_delta: number;
+      approval_now: number; whisper: string; issue: string | null; text: string }
+  | { type: "intervention"; entry_id: string | null; text: string; tags: string[] }
+  | { type: "done"; final_approval: number; band: Band; model?: string }
+  | { type: "error"; reason?: string };
+
 // A file the chatbot generated (PPTX/DOCX), surfaced on a chat `tool` event so the
 // UI can offer a download. `download_url` is a bridge-relative path served by
 // GET /api/documents/{doc_id}.

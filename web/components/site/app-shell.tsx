@@ -7,6 +7,7 @@ import {
   Building2,
   FileText,
   Home,
+  Landmark,
   Library,
   Lightbulb,
   LogOut,
@@ -35,6 +36,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/junior/knowledge", key: "nav.knowledge", icon: Library, group: "more" },
     { href: "/junior/reports", key: "nav.reports", icon: FileText, group: "more" },
     { href: "/junior/ingestion", key: "nav.ingestion", icon: Upload, group: "more" },
+    { href: "/junior/training/ringi", key: "nav.ringi", icon: Landmark, group: "more" },
   ],
   // Manager: Home is the overview-first team dashboard (Overview / All deals /
   // Flags tabs — the former Dashboard + Pipeline + Reliability routes). The
