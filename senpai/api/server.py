@@ -340,6 +340,24 @@ def download_document(doc_id: str):
                         media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
 
 
+class ExportDocRequest(BaseModel):
+    text: str
+    title: str = ""
+    slug: str = ""
+
+
+@app.post("/api/documents/export")
+def export_document(req: ExportDocRequest):
+    """Turn an assistant message's raw text into a downloadable .docx, verbatim —
+    no LLM re-authoring, no re-gathering evidence. Same contract as a CSV export:
+    the file matches exactly what's already on screen, just in a different format."""
+    from senpai.documents.export import export_text_as_docx
+    if not (req.text or "").strip():
+        raise HTTPException(400, "text is empty")
+    rec = export_text_as_docx(req.text, title=req.title, slug=req.slug)
+    return {"document": rec}
+
+
 # ---------------------------------------------------------------------------
 # dashboard
 # ---------------------------------------------------------------------------
@@ -724,6 +742,12 @@ def _junior_system() -> str:
         "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
 
+        "【複数タスク】\n"
+        "ユーザーが1つのメッセージで複数の作業（例: 提案書と稟議書の両方を作成、または"
+        "調査してから文書を作成）を依頼した場合、最初のタスクが完了しても"
+        "**残りのタスクを忘れずに順番に実行**すること。"
+        "全てのタスクが完了してから最終回答をまとめること。\n"
+
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
         "市場価格・在庫・為替レート・ニュース・最新の製品仕様や型番など、時間とともに変わる"
@@ -771,6 +795,12 @@ def _manager_system() -> str:
         "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
         "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
+
+        "【複数タスク】\n"
+        "ユーザーが1つのメッセージで複数の作業（例: 提案書と稟議書の両方を作成、または"
+        "調査してから文書を作成）を依頼した場合、最初のタスクが完了しても"
+        "**残りのタスクを忘れずに順番に実行**すること。"
+        "全てのタスクが完了してから最終回答をまとめること。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"

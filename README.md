@@ -129,7 +129,7 @@ Check it's alive on the box: `ssh team-a@100.101.186.29 'pgrep -af llama-server'
 ```bash
 # PowerShell (Windows)
 $env:SENPAI_USE_LLM = '1'        # ← switches live commentary ON (default '0' = deterministic only)
-$env:SENPAI_TODAY   = '2026-07-06'   # pin scoring's "today" to the seed anchor
+$env:SENPAI_TODAY   = '2026-07-07'   # pin scoring's "today" to the seed anchor
 python -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1
 ```
 

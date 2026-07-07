@@ -2,7 +2,7 @@ import urllib.request
 import json
 import time
 
-url = 'http://100.101.186.29:8888/v1/chat/completions'
+url = 'http://127.0.0.1:8888/v1/chat/completions'
 long_text = 'apple banana ' * 60000
 
 data = json.dumps({

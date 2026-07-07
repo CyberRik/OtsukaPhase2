@@ -14,7 +14,7 @@ import {
   FileText, Globe, Layers, Loader2, Mail, Package, Presentation, Receipt, Route, Search,
   ShieldCheck, Sparkles, UserSearch, Wrench, Zap, ChevronRight, ChevronDown, FolderTree, type LucideIcon,
 } from "lucide-react";
-import { documentUrl, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
+import { documentUrl, exportMessageAsDocx, type ResolveCandidate, type RetrievalTrace, type CrawlPage, type CrawlFrame } from "@/lib/api";
 import type { GeneratedDocument } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
@@ -319,6 +319,7 @@ export function MessageBubble({ m, t, lang, onPick }: {
     if (hasRail && !running) setRailCollapsed(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
+  const [exportState, setExportState] = useState<{ status: "idle" | "loading" | "error"; doc?: GeneratedDocument }>({ status: "idle" });
 
   return (
     <div className="flex w-full flex-col items-start gap-1.5">
@@ -345,6 +346,53 @@ export function MessageBubble({ m, t, lang, onPick }: {
           {running && <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-foreground/40 align-middle" />}
         </div>
       ) : null}
+
+      {/* 1a. Export as document — a literal, unmodified dump of this answer's
+           text into a .docx (like a CSV export), not a re-authored artifact.
+           Hidden once a real generated document already exists for this turn. */}
+      {!running && m.content && !m.tools.some((tl) => tl.document) && (
+        <div className="pt-1">
+          {exportState.doc ? (
+            <a
+              href={documentUrl(exportState.doc.download_url)}
+              download={exportState.doc.filename}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/[0.06] px-2.5 py-1.5 text-[12px] font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {lang === "ja" ? "ダウンロード" : "Download"}
+              <span className="font-mono text-[11px] text-muted-foreground">{exportState.doc.filename}</span>
+            </a>
+          ) : (
+            <button
+              type="button"
+              disabled={exportState.status === "loading"}
+              onClick={async () => {
+                setExportState({ status: "loading" });
+                try {
+                  const doc = await exportMessageAsDocx(m.content, m.query || "");
+                  setExportState({ status: "idle", doc });
+                } catch {
+                  setExportState({ status: "error" });
+                }
+              }}
+              title={lang === "ja" ? "Word (.docx) で書き出す" : "Export to Word (.docx)"}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1 text-[11.5px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground disabled:opacity-60"
+            >
+              {exportState.status === "loading" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
+              {lang === "ja" ? "書き出し" : "Export"}
+            </button>
+          )}
+          {exportState.status === "error" && (
+            <span className="ml-2 text-[11px] text-destructive">
+              {lang === "ja" ? "エクスポートに失敗しました" : "Export failed"}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
            buried inside the collapsed tool card) so the deliverable is one click. */}

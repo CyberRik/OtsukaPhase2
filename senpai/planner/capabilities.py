@@ -17,6 +17,7 @@ which were selected. All are READ/SEARCH and degrade to empty — never raise.
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping
 
 from senpai.orchestration import ExecContext
@@ -35,12 +36,24 @@ _LABELS = {
 }
 
 
+# workspace/knowledge/solutions already embed real provenance inline
+# ("出典: file://…", "出典: Playbook 123", "根拠: 先輩2名 / int001") but only CRM
+# passes an explicit `citations` list — without this, the evidence-count receipt
+# line always read 0 for them even when real grounding was retrieved.
+_CITATION_RE = re.compile(r"(?:出典|根拠):\s*([^\n）)]+)")
+
+
+def _extract_citations(text: str) -> list[str]:
+    return [m.strip() for m in _CITATION_RE.findall(text)]
+
+
 def _text_evidence(name: str, text: str, citations=()) -> Evidence:
     text = (text or "").strip()
     if not text:
         return Evidence.empty(provenance={"capability": name})
+    citations = tuple(citations) or tuple(_extract_citations(text))
     return Evidence.ok({"text": text, "label": _LABELS.get(name, name)},
-                       citations=tuple(citations), status="ok")
+                       citations=citations, status="ok")
 
 
 class ConversationCapability:
