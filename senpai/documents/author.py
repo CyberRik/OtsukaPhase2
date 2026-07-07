@@ -52,11 +52,38 @@ def _extract_json(text: str) -> dict | None:
         return None
 
 
-def _grounding_block(grounding: str) -> str:
+_REP_ID_RE = re.compile(r"\bR\d{2,3}\b")
+
+
+def _authoritative_names(prompt: str, grounding: str) -> str:
+    """Rep IDs (R01, R05, ...) are real, resolvable entities — never left to the
+    model's imagination. A free-prompt authoring call has no other anchor for
+    'who is R01' than whatever the ReAct loop's own prompt text says, so a model
+    authoring in a different language than the source data could still substitute
+    a plausible-sounding name instead of the real one. Resolve every rep ID
+    mentioned and pin the real name down explicitly, deterministically, so there
+    is nothing left to invent — the same "never trust the model with an ID"
+    principle the rest of the planner already applies to deals/customers."""
+    ids = set(_REP_ID_RE.findall(f"{prompt}\n{grounding}"))
+    if not ids:
+        return ""
+    from senpai.data import store
+    lines = [f"{rid} = {name}" for rid in sorted(ids)
+             if (name := store.rep_name(rid)) and name != rid]
+    if not lines:
+        return ""
+    return ("【担当者の実名（必ずこの表記のまま使うこと。英語文書でも別の名前への"
+            "置き換え・創作は禁止）】\n" + "\n".join(lines))
+
+
+def _grounding_block(grounding: str, prompt: str = "") -> str:
+    names = _authoritative_names(prompt, grounding)
     if not (grounding or "").strip():
-        return "(参考情報なし。一般知識に基づいて作成してよい。)"
-    return ("以下の参考情報を最優先で使うこと。Web出典がある場合は本文に出典を添えること。"
-            "参考情報にない具体的な数値・固有名詞を創作しないこと。\n" + grounding.strip())
+        base = "(参考情報なし。一般知識に基づいて作成してよい。)"
+    else:
+        base = ("以下の参考情報を最優先で使うこと。Web出典がある場合は本文に出典を添えること。"
+                "参考情報にない具体的な数値・固有名詞を創作しないこと。\n" + grounding.strip())
+    return f"{names}\n\n{base}" if names else base
 
 
 # --- PPTX -----------------------------------------------------------------------
@@ -108,7 +135,7 @@ def author_deck(prompt: str, grounding: str = "", lang: str = "ja",
         f"Write in {'Japanese' if lang == 'ja' else 'English'}.\n"
         f"{playbook.deck_style_guide(customer_scoped)}\n"
         f"Topic / request: {prompt}\n"
-        f"{_grounding_block(grounding)}")
+        f"{_grounding_block(grounding, prompt)}")
     obj = _extract_json(_complete(instr) or "")
     if obj is None:
         # one repair retry
@@ -251,7 +278,7 @@ def author_doc(prompt: str, grounding: str = "", lang: str = "ja") -> dict | Non
         f"Use 3-{MAX_SECTIONS} sections; each body is a list of paragraphs. "
         f"Write in {'Japanese' if lang == 'ja' else 'English'}.\n"
         f"Topic / request: {prompt}\n"
-        f"{_grounding_block(grounding)}")
+        f"{_grounding_block(grounding, prompt)}")
     obj = _extract_json(_complete(instr) or "")
     if obj is None:
         obj = _extract_json(_complete("Return ONLY valid JSON for the document.\n" + instr) or "")

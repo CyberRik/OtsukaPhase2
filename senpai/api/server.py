@@ -38,6 +38,10 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8")
 
+import asyncio
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -340,7 +344,6 @@ def download_document(doc_id: str):
     ext = os.path.splitext(rec["filename"])[1].lower()
     return FileResponse(rec["path"], filename=rec["filename"],
                         media_type=_DOC_MEDIA.get(ext, "application/octet-stream"))
-
 
 class ExportDocRequest(BaseModel):
     text: str
@@ -729,6 +732,8 @@ def _junior_system() -> str:
         "また、特定の顧客に対して『何を提案すべきか』『推奨ソリューションは何か』と問われた場合は、必ず advise_solutions ツールを呼び出して推奨製品を取得すること。"
         "ツールを呼ばずに『社内データに無い』と述べてはいけません。"
         "社内の数値は与えられたものだけを使い、人名や提供者名は絶対に推測・生成しないこと。"
+        "ツール結果に含まれる氏名は、英語で文書を作成する場合でも絶対に別の名前に"
+        "置き換えたり英語風の名前に創作したりせず、ツール結果の表記のまま使うこと。"
         "製品の相談には search_products / create_quote、訪問調整には schedule_meeting、"
         "連絡文の準備には send_email を使えます(いずれも下書きで、送信・確定はしません)。"
         "社内案件で自信が持てない時は route_to_expert で先輩に橋渡ししてください。"
@@ -740,15 +745,19 @@ def _junior_system() -> str:
 
         "【文書作成（PPTX / DOCX）】\n"
         "提案書、稟議書、スライド(PPTX)、文書(DOCX)の作成を依頼されたら、"
-        "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
-        "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
+        "絶対に口頭で許可を求めたりプレビューを提示するのではなく、**直ちに該当ツールを `confirm=True` で呼び出し**、ファイルを即座に生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
 
         "【複数タスク】\n"
         "ユーザーが1つのメッセージで複数の作業（例: 提案書と稟議書の両方を作成、または"
         "調査してから文書を作成）を依頼した場合、最初のタスクが完了しても"
         "**残りのタスクを忘れずに順番に実行**すること。"
-        "全てのタスクが完了してから最終回答をまとめること。\n"
+        "全てのタスクが完了してから最終回答をまとめること。"
+        "特に、メッセージが番号付き・箇条書きの手順リスト（1. 2. 3. ... や複数の"
+        "「〜について調べて」の並び）である場合、**リストされた項目1つ1つに対して"
+        "個別にツールを呼び出す**こと。数個だけ実行して途中で満足して回答するのは禁止。"
+        "独立した項目は1ターンにまとめて並行呼び出しし、全項目のツール結果が揃うまで"
+        "最終回答を書かないこと。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
@@ -784,6 +793,8 @@ def _manager_system() -> str:
         "指定された構造化出典ID（例: Playbook PB12）をそのまま添えて示すこと。"
         "特定の顧客に対して『何を提案すべきか』と問われた場合は、必ず advise_solutions ツールを呼び出して推奨製品を取得すること。"
         "絶対に人名や提供者名を推測・生成しないでください。"
+        "ツール結果に含まれる氏名は、英語で文書を作成する場合でも絶対に別の名前に"
+        "置き換えたり英語風の名前に創作したりせず、ツール結果の表記のまま使うこと。"
         "製品の確認や見積例には search_products / create_quote、"
         "調整や連絡文の準備には schedule_meeting / send_email を使えます"
         "(いずれも下書きで、送信・確定はしません)。"
@@ -794,15 +805,19 @@ def _manager_system() -> str:
 
         "【文書作成（PPTX / DOCX）】\n"
         "提案書、稟議書、スライド(PPTX)、文書(DOCX)の作成を依頼されたら、"
-        "絶対に口頭で「作成してよいですか？」と許可を求めるのではなく、**直ちに該当ツールを `confirm=False` で呼び出してプレビューを出力**してください。\n"
-        "プレビューを見たユーザーが「はい」「作成して」と同意したターンでは、**直ちに同じツールを `confirm=True` で呼び出し**、ファイルを生成してください。\n"
+        "絶対に口頭で許可を求めたりプレビューを提示するのではなく、**直ちに該当ツールを `confirm=True` で呼び出し**、ファイルを即座に生成してください。\n"
         "ツールを使わずにプレビューを自作（ハルシネーション）したり、Pythonコードを出力することは固く禁じます。\n"
 
         "【複数タスク】\n"
         "ユーザーが1つのメッセージで複数の作業（例: 提案書と稟議書の両方を作成、または"
         "調査してから文書を作成）を依頼した場合、最初のタスクが完了しても"
         "**残りのタスクを忘れずに順番に実行**すること。"
-        "全てのタスクが完了してから最終回答をまとめること。\n"
+        "全てのタスクが完了してから最終回答をまとめること。"
+        "特に、メッセージが番号付き・箇条書きの手順リスト（1. 2. 3. ... や複数の"
+        "「〜について調べて」の並び）である場合、**リストされた項目1つ1つに対して"
+        "個別にツールを呼び出す**こと。数個だけ実行して途中で満足して回答するのは禁止。"
+        "独立した項目は1ターンにまとめて並行呼び出しし、全項目のツール結果が揃うまで"
+        "最終回答を書かないこと。\n"
 
         "【一般的な質問（社外の事実・為替・市場価格・一般知識など）】"
         "汎用アシスタントとして、断らずに役立つ回答をしてください。"
@@ -988,7 +1003,7 @@ def _is_file_scoped(message: str) -> bool:
 # loop; 稟議 (ringisho) has its own tool and is excluded.
 from senpai.planner.selection import (
     is_document_goal as _is_document_goal,
-    is_planner_goal as _is_planner_goal,
+    resolve_route as _resolve_planner_route,
 )
 
 
@@ -1416,7 +1431,7 @@ def chat(req: ChatRequest):
     # Organize), runs it on the engine, and returns the artifact. No /plan prefix — a
     # normal prompt just works. An attached file rides along as conversation context; a
     # selector-picked deal is authoritative. Everything else stays in the ReAct loop.
-    if _is_planner_goal(req.message, req.history):
+    if _resolve_planner_route(req.message, req.history):
         convo: list[dict] = []
         for m in req.history:
             if m.role in ("user", "assistant") and m.content:

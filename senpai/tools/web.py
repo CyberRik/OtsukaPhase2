@@ -8,10 +8,58 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.request
 from pathlib import Path
 
 _HTTP_TIMEOUT = 6  # seconds; short so a hang can't stall the chat
+
+# Search APIs (Tavily) rank/embed short keyword queries; a caller that hands back
+# an entire prompt/instruction block verbatim — a runaway tool-call arg, or the
+# planner's `WebCapability`/`_gather_grounding`, both of which pass the ENTIRE raw
+# goal as `query` for every gather capability — gets noisy, off-topic results.
+# Worse than irrelevant: a raw goal often contains internal-app jargon that's
+# ALSO a real-world term (e.g. this app's "SPR" = Strategic Pipeline Report, but
+# search engines resolve it to the Strategic Petroleum Reserve), so a naive
+# first-N-words truncation can hand the model a page of U.S. petroleum-reserve
+# policy that it then confidently blends into a sales-pipeline report. Instead,
+# prefer the sentence(s) that actually read as an external/factual ask (prices,
+# trends, comparisons, "latest") over just "the first sentence of the prompt".
+# Every query goes through this one choke point so `web_search` and
+# `web_search_typed` are protected the same way regardless of caller.
+_MAX_QUERY_WORDS = 18
+_MAX_QUERY_CHARS = 140
+
+# External/factual cues — topics that go stale in a model's weights (prices,
+# "best-of" picks, current models/trends, comparisons). Kept in sync with
+# senpai/tools/impl.py's `_WEB_SIGNAL_RE` (same intent: is this sentence actually
+# worth a live search).
+_WEB_SIGNAL_RE = re.compile(
+    r"best|top|latest|newest|current|cheap|price|pricing|budget|under|vs\b|versus|compare|"
+    r"comparison|review|ranking|recommend|spec|market|trend|news|deal|20(2[3-9]|[3-9]\d)|"
+    r"おすすめ|比較|最新|価格|相場|予算|以内|ランキング|レビュー|選び方|市場|"
+    r"トレンド|ニュース|スペック|円",
+    re.IGNORECASE,
+)
+
+_SENTENCE_SPLIT_RE = re.compile(r"[。\n]|(?<=[.!?])\s+")
+
+
+def _condense_query(query: str) -> str:
+    q = " ".join((query or "").split())
+    if not q:
+        return q
+    if len(q) <= _MAX_QUERY_CHARS and len(q.split(" ")) <= _MAX_QUERY_WORDS:
+        return q  # already short — nothing to extract
+
+    sentences = [s.strip() for s in _SENTENCE_SPLIT_RE.split(q) if s.strip()]
+    signal = [s for s in sentences if _WEB_SIGNAL_RE.search(s)]
+    chosen = signal[0] if signal else (sentences[0] if sentences else q)
+
+    words = chosen.split(" ")
+    if len(words) > _MAX_QUERY_WORDS:
+        chosen = " ".join(words[:_MAX_QUERY_WORDS])
+    return chosen[:_MAX_QUERY_CHARS].strip()
 
 
 def _load_dotenv() -> None:
@@ -66,6 +114,7 @@ def web_search_typed(query: str, max_results: int = 4) -> dict:
     Unlike the legacy chat tool below, this does not use canned fallback text:
     research needs explicit provenance or an explicit unavailable state.
     """
+    query = _condense_query(query)
     if not TAVILY_API_KEY:
         return {"status": "error", "query": query, "answer": "", "results": [],
                 "live": False, "reason": "missing_api_key"}
@@ -99,6 +148,7 @@ def web_search_typed(query: str, max_results: int = 4) -> dict:
 def web_search(query: str) -> str:
     """Search the web for a query. Uses Tavily when configured; falls back to
     canned results on missing key / network failure so the demo never breaks."""
+    query = _condense_query(query)
     if TAVILY_API_KEY:
         data = _post_json(
             "https://api.tavily.com/search",

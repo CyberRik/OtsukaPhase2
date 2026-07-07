@@ -112,6 +112,9 @@ def export_html_deck(html: str, *, pptx_path: Path | None = None,
     done: dict[str, bool] = {}
     pw = browser = None
     try:
+        import sys, asyncio
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         pw = sync_playwright().start()
         browser = pw.chromium.launch(headless=True)
         ctx = browser.new_context(
@@ -254,3 +257,46 @@ def _parse_rgb(css: str):
     if m:
         return RGBColor(int(m.group(1)), int(m.group(2)), int(m.group(3)))
     return RGBColor(0x1A, 0x23, 0x30)
+
+
+_HEADING_RE = re.compile(r"^#{1,6}\s+(.*)$")
+_RULE_RE = re.compile(r"^-{3,}$")
+_BULLET_RE = re.compile(r"^[-*]\s+(.*)$")
+
+
+def _text_to_doc_spec(text: str, title: str) -> dict:
+    sections: list[dict] = []
+    current = {"heading": "", "body": []}
+
+    def flush() -> None:
+        if current["body"] or current["heading"]:
+            sections.append({"heading": current["heading"], "body": list(current["body"])})
+
+    for raw_line in (text or "").replace("\r", "").split("\n"):
+        line = raw_line.strip()
+        if not line or _RULE_RE.match(line):
+            continue
+        heading = _HEADING_RE.match(line)
+        if heading:
+            flush()
+            current = {"heading": heading.group(1).strip(), "body": []}
+            continue
+        bullet = _BULLET_RE.match(line)
+        current["body"].append(f"- {bullet.group(1).strip()}" if bullet else line)
+    flush()
+
+    if not sections:
+        sections = [{"heading": "", "body": [(text or "").strip() or "(no content)"]}]
+
+    return {"title": title or "Export", "subtitle": "", "sections": sections}
+
+
+def export_text_as_docx(text: str, title: str = "", slug: str = "") -> dict:
+    """Render `text` verbatim (parsed, not LLM-rewritten) to a .docx and register
+    it for download. Returns the registry record (doc_id, filename, download_url)."""
+    from senpai.documents import registry, render
+    spec = _text_to_doc_spec(text, title)
+    path = render.output_path("export", slug or title or "chat", "docx")
+    render.render_docx(spec, path)
+    return registry.register("export", path)
+

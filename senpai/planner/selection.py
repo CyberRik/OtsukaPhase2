@@ -132,6 +132,140 @@ def is_planner_goal(message: str, history: list | None = None) -> bool:
             or is_document_goal(message))
 
 
+# --- hybrid router: regex fast-path + LLM confirmation for complex prompts ---
+# The regex triggers above are a keyword match ANYWHERE in the message — correct
+# for the common case ("make me a pptx about X"), but a document noun/verb near
+# the END of a long, multi-step research message (numbered lookups, faceted
+# searches, etc.) hijacks the ENTIRE turn into the planner's one-shot capability
+# graph, which cannot run N arbitrary tool calls — it silently drops everything
+# but a hollow single-section doc. Only worth a second opinion when the regex
+# says "planner" AND the message actually looks like that shape; a short,
+# single-intent ask never pays the extra round-trip.
+# "・" (nakaguro) is the standard Japanese bullet in business writing — a plain
+# `-`/`*`/digit check misses it entirely, which matters here: Japanese has no
+# spaces, so the word-count fallback below is blind on CJK text, leaving the
+# step-bullet check as the ONLY signal for a Japanese multi-step prompt.
+_NUMBERED_STEP_RE = re.compile(r"(?:^|\n)\s*\d+[.)]\s|(?:^|\n)\s*[-*・]\s?", re.MULTILINE)
+_COMPLEXITY_WORD_THRESHOLD = 60
+_COMPLEXITY_STEP_THRESHOLD = 3
+_CJK_RE = re.compile(r"[぀-ヿ一-鿿]")
+# Japanese has no word-separating spaces, so `len(message.split())` counts the
+# whole line as ~1 "word" and never trips the English word-count threshold —
+# use a character-count threshold on CJK text instead.
+_COMPLEXITY_CJK_CHAR_THRESHOLD = 120
+
+
+def _looks_complex(message: str) -> bool:
+    m = message or ""
+    if len(_NUMBERED_STEP_RE.findall(m)) >= _COMPLEXITY_STEP_THRESHOLD:
+        return True
+    if _CJK_RE.search(m):
+        return len(re.sub(r"\s+", "", m)) > _COMPLEXITY_CJK_CHAR_THRESHOLD
+    return len(m.split()) > _COMPLEXITY_WORD_THRESHOLD
+
+
+def _extract_route_json(text: str) -> dict | None:
+    if not text:
+        return None
+    t = re.sub(r"```(?:json)?", "", text).strip()
+    start, end = t.find("{"), t.rfind("}")
+    if start == -1 or end <= start:
+        return None
+    try:
+        import json
+        obj = json.loads(t[start:end + 1])
+        return obj if isinstance(obj, dict) else None
+    except ValueError:
+        return None
+
+
+def _llm_classify_route(message: str) -> bool | None:
+    """Ask a small, fast model for the DOMINANT intent of a long/complex message.
+    Returns True (planner) / False (chat/ReAct loop) / None on any failure — the
+    caller falls back to the regex verdict on None (fail-open, same pattern as
+    the planner's own capability-selector LLM call)."""
+    from senpai.documents.author import _use_llm
+    if not _use_llm():
+        return None
+    prompt = (
+        "You are a routing classifier for a sales assistant with two surfaces:\n"
+        "  \"planner\" — a one-shot document/note generator or workspace-organizer. "
+        "Good when the message's DOMINANT ask is to produce ONE document/deck/note "
+        "or tidy files.\n"
+        "  \"chat\" — a tool-calling research assistant that can look things up "
+        "(pipelines, deals, notes, playbook, web) an arbitrary number of times, one "
+        "call at a time, and can ALSO generate a document as its last step.\n"
+        "Pick \"chat\" whenever the message is primarily a multi-step research/lookup "
+        "task (many distinct queries, numbered steps, several named entities) — even "
+        "if it also asks for a document at the end, since \"chat\" can produce that "
+        "document once the research is actually done. Pick \"planner\" only when the "
+        "message has no real multi-step research to do first.\n"
+        "Return strict JSON only, no prose, no code fence: {\"route\": \"planner\"|\"chat\"}\n\n"
+        f"Message:\n{(message or '')[:4000]}"
+    )
+    try:
+        from senpai.llm.client import simple_complete
+        raw = simple_complete([{"role": "user", "content": prompt}],
+                              temperature=0.0, max_tokens=30,
+                              no_think=True, allow_fallback=False)
+    except Exception:  # noqa: BLE001 — model down/timeout → regex verdict stands
+        return None
+    obj = _extract_route_json(raw)
+    if not isinstance(obj, dict):
+        return None
+    route = obj.get("route")
+    if not isinstance(route, str):
+        return None
+    if route.lower() not in ("planner", "chat"):
+        return None
+    return route.lower() == "planner"
+
+
+def _wants_multiple_deliverable_kinds(message: str, history: list | None = None) -> bool:
+    """True when the message asks for more than one DISTINCT kind of planner
+    deliverable (organize + note + document, in any combination), OR multiple
+    distinct documents (e.g., both a PPTX and a DOCX). The planner's ExecutionPlan
+    has exactly one terminal task (see plan.py's module docstring) — it physically
+    cannot save a note AND organize files AND generate a proposal in the same turn.
+    `_pick_doc_kind`'s priority order silently picks one and the other asks vanish.
+    The ReAct loop has no such ceiling, so route there instead whenever multiple
+    deliverables are being asked for."""
+    kinds = sum((
+        is_organize_goal(message, history),
+        is_note_goal(message),
+        is_document_goal(message),
+    ))
+    if kinds > 1:
+        return True
+        
+    # If it's a document goal, check if there are multiple document creation verbs
+    # which usually implies multiple distinct documents (e.g. "make a pptx and draft a docx")
+    if is_document_goal(message):
+        if len(_DOC_GOAL_RE.findall(message or "")) > 1:
+            return True
+            
+    return False
+
+
+def resolve_route(message: str, history: list | None = None) -> bool:
+    """True → route this turn through the LLMPlanner; False → the ReAct tool loop.
+    Fast path (the overwhelming majority of turns): trust the regex heuristic
+    directly, zero added latency. Two escapes from the fast path, both deterministic
+    or fail-open, never trusting a single ambiguous signal: (1) more than one
+    DISTINCT deliverable kind is being asked for in one message — the planner can
+    only ever produce one, so this always goes to chat; (2) the regex says
+    "planner" and the message reads as a long, multi-step task — confirm the
+    dominant intent with a small LLM classifier before committing to the
+    planner's one-shot graph."""
+    if _wants_multiple_deliverable_kinds(message, history):
+        return False
+    regex_says_planner = is_planner_goal(message, history)
+    if not regex_says_planner or not _looks_complex(message):
+        return regex_says_planner
+    verdict = _llm_classify_route(message)
+    return regex_says_planner if verdict is None else verdict
+
+
 @dataclass(frozen=True)
 class Selection:
     """The plan the LLMPlanner emits: the capability set to gather from + the

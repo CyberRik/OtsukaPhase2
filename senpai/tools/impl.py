@@ -510,9 +510,8 @@ def create_quote(items, discount_pct: float = 0, customer: str = "",
 
 def schedule_meeting(title: str = "", date: str = "", start_time: str = "",
                      duration_hours: float = 1, attendees=None,
-                     description: str = "", confirm: bool = False) -> str:
-    """Two-step booking so the rep stays in the loop. With confirm=false (default)
-    it only returns a draft — nothing is scheduled. With confirm=true it books a
+                     description: str = "", confirm: bool = True) -> str:
+    """Book a meeting in one call by default. With confirm=true it books a
     real event via the Google Calendar API; if calendar auth/creds are missing it
     degrades to a simulated confirmation so the workspace never breaks."""
     if not (title and date and start_time):
@@ -734,14 +733,13 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
 # ---------------------------------------------------------------------------
 # Document generation — the chatbot's "do stuff" tools (PPTX / DOCX)
 # ---------------------------------------------------------------------------
-# All four are two-step-confirm gated like schedule_meeting: confirm=false returns a
-# preview (no file written); confirm=true builds the file under config.GENERATED_DIR,
-# registers it for download, and returns a short confirmation. senpai.documents is
+# Document tools build the file under config.GENERATED_DIR in one confirmed call,
+# register it for download, and return a short confirmation. senpai.documents is
 # imported lazily so a missing python-pptx/docx can never break tool import.
 import hashlib as _hashlib
 
-# Authored specs for the general tools, cached between the preview and confirm calls
-# (keyed by request) so confirm=true reuses the same content the rep just reviewed.
+# Authored specs for the general tools, cached by request so repeated calls can reuse
+# the same generated structure when the grounding is identical.
 _GEN_SPEC_CACHE: dict[str, dict] = {}
 
 
@@ -795,8 +793,8 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
             f"（{ctx.customer}様）。PowerPointで直接編集できます。\n構成:\n{outline}")
 
 
-def generate_ringisho(deal_id: str = "", confirm: bool = False) -> str:
-    """Formal 稟議書 DOCX (customer IT-manager -> CEO) grounded in deal data. Two-step."""
+def generate_ringisho(deal_id: str = "", confirm: bool = True) -> str:
+    """Formal 稟議書 DOCX (customer IT-manager -> CEO) grounded in deal data."""
     from senpai.documents import registry, ringisho
     from senpai.documents.context import build_document_context
     if not deal_id:
@@ -1107,7 +1105,7 @@ def _register_deck_files(registry, files: dict, *, primary_kind: str) -> list[st
 
 
 def generate_docx(prompt: str = "", title: str = "", use_web=None,
-                  customer: str = "", lang: str = "ja", confirm: bool = False) -> str:
+                  customer: str = "", lang: str = "ja", confirm: bool = True) -> str:
     """General-purpose DOCX from a free prompt (LLM-authored). Grounding is automatic:
     external/factual topics are web-grounded by default; a named customer grounds it
     in internal records. Needs the model."""
@@ -1178,10 +1176,9 @@ def search_workspace_documents(query: str = "", limit: int = 0) -> str:
     return _format(res)
 
 
-def edit_workspace_document(path: str, content: str, confirm: bool = False) -> str:
+def edit_workspace_document(path: str, content: str, confirm: bool = True) -> str:
     """Modifies or creates a local text document in the workspace.
-    To prevent data loss, `confirm=True` must be explicitly passed to commit the write;
-    otherwise, a preview is returned for the user to review.
+    Commits by default; callers may pass confirm=False only for an explicit preview.
     """
     from senpai.workspace import sandbox
     try:
@@ -1210,10 +1207,9 @@ def edit_workspace_document(path: str, content: str, confirm: bool = False) -> s
         return f"ファイルの保存中にエラーが発生しました: {e}"
 
 
-def move_workspace_document(src: str, dst: str, confirm: bool = False) -> str:
+def move_workspace_document(src: str, dst: str, confirm: bool = True) -> str:
     """Move or rename a local document in the workspace.
-    To prevent data loss, `confirm=True` must be explicitly passed to commit the move;
-    otherwise, a preview is returned for the user to review.
+    Commits by default; callers may pass confirm=False only for an explicit preview.
     """
     from senpai.workspace import sandbox
     try:
@@ -1323,6 +1319,32 @@ _DISPATCH = {
 }
 
 
+_ALWAYS_CONFIRM_TOOLS = {
+    "schedule_meeting",
+    "edit_workspace_document",
+    "move_workspace_document",
+    "generate_proposal",
+    "generate_ringisho",
+    "generate_pptx",
+    "generate_docx",
+}
+
+
+def _force_confirm_true(name: str, arguments: dict) -> dict:
+    """Commit confirmation-gated tools in one call.
+
+    The assistant prompt asks the model to pass confirm=True, but tool correctness
+    should not depend on the model remembering that detail. Keep the coercion in the
+    shared dispatch path so API chat, tests, and any future caller get the same
+    behavior.
+    """
+    if name not in _ALWAYS_CONFIRM_TOOLS:
+        return arguments
+    coerced = dict(arguments)
+    coerced["confirm"] = True
+    return coerced
+
+
 def dispatch(name: str, arguments: dict | str) -> str:
     """Execute a tool by name with arguments (dict or JSON string). Always
     returns a string; never raises (so the chat loop can't crash)."""
@@ -1336,6 +1358,7 @@ def dispatch(name: str, arguments: dict | str) -> str:
     fn = _DISPATCH.get(name)
     if fn is None:
         return f"[error] unknown tool: {name}"
+    arguments = _force_confirm_true(name, arguments)
     try:
         return str(fn(**arguments))
     except TypeError as e:

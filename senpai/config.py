@@ -52,7 +52,7 @@ BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:8765/v1")
 FALLBACK_BASE_URL = os.environ.get("FALLBACK_BASE_URL", "http://100.101.186.29:8766/v1")
 MODEL = os.environ.get("MODEL", "exp3")
 FALLBACK_MODEL = os.environ.get("FALLBACK_MODEL", "toolmind_exp3_final")
-MAX_TOOL_ROUNDS = 15
+MAX_TOOL_ROUNDS = int(os.environ.get("MAX_TOOL_ROUNDS", 30))
 
 
 def _env_float(name: str, default: float) -> float:
@@ -71,7 +71,7 @@ def _env_int(name: str, default: int) -> int:
 
 # --- Inference tunables -----------------------------------------------------
 LLM_TIMEOUT = _env_float("LLM_TIMEOUT", 120.0)        # seconds, per request
-LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 1024)
+LLM_MAX_TOKENS = _env_int("LLM_MAX_TOKENS", 4096)
 # Senior Commentary budget. Default sized for the fast live path (thinking OFF):
 # enough for a flowing conversational read, not long-form. If NARRATE_THINK is
 # enabled (reasoning ON, for a pre-warmed cache when the GPU is free), raise this

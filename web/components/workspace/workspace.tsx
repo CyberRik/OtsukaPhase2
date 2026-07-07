@@ -111,6 +111,51 @@ function Dots() {
   );
 }
 
+function ThinkingText({ role, lang }: { role: string; lang: "ja" | "en" }) {
+  const [stage, setStage] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStage((prev) => (prev + 1) % 4);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const juniorPhrases = {
+    ja: [
+      "先輩の視点で読み解いています…",
+      "商談の力学を分析中…",
+      "プレイブックの知見を検索中…",
+      "最適なアドバイスを作成中…",
+    ],
+    en: [
+      "Reading it the way a senior would…",
+      "Analyzing deal dynamics…",
+      "Searching playbook insights…",
+      "Drafting best advice…",
+    ],
+  };
+
+  const managerPhrases = {
+    ja: [
+      "データを確認しています…",
+      "パイプラインの状況を分析中…",
+      "リスクシグナルを評価中…",
+      "レポートをまとめています…",
+    ],
+    en: [
+      "Pulling the data…",
+      "Analyzing pipeline status…",
+      "Evaluating risk signals…",
+      "Synthesizing report…",
+    ],
+  };
+
+  const phrases = role === "manager" ? managerPhrases : juniorPhrases;
+  const list = phrases[lang] || phrases["ja"];
+  return <span>{list[stage]}</span>;
+}
+
 // --- slash command picker ---------------------------------------------------
 const SLASH_COMMANDS = [
   {
@@ -739,7 +784,7 @@ function ChatTurn({
     return (
       <div className="flex items-center gap-2">
         <div className="inline-flex items-center gap-2 rounded-xl rounded-tl-sm border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-          <Dots /> {t(role === "manager" ? "chat.thinking.manager" : "chat.thinking")}
+          <Dots /> <ThinkingText role={role} lang={lang} />
         </div>
         {ctrlRef.current && (
           <button onClick={stop} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground">
@@ -1500,7 +1545,7 @@ export function Workspace({
             return (
               <Row key={m.id} who="senpai" name={assistantName}>
                 <div className="inline-flex items-center gap-2 py-1.5 text-[13px] text-muted-foreground">
-                  <Dots /> {t(role === "manager" ? "chat.thinking.manager" : "chat.thinking")}
+                  <Dots /> <ThinkingText role={role} lang={lang} />
                 </div>
               </Row>
             );
@@ -1741,7 +1786,7 @@ export function Workspace({
                     <span className="hidden sm:inline">{lang === "ja" ? "クリア" : "Clear"}</span>
                   </button>
                 )}
-                <Button variant="seal" size="sm" disabled={busy || !input.trim()} onClick={() => submit(input, dealId)} className="gap-1.5">
+                <Button variant="seal" size="sm" disabled={busy || (!input.trim() && !attached)} onClick={() => submit(input, dealId)} className="gap-1.5">
                   {t(role === "manager" ? "chat.send.manager" : "chat.send")} <CornerDownLeft className="h-3.5 w-3.5" />
                 </Button>
               </div>
