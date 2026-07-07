@@ -471,10 +471,8 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "schedule_meeting",
-            "description": "Book a meeting on the calendar in two steps so the rep stays in the "
-                           "loop. First call with confirm=false (default) to return a draft for the "
-                           "rep to review; only after the rep explicitly says to book it, call again "
-                           "with confirm=true to create a real Google Calendar event. Resolve "
+            "description": "Book a meeting on the calendar directly in one step. "
+                           "Call with confirm=true; do not ask the rep for a second confirmation turn. Resolve "
                            "relative dates to YYYY-MM-DD first.",
             "parameters": {
                 "type": "object",
@@ -487,8 +485,7 @@ TOOLS = [
                                   "description": "Attendee names or emails"},
                     "description": {"type": "string", "description": "Optional agenda/notes"},
                     "confirm": {"type": "boolean",
-                                "description": "Set true ONLY when the rep has explicitly confirmed; "
-                                               "actually books the event. Default false returns a draft."},
+                                "description": "Always set true; actually books the event in this turn."},
                 },
                 "required": ["title", "date", "start_time"],
             },
@@ -602,7 +599,7 @@ TOOLS = [
                     "deal_id": {"type": "string", "description": "The deal to build the proposal for, e.g. 'D012'"},
                     "lang": {"type": "string", "description": "'ja' (default) or 'en'"},
                     "confirm": {"type": "boolean",
-                                "description": "Set true ONLY after the rep confirms; actually creates the file. Default false returns a preview, after which you MUST stop and ask the user for confirmation."},
+                                "description": "Always set true; creates the file immediately in this turn."},
                 },
                 "required": ["deal_id"],
             },
@@ -616,15 +613,15 @@ TOOLS = [
                            "a Word file (.docx) for a specific deal, written from the "
                            "customer's IT-manager persona pitching their own CEO, using the "
                            "deal's real financials to justify solving the SPR-logged pain "
-                           "points. Two-step: confirm=false (default) returns a preview; "
-                           "confirm=true builds and saves the file. Use when the rep asks "
+                           "points. Builds and saves the file directly in one call with "
+                           "confirm=true. Use when the rep asks "
                            "for a 稟議書 / approval document.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "deal_id": {"type": "string", "description": "The deal to build the 稟議書 for, e.g. 'D012'"},
                     "confirm": {"type": "boolean",
-                                "description": "Set true ONLY after the rep confirms; actually creates the file. Default false returns a preview, after which you MUST stop and ask the user for confirmation."},
+                                "description": "Always set true; creates the file immediately in this turn."},
                 },
                 "required": ["deal_id"],
             },
@@ -652,7 +649,7 @@ TOOLS = [
                     "customer": {"type": "string", "description": "Optional customer name/ID to ground the deck in internal records"},
                     "lang": {"type": "string", "description": "'ja' (default) or 'en'"},
                     "confirm": {"type": "boolean",
-                                "description": "Set true ONLY after the rep confirms; actually creates the file. Default false returns a preview, after which you MUST stop and ask the user for confirmation."},
+                                "description": "Always set true; creates the file immediately in this turn."},
                 },
                 "required": ["prompt"],
             },
@@ -678,7 +675,7 @@ TOOLS = [
                     "customer": {"type": "string", "description": "Optional customer name/ID to ground the document in internal records"},
                     "lang": {"type": "string", "description": "'ja' (default) or 'en'"},
                     "confirm": {"type": "boolean",
-                                "description": "Set true ONLY after the rep confirms; actually creates the file. Default false returns a preview, after which you MUST stop and ask the user for confirmation."},
+                                "description": "Always set true; creates the file immediately in this turn."},
                 },
                 "required": ["prompt"],
             },
@@ -717,14 +714,13 @@ TOOLS = [
                            "already found (e.g. via search_workspace_documents), you MUST call this tool with the full "
                            "merged content, not just describe the merge in your chat answer — never claim something was "
                            "saved or applied unless this tool actually ran. "
-                           "You must pass confirm=False first to return a preview. Then ask the user to confirm. "
-                           "If they confirm, run again with confirm=True to commit the write to disk.",
+                           "Pass confirm=True and commit the write immediately; do not ask for a second confirmation turn.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "path": {"type": "string", "description": "The absolute path or relative path from the workspace to save the file."},
                     "content": {"type": "string", "description": "The text content to write into the file."},
-                    "confirm": {"type": "boolean", "description": "Set true ONLY after the user confirms; actually writes the file. Default false returns a preview."},
+                    "confirm": {"type": "boolean", "description": "Always set true; writes the file immediately."},
                 },
                 "required": ["path", "content"],
             },
@@ -735,15 +731,14 @@ TOOLS = [
         "function": {
             "name": "move_workspace_document",
             "description": "Move or rename a local document in the user's workspace. "
-                           "You must pass confirm=False first to return a preview. Then ask the user to confirm. "
-                           "If they confirm, run again with confirm=True to commit the move. "
+                           "Pass confirm=True and commit the move immediately; do not ask for a second confirmation turn. "
                            "Can be used to organize all types of files, including PDFs and PPTXs.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "src": {"type": "string", "description": "The current path of the file."},
                     "dst": {"type": "string", "description": "The new path for the file."},
-                    "confirm": {"type": "boolean", "description": "Set true ONLY after the user confirms; actually moves the file. Default false returns a preview."},
+                    "confirm": {"type": "boolean", "description": "Always set true; moves the file immediately."},
                 },
                 "required": ["src", "dst"],
             },

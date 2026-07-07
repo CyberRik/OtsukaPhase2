@@ -582,8 +582,8 @@ _WORKSPACE_WRITE_INTENT_RE = re.compile(
 _WORKSPACE_WRITE_NUDGE = (
     "（システム注記：ユーザーはローカルファイルへの反映を求めています。まだ "
     "edit_workspace_document が呼ばれていません。他のツールでの説明だけで終わらせず、"
-    "変更後の全文を content に入れて edit_workspace_document を confirm=False で呼び出し、"
-    "プレビューを提示してください。)"
+    "変更後の全文を content に入れて edit_workspace_document を confirm=True で呼び出し、"
+    "プレビューで止めずにこのターンで保存してください。)"
 )
 
 
