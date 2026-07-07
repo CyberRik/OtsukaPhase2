@@ -68,24 +68,6 @@ export function documentUrl(downloadUrl: string): string {
   return downloadUrl.startsWith("http") ? downloadUrl : `${BASE}${downloadUrl}`;
 }
 
-// Literal export of an assistant message's raw text to a .docx — no LLM
-// re-authoring, no fixture fallback (a failure must surface, not silently
-// swallow like the read endpoints' offline fallback does).
-export async function exportMessageAsDocx(
-  text: string,
-  title = "",
-): Promise<GeneratedDocument> {
-  const res = await fetch(`${BASE}/api/documents/export`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, title }),
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error(`http_${res.status}`);
-  const data = (await res.json()) as { document: GeneratedDocument };
-  return data.document;
-}
-
 async function get<T>(path: string, fallback: T): Promise<Fetched<T>> {
   try {
     const res = await fetch(`${BASE}${path}`, { cache: "no-store" });
