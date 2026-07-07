@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 
 from senpai.data import store
-from senpai.llm.client import _multi_entity_gather_calls
+from senpai.llm.client import _audit_gather_calls, _multi_entity_gather_calls
 
 
 def _valid_deals(n: int) -> list[str]:
@@ -88,3 +88,41 @@ def test_customer_ids_also_fan_out():
 def test_empty_message():
     assert _multi_entity_gather_calls("") == []
     assert _multi_entity_gather_calls(None) == []
+
+
+def test_quarterly_audit_prompt_fans_out_read_only_gathers():
+    msg = """I am conducting a massive quarterly pipeline audit and need you to gather data.
+1. Look up the SPR pipelines for three specific reps: 'R01', 'R05', and 'R12'.
+2. Query the exact current deal status for: 'アクメ商事', 'グローバルテック', and '未来工業'.
+3. Perform a semantic note search for EACH customer looking for "budget slashed" or "予算削減".
+4. Find similar comparable deals for 'アクメ商事' (in the '製造' industry) and for 'グローバルテック' (in the 'IT' industry).
+5. Run four separate faceted searches for past deals:
+   - 'サーバー' deals in '製造' that were 'won'.
+   - 'ソフトウェア' deals in '医療' that were 'lost'.
+   - 'ネットワーク機器' deals in '金融' that were 'open' with an amount over 10,000,000 JPY.
+   - Any deals containing the product code 'MON27'.
+6. Check our playbook for four different tactical scenarios individually:
+   - Scenario 1: '決定先延ばし' (decision postponed)
+   - Scenario 2: '値引き' (discounting)
+   - Scenario 3: '競合優位' (competitor advantage)
+   - Scenario 4: '担当者変更' (change in point of contact)
+Only once you have successfully pulled all of this data from the tools, synthesize it."""
+    calls = _args(_audit_gather_calls(msg))
+
+    assert ("query_spr", {"rep_id": "R01"}) in calls
+    assert ("query_spr", {"rep_id": "R05"}) in calls
+    assert ("query_spr", {"rep_id": "R12"}) in calls
+    assert ("query_spr", {"customer": "アクメ商事"}) in calls
+    assert ("search_notes", {"customer": "アクメ商事", "query": "budget slashed OR 予算削減", "limit": 5}) in calls
+    assert ("find_similar_deals", {"customer": "アクメ商事", "industry": "製造"}) in calls
+    assert ("find_deals", {"product_category": "サーバー", "industry": "製造", "outcome": "won", "limit": 10}) in calls
+    assert ("find_deals", {"product_code": "MON27", "limit": 10}) in calls
+    assert ("retrieve_playbook", {"query": "決定先延ばし", "tags": ["決定先延ばし"]}) in calls
+    assert ("find_deals", {"product_category": "アクメ商事", "limit": 10}) not in calls
+    assert len(calls) >= 19
+    assert len({cid for cid, _n, _a in _audit_gather_calls(msg)}) == len(calls)
+
+
+def test_audit_expander_stays_off_for_small_normal_prompts():
+    assert _audit_gather_calls("compare R01 and R05 quickly") == []
+    assert _audit_gather_calls("1. check R01\n2. answer") == []

@@ -225,6 +225,9 @@ class _BrowserSession:
 
     def __enter__(self) -> "_BrowserSession":
         try:
+            import sys, asyncio
+            if sys.platform == "win32":
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
             from playwright.sync_api import sync_playwright  # type: ignore
             self._pw = sync_playwright().start()
             self._browser = self._pw.chromium.launch(headless=True)

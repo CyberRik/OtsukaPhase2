@@ -267,7 +267,6 @@ export function MessageBubble({ m, t, lang, onPick }: {
 
   const running = m.status === "running";
   const error = m.status === "error";
-  const badge = !error && (m.content || m.tools.length || m.sources?.length) ? groundingBadge(m, lang) : null;
 
   return (
     <div className="flex w-full flex-col items-start gap-1.5">
@@ -323,47 +322,9 @@ export function MessageBubble({ m, t, lang, onPick }: {
               : (lang === "ja" ? `✓ 調査完了 (${m.tools.length} 操作)` : `✓ Investigation complete (${m.tools.length} operations)`)}
           </summary>
           <div className="space-y-2 border-l border-border/60 ml-2 pl-3 mt-1 pb-2.5">
-            {(() => {
-              const groups: { batchId: string | null; tools: ToolCall[] }[] = [];
-              for (const tl of m.tools) {
-                const last = groups[groups.length - 1];
-                if (tl.batchId && last && last.batchId === tl.batchId) {
-                  last.tools.push(tl);
-                } else {
-                  groups.push({ batchId: tl.batchId || null, tools: [tl] });
-                }
-              }
-
-              return groups.map((g, gi) => {
-                if (g.batchId && g.tools.length > 1) {
-                  const firstTool = g.tools[0];
-                  let batchLabel = firstTool.intent;
-                  if (!batchLabel) {
-                    const meta = TOOL_LABEL[firstTool.name];
-                    batchLabel = meta ? (lang === "ja" ? meta.ja : meta.en) : firstTool.name;
-                  }
-
-                  return (
-                    <div key={`batch-${gi}`} className="flex flex-col gap-1.5 rounded-md bg-card p-2.5 shadow-sm border border-border/40">
-                      <div className="flex items-center gap-2 text-[11.5px] font-medium text-foreground">
-                        <span className="w-3 shrink-0 text-center font-mono text-[11px] text-foreground/40">{running ? "□" : "✓"}</span>
-                        <span>{batchLabel}</span>
-                        {running && <span className="execution-pulse inline-block h-1.5 w-1.5 rounded-full bg-primary/70 shrink-0" />}
-                      </div>
-                      <div className="flex flex-col gap-1.5 pl-[22px]">
-                        {g.tools.map((tool, i) => (
-                          <ToolDisclosure key={i} tool={tool} running={running} lang={lang} isParallelItem={true} />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                return g.tools.map((tool, i) => (
-                  <ToolDisclosure key={`single-${gi}-${i}`} tool={tool} running={running} lang={lang} isParallelItem={false} />
-                ));
-              });
-            })()}
+            {m.tools.map((tool, i) => (
+              <ToolDisclosure key={i} tool={tool} running={running} lang={lang} />
+            ))}
           </div>
         </details>
       )}

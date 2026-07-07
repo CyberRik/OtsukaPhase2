@@ -421,7 +421,10 @@ TOOLS = [
         "function": {
             "name": "search_products",
             "description": "Search the Otsuka product catalog by category, price range, or keyword. "
-                           "Returns matching products with code, name and unit price (JPY).",
+                           "Returns matching products with code, name and unit price (JPY). "
+                           "IMPORTANT: If the first 1-2 attempts return no results, STOP retrying with "
+                           "synonym keywords — the catalog is limited. Instead call get_product_info "
+                           "or find_deals to find relevant products. Do NOT spray dozens of keyword variants.",
             "parameters": {
                 "type": "object",
                 "properties": {

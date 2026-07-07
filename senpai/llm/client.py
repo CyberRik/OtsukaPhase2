@@ -332,6 +332,18 @@ def _downsample_frames(frames: list[dict], cap: int) -> list[dict]:
 
 _ENTITY_DEAL_RE = re.compile(r"\bD\d{3,}\b")
 _ENTITY_CUST_RE = re.compile(r"\bC\d{2,}\b")
+_AUDIT_RE = re.compile(
+    r"\b(?:audit|quarterly|pipeline review|research steps|faceted searches?)\b|"
+    r"(?:監査|四半期|パイプライン.*レビュー|調査手順|ファセット検索)",
+    re.IGNORECASE,
+)
+_STEP_RE = re.compile(r"(?:^|\n)\s*(?:\d+[.)]|[-*・])\s+", re.MULTILINE)
+_REP_ID_RE = re.compile(r"\bR\d{2,}\b", re.IGNORECASE)
+_QUOTE_RE = re.compile(r"['\"]([^'\"]+)['\"]")
+
+
+def _json_call(prefix: str, idx: int, name: str, args: dict) -> tuple[str, str, str]:
+    return (f"{prefix}_{idx}", name, json.dumps(args, ensure_ascii=False))
 
 
 def _multi_entity_gather_calls(user_msg: str) -> list[tuple[str, str, str]]:
@@ -370,8 +382,153 @@ def _multi_entity_gather_calls(user_msg: str) -> list[tuple[str, str, str]]:
     gathers += [("score_deal_health", {"deal_id": d}) for d in deal_ids]  # all health, grouped
     gathers += [("query_spr", {"deal_id": d}) for d in deal_ids]          # then all deal records
     gathers += [("query_spr", {"customer": c}) for c in cust_ids]         # then customer records
-    return [(f"exp_{i}", name, json.dumps(args, ensure_ascii=False))
-            for i, (name, args) in enumerate(gathers)]
+    return [_json_call("exp", i, name, args) for i, (name, args) in enumerate(gathers)]
+
+
+def _mentioned_customers(user_msg: str) -> list[str]:
+    """Known customer display names mentioned in the prompt, in text order."""
+    if not user_msg:
+        return []
+    from senpai.data import store  # lazy
+    hits: list[tuple[int, str]] = []
+    seen: set[str] = set()
+    for c in store.all_customers():
+        name = c.get("name", "")
+        if not name or name in seen:
+            continue
+        pos = user_msg.find(name)
+        if pos >= 0:
+            hits.append((pos, name))
+            seen.add(name)
+    return [name for _pos, name in sorted(hits)]
+
+
+def _audit_customers(user_msg: str) -> list[str]:
+    customers = _mentioned_customers(user_msg)
+    seen = set(customers)
+    for line in (user_msg or "").splitlines():
+        if not re.search(r"customer|account|顧客|取引先|会社|status|deal status", line, re.IGNORECASE):
+            continue
+        for quoted in _QUOTE_RE.findall(line):
+            if quoted not in seen and not re.fullmatch(r"R\d{2,}|D\d{3,}|C\d{2,}", quoted, re.IGNORECASE):
+                seen.add(quoted)
+                customers.append(quoted)
+    return customers
+
+
+def _audit_faceted_deal_calls(user_msg: str) -> list[tuple[str, dict]]:
+    """Extract simple faceted deal-search bullets from audit prompts."""
+    calls: list[tuple[str, dict]] = []
+    for raw in (user_msg or "").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        low = line.lower()
+        if "status" in low or "current deal" in low:
+            continue
+        if "similar" in low or "comparable" in low or "類似" in line:
+            continue
+        if "product code" in low:
+            m_code = re.search(r"['\"]?([A-Z]{2,}\d{2,})['\"]?", line)
+            if m_code:
+                calls.append(("find_deals", {"product_code": m_code.group(1), "limit": 10}))
+            continue
+        if "deal" not in low and "案件" not in line:
+            continue
+
+        quoted = _QUOTE_RE.findall(line)
+        args: dict = {"limit": 10}
+        if quoted:
+            args["product_category"] = quoted[0]
+        if len(quoted) >= 2:
+            args["industry"] = quoted[1]
+        if "won" in low or "受注" in line:
+            args["outcome"] = "won"
+        elif "lost" in low or "失注" in line:
+            args["outcome"] = "lost"
+        elif "open" in low or "進行中" in line:
+            args["outcome"] = "open"
+        amount = re.search(r"(?:over|above|>=|more than)\s*([\d,]+)", low)
+        if amount:
+            args["min_amount"] = int(amount.group(1).replace(",", ""))
+        if any(k in args for k in ("product_category", "industry", "outcome", "min_amount")):
+            calls.append(("find_deals", args))
+    return calls
+
+
+def _audit_similar_deal_calls(user_msg: str, customers: list[str]) -> list[tuple[str, dict]]:
+    calls: list[tuple[str, dict]] = []
+    for customer in customers:
+        # Match: 'Customer' (in the 'Industry' industry)
+        pat = re.compile(
+            rf"['\"]{re.escape(customer)}['\"]\s*\([^)]*?['\"]([^'\"]+)['\"][^)]*?industry",
+            re.IGNORECASE,
+        )
+        m = pat.search(user_msg or "")
+        if m:
+            calls.append(("find_similar_deals", {"customer": customer, "industry": m.group(1)}))
+    return calls
+
+
+def _audit_playbook_calls(user_msg: str) -> list[tuple[str, dict]]:
+    calls: list[tuple[str, dict]] = []
+    for line in (user_msg or "").splitlines():
+        if not re.search(r"scenario|playbook|シナリオ|プレイブック", line, re.IGNORECASE):
+            continue
+        quoted = _QUOTE_RE.findall(line)
+        if quoted:
+            query = quoted[0]
+            calls.append(("retrieve_playbook", {"query": query, "tags": [query]}))
+    return calls
+
+
+def _audit_gather_calls(user_msg: str) -> list[tuple[str, str, str]]:
+    """Deterministic first-round fan-out for large read-only audit prompts.
+
+    The operational system prompt tells the model to call a tool for every numbered
+    item. That preserves completeness, but on audit prompts it often becomes one LLM
+    round trip per lookup. This narrow expander recognizes the common audit shape and
+    issues independent read-only gathers in one scheduler batch; the normal model
+    still synthesizes and may ask for any missing follow-up tools afterward.
+    """
+    if not user_msg or not _AUDIT_RE.search(user_msg):
+        return []
+    if len(_STEP_RE.findall(user_msg)) < 3:
+        return []
+
+    from senpai.data import store  # lazy
+    gathers: list[tuple[str, dict]] = []
+    seen_reps: set[str] = set()
+    for rep_id in _REP_ID_RE.findall(user_msg):
+        rep_id = rep_id.upper()
+        if rep_id not in seen_reps and store.get_rep(rep_id):
+            seen_reps.add(rep_id)
+            gathers.append(("query_spr", {"rep_id": rep_id}))
+
+    customers = _audit_customers(user_msg)
+    for customer in customers:
+        gathers.append(("query_spr", {"customer": customer}))
+
+    if re.search(r"semantic note|search notes?|日報|ノート|notes?", user_msg, re.IGNORECASE):
+        note_terms = []
+        if re.search(r"budget slashed", user_msg, re.IGNORECASE):
+            note_terms.append("budget slashed")
+        if "予算削減" in user_msg:
+            note_terms.append("予算削減")
+        if note_terms:
+            query = " OR ".join(note_terms)
+            for customer in customers:
+                gathers.append(("search_notes", {"customer": customer, "query": query, "limit": 5}))
+
+    gathers.extend(_audit_similar_deal_calls(user_msg, customers))
+    gathers.extend(_audit_faceted_deal_calls(user_msg))
+    gathers.extend(_audit_playbook_calls(user_msg))
+
+    # Keep the trigger narrow: at least several read-only gathers, otherwise let the
+    # model handle the turn normally.
+    if len(gathers) < 6:
+        return []
+    return [_json_call("audit", i, name, args) for i, (name, args) in enumerate(gathers)]
 
 
 _WS_AFFIRM_RE = None  # lazy-loaded below (avoids import cost when unused)
@@ -541,9 +698,13 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
     # D012, D168) keeps returning real data so it never trips the cap, while a
     # rephrasing spiral (search X→Y→Z, all empty) trips it after two dry rounds.
     # `substantive` keeps the best real tool output so a turn can always answer.
+    # `tool_call_count` is a hard absolute cap: once a tool has been dispatched
+    # _MAX_CALLS_PER_TOOL times this turn (across all rounds), further calls are
+    # short-circuited regardless of how novel each keyword/arg variant is.
     executed: dict[tuple[str, str], str] = {}
     tool_unproductive: dict[str, int] = {}
     tool_total_rounds: dict[str, int] = {}
+    tool_call_count: dict[str, int] = {}
     substantive: list[tuple[str, str]] = []   # (tool_name, result) worth answering from
     # Multi-action tracking: committed deliverables (file generated, meeting booked, etc.)
     # so the loop can continue for additional tasks instead of hard-exiting after the first.
@@ -586,7 +747,8 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # in ONE parallel round rather than letting the model dribble them out one per
         # round (it emits a single tool_call per response under the full prompt). The
         # scheduler runs them concurrently; the loop then proceeds normally.
-        expanded = [] if pending_edit else (_multi_entity_gather_calls(user_msg) if round_i == 0 else [])
+        expanded = [] if pending_edit or round_i != 0 else (
+            _audit_gather_calls(user_msg) or _multi_entity_gather_calls(user_msg))
         if pending_edit:
             path, content = pending_edit
             calls = [("confirm_edit_0", "edit_workspace_document",
@@ -686,6 +848,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # a terse "already have this" tool response so the model stops re-searching,
         # and they never hit the engine, the timeline, or the synthesis grounding.
         fresh, fresh_ids = [], set()
+        seen_keys = set()
         for cid, name, args in real_calls:
             key = (name, _canon_args(args))
             # Freshness: not an exact repeat (dedup) AND this tool hasn't spiraled —
@@ -694,9 +857,17 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             # D168 across rounds) keeps returning real data, so it never trips the cap;
             # a rephrasing spiral (search X→Y→Z, all empty) trips it after two dry rounds.
             # Multiple calls of the same tool WITHIN one round all pass (fan-out intact).
-            if key not in executed and tool_unproductive.get(name, 0) < _TOOL_ROUND_CAP and tool_total_rounds.get(name, 0) < 4:
+            # _MAX_CALLS_PER_TOOL is a hard absolute cap on total dispatches per tool per
+            # turn: prevents keyword-spray spirals where each call is a *fresh* key
+            # (different keyword) so the dedup and round-cap never fire.
+            max_calls = _MAX_CALLS_BY_TOOL.get(name, _DEFAULT_MAX_CALLS_PER_TOOL)
+            if (key not in executed and key not in seen_keys
+                    and tool_unproductive.get(name, 0) < _TOOL_ROUND_CAP
+                    and tool_total_rounds.get(name, 0) < 10
+                    and tool_call_count.get(name, 0) < max_calls):
                 fresh.append((cid, name, args))
                 fresh_ids.add(cid)
+                seen_keys.add(key)
 
         sched_calls = [SchedToolCall(id=cid, name=name, arguments=args) for cid, name, args in fresh]
         plan = _SCHEDULER.schedule(sched_calls)
@@ -746,7 +917,10 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 continue
 
             ev_frag = bundle.get(cid) if bundle else None
-            result = ev_frag.data.get("text", "[error] Missing execution result") if ev_frag else "[error] Task skipped"
+            if not ev_frag:
+                result = f"[error] Task skipped (cid={cid} not in bundle fragments. keys: {list(bundle.fragments.keys()) if bundle else 'None'})"
+            else:
+                result = ev_frag.data.get("text", "[error] Missing execution result")
 
             # TRUNCATE IF MASSIVE (prevents parallel calls from blowing up context
             # window). Cut on a natural boundary, not mid-string, so a fact — a company
@@ -758,6 +932,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             # even if the synthesis round comes back empty (see _route_final_answer),
             # and track per-round productivity for the spiral guard.
             ran_fresh.add(name)
+            tool_call_count[name] = tool_call_count.get(name, 0) + 1
             if _is_substantive(result):
                 productive_fresh.add(name)
                 substantive.append((name, result))
@@ -825,7 +1000,7 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
         # round resets to 0; one that ran but produced nothing counts an unproductive
         # round. The cap then short-circuits only sustained DRY repetition (a rephrasing
         # spiral), never productive multi-entity fan-out.
-        for name in ran_fresh:
+        for name in set(ran_fresh):
             tool_unproductive[name] = 0 if name in productive_fresh else tool_unproductive.get(name, 0) + 1
             tool_total_rounds[name] = tool_total_rounds.get(name, 0) + 1
 
@@ -974,3 +1149,13 @@ def _canon_args(arguments) -> str:
 # dispatch. Counting rounds (not calls) still allows a single round to fan out many
 # parallel calls (the "search 4 laptops at once" case).
 _TOOL_ROUND_CAP = 2
+
+# Hard absolute cap on total dispatches of a single tool within one turn. This catches
+# keyword-spray spirals (search_products with 40+ different keyword variants per turn)
+# where every call has a unique (name, args) key so neither the dedup check nor the
+# unproductive-round cap fires. Legitimate database query fan-out (like query_spr,
+# search_notes, find_deals) can run up to 30 times to handle large pipeline audit requests.
+_MAX_CALLS_BY_TOOL = {
+    "search_products": 5,
+}
+_DEFAULT_MAX_CALLS_PER_TOOL = 30

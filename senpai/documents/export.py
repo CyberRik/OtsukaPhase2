@@ -112,6 +112,9 @@ def export_html_deck(html: str, *, pptx_path: Path | None = None,
     done: dict[str, bool] = {}
     pw = browser = None
     try:
+        import sys, asyncio
+        if sys.platform == "win32":
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         pw = sync_playwright().start()
         browser = pw.chromium.launch(headless=True)
         ctx = browser.new_context(
