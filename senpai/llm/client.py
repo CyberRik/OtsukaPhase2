@@ -666,7 +666,12 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             if (not write_nudge_used and _wants_workspace_write(user_msg)
                     and not any(name == "edit_workspace_document" for name, _, _ in tool_log)):
                 write_nudge_used = True
-                convo.append({"role": "system", "content": _WORKSPACE_WRITE_NUDGE})
+                # "user", not "system" — this served model's chat template rejects a
+                # system message anywhere but index 0 ("System message must be at
+                # the beginning"), which broke every turn that reached this nudge
+                # mid-conversation. "user" is accepted anywhere and reads the same
+                # to the model as an interstitial instruction.
+                convo.append({"role": "user", "content": _WORKSPACE_WRITE_NUDGE})
                 continue
             yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return
@@ -803,7 +808,9 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 # for multiple deliverables (e.g. proposal + ringisho) in one turn.
                 committed_actions.append((name, result))
                 if not last_round:
-                    convo.append({"role": "system", "content":
+                    # "user", not "system" — see the write-nudge comment above; this
+                    # served model's chat template 400s on a non-leading system message.
+                    convo.append({"role": "user", "content":
                         f"✅ {name} が正常に完了しました。ユーザーの元のリクエストを確認してください。"
                         f"依頼されたタスクがすべて完了しましたか？ まだ残っている場合は次のツールを"
                         f"呼び出してください。すべて完了した場合は finish を呼んでください。"})
@@ -822,7 +829,12 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
             if (not write_nudge_used and _wants_workspace_write(user_msg)
                     and not any(name == "edit_workspace_document" for name, _, _ in tool_log)):
                 write_nudge_used = True
-                convo.append({"role": "system", "content": _WORKSPACE_WRITE_NUDGE})
+                # "user", not "system" — this served model's chat template rejects a
+                # system message anywhere but index 0 ("System message must be at
+                # the beginning"), which broke every turn that reached this nudge
+                # mid-conversation. "user" is accepted anywhere and reads the same
+                # to the model as an interstitial instruction.
+                convo.append({"role": "user", "content": _WORKSPACE_WRITE_NUDGE})
                 continue
             yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
             return

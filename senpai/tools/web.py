@@ -15,26 +15,51 @@ from pathlib import Path
 _HTTP_TIMEOUT = 6  # seconds; short so a hang can't stall the chat
 
 # Search APIs (Tavily) rank/embed short keyword queries; a caller that hands back
-# an entire prompt/instruction block (a runaway tool-call arg, or `_gather_grounding`
-# passing a whole doc-authoring brief) gets noisy, off-topic results — which the
-# model then has to paper over, i.e. hallucinate on top of. Every query goes
-# through this single choke point so both `web_search` and `web_search_typed` are
-# protected the same way regardless of caller.
-_MAX_QUERY_WORDS = 12
-_MAX_QUERY_CHARS = 120
+# an entire prompt/instruction block verbatim — a runaway tool-call arg, or the
+# planner's `WebCapability`/`_gather_grounding`, both of which pass the ENTIRE raw
+# goal as `query` for every gather capability — gets noisy, off-topic results.
+# Worse than irrelevant: a raw goal often contains internal-app jargon that's
+# ALSO a real-world term (e.g. this app's "SPR" = Strategic Pipeline Report, but
+# search engines resolve it to the Strategic Petroleum Reserve), so a naive
+# first-N-words truncation can hand the model a page of U.S. petroleum-reserve
+# policy that it then confidently blends into a sales-pipeline report. Instead,
+# prefer the sentence(s) that actually read as an external/factual ask (prices,
+# trends, comparisons, "latest") over just "the first sentence of the prompt".
+# Every query goes through this one choke point so `web_search` and
+# `web_search_typed` are protected the same way regardless of caller.
+_MAX_QUERY_WORDS = 18
+_MAX_QUERY_CHARS = 140
+
+# External/factual cues — topics that go stale in a model's weights (prices,
+# "best-of" picks, current models/trends, comparisons). Kept in sync with
+# senpai/tools/impl.py's `_WEB_SIGNAL_RE` (same intent: is this sentence actually
+# worth a live search).
+_WEB_SIGNAL_RE = re.compile(
+    r"best|top|latest|newest|current|cheap|price|pricing|budget|under|vs\b|versus|compare|"
+    r"comparison|review|ranking|recommend|spec|market|trend|news|deal|20(2[3-9]|[3-9]\d)|"
+    r"おすすめ|比較|最新|価格|相場|予算|以内|ランキング|レビュー|選び方|市場|"
+    r"トレンド|ニュース|スペック|円",
+    re.IGNORECASE,
+)
+
+_SENTENCE_SPLIT_RE = re.compile(r"[。\n]|(?<=[.!?])\s+")
 
 
 def _condense_query(query: str) -> str:
     q = " ".join((query or "").split())
     if not q:
         return q
-    # A multi-sentence/multi-line blob (numbered steps, a full user message) —
-    # keep only the first sentence/line, which is almost always the actual topic.
-    first = re.split(r"[。\n]", q, 1)[0]
-    words = first.split(" ")
+    if len(q) <= _MAX_QUERY_CHARS and len(q.split(" ")) <= _MAX_QUERY_WORDS:
+        return q  # already short — nothing to extract
+
+    sentences = [s.strip() for s in _SENTENCE_SPLIT_RE.split(q) if s.strip()]
+    signal = [s for s in sentences if _WEB_SIGNAL_RE.search(s)]
+    chosen = signal[0] if signal else (sentences[0] if sentences else q)
+
+    words = chosen.split(" ")
     if len(words) > _MAX_QUERY_WORDS:
-        first = " ".join(words[:_MAX_QUERY_WORDS])
-    return first[:_MAX_QUERY_CHARS].strip()
+        chosen = " ".join(words[:_MAX_QUERY_WORDS])
+    return chosen[:_MAX_QUERY_CHARS].strip()
 
 
 def _load_dotenv() -> None:
