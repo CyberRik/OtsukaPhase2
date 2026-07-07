@@ -60,6 +60,28 @@ def _grounding_block(grounding: str) -> str:
 
 
 # --- PPTX -----------------------------------------------------------------------
+# The layout vocabulary the model may choose from, one per slide. This is the fix
+# for "decks are just bullet points": the old schema only allowed {title, bullets},
+# so every slide collapsed to a bullet list no matter how rich render.py/html_render
+# could draw it. Each layout normalizes (in `_normalize_slide`) to an internal slide
+# dict that html_render.py renders richly AND render.py can still fall back on — every
+# non-title slide also carries a plain `bullets` text form so the native-pptx fallback
+# (used only when the HTML→PPTX browser path is unavailable) never renders blank.
+_SLIDE_SCHEMA = (
+    '- {"layout":"section","title":str,"subtitle":str}  (a divider that opens a new part)\n'
+    '- {"layout":"bullets","title":str,"bullets":[str,...]}  (3-6 short points)\n'
+    '- {"layout":"two_column","title":str,"columns":['
+    '{"heading":str,"bullets":[str,...]},{"heading":str,"bullets":[str,...]}]}\n'
+    '- {"layout":"stat","title":str,"stats":[{"value":"42%","label":str},...]}  (1-3 big figures)\n'
+    '- {"layout":"quote","quote":str,"attribution":str}\n'
+    '- {"layout":"comparison","title":str,"headers":[str,...],"rows":[[str,...],...]}\n'
+    '- {"layout":"timeline","title":str,"phases":['
+    '{"label":str,"duration":str,"detail":str},...]}\n'
+    '- {"layout":"chart","title":str,"chart":{"type":"bar","categories":[str,...],'
+    '"series":[{"name":str,"values":[number,...]}],"value_labels":[str,...]}}\n'
+)
+
+
 def author_deck(prompt: str, grounding: str = "", lang: str = "ja",
                 customer_scoped: bool = False) -> dict | None:
     """Author a render-ready deck spec from a free prompt. None when the LLM is
@@ -70,11 +92,19 @@ def author_deck(prompt: str, grounding: str = "", lang: str = "ja",
     if not _use_llm():
         return None
     instr = (
-        "You are a presentation author. Produce a slide deck as STRICT JSON only — no "
-        "prose, no code fence. Schema: "
-        '{"title": str, "subtitle": str, '
-        '"slides": [{"title": str, "bullets": [str, ...]}, ...]}. '
-        f"Use 4-{MAX_SLIDES} content slides, 3-6 concise bullets each. "
+        "You are an executive presentation designer building a C-level, visually rich "
+        "deck. Produce it as STRICT JSON only — no prose, no code fence.\n"
+        'Top level: {"title": str, "subtitle": str, "slides": [slide, ...]}.\n'
+        f"Use 6-{MAX_SLIDES} content slides. DESIGN FOR VISUAL VARIETY — a wall of bullet "
+        "lists is a failure. For each slide pick the layout that best fits its message:\n"
+        f"{_SLIDE_SCHEMA}"
+        "Requirements: (1) include at least ONE chart and ONE comparison table and ONE "
+        "stat slide whenever the topic can support them; (2) open sections with a "
+        "'section' divider; (3) use 'stat' for headline numbers and 'chart' to show any "
+        "trend, split or before/after; (4) no more than ~2 plain 'bullets' slides in the "
+        "whole deck. Favor data-driven, graphical slides throughout.\n"
+        "For charts, give real category labels and numeric values (type 'bar' for "
+        "comparisons/rankings, 'doughnut' for a share/composition split).\n"
         f"Write in {'Japanese' if lang == 'ja' else 'English'}.\n"
         f"{playbook.deck_style_guide(customer_scoped)}\n"
         f"Topic / request: {prompt}\n"
@@ -88,23 +118,122 @@ def author_deck(prompt: str, grounding: str = "", lang: str = "ja",
     return _to_deck_spec(obj, prompt)
 
 
+def _s(x) -> str:
+    return str(x or "").strip()
+
+
+def _slist(xs) -> list[str]:
+    return [str(b).strip() for b in (xs or []) if str(b).strip()]
+
+
+def _normalize_slide(s: dict) -> dict | None:
+    """Map one authored slide to an internal render slide. Keeps field names the
+    native renderer already understands (chart/table/timeline) and always attaches a
+    `bullets` text form so render.render_pptx degrades safely for the richer layouts
+    it does not draw natively. Returns None for unusable input."""
+    if not isinstance(s, dict):
+        return None
+    layout = _s(s.get("layout")).lower() or "bullets"
+    title = _s(s.get("title"))
+    notes = _s(s.get("notes"))
+
+    if layout == "section":
+        subtitle = _s(s.get("subtitle"))
+        return {"layout": "section", "title": title or subtitle, "subtitle": subtitle,
+                "bullets": _slist([subtitle]), "notes": notes}
+
+    if layout in ("stat", "kpi"):
+        stats = []
+        for st in (s.get("stats") or []):
+            if isinstance(st, dict):
+                value, label = _s(st.get("value")), _s(st.get("label"))
+                if value or label:
+                    stats.append({"value": value, "label": label})
+        return {"layout": "stat", "title": title, "stats": stats, "note": _s(s.get("note")),
+                "bullets": [f"{x['value']} — {x['label']}".strip(" —") for x in stats],
+                "notes": notes}
+
+    if layout == "quote":
+        quote = _s(s.get("quote") or s.get("text"))
+        attribution = _s(s.get("attribution") or s.get("author"))
+        line = (f"「{quote}」" + (f" — {attribution}" if attribution else "")) if quote else ""
+        return {"layout": "quote", "title": title, "quote": quote, "attribution": attribution,
+                "bullets": [line] if line else [], "notes": notes}
+
+    if layout in ("two_column", "twocolumn", "columns"):
+        cols, flat = [], []
+        for c in (s.get("columns") or [])[:2]:
+            if isinstance(c, dict):
+                col = {"heading": _s(c.get("heading")), "bullets": _slist(c.get("bullets"))}
+                cols.append(col)
+                if col["heading"]:
+                    flat.append(col["heading"])
+                flat += col["bullets"]
+        return {"layout": "two_column", "title": title, "columns": cols,
+                "bullets": flat, "notes": notes}
+
+    if layout in ("comparison", "table"):
+        tbl = s.get("table") if isinstance(s.get("table"), dict) else {}
+        headers = _slist(tbl.get("headers") or s.get("headers"))
+        rows = [[str(c).strip() for c in r]
+                for r in (tbl.get("rows") or s.get("rows") or [])
+                if isinstance(r, (list, tuple))]
+        return {"layout": "table", "title": title, "table": {"headers": headers, "rows": rows},
+                "bullets": [" / ".join(r) for r in rows if any(r)], "notes": notes}
+
+    if layout == "timeline":
+        phases = []
+        for p in (s.get("phases") or []):
+            if isinstance(p, dict):
+                phases.append({"label": _s(p.get("label")), "duration": _s(p.get("duration")),
+                               "detail": _s(p.get("detail"))})
+        return {"layout": "timeline", "title": title, "phases": phases,
+                "bullets": [f"{p['label']}（{p['duration']}）".replace("（）", "").strip()
+                            for p in phases if p["label"]], "notes": notes}
+
+    if layout == "chart":
+        ch = s.get("chart") if isinstance(s.get("chart"), dict) else {}
+        cats = _slist(ch.get("categories"))
+        series = []
+        for se in (ch.get("series") or []):
+            if isinstance(se, dict):
+                vals = []
+                for v in (se.get("values") or []):
+                    try:
+                        vals.append(float(v))
+                    except (TypeError, ValueError):
+                        pass
+                series.append({"name": _s(se.get("name")), "values": vals})
+        return {"layout": "chart", "title": title,
+                "chart": {"type": _s(ch.get("type")) or "bar", "categories": cats,
+                          "series": series, "value_labels": _slist(ch.get("value_labels"))},
+                "bullets": [], "notes": notes}
+
+    if layout in ("image_caption", "image", "callout"):
+        caption = _s(s.get("caption"))
+        return {"layout": "image_caption", "title": title, "image_url": _s(s.get("image_url")),
+                "caption": caption, "bullets": _slist(s.get("bullets")) or _slist([caption]),
+                "notes": notes}
+
+    # default: plain bullet slide
+    return {"layout": "bullets", "title": title, "bullets": _slist(s.get("bullets")),
+            "notes": notes}
+
+
 def _to_deck_spec(obj: dict, prompt: str) -> dict:
-    """Convert authored JSON to render.render_pptx's spec (title slide + content)."""
+    """Convert authored JSON to the internal deck spec (title slide + typed content
+    slides) that html_render.py and render.render_pptx consume."""
     slides = [{
         "layout": "title",
         "title": str(obj.get("title") or prompt[:80] or "Presentation"),
         "subtitle": str(obj.get("subtitle") or ""),
     }]
     for s in (obj.get("slides") or [])[:MAX_SLIDES]:
-        if not isinstance(s, dict):
-            continue
-        slides.append({
-            "layout": "content",
-            "title": str(s.get("title") or ""),
-            "bullets": [str(b) for b in (s.get("bullets") or []) if str(b).strip()],
-        })
+        norm = _normalize_slide(s)
+        if norm is not None:
+            slides.append(norm)
     if len(slides) == 1:  # model gave a title but no content → one summary slide
-        slides.append({"layout": "content", "title": "概要",
+        slides.append({"layout": "bullets", "title": "概要",
                        "bullets": [str(obj.get("subtitle") or prompt)]})
     return {"slides": slides, "_title": slides[0]["title"]}
 

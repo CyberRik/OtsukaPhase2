@@ -15,7 +15,6 @@ from pathlib import Path
 
 from senpai.documents import narrative
 from senpai.documents.context import DocumentContext, build_document_context
-from senpai.documents.render import output_path, render_pptx
 
 
 def _yen(n) -> str:
@@ -150,7 +149,10 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
         "chart": {
             "renderer": "mpl",
             "categories": chart_categories,
-            "series": [{"name": "Amount", "values": chart_values}]
+            "series": [{"name": "Amount", "values": chart_values}],
+            # Yen-formatted direct labels so the HTML/SVG bar reads "¥1,200万" not a raw
+            # number; the native-fallback mpl renderer formats its own labels.
+            "value_labels": [_yen(v) for v in chart_values],
         },
         "notes": roi_notes.strip(),
     }
@@ -205,19 +207,23 @@ def build_proposal_spec(ctx: DocumentContext, lang: str = "ja") -> dict:
 
 
 def generate(deal_id: str, lang: str = "ja",
-            deal_ids: list[str] | None = None) -> tuple[Path, DocumentContext, dict] | None:
-    """Build + render a proposal for `deal_id`. Returns (path, context, spec) or None.
-    The spec is returned so the caller can show the exact outline that was rendered
-    without re-authoring it (which, with the LLM prose pass, would be a second call
-    and could differ from the file). `deal_ids`, when given, merges that customer's
-    other deals into the same deck (see context.build_document_context)."""
+            deal_ids: list[str] | None = None) -> tuple[dict, DocumentContext, dict] | None:
+    """Build + render a proposal for `deal_id`. Returns (files, context, spec) or None,
+    where `files` is the export set {"pptx": Path, "html": Path, "pdf": Path?}. The whole
+    grounded narrative arc (build_proposal_spec) is preserved verbatim — it is rendered
+    through the shared HTML-first pipeline so the proposal gets the same executive design
+    and an editable PPTX, with the native python-pptx renderer as the offline fallback.
+    The spec is returned so the caller can show the exact outline that was rendered without
+    re-authoring it (which, with the LLM prose pass, would be a second call and could
+    differ from the file). `deal_ids`, when given, merges that customer's other deals into
+    the same deck (see context.build_document_context)."""
     ctx = build_document_context(deal_id, deal_ids=deal_ids)
     if ctx is None:
         return None
     spec = build_proposal_spec(ctx, lang=lang)
-    path = output_path("proposal", deal_id, "pptx")
-    render_pptx(spec, path)
-    return path, ctx, spec
+    from senpai.documents import export
+    files = export.render_deck(spec, kind="proposal", slug=deal_id, lang=lang)
+    return files, ctx, spec
 
 
 if __name__ == "__main__":
@@ -228,5 +234,7 @@ if __name__ == "__main__":
     if out is None:
         print(f"deal {did} not found")
     else:
-        p, c, _spec = out
-        print(f"wrote {p}  ({p.stat().st_size} bytes) for {c.customer}")
+        files, c, _spec = out
+        p = files["pptx"]
+        print(f"wrote {p}  ({p.stat().st_size} bytes) for {c.customer}; "
+              f"formats: {sorted(files)}")

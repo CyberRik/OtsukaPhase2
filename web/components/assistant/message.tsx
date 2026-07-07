@@ -20,7 +20,21 @@ import { cn } from "@/lib/utils";
 import { RetrievalExplorer } from "@/components/assistant/retrieval-explorer";
 import { CrawlReplay } from "@/components/assistant/crawl-replay";
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; documents?: GeneratedDocument[]; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
+
+// Short, human format tag for a generated-file download chip, from its extension.
+const DOC_FORMAT: Record<string, string> = {
+  pptx: "PowerPoint", pdf: "PDF", html: "HTML", docx: "Word", xlsx: "Excel",
+};
+function docFormat(filename: string): string {
+  const ext = (filename.split(".").pop() ?? "").toLowerCase();
+  return DOC_FORMAT[ext] ?? ext.toUpperCase();
+}
+// All downloadable files a tool call produced: the new `documents` list, or the legacy
+// singular `document`, deduped by doc_id.
+function toolDocs(tl: { document?: GeneratedDocument; documents?: GeneratedDocument[] }): GeneratedDocument[] {
+  return tl.documents && tl.documents.length > 0 ? tl.documents : tl.document ? [tl.document] : [];
+}
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -175,16 +189,21 @@ function ToolDisclosure({ tool, running, lang, isParallelItem = false }: { tool:
               </ol>
             </div>
           )}
-          {tool.document && (
-            <a
-              href={documentUrl(tool.document.download_url)}
-              download={tool.document.filename}
-              className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
-            >
-              <Download className="h-3.5 w-3.5" />
-              {lang === "ja" ? "ダウンロード" : "Download"}
-              <span className="font-mono text-[10px] text-muted-foreground">{tool.document.filename}</span>
-            </a>
+          {toolDocs(tool).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {toolDocs(tool).map((doc) => (
+                <a
+                  key={doc.doc_id}
+                  href={documentUrl(doc.download_url)}
+                  download={doc.filename}
+                  className="inline-flex w-fit items-center gap-1.5 rounded-md border border-primary/40 bg-primary/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {docFormat(doc.filename)}
+                  <span className="font-mono text-[10px] text-muted-foreground">{doc.filename}</span>
+                </a>
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -274,7 +293,14 @@ export function MessageBubble({ m, t, lang, onPick }: {
       {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
            buried inside the collapsed tool card) so the deliverable is one click. */}
       {(() => {
-        const docs = m.tools.map((tl) => tl.document).filter(Boolean) as GeneratedDocument[];
+        // Flatten every file each tool call produced (dedupe by doc_id), so an export set
+        // like PPTX + PDF + HTML all surface as one-click chips at the response level.
+        const seen = new Set<string>();
+        const docs = m.tools.flatMap(toolDocs).filter((d) => {
+          if (seen.has(d.doc_id)) return false;
+          seen.add(d.doc_id);
+          return true;
+        });
         if (docs.length === 0) return null;
         return (
           <div className="flex w-full max-w-[88%] flex-wrap gap-2 pt-1">
@@ -286,7 +312,7 @@ export function MessageBubble({ m, t, lang, onPick }: {
                 className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/[0.06] px-3 py-2 text-[12.5px] font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 <Download className="h-4 w-4 shrink-0" />
-                {lang === "ja" ? "ダウンロード" : "Download"}
+                {docFormat(doc.filename)}
                 <span className="font-mono text-[11px] text-muted-foreground">{doc.filename}</span>
               </a>
             ))}

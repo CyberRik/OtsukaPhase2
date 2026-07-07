@@ -775,15 +775,21 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                         # Thinned scroll sequence → an auto-playing browser replay on
                         # the chat card (the /intel path streams these live instead).
                         ev["crawlFrames"] = _downsample_frames(frames, 16)
-            # Attach the file this call produced. A generated document is a WRITE
-            # deliverable (generate_*/action tools), which the scheduler runs
-            # serially — so there is at most one per round, and the newest new id
-            # belongs to this terminal call.
+            # Attach the file(s) this call produced. Most generate_* tools emit a single
+            # deliverable, but generate_pptx now ships a whole export set (editable PPTX +
+            # PDF + the source HTML) from one call, so surface them all as download chips.
+            # `document` (singular) stays for backward compat = the primary editable office
+            # file (pptx/docx), falling back to the newest id.
             if new_doc_ids and (name.startswith("generate_") or name in _ACTION_TOOLS):
-                doc = _docs.get(new_doc_ids[-1])
-                if doc:
-                    ev["document"] = {"doc_id": doc["doc_id"], "kind": doc["kind"],
-                                      "filename": doc["filename"], "download_url": doc["download_url"]}
+                docs = [d for d in (_docs.get(i) for i in new_doc_ids) if d]
+                if docs:
+                    ev["documents"] = [{"doc_id": d["doc_id"], "kind": d["kind"],
+                                        "filename": d["filename"],
+                                        "download_url": d["download_url"]} for d in docs]
+                    ev["document"] = next(
+                        (d for d in ev["documents"]
+                         if d["kind"] in ("pptx", "docx", "proposal", "ringisho")),
+                        ev["documents"][-1])
             yield ev
 
             if _is_terminal_action(name, result):

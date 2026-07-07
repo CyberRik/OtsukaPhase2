@@ -43,6 +43,13 @@ pykakasi==2.3.0
 # can't break tool import. Files are written to senpai/data/generated/ (gitignored).
 python-pptx==1.0.2
 python-docx==1.1.2
+# matplotlib backs render.py's server-side comparison chart (native-PPTX path). It was
+# previously undeclared; pin it so chart slides don't ImportError at runtime.
+matplotlib==3.9.2
+# playwright drives the HTML-first deck export (senpai/documents/export.py): Chromium
+# renders the HTML deck to a pixel-perfect PDF and to an editable PPTX. Also used by
+# senpai/tools/crawl.py. Run `python -m playwright install chromium` after install.
+playwright==1.61.0
 
 # NOTE: the Next.js frontend's HTTP bridge (fastapi/uvicorn) is intentionally NOT
 # pinned here — gradio 6.17 requires starlette>=1.0, which conflicts with
