@@ -53,7 +53,15 @@ def _rep_activities(employee_id: str) -> list[dict]:
 
 
 def _stars(ratio: float) -> int:
-    return max(1, min(5, round(1 + ratio * 4)))
+    if ratio >= 0.85:
+        return 5
+    if ratio >= 0.65:
+        return 4
+    if ratio >= 0.40:
+        return 3
+    if ratio >= 0.15:
+        return 2
+    return 1
 
 
 def _week_start(d: date) -> date:
@@ -92,7 +100,7 @@ def _month_relationship(acts: list[dict]) -> float | None:
     if not deals:
         return None
     depth = len(acts) / len(deals)
-    return min(1.0, depth / 5.0)
+    return min(1.0, depth / 8.0)
 
 
 def _month_proposal(acts: list[dict]) -> float | None:
@@ -509,8 +517,8 @@ def rep_growth(employee_id: str, today: date | None = None) -> dict:
 
     disc_ratio = (sum(1 for a in acts if a.get("customer_challenge")) / n_acts) if n_acts else 0.0
     depth = (n_acts / n_deals) if n_deals else 0.0
-    rel_ratio = min(1.0, depth / 5.0)
-    win_ratio = (len(won) / len(closed)) if closed else 0.5
+    rel_ratio = min(1.0, depth / 8.0)
+    win_ratio = (len(won) / len(closed)) if closed else 0.0
     quoted_count = sum(1 for d in deals if store.quote_for_deal(d["deal_id"]))
     quote_ratio = (quoted_count / n_deals) if n_deals else 0.0
 

@@ -332,15 +332,17 @@ function DealCard({ deal, onOpen }: { deal: DealRow; onOpen: (id: string) => voi
 
 function SkillProgressionChart({
   monthly,
+  skills,
   lang,
   highlighted,
 }: {
   monthly: { month: string; count: number; skill_scores?: Partial<Record<string, number | null>> }[];
+  skills: GrowthResponse["growth"]["skills"];
   lang: "ja" | "en";
   highlighted: string | null;
 }) {
   const { t } = useT();
-  const [tab, setTab] = useState<"skills" | "activity">("skills");
+  const [tab, setTab] = useState<"radar" | "skills" | "activity">("radar");
   // closing_discipline has no per-month ratio so it never appears as a line
   const skillKeys = Object.keys(SKILL_STROKE).filter((k) => k !== "closing_discipline");
   const n = monthly.length;
@@ -357,7 +359,7 @@ function SkillProgressionChart({
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       {/* tab strip */}
       <div className="flex border-b border-border">
-        {(["skills", "activity"] as const).map((tb) => (
+        {(["radar", "skills", "activity"] as const).map((tb) => (
           <button
             key={tb}
             onClick={() => setTab(tb)}
@@ -368,17 +370,23 @@ function SkillProgressionChart({
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {tb === "skills"
+            {tb === "radar"
+              ? (lang === "ja" ? "能力チャート" : "Skill Radar")
+              : tb === "skills"
               ? (lang === "ja" ? "スキル推移" : "Skill trends")
               : (lang === "ja" ? "活動量" : "Activity")}
           </button>
         ))}
       </div>
 
-      {tab === "skills" ? (
-        <div className="p-4">
+      {tab === "radar" ? (
+        <div className="p-4 flex justify-center" style={{ minHeight: 250 }}>
+          <SkillRadarChart skills={skills} lang={lang} highlighted={highlighted} />
+        </div>
+      ) : tab === "skills" ? (
+        <div className="p-4" style={{ minHeight: 250 }}>
           {/* SVG chart area */}
-          <div className="relative" style={{ height: 120 }}>
+          <div className="relative" style={{ height: 200 }}>
             {/* Y-axis labels — HTML, not SVG, so no fill-class issues */}
             <div className="absolute left-0 top-0 flex h-full flex-col justify-between">
               {["100%", "50%", "0%"].map((l) => (
@@ -456,8 +464,8 @@ function SkillProgressionChart({
         </div>
       ) : (
         /* ── Activity bars tab ── */
-        <div className="p-4">
-          <div className="relative flex h-32 items-end justify-between gap-1.5">
+        <div className="p-4" style={{ minHeight: 250 }}>
+          <div className="relative flex items-end justify-between gap-1.5" style={{ height: 200 }}>
             {monthly.map((m) => {
               const ratio = maxCount > 0 ? m.count / maxCount : 0;
               const pct = m.count === 0 ? 0 : Math.max(6, ratio * 100);
@@ -514,6 +522,124 @@ function SkillProgressionChart({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SkillRadarChart({
+  skills,
+  lang,
+  highlighted,
+}: {
+  skills: GrowthResponse["growth"]["skills"];
+  lang: "ja" | "en";
+  highlighted: string | null;
+}) {
+  const { t } = useT();
+  const W = 320;
+  const H = 260;
+  const cx = W / 2;
+  const cy = H / 2 + 10;
+  const R = 80;
+
+  const order = [
+    "relationship_building",
+    "decision_maker_discovery",
+    "customer_discovery",
+    "closing_discipline",
+    "proposal_pricing",
+  ];
+
+  const getPt = (idx: number, r: number) => {
+    const angle = (Math.PI * 2 * idx) / 5 - Math.PI / 2;
+    return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r };
+  };
+
+  const levels = [1, 2, 3, 4, 5];
+
+  const skillPts = order.map((k, i) => {
+    const s = skills.find((x) => x.key === k);
+    const stars = s ? s.stars : 1;
+    return getPt(i, (stars / 5) * R);
+  });
+  const skillPath = skillPts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ") + " Z";
+
+  return (
+    <div className="w-full relative flex items-center justify-center" style={{ minHeight: H, maxWidth: W }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className="w-full h-auto text-[10px]">
+        {/* Background web */}
+          {levels.map((l) => {
+            const r = (l / 5) * R;
+            const pts = order.map((_, i) => getPt(i, r));
+            const d = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ") + " Z";
+            return <path key={l} d={d} fill="none" stroke="currentColor" className="text-muted-foreground/15" />;
+          })}
+          
+          {/* Spokes */}
+          {order.map((_, i) => {
+            const p = getPt(i, R);
+            return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="currentColor" className="text-muted-foreground/15" />;
+          })}
+
+          {/* Polygon */}
+          <path
+            d={skillPath}
+            fill="currentColor"
+            className="text-primary/10 transition-all duration-300"
+            stroke="currentColor"
+            strokeWidth={2}
+            style={{ color: "hsl(var(--primary))" }}
+          />
+          
+          {/* Points */}
+          {skillPts.map((p, i) => {
+            const k = order[i];
+            const isHl = highlighted === k;
+            return (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r={isHl ? 5 : 3.5}
+                fill={isHl ? "currentColor" : "var(--background)"}
+                stroke="currentColor"
+                strokeWidth={isHl ? 0 : 1.5}
+                className={cn("transition-all duration-300", isHl ? "text-primary" : "text-primary")}
+                style={{ color: "hsl(var(--primary))" }}
+              />
+            );
+          })}
+
+          {/* Labels */}
+          {order.map((k, i) => {
+            const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+            const p = getPt(i, R + 18);
+            
+            let anchor: "start" | "middle" | "end" = "middle";
+            if (Math.abs(Math.cos(angle)) > 0.1) {
+              anchor = Math.cos(angle) > 0 ? "start" : "end";
+            }
+            
+            const lx = p.x + (anchor === "start" ? 4 : anchor === "end" ? -4 : 0);
+            const ly = p.y;
+            
+            return (
+              <text
+                key={k}
+                x={lx}
+                y={ly}
+                textAnchor={anchor}
+                dominantBaseline="middle"
+                className={cn(
+                  "fill-foreground font-medium transition-all duration-200",
+                  highlighted === k && "fill-primary font-bold text-[11px]"
+                )}
+              >
+                {t(`skill.${k}`)}
+              </text>
+            );
+          })}
+      </svg>
     </div>
   );
 }
@@ -628,9 +754,7 @@ export function GrowthDashboard({
               ))}
             </div>
             <div>
-              <div className="eyebrow mb-1">{t("growth.monthlyTitle")}</div>
-              <p className="mb-3 text-[11.5px] text-muted-foreground">{t("growth.monthlySkills")}</p>
-              <SkillProgressionChart monthly={g.monthly} lang={lang} highlighted={selectedSkill} />
+              <SkillProgressionChart monthly={g.monthly} skills={g.skills} lang={lang} highlighted={selectedSkill} />
             </div>
           </div>
         </TabsContent>
