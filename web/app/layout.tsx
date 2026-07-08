@@ -24,6 +24,12 @@ export const metadata: Metadata = {
   title: "Senpai — Sales Knowledge & Onboarding Platform",
   description:
     "Onboard new sales reps with a senior's reasoning. Source-traceable principles, computed confidence, deal-health that explains itself.",
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon.png', type: 'image/png' },
+    ]
+  }
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
