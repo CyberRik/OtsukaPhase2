@@ -144,7 +144,9 @@ export const REP_EN: Record<string, string> = {
 };
 
 export function repText(lang: Lang, ja: string): Localized {
-  return pickText(lang, ja, REP_EN[ja]);
+  // Person names are proper nouns: they stay Japanese in every language.
+  // (Not a fallback — the kanji IS the canonical rendering, so no JP badge.)
+  return { text: ja, fallback: false };
 }
 
 // --- Department names ------------------------------------------------------

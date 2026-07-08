@@ -9,23 +9,36 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, Volume2, VolumeX } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 /**
  * First-visit scroll intro — a dark cinematic sequence, deliberately unlike
- * the product UI. A single particle field (canvas) morphs through three
- * formations as you scroll — the 大塚 kanji → a drifting constellation → the
- * word 先輩 — then warps into light-streaks while the void dissolves into
- * the real landing page underneath. All scrubbed off scroll position.
+ * the product UI. One particle field morphs through three formations as you
+ * scroll — 大塚商会 → a living knowledge graph → 先輩 — with a feature act of
+ * stat shards flying past the camera in between, then warps into light
+ * streaks as the void dissolves into the real landing page underneath.
+ * Everything is scrubbed off scroll position. Headlines are bilingual
+ * lockups: the active language leads, the other echoes underneath.
  */
+
+// Act boundaries, in scroll progress (0–1).
+const GATHER_END = 0.06; // particles fly in and form 大塚商会
+const M1_START = 0.17; // 大塚商会 → constellation
+const M1_END = 0.24;
+const M2_START = 0.66; // constellation → 先輩
+const M2_END = 0.73;
+const WARP_START = 0.86;
+
 export function IntroDemo({ onDone }: { onDone: () => void }) {
   const { t } = useT();
   const reduced = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const [leaving, setLeaving] = useState(false);
+  const [sound, setSound] = useState(false);
 
   const { scrollYProgress: p } = useScroll({ container: containerRef });
+  useAmbientScore(p, sound && !leaving);
 
   // Reduced-motion users skip the intro entirely.
   useEffect(() => {
@@ -48,11 +61,13 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
 
   // Final reveal: the DOM layer blasts past the camera while the dark void
   // and the particle canvas dissolve, exposing the light landing page.
-  const stageScale = useTransform(p, [0.84, 1], [1, 7]);
-  const stageOpacity = useTransform(p, [0.9, 1], [1, 0]);
-  const voidOpacity = useTransform(p, [0.86, 1], [1, 0]);
-  const canvasOpacity = useTransform(p, [0.9, 1], [1, 0]);
-  const hintOpacity = useTransform(p, [0, 0.05], [1, 0]);
+  // 3x is enough to sell the blast; higher magnifications force the browser
+  // to re-rasterize huge text layers mid-warp and drop frames.
+  const stageScale = useTransform(p, [WARP_START, 1], [1, 3]);
+  const stageOpacity = useTransform(p, [0.91, 1], [1, 0]);
+  const voidOpacity = useTransform(p, [0.88, 1], [1, 0]);
+  const canvasOpacity = useTransform(p, [0.91, 1], [1, 0]);
+  const hintOpacity = useTransform(p, [0, 0.02, 0.08], [0, 1, 0]);
 
   if (reduced) return null;
 
@@ -68,14 +83,14 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
       onAnimationComplete={() => leaving && onDone()}
       aria-label="intro"
     >
-      <div className="relative h-[520vh]">
+      <div className="relative h-[800vh]">
         {/* The void — near-black navy with a faint indigo core. */}
         <motion.div
           className="fixed inset-0"
           style={{
             opacity: voidOpacity,
             background:
-              "radial-gradient(80% 70% at 50% 45%, hsl(235 60% 14%) 0%, hsl(228 45% 7%) 55%, hsl(225 40% 4%) 100%)",
+              "radial-gradient(80% 70% at 50% 45%, hsl(235 55% 13%) 0%, hsl(228 45% 7%) 55%, hsl(225 40% 4%) 100%)",
           }}
         />
 
@@ -85,34 +100,55 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
 
         <div className="sticky top-0 h-[100dvh] overflow-hidden">
           <motion.div className="relative h-full w-full" style={{ scale: stageScale, opacity: stageOpacity }}>
-            {/* Act I — the kanji burns in the void. */}
-            <Headline p={p} range={[0.03, 0.07, 0.15, 0.2]} depth={1.4} position="low">
-              {t("landing.intro.h1")}
-            </Headline>
+            {/* Act I — 大塚商会 burns in the void. */}
+            <DualHeadline p={p} range={[0.03, 0.06, 0.1, 0.135]} position="low" main={t("landing.intro.a1.h1")} sub={t("landing.intro.a1.h1.sub")} />
+            <DualHeadline p={p} range={[0.13, 0.16, 0.2, 0.235]} position="low" main={t("landing.intro.a1.h2")} sub={t("landing.intro.a1.h2.sub")} />
 
-            {/* Act II — the constellation. */}
-            <Headline p={p} range={[0.3, 0.36, 0.44, 0.5]} depth={1.8}>
-              {t("landing.intro.h2")}
-            </Headline>
+            {/* Act II — the living knowledge graph. */}
+            <DualHeadline p={p} range={[0.235, 0.265, 0.3, 0.33]} main={t("landing.intro.a2.h1")} sub={t("landing.intro.a2.h1.sub")} />
+            <DualHeadline p={p} range={[0.3, 0.33, 0.355, 0.38]} main={t("landing.intro.a2.h2")} sub={t("landing.intro.a2.h2.sub")} />
 
-            {/* Act III — 先輩 re-forms. */}
-            <Headline p={p} range={[0.6, 0.66, 0.72, 0.78]} depth={1.6} position="low" glow>
-              {t("landing.intro.h3")}
-            </Headline>
+            {/* Act III — feature shards fly past the camera, alternating sides:
+                tools → guardrails → ringi → deterministic checks → doc gen →
+                war room → bilingual. */}
+            <FeatureShard p={p} range={[0.375, 0.395, 0.421, 0.443]} side="left" big={t("landing.intro.f1.big")} label={t("landing.intro.f1.label")} sub={t("landing.intro.f1.sub")} />
+            <FeatureShard p={p} range={[0.414, 0.434, 0.46, 0.482]} side="right" big={t("landing.intro.f6.big")} label={t("landing.intro.f6.label")} sub={t("landing.intro.f6.sub")} />
+            <FeatureShard p={p} range={[0.453, 0.473, 0.499, 0.521]} side="left" big={t("landing.intro.f2.big")} label={t("landing.intro.f2.label")} sub={t("landing.intro.f2.sub")} />
+            <FeatureShard p={p} range={[0.492, 0.512, 0.538, 0.56]} side="right" big={t("landing.intro.f3.big")} label={t("landing.intro.f3.label")} sub={t("landing.intro.f3.sub")} />
+            <FeatureShard p={p} range={[0.531, 0.551, 0.577, 0.599]} side="left" big={t("landing.intro.f4.big")} label={t("landing.intro.f4.label")} sub={t("landing.intro.f4.sub")} />
+            <FeatureShard p={p} range={[0.57, 0.59, 0.616, 0.638]} side="right" big={t("landing.intro.f7.big")} label={t("landing.intro.f7.label")} sub={t("landing.intro.f7.sub")} />
+            <FeatureShard p={p} range={[0.609, 0.629, 0.652, 0.674]} side="center" big={t("landing.intro.f5.big")} label={t("landing.intro.f5.label")} sub={t("landing.intro.f5.sub")} />
 
-            {/* Act IV — the send-off, riding the warp. */}
-            <SceneEnter p={p} title={t("landing.intro.s4.title")} cta={t("landing.intro.s4.cta")} onEnter={() => setLeaving(true)} />
+            {/* Act IV — 先輩 re-forms; the money line rides into the warp. */}
+            <DualHeadline p={p} range={[0.7, 0.735, 0.775, 0.805]} position="low" glow main={t("landing.intro.a4.h1")} sub={t("landing.intro.a4.h1.sub")} />
+            <EnterScene
+              p={p}
+              main={t("landing.intro.a4.h2")}
+              sub={t("landing.intro.a4.h2.sub")}
+              cta={t("landing.intro.s4.cta")}
+              onEnter={() => setLeaving(true)}
+            />
           </motion.div>
 
-          <button
-            onClick={() => setLeaving(true)}
-            className="fixed right-5 top-5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[12px] font-medium text-white/60 backdrop-blur transition-colors hover:text-white"
-          >
-            {t("landing.intro.skip")}
-          </button>
+          <div className="fixed right-5 top-5 z-20 flex items-center gap-2">
+            <button
+              onClick={() => setSound((s) => !s)}
+              aria-label={t("landing.intro.sound")}
+              title={t("landing.intro.sound")}
+              className="rounded-full border border-white/15 bg-white/5 p-2 text-white/60 backdrop-blur transition-colors hover:text-white"
+            >
+              {sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </button>
+            <button
+              onClick={() => setLeaving(true)}
+              className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[12px] font-medium text-white/60 backdrop-blur transition-colors hover:text-white"
+            >
+              {t("landing.intro.skip")}
+            </button>
+          </div>
 
           <motion.div
-            className="fixed inset-x-0 bottom-6 flex flex-col items-center gap-1 text-white/50"
+            className="fixed inset-x-0 bottom-6 z-20 flex flex-col items-center gap-1 text-white/50"
             style={{ opacity: hintOpacity }}
           >
             <span className="text-[11px] font-medium uppercase tracking-[0.16em]">{t("landing.intro.scroll")}</span>
@@ -127,79 +163,132 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
 }
 
 /* ------------------------------------------------------------------------ */
-/* Kinetic headline: arrives from deep in the frame, holds, flies past.      */
-/* `depth` controls how hard it zooms; `range` = [in-start, hold, hold-end,  */
-/* out-end] in scroll progress.                                              */
+/* Bilingual kinetic headline: the active language leads, the other echoes   */
+/* beneath. Arrives blurred from deep in the frame, holds, flies past.       */
+/* `range` = [in-start, hold-start, hold-end, out-end].                      */
 /* ------------------------------------------------------------------------ */
-function Headline({
+function DualHeadline({
   p,
   range,
-  depth,
+  main,
+  sub,
   position = "center",
   glow = false,
-  children,
 }: {
   p: MotionValue<number>;
   range: [number, number, number, number];
-  depth: number;
+  main: string;
+  sub: string;
   position?: "center" | "low";
   glow?: boolean;
-  children: React.ReactNode;
 }) {
   const [a, b, c, d] = range;
   const opacity = useTransform(p, [a, b, c, d], [0, 1, 1, 0]);
-  const scale = useTransform(p, [a, c, d], [0.55, 1, depth]);
-  const y = useTransform(p, [a, d], [70, -70]);
+  const scale = useTransform(p, [a, c, d], [0.6, 1, 1.6]);
+  const y = useTransform(p, [a, d], [60, -60]);
   const blur = useTransform(p, [a, b, c, d], [8, 0, 0, 6]);
   const filter = useTransform(blur, (v) => `blur(${v}px)`);
+  // Unmount from the compositor when invisible — blurred text layers are
+  // expensive even at opacity 0.
+  const display = useTransform(opacity, (v) => (v < 0.02 ? "none" : "flex"));
 
   return (
     <motion.div
       className={`absolute inset-0 flex flex-col items-center px-6 text-center ${
-        position === "low" ? "justify-end pb-[16dvh]" : "justify-center"
+        position === "low" ? "justify-end pb-[14dvh]" : "justify-center"
       }`}
-      style={{ opacity }}
+      style={{ opacity, display }}
     >
-      <motion.h2
-        className={`max-w-3xl text-balance text-[30px] font-semibold leading-[1.15] tracking-tight text-white md:text-[52px] ${
-          glow ? "[text-shadow:0_0_60px_hsl(235_84%_65%/0.55)]" : "[text-shadow:0_0_40px_rgba(0,0,0,0.6)]"
-        }`}
-        style={{ scale, y, filter }}
-      >
-        {children}
-      </motion.h2>
+      <motion.div style={{ scale, y, filter }}>
+        <h2
+          className={`max-w-3xl text-balance text-[28px] font-semibold leading-[1.2] tracking-tight text-white md:text-[48px] ${
+            glow ? "[text-shadow:0_0_60px_hsl(235_84%_65%/0.55)]" : "[text-shadow:0_0_40px_rgba(0,0,0,0.6)]"
+          }`}
+        >
+          {main}
+        </h2>
+        <p className="mt-3 text-[13px] font-medium tracking-wide text-white/40 md:text-[15px]">{sub}</p>
+      </motion.div>
     </motion.div>
   );
 }
 
 /* ------------------------------------------------------------------------ */
-/* Act IV — CTA riding the warp streaks.                                     */
+/* Act III — a feature shard: a glassy stat card that flies in from one side */
+/* and past the camera, riding the constellation backdrop.                   */
 /* ------------------------------------------------------------------------ */
-function SceneEnter({
+function FeatureShard({
   p,
-  title,
+  range,
+  side,
+  big,
+  label,
+  sub,
+}: {
+  p: MotionValue<number>;
+  range: [number, number, number, number];
+  side: "left" | "right" | "center";
+  big: string;
+  label: string;
+  sub: string;
+}) {
+  const [a, b, c, d] = range;
+  const opacity = useTransform(p, [a, b, c, d], [0, 1, 1, 0]);
+  const scale = useTransform(p, [a, c, d], [0.45, 1, 2]);
+  const x = useTransform(p, [a, d], side === "left" ? ["-26vw", "-10vw"] : side === "right" ? ["26vw", "10vw"] : ["0vw", "0vw"]);
+  const y = useTransform(p, [a, d], [40, -40]);
+  const blur = useTransform(p, [a, b, c, d], [10, 0, 0, 8]);
+  const filter = useTransform(blur, (v) => `blur(${v}px)`);
+  const display = useTransform(opacity, (v) => (v < 0.02 ? "none" : "flex"));
+
+  return (
+    <motion.div className="absolute inset-0 flex items-center justify-center px-6" style={{ opacity, display }}>
+      <motion.div
+        className="max-w-[320px] rounded-2xl border border-white/12 bg-white/[0.05] px-7 py-6 text-center shadow-[0_0_60px_hsl(235_84%_60%/0.18)] backdrop-blur-sm md:max-w-[380px]"
+        style={{ scale, x, y, filter }}
+      >
+        <div className="text-[40px] font-bold leading-none tracking-tight text-white [text-shadow:0_0_40px_hsl(235_84%_65%/0.6)] md:text-[52px]">
+          {big}
+        </div>
+        <div className="mt-2.5 text-[15px] font-semibold text-white/85 md:text-[17px]">{label}</div>
+        <div className="mt-2 text-[12px] leading-relaxed text-white/40 md:text-[13px]">{sub}</div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ------------------------------------------------------------------------ */
+/* Act IV finale — the one-line pitch plus CTA, riding the warp streaks.     */
+/* ------------------------------------------------------------------------ */
+function EnterScene({
+  p,
+  main,
+  sub,
   cta,
   onEnter,
 }: {
   p: MotionValue<number>;
-  title: string;
+  main: string;
+  sub: string;
   cta: string;
   onEnter: () => void;
 }) {
-  const opacity = useTransform(p, [0.8, 0.87], [0, 1]);
-  const scale = useTransform(p, [0.8, 0.9], [0.5, 1]);
+  const opacity = useTransform(p, [0.8, 0.86], [0, 1]);
+  const scale = useTransform(p, [0.8, 0.9], [0.55, 1]);
+  const display = useTransform(opacity, (v) => (v < 0.02 ? "none" : "flex"));
 
   return (
     <motion.div
       className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
-      style={{ opacity, scale }}
+      style={{ opacity, scale, display }}
     >
-      <h2 className="text-balance text-[34px] font-semibold leading-tight tracking-tight text-white [text-shadow:0_0_80px_hsl(235_84%_65%/0.7)] md:text-[52px]">
-        {title}
+      <h2 className="max-w-3xl text-balance text-[30px] font-semibold leading-[1.25] tracking-tight text-white [text-shadow:0_0_24px_hsl(235_84%_65%/0.5)] md:text-[46px]">
+        {main}
       </h2>
+      <p className="mt-3 text-[13px] font-medium tracking-wide text-white/45 md:text-[15px]">{sub}</p>
       <button
         onClick={onEnter}
-        className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-[hsl(228,45%,10%)] shadow-[0_0_50px_hsl(235_84%_65%/0.45)] transition-transform hover:scale-[1.04]"
+        className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-[hsl(228,45%,10%)] shadow-[0_0_25px_hsl(235_84%_65%/0.4)] transition-transform hover:scale-[1.04]"
       >
         {cta}
         <ArrowRight className="h-4 w-4" />
@@ -209,19 +298,128 @@ function SceneEnter({
 }
 
 /* ------------------------------------------------------------------------ */
-/* The particle field. One system, four states driven by scroll progress:    */
-/*   form 大塚 → disperse into constellation → re-form as 先輩 → warp.       */
-/* Each particle has a depth factor (z) so camera zoom and warp move the     */
-/* planes at different speeds — the parallax is real, not faked per-layer.   */
+/* Ambient score, synthesized with WebAudio (no asset, no licensing): a deep */
+/* detuned drone breathing through a lowpass, heartbeat thumps while the     */
+/* kanji is formed, and a bandpassed-noise riser that swells into the warp.  */
+/* Created only after the user clicks the sound toggle (autoplay policy).    */
 /* ------------------------------------------------------------------------ */
-const COUNT = 2200;
-const HUBS = 90;
+function useAmbientScore(p: MotionValue<number>, enabled: boolean) {
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined") return;
+    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AC) return;
+    const ac = new AC();
 
+    const master = ac.createGain();
+    master.gain.setValueAtTime(0.0001, ac.currentTime);
+    master.gain.linearRampToValueAtTime(0.16, ac.currentTime + 2.5);
+    master.connect(ac.destination);
+
+    // Drone: D2/A2/D3/A3 stack through a slowly breathing lowpass.
+    const lowpass = ac.createBiquadFilter();
+    lowpass.type = "lowpass";
+    lowpass.frequency.value = 420;
+    lowpass.connect(master);
+    const specs: { f: number; type: OscillatorType; g: number; detune: number }[] = [
+      { f: 73.42, type: "sine", g: 0.5, detune: 0 },
+      { f: 110.0, type: "sine", g: 0.34, detune: 4 },
+      { f: 146.83, type: "triangle", g: 0.16, detune: -5 },
+      { f: 220.0, type: "sine", g: 0.07, detune: 7 },
+    ];
+    const oscs = specs.map((s) => {
+      const o = ac.createOscillator();
+      o.type = s.type;
+      o.frequency.value = s.f;
+      o.detune.value = s.detune;
+      const g = ac.createGain();
+      g.gain.value = s.g;
+      o.connect(g);
+      g.connect(lowpass);
+      o.start();
+      return o;
+    });
+    const lfo = ac.createOscillator();
+    lfo.frequency.value = 0.05;
+    const lfoGain = ac.createGain();
+    lfoGain.gain.value = 150;
+    lfo.connect(lfoGain);
+    lfoGain.connect(lowpass.frequency);
+    lfo.start();
+
+    // Warp riser: looped white noise through a rising bandpass.
+    const buf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ac.createBufferSource();
+    noise.buffer = buf;
+    noise.loop = true;
+    const bandpass = ac.createBiquadFilter();
+    bandpass.type = "bandpass";
+    bandpass.frequency.value = 300;
+    bandpass.Q.value = 1.2;
+    const warpGain = ac.createGain();
+    warpGain.gain.value = 0;
+    noise.connect(bandpass);
+    bandpass.connect(warpGain);
+    warpGain.connect(master);
+    noise.start();
+
+    // Heartbeat: one 52Hz thump per visual pulse period (~3.9s), fading out
+    // as the kanji disperses and again at the warp.
+    const beatTimer = window.setInterval(() => {
+      const t = p.get();
+      const amp = (1 - smooth(t, M1_START, M1_END)) * (1 - smooth(t, WARP_START, 0.98));
+      if (amp < 0.05) return;
+      const o = ac.createOscillator();
+      o.type = "sine";
+      o.frequency.value = 52;
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.5 * amp, ac.currentTime + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.55);
+      o.connect(g);
+      g.connect(master);
+      o.start();
+      o.stop(ac.currentTime + 0.6);
+    }, 3900);
+
+    // Scroll-coupled dynamics.
+    const paramTimer = window.setInterval(() => {
+      const t = p.get();
+      const warp = smooth(t, WARP_START, 0.98);
+      warpGain.gain.setTargetAtTime(warp * 0.55, ac.currentTime, 0.1);
+      bandpass.frequency.setTargetAtTime(300 + warp * 2600, ac.currentTime, 0.1);
+      lowpass.frequency.setTargetAtTime(420 + smooth(t, 0.2, 0.7) * 500, ac.currentTime, 0.3);
+    }, 90);
+
+    return () => {
+      window.clearInterval(beatTimer);
+      window.clearInterval(paramTimer);
+      master.gain.setTargetAtTime(0.0001, ac.currentTime, 0.25);
+      window.setTimeout(() => {
+        oscs.forEach((o) => o.stop());
+        lfo.stop();
+        noise.stop();
+        void ac.close().catch(() => undefined);
+      }, 900);
+    };
+  }, [p, enabled]);
+}
+
+/* ------------------------------------------------------------------------ */
+/* The particle field. One system, four states driven by scroll progress:    */
+/*   fly in and form 大塚商会 → disperse into a knowledge-graph               */
+/*   constellation → re-form as 先輩 → warp into hyperspace streaks.          */
+/* Each particle has a depth factor (z) so camera zoom, cursor scatter and   */
+/* warp move near/far planes at different speeds — real depth parallax.      */
+/* ------------------------------------------------------------------------ */
 type Particle = {
   x: number;
   y: number;
+  ox: number;
+  oy: number; // fly-in origin, far off-screen
   ax: number;
-  ay: number; // formation A: 大塚
+  ay: number; // formation A: 大塚商会
   bx: number;
   by: number; // formation B: constellation
   cx2: number;
@@ -229,12 +427,15 @@ type Particle = {
   z: number; // depth 0.35..1.8
   size: number;
   tw: number; // twinkle phase
+  isNode: boolean; // constellation hub (brighter, carries edges)
 };
 
 function smooth(v: number, lo: number, hi: number) {
   const t = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
   return t * t * (3 - 2 * t);
 }
+
+const NODE_COUNT = 80;
 
 function ParticleField({ p }: { p: MotionValue<number> }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -262,14 +463,14 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       mouse.active = false;
     };
 
-    const sampleText = (text: string, fontScale: number) => {
+    const sampleText = (text: string, fontSize: number) => {
       const off = document.createElement("canvas");
       off.width = W;
       off.height = H;
       const o = off.getContext("2d");
       if (!o) return [] as { x: number; y: number }[];
       o.fillStyle = "#fff";
-      o.font = `900 ${Math.min(W, H) * fontScale}px "Noto Sans JP", "Inter", sans-serif`;
+      o.font = `900 ${fontSize}px "Noto Sans JP", "Inter", sans-serif`;
       o.textAlign = "center";
       o.textBaseline = "middle";
       o.fillText(text, W / 2, H / 2);
@@ -291,22 +492,29 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       canvas.style.height = `${H}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const kanji = sampleText("大塚", W > 640 ? 0.42 : 0.34);
-      const word = sampleText("先輩", W > 640 ? 0.42 : 0.34);
+      const count = W > 768 ? 2200 : 1300;
+      // Four glyphs need to fit the width; two glyphs can go bigger.
+      const otsuka = sampleText("大塚商会", Math.min(W / 4.4, H * 0.42));
+      const senpai = sampleText("先輩", Math.min(W / 2.3, H * 0.46));
       const cxm = W / 2;
       const cym = H / 2;
 
-      pts = Array.from({ length: COUNT }, (_, i) => {
+      pts = Array.from({ length: count }, (_, i) => {
         // Constellation: a loose galaxy spiral around the center.
         const ang = Math.random() * Math.PI * 2;
         const rad = Math.pow(Math.random(), 0.55) * Math.min(W, H) * 0.55;
         const arm = ang + rad * 0.006;
-        const a = kanji.length ? kanji[i % kanji.length] : { x: cxm, y: cym };
-        const c = word.length ? word[i % word.length] : { x: cxm, y: cym };
+        // Stride evenly through the sampled points (which are in row-major
+        // order) so the whole glyph is covered even when points > particles.
+        const a = otsuka.length ? otsuka[Math.floor((i * otsuka.length) / count) % otsuka.length] : { x: cxm, y: cym };
+        const c = senpai.length ? senpai[Math.floor((i * senpai.length) / count) % senpai.length] : { x: cxm, y: cym };
         const jit = () => (Math.random() - 0.5) * 3;
+        const oAng = Math.random() * Math.PI * 2;
         return {
-          x: cxm + (Math.random() - 0.5) * W,
-          y: cym + (Math.random() - 0.5) * H,
+          ox: cxm + Math.cos(oAng) * W * 0.75,
+          oy: cym + Math.sin(oAng) * H * 0.75,
+          x: 0,
+          y: 0,
           ax: a.x + jit(),
           ay: a.y + jit(),
           bx: cxm + Math.cos(arm) * rad,
@@ -316,22 +524,24 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
           z: 0.35 + Math.random() * 1.45,
           size: 0.6 + Math.random() * 1.6,
           tw: Math.random() * Math.PI * 2,
+          isNode: i < NODE_COUNT,
         };
       });
+      for (const pt of pts) {
+        pt.x = pt.ox;
+        pt.y = pt.oy;
+      }
 
-      // Precompute constellation edges among a hub subset (kept O(hubs²) once).
+      // Precompute constellation edges among the hub subset (O(hubs²) once).
       edges = [];
-      const maxD = Math.min(W, H) * 0.16;
-      for (let i = 0; i < HUBS; i++) {
-        for (let j = i + 1; j < HUBS; j++) {
-          const A = pts[i * 20];
-          const B = pts[j * 20];
-          if (!A || !B) continue;
-          const d = Math.hypot(A.bx - B.bx, A.by - B.by);
-          if (d < maxD) edges.push([i * 20, j * 20]);
-          if (edges.length > 170) break;
+      const maxD = Math.min(W, H) * 0.17;
+      for (let i = 0; i < NODE_COUNT; i++) {
+        for (let j = i + 1; j < NODE_COUNT; j++) {
+          const d = Math.hypot(pts[i].bx - pts[j].bx, pts[i].by - pts[j].by);
+          if (d < maxD) edges.push([i, j]);
+          if (edges.length > 180) break;
         }
-        if (edges.length > 170) break;
+        if (edges.length > 180) break;
       }
     };
 
@@ -342,51 +552,64 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       const cym = H / 2;
 
       // Formation blends.
-      const m1 = smooth(t, 0.17, 0.3); // kanji -> constellation
-      const m2 = smooth(t, 0.5, 0.62); // constellation -> 先輩
-      const warp = smooth(t, 0.78, 0.97); // -> hyperspace
-      const scatterIn = smooth(t, 0, 0.05); // initial gather from chaos
+      const gather = smooth(t, 0, GATHER_END); // origins -> 大塚商会
+      const m1 = smooth(t, M1_START, M1_END); // 大塚商会 -> constellation
+      const m2 = smooth(t, M2_START, M2_END); // constellation -> 先輩
+      const warp = smooth(t, WARP_START, 0.98); // -> hyperspace
+      const networkAlive = m1 * (1 - m2);
+      // How strongly particles are currently spelling text (A or C formation):
+      // dots get bigger, brighter and steadier so the kanji reads clearly.
+      const wForm = gather * (1 - m1) + m2 * (1 - warp);
       // Slow push-in per act; warp handles the final blast.
-      const zoom = 1 + m1 * 0.12 + m2 * 0.1;
-      // Heartbeat on the kanji: a sharpened sine so it reads as a beat, not a
-      // wobble. Fades out as the formation disperses (1 - m1).
+      const zoom = 1 + m1 * 0.1 + m2 * 0.08;
+      // Heartbeat on 大塚商会 (fades with m1); 先輩 gets a glow surge instead.
       const beat = Math.pow(0.5 + 0.5 * Math.sin(now * 0.0016), 3) * (1 - m1);
       const pulse = 1 + beat * 0.035;
+      const senpaiGlow = smooth(t, 0.69, 0.77) * (1 - warp);
 
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = "lighter";
 
+      // Warp streaks are batched into depth buckets: one stroke() per bucket
+      // instead of one per particle, which is what made the outro stutter.
+      const NB = 6;
+      const warpPaths = warp > 0.02 ? Array.from({ length: NB }, () => new Path2D()) : null;
+
       // Constellation edges, only alive mid-sequence.
-      const edgeAlpha = m1 * (1 - m2) * 0.22;
-      if (edgeAlpha > 0.01) {
+      const edgeAlpha = networkAlive * 0.22;
+      if (edgeAlpha > 0.01 && warp < 0.05) {
         ctx.strokeStyle = `hsla(235, 84%, 72%, ${edgeAlpha})`;
         ctx.lineWidth = 0.6;
         ctx.beginPath();
         for (const [i, j] of edges) {
-          const A = pts[i];
-          const B = pts[j];
-          ctx.moveTo(A.x, A.y);
-          ctx.lineTo(B.x, B.y);
+          ctx.moveTo(pts[i].x, pts[i].y);
+          ctx.lineTo(pts[j].x, pts[j].y);
         }
         ctx.stroke();
       }
 
       for (const pt of pts) {
-        // Where this particle wants to be right now.
-        let tx = pt.ax + (pt.bx - pt.ax) * m1 + (pt.cx2 - (pt.ax + (pt.bx - pt.ax) * m1)) * m2;
-        let ty = pt.ay + (pt.by - pt.ay) * m1 + (pt.cy2 - (pt.ay + (pt.by - pt.ay) * m1)) * m2;
+        // Where this particle wants to be right now: origin -> A -> B -> C.
+        const fx = pt.ox + (pt.ax - pt.ox) * gather;
+        const fy = pt.oy + (pt.ay - pt.oy) * gather;
+        let tx = fx + (pt.bx - fx) * m1;
+        let ty = fy + (pt.by - fy) * m1;
+        tx = tx + (pt.cx2 - tx) * m2;
+        ty = ty + (pt.cy2 - ty) * m2;
 
         // Depth-aware camera zoom around the center, breathing with the beat.
         const zf = (1 + (zoom - 1) * pt.z) * (1 + (pulse - 1) * pt.z);
         tx = cxm + (tx - cxm) * zf;
         ty = cym + (ty - cym) * zf;
 
-        // Ambient drift so formations feel alive.
-        tx += Math.sin(now * 0.0007 + pt.tw) * 2.2 * pt.z;
-        ty += Math.cos(now * 0.0009 + pt.tw * 1.3) * 2.2 * pt.z;
+        // Ambient drift so formations feel alive — calmer while spelling text
+        // so glyph edges stay crisp.
+        const drift = 2.2 - wForm * 1.4;
+        tx += Math.sin(now * 0.0007 + pt.tw) * drift * pt.z;
+        ty += Math.cos(now * 0.0009 + pt.tw * 1.3) * drift * pt.z;
 
-        // Ease toward target (snappier while gathering).
-        const ease = 0.055 + scatterIn * 0.03;
+        // Ease toward target (snappier while gathering and re-forming).
+        const ease = 0.055 + gather * 0.02 + m2 * 0.03;
         pt.x += (tx - pt.x) * ease;
         pt.y += (ty - pt.y) * ease;
 
@@ -405,30 +628,46 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
         }
 
         const twinkle = 0.55 + 0.45 * Math.sin(now * 0.002 + pt.tw);
-        const alpha = Math.min(1, (0.25 + 0.55 * twinkle) * (0.5 + pt.z * 0.4) * (1 + beat * 0.6));
+        let alpha = Math.min(1, (0.25 + 0.55 * twinkle) * (0.5 + pt.z * 0.4) * (1 + beat * 0.6));
+        if (pt.isNode) alpha = Math.min(1, alpha * (1.1 + networkAlive * 0.6));
+        // Legibility floor while spelling text: no dot in a glyph goes dim.
+        alpha = Math.min(1, alpha + wForm * 0.3);
 
-        if (warp > 0.02) {
+        if (warpPaths) {
           // Hyperspace: radial streaks, longer for nearer (higher z) particles.
           const dx = pt.x - cxm;
           const dy = pt.y - cym;
           const r = Math.hypot(dx, dy) || 1;
           const stretch = warp * warp * (30 + 160 * pt.z);
-          const ox = (dx / r) * stretch;
-          const oy = (dy / r) * stretch;
+          const sx = (dx / r) * stretch;
+          const sy = (dy / r) * stretch;
           pt.x += (dx / r) * warp * 14 * pt.z;
           pt.y += (dy / r) * warp * 14 * pt.z;
-          ctx.strokeStyle = `hsla(${228 + pt.z * 8}, 90%, ${70 + warp * 20}%, ${Math.min(1, alpha + warp * 0.4)})`;
-          ctx.lineWidth = pt.size * (0.7 + warp);
-          ctx.beginPath();
-          ctx.moveTo(pt.x - ox, pt.y - oy);
-          ctx.lineTo(pt.x + ox * 0.2, pt.y + oy * 0.2);
-          ctx.stroke();
+          const bucket = Math.min(NB - 1, Math.floor(((pt.z - 0.35) / 1.45) * NB));
+          warpPaths[bucket].moveTo(pt.x - sx, pt.y - sy);
+          warpPaths[bucket].lineTo(pt.x + sx * 0.2, pt.y + sy * 0.2);
         } else {
-          ctx.fillStyle = `hsla(235, 84%, ${62 + twinkle * 22}%, ${alpha})`;
+          ctx.fillStyle = `hsla(235, 84%, ${62 + twinkle * 22 + senpaiGlow * 14}%, ${alpha * (0.15 + 0.85 * gather)})`;
           ctx.beginPath();
-          ctx.arc(pt.x, pt.y, pt.size * (0.7 + pt.z * 0.35), 0, Math.PI * 2);
+          ctx.arc(pt.x, pt.y, pt.size * (0.7 + pt.z * 0.35) * (1 + senpaiGlow * 0.6 + wForm * 0.4), 0, Math.PI * 2);
           ctx.fill();
         }
+      }
+
+      if (warpPaths) {
+        for (let b = 0; b < NB; b++) {
+          const zb = 0.35 + ((b + 0.5) / NB) * 1.45; // bucket-representative depth
+          ctx.strokeStyle = `hsla(${228 + zb * 8}, 90%, ${70 + warp * 20}%, ${Math.min(1, 0.35 + zb * 0.25 + warp * 0.4)})`;
+          ctx.lineWidth = (0.6 + zb * 0.9) * (0.7 + warp);
+          ctx.stroke(warpPaths[b]);
+        }
+      }
+
+      // Bloom flash as the warp opens into the light landing page.
+      const flash = smooth(t, WARP_START + 0.04, 0.97);
+      if (flash > 0.01) {
+        ctx.fillStyle = `hsla(0, 0%, 100%, ${flash * 0.5})`;
+        ctx.fillRect(0, 0, W, H);
       }
 
       raf = requestAnimationFrame(frame);
