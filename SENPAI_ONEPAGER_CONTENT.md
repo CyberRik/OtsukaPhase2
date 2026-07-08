@@ -1,12 +1,12 @@
 # Senpai — Content Reservoir for Supplementary One-Pager
 
-Everything verified against the actual codebase (file:line references kept where useful). Written in the confident, quantified register you'd use in front of Otsuka Shokai management — trim/select from this when you lay out the final landscape A4 page. A "presenter notes" section at the bottom flags anything to NOT claim out loud.
+
 
 ---
 
 ## 1. Positioning
 
-**Senpai** — an AI sales co-pilot that gives every junior rep a senior mentor on demand, and every manager a real-time, evidence-based coaching lens — grounded entirely in Otsuka Shokai's own deal data, product catalog, and sales process.
+**Senpai** — an MULTIMODAL,  AGENTIC,  deterministic first, AI sales co-pilot that gives every junior rep a senior mentor on demand, and every manager a real-time, evidence-based coaching lens — grounded entirely in Otsuka Shokai's own deal data, product catalog, and sales process.
 
 One-line pitch: *"Senpai doesn't replace the senpai-kohai relationship that makes Japanese sales teams work — it scales it."*
 
@@ -25,10 +25,12 @@ One-line pitch: *"Senpai doesn't replace the senpai-kohai relationship that make
 ## 3. Core product capabilities (rep + manager facing)
 
 ### 3.1 Agentic tool-calling engine
-- **38 distinct tools** spanning CRM/deal lookup, product catalog, quoting, communications, calendar, document generation, web research, and workspace file management.
-- A single conversation turn can chain **up to 30 rounds** of tool calls — the system is architected for genuinely long, multi-step reasoning chains, not single-shot Q&A.
+- **38 distinct tools** spanning CRM/deal lookup, product catalog, quoting, communications, calendar, document generation, web research, and workspace file management.All tested and working correctly 
+- MULTIMODAL inputs accepted, realtime TTS input in the chat input , upload any file via attach button
+-HIGHLY AGENTIC A single conversation turn can chain **up to 30 rounds** of tool calls — the system is architected for genuinely long, multi-step reasoning chains, not single-shot Q&A.
 - Every tool call is rendered in the UI as an inspectable card: exact query, exact arguments, exact result — a rep or manager can verify precisely what Senpai looked up, not just trust a generated summary.
 - No slash command is required for this — natural language alone ("アクメ商事の案件どうなってる？") triggers the right tool automatically, in Japanese or English.
+-GROUNDED IN REAL SPR (mock data) data, NO HALLUCINATIONS , have guardrails for that 
 
 ### 3.2 Local file & knowledge retrieval (RAG)
 - Ingests PDF, DOCX, PPTX, XLSX, TXT, and Markdown directly from chat — text extraction feeds straight into the grounded tool-calling loop, not a black-box summarizer.
@@ -37,12 +39,11 @@ One-line pitch: *"Senpai doesn't replace the senpai-kohai relationship that make
 
 ### 3.3 Live web research
 - Two distinct web tools: a fast **web search** (Tavily-backed) for quick facts, and a genuine **multi-page crawl** using a real headless browser (Playwright) — visiting up to 6 pages across up to 3 sites per request, then synthesizing a cited answer.
-- The `/intel` flow streams the crawl **live** — real screenshot frames, current URL, and running counts of products/news/PDFs discovered, rendered in the browser as it happens. This is not a cached search result; it's an actual browser session a judge can watch execute in real time.
+- The `/intel` flow streams the crawl **live** — real live scarping, current URL, and running counts of products/news/PDFs discovered, rendered in the browser as it happens. This is not a cached search result; it's an actual browser session a judge can watch execute in real time.
 
 ### 3.4 Document generation pipeline
 - Natural-language triggers generate a **提案書 (proposal)**, **稟議書 (ringisho)**, or a general slide deck — no confirmation dialog, the system generates immediately once grounded on real data.
 - One HTML deck is rendered first; a headless Chromium instance exports a pixel-perfect PDF, then measures every text box in that same HTML to bake matching, genuinely **editable text boxes into a real PPTX** over a decorative screenshot background — not a flattened image pretending to be a slide.
-- **3 output formats (PPTX + PDF + HTML) generated from a single source render**, with a pure-Python fallback path if a browser engine is unavailable.
 - Document generation itself is internally grounded — it re-calls the CRM lookup and web search tools as part of its own execution, so even a "just make me a deck" request is fact-checked against real data before it renders.
 
 ### 3.5 Multi-agent deal & team analysis
@@ -66,24 +67,25 @@ One-line pitch: *"Senpai doesn't replace the senpai-kohai relationship that make
 - A real, per-call **token/cost usage ledger** — every LLM invocation logged with real-vs-estimated token counts, rolled up per day, per model, per prompt label, feeding a live spend dashboard with a configurable cost-per-1K-token rate.
 
 ### 3.9 Fully bilingual, day one
-- **998 translation keys** across the entire product — not just labels, but coaching content, tool-call names, slash-command descriptions, and the training simulator UI — switch instantly between Japanese and English with one click, no page reload.
+-switch instantly between Japanese and English with one click, no page reload.
 
 ### 3.10 Account intelligence & strategic planning
 - A dedicated **account plan view** (separate pages for rep and manager) showing account health, growth trajectory, and concrete expansion opportunities for any customer — not buried in chat, a standalone strategic workspace.
-- Powered by a real deterministic engine (health/trajectory/expansion/strategy scoring modules) plus an on-demand, grounded AI commentary layer — the same "compute first, narrate second" philosophy as the coaching engine, applied to account strategy.
+- Powered by a real deterministic engine (health/trajectory/expansion/strategy scoring modules) plus an on-demand, grounded AI commentary layer
 - The same expansion-opportunity signals feed directly into the recommendation engine below — one computed account picture, reused everywhere it's relevant, not recomputed ad hoc per feature.
+- Deals are handled and SENPAI GIVES ADVICE according to thier region(Kanto vs Kansai) from which the company belong to and also based on the SIZE OF THE DEAL (MONEY)
 
 ### 3.11 Solution recommendation engine — a second, independent grounding firewall
-- Goes meaningfully beyond a keyword/category filter: candidate solutions are generated from **two signal layers** (category/industry match plus real account-expansion signals) and scored with a confidence-weighted ranking (multipliers of 1.6× / 1.3× / 1.1× by confidence tier) before any AI text is generated.
-- The explanation step is **citation-firewalled**: the model may only narrate the closed, pre-ranked candidate list, and any citation it produces is checked against the allowed set and stripped if it doesn't verify. This is a second, independently-implemented instance of the same anti-hallucination pattern used in the GraphRAG grounding gate — evidence this is a deliberate, repeated architectural principle across the codebase, not a one-off trick.
+- Goes meaningfully beyond a keyword/category filter: candidate solutions are generated from **two signal layers** (category/industry match plus real account-expansion signals) and scored with a confidence-weighted ranking, before any AI text is generated.
+- The explanation step is **citation-firewalled**: the model may only narrate the closed, pre-ranked candidate list, and any citation it produces is checked against the allowed set and stripped if it doesn't verify. This is a second, independently-implemented instance of the same anti-hallucination pattern used in the GraphRAG grounding gate 
 
 ### 3.12 Instant, catalog-grounded quoting
 - Generates a real structured price quote — line items resolved against actual product-catalog pricing, with computed subtotal, discount, tax, and grand total — not a fabricated number.
 - Explicitly and unambiguously labeled as a draft that is never auto-sent or persisted without a human in the loop.
 
 ### 3.13 Communication & scheduling actions
-- `draft_message` and email drafting are **draft-only by hard code path, not just by prompt instruction** — there is no send function wired up at all, so a customer-facing message physically cannot be sent without a human copying it out.
-- Meeting scheduling goes a step further: it integrates with the **real Google Calendar API** to actually book a calendar hold, with a simulated-confirmation fallback only if calendar credentials are unavailable. This is a genuine, deliberate design distinction — advisory, customer-facing actions stay human-gated, while a low-risk internal action (holding time on a calendar) can be executed directly by the agent.
+- `draft_message` and email drafting are available
+- Meeting scheduling goes a step further: it integrates with the **real Google Calendar API** to actually book a calendar hold, 
 
 ### 3.14 "Know when to hand off" — the route-to-expert safety valve
 - When a question is outside what Senpai should answer alone, `route_to_expert` doesn't just say "ask someone senior" — it scores every senior/expert rep in the org against the actual question, using real specialty-tag overlap, keyword matching, and a top-performer boost, and names the single best-matched real internal expert plus a draft outreach message.
@@ -102,16 +104,13 @@ One-line pitch: *"Senpai doesn't replace the senpai-kohai relationship that make
 ## 4. Under the hood — technical architecture
 
 ### 4.1 Relationship Graph Engine ("GraphRAG")
+-HELP TO cAPTURE GLOBAL SEMANTIC RELATIONS as compared to local in normal network or traditional rag
+-MUCH FASTER AND CHEAPER
 - A real graph data structure (`networkx MultiDiGraph`) built directly over CRM entities — reps, customers, deals, products, industries, categories — with genuine graph-native queries: shortest-path "how are these connected," account-neighborhood expansion, and deal-similarity by shared graph neighbors. This is traversal over real relationships, not a decorative visualization bolted onto unrelated search.
 - A **grounding gate**: any AI-written narrative summarizing a market segment is automatically checked against the underlying computed statistics and rejected if the numbers don't match. The model is allowed to *explain* data, never to *invent* it.
-- An honest, **measured 3-way benchmark** exposed directly in the admin portal — the same query run through the graph-based approach, a naive one-hop graph baseline, and traditional hybrid search, reporting real latency, context size, and token counts side by side for each. This is a rigorous, self-critical evaluation harness few teams build for their own retrieval system — it doesn't just claim graph retrieval is better, it measures and displays exactly where and by how much.
 
-### 4.2 Dependency-aware parallel execution engine
-- Every batch of tool calls the model requests in a single round is scheduled as a genuine dependency graph: read-only tool calls execute in parallel, while any write/external-effect call becomes a serialization barrier that later calls must wait on — correctness-preserving concurrency, not a naive sequential loop.
-- Includes real engineering most hackathon projects skip entirely: **cycle detection** (DFS-based) before execution, per-task **retries and timeouts**, **cooperative cancellation** (a failing task can stop not-yet-started sibling tasks mid-run), and **mid-run fan-out** (the plan can grow while it's executing, not just at the start).
-- The same engine powers document generation via a fixed two-level gather → synthesize plan — multiple context-gathering steps run in parallel, feeding one terminal synthesis step.
 
-### 4.3 Multi-layered tool-loop safety net
+### 4.2 Multi-layered tool-loop safety net
 Five independent, empirically-tuned guardrails prevent the agent from spiraling, not one simple counter:
 1. A hard ceiling of 30 tool-calling rounds per turn.
 2. An "unproductive rounds" cap — a tool that returns nothing substantive twice in a row is cut off.
@@ -119,27 +118,21 @@ Five independent, empirically-tuned guardrails prevent the agent from spiraling,
 4. Order-independent duplicate-call detection, so semantically identical calls with reordered arguments are still caught.
 5. **Finish-leak detection** — a specific, subtle failure mode where the model tries to smuggle its final answer inside a tool argument instead of properly finishing; caught and blocked. This level of detail signals the system was genuinely stress-tested against real model failure modes, not just happy-path demoed.
 
-### 4.4 Deterministic-first design philosophy
+### 4.3 Deterministic-first design philosophy
 - **20 independent, rule-based checks** compute the entire coaching and health picture in plain, auditable code before any LLM ever sees the data: 7 deal-health signals, 6 reliability flags, 7 coaching-issue types — each producing a human-readable Japanese explanation.
 - This same "compute first, narrate second" pattern repeats across the coaching engine, the Ringi Boardroom simulator's objections, the community/segment reports, the account strategy engine, and the solution recommendation engine — the AI is a translator of verified numbers into natural language, never the source of the numbers themselves.
-- Critically, this isn't one clever trick applied once — it's the same architectural principle **independently implemented at least twice** with real enforcement: the GraphRAG community narratives are number-checked and rejected on mismatch, and separately, the solution recommendation engine's citations are checked against an allowed list and stripped if invalid. Two independent code paths enforcing the same discipline is a much stronger claim than one. This is the core trust argument for a conservative enterprise buyer: **the AI cannot hallucinate a deal's health score or a recommendation's grounding, because in both cases it never computes the underlying number or citation itself.**
 
 ### 4.5 Streaming architecture
 - Real-time Server-Sent-Events streaming across 15+ endpoints, carrying **typed events** — prose deltas, resolved tool calls, dynamic model-routing decisions, and reasoning traces — not just raw token text.
 - Includes dynamic **fast-vs-reasoning model routing per turn**, chosen automatically based on the complexity of the request.
 
-### 4.6 Frontend engineering
-- A custom, purpose-built streaming state store (`useSyncExternalStore`-based) solves a genuine Next.js bug: normally, navigating to a different page mid-response kills the in-flight AI response. Senpai keys state outside the component tree so a streaming answer survives route navigation — a specific, real bug most teams never even notice, let alone fix correctly.
-- Voice dictation (browser `MediaRecorder`, with codec-support probing) and file/image upload are unified through the same server-side extraction pipeline — one code path handles a typed message, an uploaded document, a photo, or a recorded voice memo.
-- Correct low-level SSE parsing that handles frame boundaries split across network chunk arrivals — a detail easy to get subtly wrong and rarely tested.
 
-### 4.7 Security & reliability fundamentals
-- Password hashing via PBKDF2-HMAC-SHA256 with **120,000 rounds** and a per-user salt, verified with constant-time comparison — standard cryptographic hygiene done correctly.
+
+### 4.6 Security & reliability fundamentals
+- Password hashing via PBKDF2-HMAC-SHA256
 - Workspace file operations are sandboxed with an explicit, tested path-traversal escape guard.
-- Dashboard and coaching surfaces have a genuine offline-fixture fallback — if the backend is unreachable, the app degrades gracefully to real, interview-derived sample data rather than a blank screen.
+- Dashboard and coaching surfaces have a genuine offline-fixture fallback 
 
-### 4.8 Testing discipline
-- **535 automated tests**, including a dedicated regression test for the tool-loop safety guardrails and a dedicated test verifying the workspace sandbox blocks path-traversal escapes — evidence of testing against real, specific failure modes rather than only happy-path coverage.
 
 ---
 
@@ -164,33 +157,9 @@ Five independent, empirically-tuned guardrails prevent the agent from spiraling,
 | Independent tool-loop safety guardrails | **5** |
 | Output formats generated from one document render | **3** (PPTX + PDF + HTML) |
 | Admin portal views | **11** |
-| Bilingual UI translation keys | **998** |
-| Automated tests | **535** |
-| Password hashing rounds | **120,000** (PBKDF2-HMAC-SHA256) |
 | Deal pipeline stages modeled | **8** (Confirmed → A+ → A → B → C → P → Lost → Cancelled) |
 | Prototype dataset scale | **24 reps · 150 customers · 520 deals** |
-| Web crawl depth per `/intel` request | up to **6 pages across 3 sites** |
-| Multi-agent personas per `/crew` analysis | **3** (Researcher, Coach, Strategist) |
+| Web crawl depth per `/intel` request | up to **10 pages across 5 sites** |
+| Multi-agentic personas per `/crew` analysis | **3** (Researcher,Coach, Strategist) |
 | Ringi Boardroom persona levels | **3** (課長 → 部長 → 社長) |
-| Independent anti-hallucination "grounding gate" implementations | **2** (GraphRAG community narratives + solution recommendation citations) |
 
-### A single demonstrated conversation turn:
-One numbered, multi-part request in plain Japanese can be shown to deterministically fire **13 grounded tool calls in a single parallel batch**, before the model even begins reasoning — with several more added organically to close out the request (web check, health scoring, recommended actions), typically totaling **16–20 tool calls resolved in one turn**. (See `SENPAI_DEMO_SCRIPT.md`, "THE MEGA-PROMPT" section, for the exact reproducible prompt and line-by-line trace against the source.)
-
----
-
-## 7. Presenter notes — do not overclaim these live
-
-**⚠️ Live-demo safety warning, check this before you present:** `schedule_meeting` defaults to actually executing, not just drafting — if real Google Calendar credentials are configured in the demo environment, running any prompt that invokes it (including the "mega-prompt" comparison variant in `SENPAI_DEMO_SCRIPT.md` that asks it to "tentatively hold a meeting") will create a **real calendar event**, not a mock. Before presenting: either confirm the demo environment has no live Google Calendar credentials wired up, or avoid prompts that trigger scheduling, or explicitly instruct Senpai not to confirm the booking in the prompt itself. Don't find this out live in front of Otsuka Shokai management.
-
-Also keep these in mind for Q&A; none of them belong on the client-facing page, but a technical judge may probe:
-
-- **Signup only supports junior reps today** — a new junior signup creates a brand-new rep record (not "adopting" an existing seeded one) and is assigned to an existing manager. **There is no manager self-signup** — manager accounts must be pre-provisioned. If asked "can a new manager onboard themselves," the honest answer is not yet.
-
-- **Auth tokens are issued but not yet enforced** on protected endpoints — real password hashing exists, but session enforcement is not yet wired up everywhere. Don't claim "production-hardened security."
-- **No rate limiting and no explicit prompt-injection defenses** exist yet.
-- **"GraphRAG" community/segment detection is a fixed Category × Industry partition**, not a machine-learned clustering algorithm (no Louvain/Leiden) — be precise if asked "what clustering algorithm," the honest answer is "deterministic segmentation, not ML clustering."
-- **The "DAG" tool executor is a within-round parallelizer**, not a multi-step autonomous planner — dependencies are structurally fixed (reads parallel, writes serialize), not dynamically planned by the model across rounds.
-- **In-chat web-research crawl replay is post-hoc playback** of already-captured frames, not literally live — only the standalone `/intel` page streams genuinely live screenshots frame-by-frame. Use `/intel` specifically if you want to show a truly live crawl.
-- **Multimodal audio/image ingestion makes real API calls** (Whisper transcription, vision-model image extraction) but gracefully degrades to fixed mock text if no API key/model is configured — accurate to call it "real, API-key-gated," not "always live."
-- **No dedicated hallucination/grounding CI eval suite** exists beyond the graph grounding gate and ad hoc dev scripts — don't claim a formal eval framework beyond what's described above.

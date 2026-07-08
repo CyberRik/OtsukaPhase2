@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Building2, CalendarClock, Sparkles, TrendingUp, User } from "lucide-react";
+import { ArrowUpRight, Building2, CalendarClock, Landmark, Sparkles, TrendingUp, User } from "lucide-react";
 import { api } from "@/lib/api";
 import type { AccountHealth, DealDetail } from "@/lib/types";
 import { formatYen } from "@/lib/utils";
@@ -104,6 +104,27 @@ export function DealDrawer({
               >
                 <Sparkles className="h-4 w-4" /> {t("mcc.askThisDeal")}
               </button>
+            )}
+
+            {/* Junior-only: rehearse how this deal will fare in the customer's
+                closed-door consensus (稟議) review — a lens on the same engine. */}
+            {role === "junior" && (
+              <Link
+                href={`/junior/training/ringi?deal=${detail.deal.deal_id}`}
+                onClick={() => onOpenChange(false)}
+                className="flex items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.03] px-4 py-3 transition-colors hover:border-primary/50"
+              >
+                <span className="flex items-center gap-2 text-[13px]">
+                  <Landmark className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-foreground">
+                    {lang === "ja" ? "この案件で稟議を予行する" : "Rehearse the consensus review"}
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-[12.5px] font-medium text-primary">
+                  {lang === "ja" ? "シミュレーション" : "Simulate"}
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </span>
+              </Link>
             )}
 
             {/* Account cross-link: weigh this deal against the whole relationship */}
