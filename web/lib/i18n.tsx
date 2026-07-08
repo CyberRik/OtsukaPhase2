@@ -89,7 +89,7 @@ const ja: Dict = {
   "nav.accounts": "アカウント",
   "nav.knowledge": "ナレッジ・ライブラリ",
   "nav.reports": "マイ成長",
-  "nav.ringi": "稟議シアター",
+  "nav.ringi": "稟議シミュレーション",
   // command center (junior home)
   "cc.todayWork": "今日の商談",
   "cc.todayWorkLead": "商談を選ぶと、コパイロットがその商談を前提に回答します。",
@@ -636,7 +636,7 @@ const en: Dict = {
   "nav.accounts": "Accounts",
   "nav.knowledge": "Knowledge Library",
   "nav.reports": "My Growth",
-  "nav.ringi": "Ringi Theater",
+  "nav.ringi": "Consensus Sim",
   // command center (junior home)
   "cc.todayWork": "Today's deals",
   "cc.todayWorkLead": "Pick a deal to brief the Copilot on it.",

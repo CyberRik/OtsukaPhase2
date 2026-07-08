@@ -39,8 +39,8 @@ export function SpeechFeed({ lines, lang }: { lines: FeedLine[]; lang: string })
           const meta = PERSONAS[l.persona];
           return (
             <div key={l.id} className="flex gap-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[15px]">
-                {meta.emoji}
+              <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-jp text-[13px] font-semibold", meta.disc)}>
+                {meta.mono}
               </div>
               <div className="flex-1">
                 <span className="text-[11px] font-semibold text-foreground">{personaName(l.persona, lang)}</span>

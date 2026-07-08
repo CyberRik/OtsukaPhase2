@@ -34,11 +34,12 @@ export function PersonaCard({
       <div className="relative">
         <div
           className={cn(
-            "flex h-14 w-14 items-center justify-center rounded-full bg-muted text-[30px] leading-none",
+            "flex h-14 w-14 items-center justify-center rounded-full font-jp text-[24px] font-semibold leading-none",
+            meta.disc,
             speaking && "execution-pulse",
           )}
         >
-          {meta.emoji}
+          {meta.mono}
         </div>
         {speaking && (
           <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">

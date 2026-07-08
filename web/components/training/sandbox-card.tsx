@@ -54,11 +54,11 @@ export function SandboxCard({
       <div className="flex items-center gap-2 border-b border-primary/15 px-4 py-3">
         <Sparkles className="h-4 w-4 text-primary" />
         <div>
-          <div className="text-[14px] font-bold text-foreground">
-            {ja ? "オンボーディング道場 · サンドボックス" : "Onboarding Dojo · Sandbox"}
+          <div className="text-[14px] font-semibold text-foreground">
+            {ja ? "介入シミュレーション" : "Simulate an intervention"}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            {ja ? "日報を書き直し、決裁者に会って、もう一度稟議にかけよう。" : "Rewrite the report, meet the decision-maker, and re-run the Ringi."}
+            {ja ? "日報を追記し、決裁者の名刺を添付して、稟議を再判定します。" : "Add a report note, attach the decision-maker's card, and re-run the review."}
           </div>
         </div>
       </div>
