@@ -11,6 +11,9 @@
 */
 @layer base {
   :root {
+    --font-sans: var(--font-geist-sans);
+    --font-plex: 'IBM Plex Sans', 'IBM Plex Sans JP', sans-serif;
+    --font-jp: 'Noto Sans JP', system-ui, sans-serif;
     --background: 220 24% 98%;       /* light-gray canvas */
     --foreground: 222 47% 11%;       /* deep navy ink */
 
@@ -57,6 +60,10 @@
     font-feature-settings: "cv02", "cv03", "cv04", "palt";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-plex), var(--font-jp), sans-serif;
   }
 
   ::selection {

@@ -66,6 +66,7 @@ module.exports = {
       fontFamily: {
         sans: ["var(--font-sans)", "var(--font-jp)", "system-ui", "sans-serif"],
         serif: ["var(--font-sans)", "var(--font-jp)", "system-ui", "sans-serif"],
+        plex: ["var(--font-plex)", "var(--font-jp)", "sans-serif"],
         jp: ["var(--font-jp)", "var(--font-sans)", "sans-serif"],
         display: ["var(--font-sans)", "var(--font-jp)", "system-ui", "sans-serif"],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],

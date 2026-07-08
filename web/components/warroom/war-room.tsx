@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { useT } from "@/lib/i18n";
 import { cn, compactYen, formatYen } from "@/lib/utils";
-import type { Band, WarroomData, WarroomDeal } from "@/lib/types";
+import type { Band, WarroomData, WarroomDeal, WarroomPoint } from "@/lib/types";
 import { BandDot, BandPill } from "@/components/band";
 import { DealDrawer } from "@/components/dashboard/deal-drawer";
 
@@ -46,6 +46,17 @@ interface BubblePos {
   x: number; y: number; r: number;
   band: Band; score: number; rank: string;
   alive: boolean;      // open at the current snapshot (fades out otherwise)
+}
+
+// A pipeline move between the previous snapshot and the current one — the unit
+// of the "this week" feed that narrates the replay.
+type MoveType = "won" | "lost" | "danger" | "recovered" | "riskUp" | "riskDown" | "new";
+const MOVE_PRIORITY: MoveType[] = ["won", "lost", "danger", "recovered", "riskUp", "riskDown", "new"];
+
+interface Move {
+  type: MoveType;
+  deal: WarroomDeal;
+  delta?: number; // score change, for riskUp/riskDown
 }
 
 export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
@@ -174,6 +185,46 @@ export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
     return { open, won, lost, danger, pipeline, bands, flows };
   }, [deals, idx]);
 
+  // Same counters one snapshot back, for the week-over-week chips on the tiles.
+  const prevTally = useMemo(() => {
+    if (idx === 0) return null;
+    let open = 0, won = 0, lost = 0, danger = 0;
+    for (const d of deals) {
+      const p = d.series[idx - 1];
+      if (!p) continue;
+      if (p.st === "open") { open += 1; if (p.b === "red") danger += 1; }
+      else if (p.st === "won") won += 1;
+      else lost += 1;
+    }
+    return { open, won, lost, danger };
+  }, [deals, idx]);
+
+  // What changed between the previous snapshot and this one. Score wobble under
+  // 15 points is noise; band crossings and closes always count.
+  const moves = useMemo(() => {
+    if (idx === 0) return [] as Move[];
+    const out: Move[] = [];
+    for (const d of deals) {
+      const prev = d.series[idx - 1];
+      const cur = d.series[idx];
+      if (!cur) continue;
+      if (!prev) {
+        if (cur.st === "open") out.push({ type: "new", deal: d });
+        continue;
+      }
+      if (prev.st === "open" && cur.st === "won") out.push({ type: "won", deal: d });
+      else if (prev.st === "open" && cur.st === "lost") out.push({ type: "lost", deal: d });
+      else if (prev.st === "open" && cur.st === "open") {
+        const delta = (cur.s ?? 0) - (prev.s ?? 0);
+        if (prev.b !== "red" && cur.b === "red") out.push({ type: "danger", deal: d, delta });
+        else if (prev.b === "red" && cur.b !== "red") out.push({ type: "recovered", deal: d, delta });
+        else if (delta >= 15) out.push({ type: "riskUp", deal: d, delta });
+        else if (delta <= -15) out.push({ type: "riskDown", deal: d, delta });
+      }
+    }
+    return out.sort((a, b) => MOVE_PRIORITY.indexOf(a.type) - MOVE_PRIORITY.indexOf(b.type));
+  }, [deals, idx]);
+
   // Month ticks across the x domain; quarterly when the domain is wide. The
   // first tick and every January carry the year so months are unambiguous.
   const ticks = useMemo(() => {
@@ -259,25 +310,40 @@ export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
       {/* Stat tiles at the selected date */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {([
-          { label: t("warroom.open"), value: tally.open, sub: compactYen(tally.pipeline) },
-          { label: t("warroom.won"), value: tally.won, dot: "green" as Band },
-          { label: t("warroom.lost"), value: tally.lost, dot: "red" as Band },
-          { label: t("warroom.danger"), value: tally.danger, dot: "red" as Band },
-        ]).map((s, i) => (
-          <div key={i} className="card-surface px-4 py-3">
-            <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-              {s.dot && <BandDot band={s.dot} className="h-2 w-2" />}
-              {s.label}
+          { label: t("warroom.open"), value: tally.open, sub: compactYen(tally.pipeline), prev: prevTally?.open },
+          { label: t("warroom.won"), value: tally.won, dot: "green" as Band, prev: prevTally?.won },
+          { label: t("warroom.lost"), value: tally.lost, dot: "red" as Band, prev: prevTally?.lost },
+          { label: t("warroom.danger"), value: tally.danger, dot: "red" as Band, prev: prevTally?.danger, alarm: true },
+        ]).map((s, i) => {
+          const delta = s.prev === undefined ? 0 : s.value - s.prev;
+          return (
+            <div key={i} className="card-surface px-4 py-3">
+              <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                {s.dot && <BandDot band={s.dot} className="h-2 w-2" />}
+                {s.label}
+              </div>
+              <div className="mt-0.5 flex items-baseline text-[24px] font-semibold leading-tight">
+                {s.value}
+                {s.sub && <span className="ml-2 text-[13px] font-normal text-muted-foreground">{s.sub}</span>}
+                {delta !== 0 && (
+                  <span
+                    className={cn(
+                      "ml-auto font-mono text-[12px] font-medium tabular-nums",
+                      s.alarm && delta > 0 ? "text-[hsl(var(--band-red))]" : "text-muted-foreground",
+                    )}
+                    title={t("warroom.vsPrev")}
+                  >
+                    {delta > 0 ? `+${delta}` : delta} <span className="font-sans font-normal text-muted-foreground">{t("warroom.vsPrev")}</span>
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="mt-0.5 text-[24px] font-semibold leading-tight">
-              {s.value}
-              {s.sub && <span className="ml-2 text-[13px] font-normal text-muted-foreground">{s.sub}</span>}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {view === "chart" ? (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_264px]">
         <div className="card-surface relative p-4">
           <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="w-full">
             {/* Band zones — the y-axis meaning, tinted just enough to read */}
@@ -372,6 +438,7 @@ export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
                 <span className="font-mono text-[11px] text-muted-foreground">{hovered.rank}</span>
               </div>
               <div className="mt-1 text-[12px] font-medium tabular-nums">{formatYen(hovered.deal.amount)}</div>
+              <Sparkline series={hovered.deal.series} idx={idx} last={last} red={red} band={hovered.band} label={t("warroom.trend")} />
             </div>
           )}
 
@@ -386,6 +453,8 @@ export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
             ))}
             <span className="ml-auto">{t("warroom.legendNote")}{markerX !== null ? ` · ${t("warroom.overdueNote")}` : ""}</span>
           </div>
+        </div>
+        <MovesFeed moves={moves} atStart={idx === 0} onOpen={setDrawerDeal} />
         </div>
       ) : (
         <WarRoomTable bubbles={bubbles.filter((b) => b.alive).sort((a, b) => b.score - a.score)} onOpen={setDrawerDeal} />
@@ -410,6 +479,95 @@ export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
       </div>
 
       <DealDrawer dealId={drawerDeal} open={drawerDeal !== null} onOpenChange={(o) => !o && setDrawerDeal(null)} />
+    </div>
+  );
+}
+
+// --- this-week feed: narrates the diff between snapshot t-1 and t ------------
+const MOVE_META: Record<MoveType, { band?: Band; labelKey: string }> = {
+  won: { band: "green", labelKey: "warroom.won" },
+  lost: { band: "red", labelKey: "warroom.lost" },
+  danger: { band: "red", labelKey: "warroom.evDanger" },
+  recovered: { band: "green", labelKey: "warroom.evRecovered" },
+  riskUp: { band: "yellow", labelKey: "warroom.score" },
+  riskDown: { band: "yellow", labelKey: "warroom.score" },
+  new: { labelKey: "warroom.evNew" },
+};
+
+function MovesFeed({ moves, atStart, onOpen }: { moves: Move[]; atStart: boolean; onOpen: (id: string) => void }) {
+  const { t } = useT();
+  return (
+    <div className="card-surface flex flex-col p-4">
+      <div className="text-[13px] font-semibold">{t("warroom.thisWeek")}</div>
+      {atStart || !moves.length ? (
+        <div className="mt-2 rounded-md border border-dashed border-border px-3 py-4 text-center text-[12px] text-muted-foreground">
+          {t(atStart ? "warroom.firstWeek" : "warroom.noMoves")}
+        </div>
+      ) : (
+        <div className="mt-1.5 -mx-2 max-h-[400px] flex-1 overflow-y-auto">
+          {moves.map((m) => {
+            const meta = MOVE_META[m.type];
+            const isScoreMove = m.type === "riskUp" || m.type === "riskDown";
+            const delta = m.delta !== undefined && m.delta !== 0
+              ? ` ${m.delta > 0 ? "+" : ""}${Math.round(m.delta)}`
+              : "";
+            return (
+              <button
+                key={`${m.type}:${m.deal.deal_id}`}
+                onClick={() => onOpen(m.deal.deal_id)}
+                className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/60"
+              >
+                {meta.band
+                  ? <BandDot band={meta.band} className="mt-[5px] h-2 w-2 shrink-0" />
+                  : <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40" />}
+                <span className="min-w-0">
+                  <span className="block truncate text-[12.5px] font-medium leading-snug">{m.deal.deal_name}</span>
+                  <span className="text-[11.5px] text-muted-foreground">
+                    {t(meta.labelKey)}
+                    {isScoreMove ? <span className="font-mono tabular-nums">{delta}</span> : delta && <span className="font-mono tabular-nums"> ({t("warroom.score")}{delta})</span>}
+                    <span className="mx-1">·</span>{m.deal.rep_name}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- tooltip sparkline: the deal's real score series up to the scrubber ------
+function Sparkline({
+  series, idx, last, red, band, label,
+}: {
+  series: (WarroomPoint | null)[]; idx: number; last: number; red: number; band: Band; label: string;
+}) {
+  const W = 210, H = 36, P = 4;
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i <= idx; i++) {
+    const p = series[i];
+    if (p?.st === "open") {
+      pts.push({ x: P + (i / Math.max(1, last)) * (W - 2 * P), y: P + (1 - (p.s ?? 0) / 100) * (H - 2 * P) });
+    }
+  }
+  if (pts.length < 2) return null;
+  const end = pts[pts.length - 1];
+  const yRed = P + (1 - red / 100) * (H - 2 * P);
+  return (
+    <div className="mt-1.5 border-t border-border pt-1.5">
+      <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={label}>
+        <line x1={P} x2={W - P} y1={yRed} y2={yRed} stroke="hsl(var(--band-red) / 0.4)" strokeWidth={1} strokeDasharray="3 3" />
+        <polyline
+          points={pts.map((p) => `${p.x},${p.y}`).join(" ")}
+          fill="none"
+          stroke="hsl(var(--muted-foreground))"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+        />
+        <circle cx={end.x} cy={end.y} r={3} fill={BAND_FILL[band]} />
+      </svg>
+      <div className="text-[10.5px] text-muted-foreground">{label}</div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, LayoutDashboard, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import { useSession, type Role } from "@/lib/session";
+import { useSession, demoCreds, type Role } from "@/lib/session";
 import { Brand } from "@/components/site/brand";
 import { ClientBadge } from "@/components/site/client-badge";
 import { LangToggle } from "@/components/site/lang-toggle";
@@ -88,6 +88,28 @@ function LoginForm() {
               {error && <p className="text-[12px] text-band-red">{t("login.error")}</p>}
               <Button type="submit" variant="seal" className="w-full">{t("login.submit")}</Button>
             </form>
+
+            <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-[12px] font-semibold text-primary">{t("login.demo")}</p>
+                  <p className="font-mono text-[11px] text-muted-foreground">{demoCreds(role).username} / {demoCreds(role).password}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-[11px] bg-background"
+                  onClick={() => {
+                    setUsername(demoCreds(role).username);
+                    setPassword(demoCreds(role).password);
+                    setError(false);
+                  }}
+                >
+                  {t("login.useThese")}
+                </Button>
+              </div>
+            </div>
 
 
             {role === "junior" && (

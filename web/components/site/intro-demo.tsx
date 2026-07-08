@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  animate,
   motion,
   useMotionValueEvent,
   useReducedMotion,
@@ -9,7 +10,7 @@ import {
   useTransform,
   type MotionValue,
 } from "framer-motion";
-import { ArrowRight, ChevronDown, Volume2, VolumeX } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { useT } from "@/lib/i18n";
 
 /**
@@ -35,10 +36,46 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
   const reduced = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
   const [leaving, setLeaving] = useState(false);
-  const [sound, setSound] = useState(false);
 
   const { scrollYProgress: p } = useScroll({ container: containerRef });
-  useAmbientScore(p, sound && !leaving);
+  const animRef = useRef<any>(null);
+
+  // Stop custom scroll animation on manual user scroll intervention
+  const handleUserInteraction = () => {
+    if (animRef.current) {
+      animRef.current.stop();
+      animRef.current = null;
+    }
+  };
+
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const currentScroll = container.scrollTop;
+    const maxScroll = container.scrollHeight - container.clientHeight;
+    if (maxScroll <= 0) return;
+
+    const currentP = currentScroll / maxScroll;
+    
+    const snapPoints = [0, 0.08, 0.18, 0.28, 0.34, 0.41, 0.45, 0.49, 0.525, 0.565, 0.605, 0.64, 0.75, 0.90];
+    const nextPoint = snapPoints.find((val) => val > currentP + 0.01);
+    
+    if (nextPoint !== undefined) {
+      const targetScroll = nextPoint * maxScroll;
+      if (animRef.current) animRef.current.stop();
+      
+      animRef.current = animate(container.scrollTop, targetScroll, {
+        duration: 1.8,
+        ease: "easeInOut",
+        onUpdate: (v) => {
+          container.scrollTop = v;
+        }
+      });
+    }
+  };
 
   // Reduced-motion users skip the intro entirely.
   useEffect(() => {
@@ -63,8 +100,8 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
   // and the particle canvas dissolve, exposing the light landing page.
   // 3x is enough to sell the blast; higher magnifications force the browser
   // to re-rasterize huge text layers mid-warp and drop frames.
-  const stageScale = useTransform(p, [WARP_START, 1], [1, 3]);
-  const stageOpacity = useTransform(p, [0.91, 1], [1, 0]);
+  const stageScale = useTransform(p, [WARP_START, 1], [1, 1.3]);
+  const stageOpacity = useTransform(p, [0.88, 0.97], [1, 0]);
   const voidOpacity = useTransform(p, [0.88, 1], [1, 0]);
   const canvasOpacity = useTransform(p, [0.91, 1], [1, 0]);
   const hintOpacity = useTransform(p, [0, 0.02, 0.08], [0, 1, 0]);
@@ -74,16 +111,35 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
   return (
     <motion.div
       ref={containerRef}
-      className={`fixed inset-0 z-50 overflow-y-auto overflow-x-hidden overscroll-contain ${
-        leaving ? "pointer-events-none" : ""
-      }`}
+      className={`fixed inset-0 z-50 overflow-y-auto overflow-x-hidden overscroll-contain snap-y snap-proximity ${leaving ? "pointer-events-none" : ""
+        }`}
       initial={{ opacity: 0 }}
       animate={{ opacity: leaving ? 0 : 1 }}
       transition={{ duration: leaving ? 0.7 : 0.5, ease: "easeInOut" }}
       onAnimationComplete={() => leaving && onDone()}
       aria-label="intro"
+      onClick={handleContainerClick}
+      onWheel={handleUserInteraction}
+      onTouchStart={handleUserInteraction}
     >
-      <div className="relative h-[800vh]">
+      <div className="relative h-[1600vh]">
+        {/* Native CSS Scroll Snapping Keyframe Targets (mapped exactly using scrollHeight - clientHeight) */}
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "0vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "120vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "270vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "420vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "510vh" }} />
+        {/* Achievement Shards Snap Points (Act III) */}
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "615vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "675vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "735vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "787.5vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "847.5vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "907.5vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "960vh" }} />
+        {/* Finale / Senpai Re-form */}
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1125vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1350vh" }} />
         {/* The void — near-black navy with a faint indigo core. */}
         <motion.div
           className="fixed inset-0"
@@ -99,7 +155,10 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
         </motion.div>
 
         <div className="sticky top-0 h-[100dvh] overflow-hidden">
-          <motion.div className="relative h-full w-full" style={{ scale: stageScale, opacity: stageOpacity }}>
+          <motion.div 
+            className="relative h-full w-full" 
+            style={{ scale: stageScale, opacity: stageOpacity, willChange: "transform, opacity" }}
+          >
             {/* Act I — 大塚商会 burns in the void. */}
             <DualHeadline p={p} range={[0.03, 0.06, 0.1, 0.135]} position="low" main={t("landing.intro.a1.h1")} sub={t("landing.intro.a1.h1.sub")} />
             <DualHeadline p={p} range={[0.13, 0.16, 0.2, 0.235]} position="low" main={t("landing.intro.a1.h2")} sub={t("landing.intro.a1.h2.sub")} />
@@ -131,14 +190,6 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
           </motion.div>
 
           <div className="fixed right-5 top-5 z-20 flex items-center gap-2">
-            <button
-              onClick={() => setSound((s) => !s)}
-              aria-label={t("landing.intro.sound")}
-              title={t("landing.intro.sound")}
-              className="rounded-full border border-white/15 bg-white/5 p-2 text-white/60 backdrop-blur transition-colors hover:text-white"
-            >
-              {sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </button>
             <button
               onClick={() => setLeaving(true)}
               className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[12px] font-medium text-white/60 backdrop-blur transition-colors hover:text-white"
@@ -194,16 +245,14 @@ function DualHeadline({
 
   return (
     <motion.div
-      className={`absolute inset-0 flex flex-col items-center px-6 text-center ${
-        position === "low" ? "justify-end pb-[14dvh]" : "justify-center"
-      }`}
+      className={`absolute inset-0 flex flex-col items-center px-6 text-center ${position === "low" ? "justify-end pb-[14dvh]" : "justify-center"
+        }`}
       style={{ opacity, display }}
     >
       <motion.div style={{ scale, y, filter }}>
         <h2
-          className={`max-w-3xl text-balance text-[28px] font-semibold leading-[1.2] tracking-tight text-white md:text-[48px] ${
-            glow ? "[text-shadow:0_0_60px_hsl(235_84%_65%/0.55)]" : "[text-shadow:0_0_40px_rgba(0,0,0,0.6)]"
-          }`}
+          className={`max-w-3xl text-balance text-[28px] font-semibold leading-[1.2] tracking-tight text-white md:text-[48px] ${glow ? "[text-shadow:0_0_60px_hsl(235_84%_65%/0.55)]" : "[text-shadow:0_0_40px_rgba(0,0,0,0.6)]"
+            }`}
         >
           {main}
         </h2>
@@ -279,7 +328,7 @@ function EnterScene({
 
   return (
     <motion.div
-      className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
+      className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center bg-black/10"
       style={{ opacity, scale, display }}
     >
       <h2 className="max-w-3xl text-balance text-[30px] font-semibold leading-[1.25] tracking-tight text-white [text-shadow:0_0_24px_hsl(235_84%_65%/0.5)] md:text-[46px]">
@@ -297,114 +346,7 @@ function EnterScene({
   );
 }
 
-/* ------------------------------------------------------------------------ */
-/* Ambient score, synthesized with WebAudio (no asset, no licensing): a deep */
-/* detuned drone breathing through a lowpass, heartbeat thumps while the     */
-/* kanji is formed, and a bandpassed-noise riser that swells into the warp.  */
-/* Created only after the user clicks the sound toggle (autoplay policy).    */
-/* ------------------------------------------------------------------------ */
-function useAmbientScore(p: MotionValue<number>, enabled: boolean) {
-  useEffect(() => {
-    if (!enabled || typeof window === "undefined") return;
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return;
-    const ac = new AC();
 
-    const master = ac.createGain();
-    master.gain.setValueAtTime(0.0001, ac.currentTime);
-    master.gain.linearRampToValueAtTime(0.16, ac.currentTime + 2.5);
-    master.connect(ac.destination);
-
-    // Drone: D2/A2/D3/A3 stack through a slowly breathing lowpass.
-    const lowpass = ac.createBiquadFilter();
-    lowpass.type = "lowpass";
-    lowpass.frequency.value = 420;
-    lowpass.connect(master);
-    const specs: { f: number; type: OscillatorType; g: number; detune: number }[] = [
-      { f: 73.42, type: "sine", g: 0.5, detune: 0 },
-      { f: 110.0, type: "sine", g: 0.34, detune: 4 },
-      { f: 146.83, type: "triangle", g: 0.16, detune: -5 },
-      { f: 220.0, type: "sine", g: 0.07, detune: 7 },
-    ];
-    const oscs = specs.map((s) => {
-      const o = ac.createOscillator();
-      o.type = s.type;
-      o.frequency.value = s.f;
-      o.detune.value = s.detune;
-      const g = ac.createGain();
-      g.gain.value = s.g;
-      o.connect(g);
-      g.connect(lowpass);
-      o.start();
-      return o;
-    });
-    const lfo = ac.createOscillator();
-    lfo.frequency.value = 0.05;
-    const lfoGain = ac.createGain();
-    lfoGain.gain.value = 150;
-    lfo.connect(lfoGain);
-    lfoGain.connect(lowpass.frequency);
-    lfo.start();
-
-    // Warp riser: looped white noise through a rising bandpass.
-    const buf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-    const noise = ac.createBufferSource();
-    noise.buffer = buf;
-    noise.loop = true;
-    const bandpass = ac.createBiquadFilter();
-    bandpass.type = "bandpass";
-    bandpass.frequency.value = 300;
-    bandpass.Q.value = 1.2;
-    const warpGain = ac.createGain();
-    warpGain.gain.value = 0;
-    noise.connect(bandpass);
-    bandpass.connect(warpGain);
-    warpGain.connect(master);
-    noise.start();
-
-    // Heartbeat: one 52Hz thump per visual pulse period (~3.9s), fading out
-    // as the kanji disperses and again at the warp.
-    const beatTimer = window.setInterval(() => {
-      const t = p.get();
-      const amp = (1 - smooth(t, M1_START, M1_END)) * (1 - smooth(t, WARP_START, 0.98));
-      if (amp < 0.05) return;
-      const o = ac.createOscillator();
-      o.type = "sine";
-      o.frequency.value = 52;
-      const g = ac.createGain();
-      g.gain.setValueAtTime(0.0001, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.5 * amp, ac.currentTime + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.55);
-      o.connect(g);
-      g.connect(master);
-      o.start();
-      o.stop(ac.currentTime + 0.6);
-    }, 3900);
-
-    // Scroll-coupled dynamics.
-    const paramTimer = window.setInterval(() => {
-      const t = p.get();
-      const warp = smooth(t, WARP_START, 0.98);
-      warpGain.gain.setTargetAtTime(warp * 0.55, ac.currentTime, 0.1);
-      bandpass.frequency.setTargetAtTime(300 + warp * 2600, ac.currentTime, 0.1);
-      lowpass.frequency.setTargetAtTime(420 + smooth(t, 0.2, 0.7) * 500, ac.currentTime, 0.3);
-    }, 90);
-
-    return () => {
-      window.clearInterval(beatTimer);
-      window.clearInterval(paramTimer);
-      master.gain.setTargetAtTime(0.0001, ac.currentTime, 0.25);
-      window.setTimeout(() => {
-        oscs.forEach((o) => o.stop());
-        lfo.stop();
-        noise.stop();
-        void ac.close().catch(() => undefined);
-      }, 900);
-    };
-  }, [p, enabled]);
-}
 
 /* ------------------------------------------------------------------------ */
 /* The particle field. One system, four states driven by scroll progress:    */
@@ -470,13 +412,13 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       const o = off.getContext("2d");
       if (!o) return [] as { x: number; y: number }[];
       o.fillStyle = "#fff";
-      o.font = `900 ${fontSize}px "Noto Sans JP", "Inter", sans-serif`;
+      o.font = `900 ${fontSize}px "Noto Sans JP", "Meiryo", "MS PGothic", "Hiragino Kaku Gothic ProN", sans-serif`;
       o.textAlign = "center";
       o.textBaseline = "middle";
       o.fillText(text, W / 2, H / 2);
       const data = o.getImageData(0, 0, W, H).data;
       const out: { x: number; y: number }[] = [];
-      const step = 3;
+      const step = 2;
       for (let y = 0; y < H; y += step)
         for (let x = 0; x < W; x += step) if (data[(y * W + x) * 4 + 3] > 128) out.push({ x, y });
       return out;
@@ -492,10 +434,9 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       canvas.style.height = `${H}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const count = W > 768 ? 2200 : 1300;
-      // Four glyphs need to fit the width; two glyphs can go bigger.
+      const count = W > 768 ? 4000 : 2200;
       const otsuka = sampleText("大塚商会", Math.min(W / 4.4, H * 0.42));
-      const senpai = sampleText("先輩", Math.min(W / 2.3, H * 0.46));
+      const senpai = sampleText("先輩", Math.min(W / 2.5, H * 0.45));
       const cxm = W / 2;
       const cym = H / 2;
 
@@ -548,6 +489,17 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
     const frame = (now: number) => {
       if (disposed) return;
       const t = p.get();
+      
+      const blurVal = t < 0.805 ? 0 : Math.min(10, ((t - 0.805) / 0.055) * 10);
+
+      if (blurVal > 0.1) {
+        canvas.style.filter = `blur(${blurVal}px)`;
+        (canvas.style as any).webkitFilter = `blur(${blurVal}px)`;
+      } else {
+        canvas.style.filter = "none";
+        (canvas.style as any).webkitFilter = "none";
+      }
+
       const cxm = W / 2;
       const cym = H / 2;
 
@@ -604,7 +556,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
 
         // Ambient drift so formations feel alive — calmer while spelling text
         // so glyph edges stay crisp.
-        const drift = 2.2 - wForm * 1.4;
+        const drift = 1.9 - wForm * 1.6;
         tx += Math.sin(now * 0.0007 + pt.tw) * drift * pt.z;
         ty += Math.cos(now * 0.0009 + pt.tw * 1.3) * drift * pt.z;
 
@@ -647,9 +599,11 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
           warpPaths[bucket].moveTo(pt.x - sx, pt.y - sy);
           warpPaths[bucket].lineTo(pt.x + sx * 0.2, pt.y + sy * 0.2);
         } else {
-          ctx.fillStyle = `hsla(235, 84%, ${62 + twinkle * 22 + senpaiGlow * 14}%, ${alpha * (0.15 + 0.85 * gather)})`;
+          // Glow through brightness and opacity instead of bloating dot size.
+          const finalAlpha = Math.min(1, alpha + senpaiGlow * 0.5);
+          ctx.fillStyle = `hsla(235, 84%, ${62 + twinkle * 22 + senpaiGlow * 28}%, ${finalAlpha * (0.15 + 0.85 * gather)})`;
           ctx.beginPath();
-          ctx.arc(pt.x, pt.y, pt.size * (0.7 + pt.z * 0.35) * (1 + senpaiGlow * 0.6 + wForm * 0.4), 0, Math.PI * 2);
+          ctx.arc(pt.x, pt.y, pt.size * (0.55 + pt.z * 0.25) * (1 + wForm * 0.2), 0, Math.PI * 2);
           ctx.fill();
         }
       }
