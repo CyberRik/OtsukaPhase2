@@ -765,18 +765,35 @@ def ringi_stream(req: RingiRequest):
     script = simulate_ringi(req.deal_id, overlay_activities=overlay_acts, today=_today())
 
     def gen():
+        import time
+
         from senpai.llm import client
+
+        # Pacing so the debate plays out live instead of dumping at once. (This
+        # sync generator is iterated in a threadpool, so time.sleep is safe and
+        # doesn't block the event loop.) The LLM path paces itself; only the
+        # deterministic fallback text is typewriter-chunked here.
+        FIRST_DELAY = 0.3      # after meta, before the room starts
+        THINK_DELAY = 0.28     # after a speaker lights up, before they talk
+        BEAT_PAUSE = 0.6       # gap between one member finishing and the next
+        CHAR_CHUNK = 2         # fallback: chars emitted per delta
+        CHAR_DELAY = 0.04      # fallback: pause between those chunks
+        PRE_VERDICT = 0.5      # beat before the intervention / final verdict
 
         yield _sse({"type": "meta", "deal_id": script.deal_id,
                     "deal_name": script.deal_name, "customer": script.customer,
                     "base_approval": script.base_approval,
                     "final_approval": script.final_approval,
                     "band": script.band, "issues": script.issues})
+        time.sleep(FIRST_DELAY)
 
         approval = 100  # rep's optimistic starting view; objections tick it to base_approval
         for i, beat in enumerate(script.beats):
+            if i > 0:
+                time.sleep(BEAT_PAUSE)  # let the floor pass between members
             yield _sse({"type": "speaker_start", "index": i,
                         "persona": beat.persona, "issue": beat.issue})
+            time.sleep(THINK_DELAY)  # speaker's halo/pulse shows before they talk
             streamed = ""
             if USE_LLM:
                 try:
@@ -797,9 +814,13 @@ def ringi_stream(req: RingiRequest):
                 except Exception:  # noqa: BLE001 — model down/timeout; use the template
                     streamed = ""
             if not streamed.strip():
-                # Deterministic fallback — stream the beat's own Japanese verbatim.
+                # Deterministic fallback — type the beat's own Japanese out in
+                # small chunks so it reads as the persona speaking in real time.
                 streamed = beat.text
-                yield _sse({"type": "delta", "index": i, "text": beat.text})
+                for j in range(0, len(beat.text), CHAR_CHUNK):
+                    yield _sse({"type": "delta", "index": i,
+                                "text": beat.text[j:j + CHAR_CHUNK]})
+                    time.sleep(CHAR_DELAY)
 
             approval += beat.approval_delta
             yield _sse({"type": "speaker_end", "index": i, "persona": beat.persona,
@@ -807,6 +828,7 @@ def ringi_stream(req: RingiRequest):
                         "whisper": beat.whisper, "issue": beat.issue,
                         "text": streamed.strip()})
 
+        time.sleep(PRE_VERDICT)
         if script.intervention:
             yield _sse({"type": "intervention", **script.intervention})
         yield _sse({"type": "done", "final_approval": script.final_approval,

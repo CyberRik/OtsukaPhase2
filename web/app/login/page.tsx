@@ -3,9 +3,9 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, KeyRound, LayoutDashboard, UserRound } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, UserRound } from "lucide-react";
 import { useT } from "@/lib/i18n";
-import { demoCreds, useSession, type Role } from "@/lib/session";
+import { useSession, type Role } from "@/lib/session";
 import { Brand } from "@/components/site/brand";
 import { ClientBadge } from "@/components/site/client-badge";
 import { LangToggle } from "@/components/site/lang-toggle";
@@ -17,7 +17,6 @@ function LoginForm() {
   const { login } = useSession();
   const params = useSearchParams();
   const role: Role = params.get("role") === "manager" ? "manager" : "junior";
-  const creds = demoCreds(role);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -90,22 +89,6 @@ function LoginForm() {
               <Button type="submit" variant="seal" className="w-full">{t("login.submit")}</Button>
             </form>
 
-            <div className="mt-5 rounded-lg border border-dashed border-border bg-muted/40 p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                  <KeyRound className="h-3.5 w-3.5" /> {t("login.demo")}
-                </div>
-                <button
-                  onClick={() => { setUsername(creds.username); setPassword(creds.password); setError(false); }}
-                  className="text-[11px] font-medium text-primary hover:underline"
-                >
-                  {t("login.useThese")}
-                </button>
-              </div>
-              <div className="mt-2 font-mono text-[12px] text-foreground">
-                {creds.username} / {creds.password}
-              </div>
-            </div>
 
             {role === "junior" && (
               <p className="mt-5 text-center text-[12px] text-muted-foreground">
