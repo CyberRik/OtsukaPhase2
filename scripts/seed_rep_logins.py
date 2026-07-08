@@ -77,7 +77,7 @@ def main() -> int:
     OUT_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     print(f"seeded {created} account(s), skipped {skipped} existing; "
-          f"credentials → {OUT_FILE}")
+          f"credentials -> {OUT_FILE}")
     return 0
 
 

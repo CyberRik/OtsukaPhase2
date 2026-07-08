@@ -8,9 +8,12 @@ export type Role = "junior" | "manager";
 // Built-in demo accounts. Real signup/login now go through the FastAPI bridge
 // (persisted, hashed users); these stay as an OFFLINE FALLBACK so the showcase
 // still works with the backend down — mirroring how api.ts falls back to fixtures.
-const CREDENTIALS: Record<Role, { username: string; password: string }> = {
-  junior: { username: "junior", password: "demo123" },
-  manager: { username: "manager", password: "demo123" },
+// These are REAL seeded reps (see scripts/seed_rep_logins.py): 伊藤翔 (R05,
+// junior) and 田中健太 (R01, manager), so the fallback shows the same person
+// the backend account resolves to.
+const CREDENTIALS: Record<Role, { username: string; password: string; employeeId: string; name: string }> = {
+  junior: { username: "itoushou", password: "demo123", employeeId: "R05", name: "伊藤翔" },
+  manager: { username: "tanakakenta", password: "demo123", employeeId: "R01", name: "田中健太" },
 };
 
 export function demoCreds(role: Role) {
@@ -21,7 +24,7 @@ type Ctx = {
   role: Role | null;
   username: string | null;
   // The seed rep this account is; scopes the data (a junior's own rep, or a
-  // manager's identity). Null for the offline demo fallback.
+  // manager's identity).
   employeeId: string | null;
   ready: boolean;
   // Resolve to the account's role on success, or null on failure. `roleHint`
@@ -95,7 +98,7 @@ export function SessionProvider({ initial, children }: { initial: Role | null; c
     if (res.error === "network") {
       const demo = CREDENTIALS[roleHint];
       if (user.trim() === demo.username && password === demo.password) {
-        persist(roleHint, demo.username);
+        persist(roleHint, demo.username, demo.employeeId);
         return roleHint;
       }
     }

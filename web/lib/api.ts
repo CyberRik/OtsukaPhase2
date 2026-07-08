@@ -40,6 +40,7 @@ import type {
   SaveActivityResult,
   SimilarCase,
   Source,
+  WarroomData,
 } from "./types";
 import type { ArtifactKind, EntityRef } from "./artifacts";
 import type {
@@ -230,6 +231,13 @@ export const api = {
     ),
   growth: (rep?: string) =>
     get<GrowthResponse>(`/api/growth${rep ? `?rep=${encodeURIComponent(rep)}` : ""}`, GROWTH_FALLBACK),
+  // Pipeline War Room replay; `manager` scopes to that manager's team. Offline
+  // fallback is an empty replay — the page shows its own offline hint.
+  warroom: (manager?: string) =>
+    get<WarroomData>(
+      `/api/warroom${manager ? `?manager=${encodeURIComponent(manager)}` : ""}`,
+      { as_of: "", snapshots: [], thresholds: { yellow: 25, red: 55 }, deals: [] },
+    ),
   // `manager` (an employee_id) scopes to that manager's coachees; omit for all.
   coaching: (manager?: string) =>
     get<CoachingWorkspace>(

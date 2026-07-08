@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "headroom-ai": "^0.22.4",
-    "next": "^16.2.9"
+    "next": "^16.2.9",
+    "react-use": "^17.6.1"
   }
 }

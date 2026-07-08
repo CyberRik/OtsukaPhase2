@@ -12,5 +12,173 @@
     "employee_id": null,
     "salt": "0bac2353ea1a6a252fffcd471fdf8067",
     "password_hash": "f6c12f782dbfac573df43dd81d4bb9cd96b469f65a6e42ba2db4b7e7d7c5ced2"
+  },
+  "tanakakenta": {
+    "username": "tanakakenta",
+    "role": "manager",
+    "employee_id": "R01",
+    "salt": "751eaa0905d1556506c6ed87f29e49e8",
+    "password_hash": "c98fa6edee1c29292ded76dcbe71aee264c9204ee723cbf90b245fa517c24148"
+  },
+  "satoumisaki": {
+    "username": "satoumisaki",
+    "role": "manager",
+    "employee_id": "R02",
+    "salt": "5043bbc6d827c5938ed191056b42a172",
+    "password_hash": "d76ba0eeb9fa61bfa7462c35cf04d96b418037e41d5a087a2d1750a6cd339e48"
+  },
+  "suzukidaisuke": {
+    "username": "suzukidaisuke",
+    "role": "manager",
+    "employee_id": "R03",
+    "salt": "6110d0f2968cde912e2b19d3536fcf69",
+    "password_hash": "efea6d83e69a41cbdd06be7ee0fae74078171f4d44baae9b372d9f2848ce0234"
+  },
+  "takahashiyumi": {
+    "username": "takahashiyumi",
+    "role": "manager",
+    "employee_id": "R04",
+    "salt": "8e20965f457e0ffe7a94180c482a17b4",
+    "password_hash": "33004efba86aeab971ee0010e91a25ea4eea9b2b8dfd18109933b0e8ffacbf0b"
+  },
+  "itoushou": {
+    "username": "itoushou",
+    "role": "junior",
+    "employee_id": "R05",
+    "salt": "b34995b0500c11ca551269836f2dae2c",
+    "password_hash": "91fd034a0cba59951a098df12f25e99f50f8bd4f9eec224efb207fc26bb286f7"
+  },
+  "watanabesakura": {
+    "username": "watanabesakura",
+    "role": "junior",
+    "employee_id": "R06",
+    "salt": "9c3ed67ec7377fec3b551a64044b73f7",
+    "password_hash": "e6b07ca0d07476c3099261602381784c1c553bb9f7023336f50bd58c54bfa638"
+  },
+  "yamamotokenichi": {
+    "username": "yamamotokenichi",
+    "role": "junior",
+    "employee_id": "R07",
+    "salt": "ae1db1617364f3af0a9b0443b77676a5",
+    "password_hash": "150465382c3eff2b804b44ed7be9f92a3b0bf8151754431893476ef457f98084"
+  },
+  "nakamurayuuko": {
+    "username": "nakamurayuuko",
+    "role": "manager",
+    "employee_id": "R08",
+    "salt": "a015a38396dadacc552c7300e0ea5f55",
+    "password_hash": "8751c726346733a702401ac9c8cac020c40e21cd48607be1390a351df773bca4"
+  },
+  "kobayashinaoki": {
+    "username": "kobayashinaoki",
+    "role": "manager",
+    "employee_id": "R09",
+    "salt": "63ed9959982a52ce7796c670d22740ce",
+    "password_hash": "e896da46f60f7d5a1fb92b925a4542436fe3580724776d8878e2fc4d6dbcaf13"
+  },
+  "katoumiho": {
+    "username": "katoumiho",
+    "role": "manager",
+    "employee_id": "R10",
+    "salt": "9611b3d2d61ac0cb727f81f117f7b42d",
+    "password_hash": "ee9b9916a125dca544676e41437d3dd9af8d908b17b50d546cae18b6f01bd4b2"
+  },
+  "yoshidaakira": {
+    "username": "yoshidaakira",
+    "role": "junior",
+    "employee_id": "R11",
+    "salt": "1a8f2138dd0c089c6e8f77e4f635437c",
+    "password_hash": "5c7712c17c1067f8160a3601c1f63e3dd5b27f46c0878edf6c8f617d2e520e5d"
+  },
+  "yamadasai": {
+    "username": "yamadasai",
+    "role": "junior",
+    "employee_id": "R12",
+    "salt": "1dc350447624297b1e17bd326d8476ae",
+    "password_hash": "79dcbada996f4710b2a44ada96d3b5d5c23bcf5db6b9800097b25c166b277b45"
+  },
+  "sasakitakumi": {
+    "username": "sasakitakumi",
+    "role": "manager",
+    "employee_id": "R13",
+    "salt": "4a62cf23d8bbcb3cd91a8723ccef2faa",
+    "password_hash": "7057b97a7bb6c6636c61d0735c205aded023a13324f0f7885c377749a29a2153"
+  },
+  "matsumotosenjin": {
+    "username": "matsumotosenjin",
+    "role": "manager",
+    "employee_id": "R14",
+    "salt": "64c75385a13ef64f6f68ebabe5f86baf",
+    "password_hash": "ed1bcce426ed48d7f4f9711aae3ccded4351806b8751661ccc13563db72e0ee6"
+  },
+  "inouekaito": {
+    "username": "inouekaito",
+    "role": "junior",
+    "employee_id": "R15",
+    "salt": "0851d2c1ac94c4108f2c97c380d6df38",
+    "password_hash": "7d1852f788b41fee4190953303e9aba5fb9f11e00709084161bd9aab6cc9e1b1"
+  },
+  "kimuranana": {
+    "username": "kimuranana",
+    "role": "junior",
+    "employee_id": "R16",
+    "salt": "65b516c1da3ca96bfbe332313d266624",
+    "password_hash": "11b88a7534ca6ea3186133f5be0c36fb2e37ad88bba2ba759bd0eb1b615621a0"
+  },
+  "hayashidaichi": {
+    "username": "hayashidaichi",
+    "role": "manager",
+    "employee_id": "R17",
+    "salt": "7ba8f41afeea002729cce03b0c555c85",
+    "password_hash": "6e7effa6fc2875eecdc35a59e2469e641d2f3ee93763c3f31bb102541996b555"
+  },
+  "shimizuakane": {
+    "username": "shimizuakane",
+    "role": "junior",
+    "employee_id": "R18",
+    "salt": "1796ff42886b4256a367d70c2890d88b",
+    "password_hash": "ddce24af07049b3247d3c156e2aed74492f554a2a5d9d03e922f16ff94d3b11b"
+  },
+  "saitouyousuke": {
+    "username": "saitouyousuke",
+    "role": "manager",
+    "employee_id": "R19",
+    "salt": "23b65cca05f2c9ac83a65ef2e3a92f82",
+    "password_hash": "3d260075abac4a462ad3abcd2165e786b0cc909b1f7826c668bc52b7bc69500f"
+  },
+  "yamaguchimitsuki": {
+    "username": "yamaguchimitsuki",
+    "role": "junior",
+    "employee_id": "R20",
+    "salt": "823f90256c4866052c216ffd2ec31fa0",
+    "password_hash": "a9c5c122e67b4c93b41d1bc9be7e20bcb2693f232a4225b39144b0cff03cd533"
+  },
+  "moritakeigo": {
+    "username": "moritakeigo",
+    "role": "manager",
+    "employee_id": "R21",
+    "salt": "d6227e9e6c0399667c6caebeb90a1d90",
+    "password_hash": "e9eb63014e555ada433d6788b2e5b22c57db8a2de8632e7d7dbd2c25be141205"
+  },
+  "ikedayui": {
+    "username": "ikedayui",
+    "role": "junior",
+    "employee_id": "R22",
+    "salt": "ef2e057d109babb7ea7bcd6f289256d0",
+    "password_hash": "4fcccfbed310cfa8c806313c106ff40254615eed9a218c4ca38a59ef19887b48"
+  },
+  "hashimotoyuuma": {
+    "username": "hashimotoyuuma",
+    "role": "manager",
+    "employee_id": "R23",
+    "salt": "cc20d275a55a44e964eb42666c90e748",
+    "password_hash": "1287e43142ce692c5e276d4ca59d6523d92ef74cfac3d4e740361bed96d404c9"
+  },
+  "ishikawasayaka": {
+    "username": "ishikawasayaka",
+    "role": "junior",
+    "employee_id": "R24",
+    "salt": "60ac34f7cb20f515cb61767cc5fc472c",
+    "password_hash": "37d57d485f8dc43f541b7d785c836ac66f902f6f881a85bee43b46a1ad1d0d83"
   }
 }

@@ -6,9 +6,12 @@ import { useT } from "@/lib/i18n";
 import { Brand } from "@/components/site/brand";
 import { ClientBadge } from "@/components/site/client-badge";
 import { LangToggle } from "@/components/site/lang-toggle";
+import { IntroDemo } from "@/components/site/intro-demo";
+import { useFirstVisit } from "@/lib/use-first-visit";
 
 export default function Landing() {
   const { t } = useT();
+  const { intro, markSeen } = useFirstVisit();
 
   const cards = [
     {
@@ -35,7 +38,8 @@ export default function Landing() {
 
   return (
     <div className="hero-wash min-h-screen">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+      {intro === "show" && <IntroDemo onDone={markSeen} />}
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         <Brand fullMark tagline={t("app.tagline")} />
         <div className="flex items-center gap-3 sm:gap-4">
           <ClientBadge />
@@ -44,15 +48,15 @@ export default function Landing() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-5xl flex-col items-center px-6 pb-20 pt-10 text-center md:pt-16">
+      <main className="mx-auto flex max-w-7xl flex-col items-center px-6 pb-20 pt-10 text-center md:pt-16">
         <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[12px] text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           {t("landing.eyebrow")}
         </div>
-        <h1 className="mt-6 max-w-3xl text-balance text-[34px] font-semibold leading-[1.1] tracking-tight text-foreground md:text-[48px]">
+        <h1 className="mt-6 max-w-4xl text-balance text-[34px] font-semibold leading-[1.1] tracking-tight text-foreground md:text-[48px]">
           {t("landing.title")}
         </h1>
-        <p className="mt-5 max-w-2xl text-pretty text-[15px] leading-relaxed text-muted-foreground md:text-base">
+        <p className="mt-5 max-w-3xl text-pretty text-[15px] leading-relaxed text-muted-foreground md:text-base">
           {t("landing.subtitle")}
         </p>
 
@@ -60,7 +64,7 @@ export default function Landing() {
           <div className="mb-5 text-[13px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
             {t("landing.who")}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid max-w-4xl mx-auto gap-8 sm:grid-cols-2">
             {cards.map((c) => {
               const Icon = c.icon;
               return (

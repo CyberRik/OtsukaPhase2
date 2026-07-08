@@ -95,6 +95,19 @@
       radial-gradient(60% 50% at 50% 0%, hsl(var(--primary) / 0.07), transparent 70%),
       radial-gradient(40% 40% at 85% 10%, hsl(var(--primary) / 0.05), transparent 70%);
   }
+  
+  .pulse {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 /* Execution log active-step pulse — slow opacity only, no transform, no spin.

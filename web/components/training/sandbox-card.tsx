@@ -10,9 +10,9 @@ import type { RingiDraft } from "@/lib/types";
 // deterministic engine (senpai.health.scoring._has_decision_maker).
 const DM_CONTACTS = [
   { value: "", ja: "— 決裁者を選択 —", en: "— pick a decision-maker —" },
-  { value: "山田 太郎(情報システム部 部長)", ja: "山田 部長 · 情シス部長(決裁者)", en: "Bucho Yamada · IT Dept. Head (DM)" },
-  { value: "佐藤 花子(取締役 経営企画)", ja: "佐藤 取締役 · 経営企画", en: "Director Sato · Corp. Planning" },
-  { value: "鈴木 一郎(本部長 事業統括)", ja: "鈴木 本部長 · 事業統括", en: "Div. GM Suzuki · Business" },
+  { value: "山田 太郎(情報システム部 部長)", ja: "山田 部長 · 情シス部長(決裁者)", en: "山田 部長 · IT Dept. Head (DM)" },
+  { value: "佐藤 花子(取締役 経営企画)", ja: "佐藤 取締役 · 経営企画", en: "佐藤 取締役 · Corp. Planning" },
+  { value: "鈴木 一郎(本部長 事業統括)", ja: "鈴木 本部長 · 事業統括", en: "鈴木 本部長 · Business" },
 ];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

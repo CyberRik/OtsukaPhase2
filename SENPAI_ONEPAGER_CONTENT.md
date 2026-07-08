@@ -95,7 +95,12 @@ One-line pitch: *"Senpai doesn't replace the senpai-kohai relationship that make
 - A dedicated capture flow (separate from chat file-attach) takes one audio recording, photo, or document at a time, extracts it, and turns it into an **editable structured draft** (activity type, daily report content, contact, category, challenge) that a rep confirms and binds to a real customer/deal before it's saved as a permanent activity record.
 - Means a rep's daily report doesn't have to be manually typed — a voice memo or a photo of handwritten notes becomes a proper structured CRM record with a review step, not an unverified auto-import.
 
-### 3.16 Command Center — a workspace, not just a chat window
+### 3.16 Pipeline War Room — a time machine for the whole pipeline
+- A manager-facing **replay of the last six months of the entire deal pipeline**, recomputed week by week from real deal history by the deterministic engine — press play and watch every deal's health band shift across the weekly snapshots.
+- The same rule-based health checks that power live coaching produce every historical frame, so the replay is an **audit trail, not an animation**: any number on screen traces back to the engine's output for that week.
+- Turns "how did we get here?" retrospectives into something a manager can literally scrub through in a team meeting.
+
+### 3.17 Command Center — a workspace, not just a chat window
 - A persistent, collapsible context pane sits alongside the chat at all times — showing a junior rep's own deals/account context, or a manager's whole-team triage view — so the conversation and the underlying data are always visible together.
 - Reinforces that Senpai is a working environment for the sales day, not a chatbot bolted onto the side of a separate CRM.
 
@@ -144,6 +149,7 @@ Five independent, empirically-tuned guardrails prevent the agent from spiraling,
 - **Designed to scale senior mentorship, not replace it** — the coaching loop makes every senior rep's judgment reusable across an entire junior cohort, addressing a workforce structure with a large junior-rep base and a limited number of senior mentors.
 - **Radically auditable, by construction** — every tool call, every generated number, every AI narrative is traceable back to real data or explicitly gated against it. This matches an enterprise, and specifically a distributor whose entire brand promise is reliability, precisely where a typical "black box AI" pitch would fail an internal trust review.
 - **A real, working, end-to-end system today** — not a slide deck of future features. 38 working tools, 535 passing tests, a functioning admin cost-tracking dashboard, and a live training simulator all exist and run, in one live demo, right now.
+- **The first 30 seconds sell it** — a first-visit cinematic intro (2,200 particles drawing 大塚商会 → a living knowledge graph → 先輩, with fully bilingual narration) makes the landing page itself a statement of the product's polish before a single click.
 
 ---
 
@@ -158,6 +164,7 @@ Five independent, empirically-tuned guardrails prevent the agent from spiraling,
 | Output formats generated from one document render | **3** (PPTX + PDF + HTML) |
 | Admin portal views | **11** |
 | Deal pipeline stages modeled | **8** (Confirmed → A+ → A → B → C → P → Lost → Cancelled) |
+| Pipeline War Room replay horizon | **6 months**, recomputed weekly by the deterministic engine |
 | Prototype dataset scale | **24 reps · 150 customers · 520 deals** |
 | Web crawl depth per `/intel` request | up to **10 pages across 5 sites** |
 | Multi-agentic personas per `/crew` analysis | **3** (Researcher,Coach, Strategist) |
