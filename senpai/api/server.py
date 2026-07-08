@@ -73,6 +73,7 @@ from senpai.knowledge import store as kstore
 from senpai.research import shaping as _shaping
 from senpai.retrieval.playbook import find_similar_deals
 from senpai.tools.web import web_search_typed
+from senpai.warroom import build_warroom
 
 app = FastAPI(title="Senpai API", version="1.0", docs_url="/api/docs")
 
@@ -396,6 +397,13 @@ def dashboard(rep: str | None = None, manager: str | None = None):
     }
     return {"today": today.isoformat(), "kpis": kpis, "deals": rows,
             "flags": flagged, "reps": reps}
+
+
+@app.get("/api/warroom")
+def warroom(manager: str | None = None):
+    """Pipeline War Room replay: every deal reconstructed and re-scored as of
+    weekly snapshot dates (see senpai.warroom). `manager` scopes to a team."""
+    return build_warroom(manager)
 
 
 @app.get("/api/deals/{deal_id}")

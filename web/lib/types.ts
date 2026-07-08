@@ -563,6 +563,38 @@ export interface GrowthResponse {
   juniors: { employee_id: string; name: string }[];
 }
 
+// --- Pipeline War Room (time-machine replay; see senpai/warroom.py) ---------
+// One point per snapshot date: the deal reconstructed as of that date and
+// re-scored by the real engine. Null before the deal was registered.
+export interface WarroomPoint {
+  st: "open" | "won" | "lost";
+  s?: number;   // risk score 0-100 (open only)
+  b?: Band;     // band at that date (open only)
+  r?: string;   // order_rank at that date
+}
+
+export interface WarroomDeal {
+  deal_id: string;
+  deal_name: string;
+  customer: string;
+  customer_id: string;
+  rep_id: string;
+  rep_name: string;
+  amount: number;
+  expected_order_date: string | null;
+  registered_at: string | null;
+  initial_rank: string;
+  outcome: "open" | "won" | "lost";
+  series: (WarroomPoint | null)[];   // aligned to WarroomData.snapshots
+}
+
+export interface WarroomData {
+  as_of: string;
+  snapshots: string[];
+  thresholds: { yellow: number; red: number };
+  deals: WarroomDeal[];
+}
+
 export interface Source {
   source_id: string;
   kind: string;

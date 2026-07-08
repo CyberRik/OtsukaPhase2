@@ -12,6 +12,7 @@ import {
   Lightbulb,
   LogOut,
   type LucideIcon,
+  Radar,
   Sparkles,
   Upload,
 } from "lucide-react";
@@ -46,6 +47,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/manager", key: "nav.home", icon: Home, group: "main" },
     { href: "/manager/workspace", key: "nav.copilot", icon: Sparkles, group: "more" },
     { href: "/manager/coaching", key: "nav.coaching", icon: Lightbulb, group: "more" },
+    { href: "/manager/warroom", key: "nav.warroom", icon: Radar, group: "more" },
     { href: "/manager/accounts", key: "nav.accounts", icon: Building2, group: "more" },
     { href: "/manager/knowledge", key: "nav.mknowledge", icon: Library, group: "more" },
   ],

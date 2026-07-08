@@ -102,8 +102,11 @@ function LoginForm() {
                   {t("login.useThese")}
                 </button>
               </div>
-              <div className="mt-2 font-mono text-[12px] text-foreground">
-                {creds.username} / {creds.password}
+              <div className="mt-2 flex items-baseline justify-between gap-2">
+                <span className="font-mono text-[12px] text-foreground">
+                  {creds.username} / {creds.password}
+                </span>
+                <span className="text-[11px] text-muted-foreground">{creds.name} · {creds.employeeId}</span>
               </div>
             </div>
 

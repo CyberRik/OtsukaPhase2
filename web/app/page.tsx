@@ -6,9 +6,12 @@ import { useT } from "@/lib/i18n";
 import { Brand } from "@/components/site/brand";
 import { ClientBadge } from "@/components/site/client-badge";
 import { LangToggle } from "@/components/site/lang-toggle";
+import { IntroDemo } from "@/components/site/intro-demo";
+import { useFirstVisit } from "@/lib/use-first-visit";
 
 export default function Landing() {
   const { t } = useT();
+  const { intro, markSeen } = useFirstVisit();
 
   const cards = [
     {
@@ -35,6 +38,7 @@ export default function Landing() {
 
   return (
     <div className="hero-wash min-h-screen">
+      {intro === "show" && <IntroDemo onDone={markSeen} />}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
         <Brand fullMark tagline={t("app.tagline")} />
         <div className="flex items-center gap-3 sm:gap-4">
