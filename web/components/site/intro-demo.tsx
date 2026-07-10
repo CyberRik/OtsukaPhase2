@@ -24,12 +24,12 @@ import { useT } from "@/lib/i18n";
  */
 
 // Act boundaries, in scroll progress (0–1).
-const GATHER_END = 0.06; // particles fly in and form 大塚商会
-const M1_START = 0.17; // 大塚商会 → constellation
-const M1_END = 0.24;
-const M2_START = 0.66; // constellation → 先輩
-const M2_END = 0.73;
-const WARP_START = 0.86;
+const GATHER_END = 0.05; // particles fly in and form 大塚商会
+const M1_START = 0.48; // 大塚商会 → constellation
+const M1_END = 0.53;
+const M2_START = 0.855; // constellation → 先輩
+const M2_END = 0.9;
+const WARP_START = 0.94;
 
 export function IntroDemo({ onDone }: { onDone: () => void }) {
   const { t } = useT();
@@ -60,7 +60,7 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
 
     const currentP = currentScroll / maxScroll;
     
-    const snapPoints = [0, 0.08, 0.18, 0.28, 0.34, 0.41, 0.45, 0.49, 0.525, 0.565, 0.605, 0.64, 0.75, 0.90];
+    const snapPoints = [0, 0.055, 0.13, 0.205, 0.28, 0.355, 0.43, 0.535, 0.63, 0.71, 0.79, 0.855, 0.9, 0.95];
     const nextPoint = snapPoints.find((val) => val > currentP + 0.01);
     
     if (nextPoint !== undefined) {
@@ -101,9 +101,9 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
   // 3x is enough to sell the blast; higher magnifications force the browser
   // to re-rasterize huge text layers mid-warp and drop frames.
   const stageScale = useTransform(p, [WARP_START, 1], [1, 1.3]);
-  const stageOpacity = useTransform(p, [0.88, 0.97], [1, 0]);
-  const voidOpacity = useTransform(p, [0.88, 1], [1, 0]);
-  const canvasOpacity = useTransform(p, [0.91, 1], [1, 0]);
+  const stageOpacity = useTransform(p, [0.955, 0.99], [1, 0]);
+  const voidOpacity = useTransform(p, [0.955, 1], [1, 0]);
+  const canvasOpacity = useTransform(p, [0.965, 1], [1, 0]);
   const hintOpacity = useTransform(p, [0, 0.02, 0.08], [0, 1, 0]);
 
   if (reduced) return null;
@@ -122,24 +122,26 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
       onWheel={handleUserInteraction}
       onTouchStart={handleUserInteraction}
     >
-      <div className="relative h-[1600vh]">
+      <div className="relative h-[2600vh]">
         {/* Native CSS Scroll Snapping Keyframe Targets (mapped exactly using scrollHeight - clientHeight) */}
+        {/* Act I — six problem beats over 大塚商会 */}
         <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "0vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "120vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "270vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "420vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "510vh" }} />
-        {/* Achievement Shards Snap Points (Act III) */}
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "615vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "675vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "735vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "787.5vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "847.5vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "907.5vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "960vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "143vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "338vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "533vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "728vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "923vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1118vh" }} />
+        {/* Act II — knowledge graph */}
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1391vh" }} />
+        {/* Act III — feature shards */}
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1638vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1846vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "2054vh" }} />
         {/* Finale / Senpai Re-form */}
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1125vh" }} />
-        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "1350vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "2223vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "2340vh" }} />
+        <div className="absolute h-px w-full snap-start pointer-events-none" style={{ top: "2470vh" }} />
         {/* The void — near-black navy with a faint indigo core. */}
         <motion.div
           className="fixed inset-0"
@@ -159,27 +161,31 @@ export function IntroDemo({ onDone }: { onDone: () => void }) {
             className="relative h-full w-full" 
             style={{ scale: stageScale, opacity: stageOpacity, willChange: "transform, opacity" }}
           >
-            {/* Act I — 大塚商会 burns in the void. */}
-            <DualHeadline p={p} range={[0.03, 0.06, 0.1, 0.135]} position="low" main={t("landing.intro.a1.h1")} sub={t("landing.intro.a1.h1.sub")} />
-            <DualHeadline p={p} range={[0.13, 0.16, 0.2, 0.235]} position="low" main={t("landing.intro.a1.h2")} sub={t("landing.intro.a1.h2.sub")} />
+            {/* Act I — the problem, in six beats over 大塚商会 burning in the void. */}
+            <DualHeadline p={p} range={[0.02, 0.055, 0.09, 0.115]} position="low" main={t("landing.intro.a1.h1")} sub={t("landing.intro.a1.h1.sub")} />
+            <DualHeadline p={p} range={[0.095, 0.13, 0.165, 0.19]} position="low" main={t("landing.intro.a1.h2")} sub={t("landing.intro.a1.h2.sub")} />
+            <DualHeadline p={p} range={[0.17, 0.205, 0.24, 0.265]} position="low" main={t("landing.intro.a1.h3")} sub={t("landing.intro.a1.h3.sub")} />
+            <DualHeadline p={p} range={[0.245, 0.28, 0.315, 0.34]} position="low" main={t("landing.intro.a1.h4")} sub={t("landing.intro.a1.h4.sub")} />
+            <DualHeadline p={p} range={[0.32, 0.355, 0.39, 0.415]} position="low" main={t("landing.intro.a1.h5")} sub={t("landing.intro.a1.h5.sub")} />
+            <DualHeadline p={p} range={[0.395, 0.43, 0.46, 0.485]} position="low" main={t("landing.intro.a1.h6")} sub={t("landing.intro.a1.h6.sub")} />
 
             {/* Act II — the living knowledge graph. */}
-            <DualHeadline p={p} range={[0.235, 0.265, 0.3, 0.33]} main={t("landing.intro.a2.h1")} sub={t("landing.intro.a2.h1.sub")} />
-            <DualHeadline p={p} range={[0.3, 0.33, 0.355, 0.38]} main={t("landing.intro.a2.h2")} sub={t("landing.intro.a2.h2.sub")} />
+            <DualHeadline p={p} range={[0.535, 0.565, 0.595, 0.62]} main={t("landing.intro.a2.h1")} sub={t("landing.intro.a2.h1.sub")} />
+            <DualHeadline p={p} range={[0.6, 0.63, 0.655, 0.68]} main={t("landing.intro.a2.h2")} sub={t("landing.intro.a2.h2.sub")} />
 
             {/* Act III — feature shards fly past the camera, alternating sides:
                 tools → guardrails → ringi → deterministic checks → doc gen →
                 war room → bilingual. */}
-            <FeatureShard p={p} range={[0.375, 0.395, 0.421, 0.443]} side="left" big={t("landing.intro.f1.big")} label={t("landing.intro.f1.label")} sub={t("landing.intro.f1.sub")} />
-            <FeatureShard p={p} range={[0.414, 0.434, 0.46, 0.482]} side="right" big={t("landing.intro.f6.big")} label={t("landing.intro.f6.label")} sub={t("landing.intro.f6.sub")} />
-            <FeatureShard p={p} range={[0.453, 0.473, 0.499, 0.521]} side="left" big={t("landing.intro.f2.big")} label={t("landing.intro.f2.label")} sub={t("landing.intro.f2.sub")} />
-            <FeatureShard p={p} range={[0.492, 0.512, 0.538, 0.56]} side="right" big={t("landing.intro.f3.big")} label={t("landing.intro.f3.label")} sub={t("landing.intro.f3.sub")} />
-            <FeatureShard p={p} range={[0.531, 0.551, 0.577, 0.599]} side="left" big={t("landing.intro.f4.big")} label={t("landing.intro.f4.label")} sub={t("landing.intro.f4.sub")} />
-            <FeatureShard p={p} range={[0.57, 0.59, 0.616, 0.638]} side="right" big={t("landing.intro.f7.big")} label={t("landing.intro.f7.label")} sub={t("landing.intro.f7.sub")} />
-            <FeatureShard p={p} range={[0.609, 0.629, 0.652, 0.674]} side="center" big={t("landing.intro.f5.big")} label={t("landing.intro.f5.label")} sub={t("landing.intro.f5.sub")} />
+            <FeatureShard p={p} range={[0.655, 0.673, 0.693, 0.711]} side="left" big={t("landing.intro.f1.big")} label={t("landing.intro.f1.label")} sub={t("landing.intro.f1.sub")} />
+            <FeatureShard p={p} range={[0.679, 0.697, 0.717, 0.735]} side="right" big={t("landing.intro.f6.big")} label={t("landing.intro.f6.label")} sub={t("landing.intro.f6.sub")} />
+            <FeatureShard p={p} range={[0.703, 0.721, 0.741, 0.759]} side="left" big={t("landing.intro.f2.big")} label={t("landing.intro.f2.label")} sub={t("landing.intro.f2.sub")} />
+            <FeatureShard p={p} range={[0.727, 0.745, 0.765, 0.783]} side="right" big={t("landing.intro.f3.big")} label={t("landing.intro.f3.label")} sub={t("landing.intro.f3.sub")} />
+            <FeatureShard p={p} range={[0.751, 0.769, 0.789, 0.807]} side="left" big={t("landing.intro.f4.big")} label={t("landing.intro.f4.label")} sub={t("landing.intro.f4.sub")} />
+            <FeatureShard p={p} range={[0.775, 0.793, 0.813, 0.831]} side="right" big={t("landing.intro.f7.big")} label={t("landing.intro.f7.label")} sub={t("landing.intro.f7.sub")} />
+            <FeatureShard p={p} range={[0.799, 0.817, 0.837, 0.855]} side="center" big={t("landing.intro.f5.big")} label={t("landing.intro.f5.label")} sub={t("landing.intro.f5.sub")} />
 
             {/* Act IV — 先輩 re-forms; the money line rides into the warp. */}
-            <DualHeadline p={p} range={[0.7, 0.735, 0.775, 0.805]} position="low" glow main={t("landing.intro.a4.h1")} sub={t("landing.intro.a4.h1.sub")} />
+            <DualHeadline p={p} range={[0.865, 0.895, 0.915, 0.935]} position="low" glow main={t("landing.intro.a4.h1")} sub={t("landing.intro.a4.h1.sub")} />
             <EnterScene
               p={p}
               main={t("landing.intro.a4.h2")}
@@ -327,8 +333,8 @@ function EnterScene({
   cta: string;
   onEnter: () => void;
 }) {
-  const opacity = useTransform(p, [0.8, 0.86], [0, 1]);
-  const scale = useTransform(p, [0.8, 0.9], [0.55, 1]);
+  const opacity = useTransform(p, [0.9, 0.945], [0, 1]);
+  const scale = useTransform(p, [0.9, 0.96], [0.55, 1]);
   const display = useTransform(opacity, (v) => (v < 0.02 ? "none" : "flex"));
 
   return (
@@ -502,7 +508,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       if (disposed) return;
       const t = p.get();
       
-      const blurVal = t < 0.805 ? 0 : Math.min(10, ((t - 0.805) / 0.055) * 10);
+      const blurVal = t < 0.9 ? 0 : Math.min(10, ((t - 0.9) / 0.04) * 10);
 
       if (blurVal > 0.1) {
         canvas.style.filter = `blur(${blurVal}px)`;
@@ -519,7 +525,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       const gather = smooth(t, 0, GATHER_END); // origins -> 大塚商会
       const m1 = smooth(t, M1_START, M1_END); // 大塚商会 -> constellation
       const m2 = smooth(t, M2_START, M2_END); // constellation -> 先輩
-      const warp = smooth(t, WARP_START, 0.98); // -> hyperspace
+      const warp = smooth(t, WARP_START, 0.99); // -> hyperspace
       const networkAlive = m1 * (1 - m2);
       // How strongly particles are currently spelling text (A or C formation):
       // dots get bigger, brighter and steadier so the kanji reads clearly.
@@ -529,7 +535,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       // Heartbeat on 大塚商会 (fades with m1); 先輩 gets a glow surge instead.
       const beat = Math.pow(0.5 + 0.5 * Math.sin(now * 0.0016), 3) * (1 - m1);
       const pulse = 1 + beat * 0.035;
-      const senpaiGlow = smooth(t, 0.69, 0.77) * (1 - warp);
+      const senpaiGlow = smooth(t, 0.85, 0.93) * (1 - warp);
 
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = "lighter";
@@ -639,7 +645,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       }
 
       // Bloom flash as the warp opens into the light landing page.
-      const flash = smooth(t, WARP_START + 0.04, 0.97);
+      const flash = smooth(t, WARP_START + 0.02, 0.99);
       if (flash > 0.01) {
         ctx.globalCompositeOperation = "source-over";
         ctx.fillStyle = `hsla(0, 0%, 100%, ${flash * 0.5})`;
