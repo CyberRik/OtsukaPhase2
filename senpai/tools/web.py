@@ -147,13 +147,21 @@ def web_search_typed(query: str, max_results: int = 4) -> dict:
 
 def web_search(query: str) -> str:
     """Search the web for a query. Uses Tavily when configured; falls back to
-    canned results on missing key / network failure so the demo never breaks."""
+    canned results on missing key / network failure so the demo never breaks.
+
+    Returns ONLY sourced snippets, each carrying its URL. Tavily's `answer` — a
+    third-party model's synthesis of those snippets — is deliberately NOT included:
+    it arrived as the leading unattributed sentence, above the sources and with no
+    URL to cite, so the role prompts' 「出典(URL)を添えて引用する」 rule could not bite
+    and the model restated its guesses as fact ("Isshin Kaneko … under 1500 yen",
+    which no snippet supports). Every line the model now sees is attributable.
+    `include_answer` stays off so we don't pay for generating it."""
     query = _condense_query(query)
     if TAVILY_API_KEY:
         data = _post_json(
             "https://api.tavily.com/search",
             {"api_key": TAVILY_API_KEY, "query": query,
-             "max_results": 4, "search_depth": "basic", "include_answer": True},
+             "max_results": 4, "search_depth": "basic", "include_answer": False},
             timeout=12,
         )
         if data and data.get("results"):
@@ -165,9 +173,7 @@ def web_search(query: str) -> str:
                     snippet = snippet[:157] + "…"
                 url = r.get("url", "")
                 lines.append(f"{title} — {snippet} ({url})")
-            answer = (data.get("answer") or "").strip()
-            head = f"{answer}\n\n" if answer else ""
-            return head + "検索結果:\n- " + "\n- ".join(lines)
+            return "検索結果:\n- " + "\n- ".join(lines)
     # fallback: canned results
     q = query.lower()
     for key, results in _SEARCH_CANNED.items():

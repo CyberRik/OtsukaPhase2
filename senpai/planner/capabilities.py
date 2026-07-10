@@ -135,8 +135,9 @@ class KnowledgeCapability:
 
     def run(self, op: str, inputs: Mapping[str, Any], ctx: ExecContext) -> Evidence:
         from senpai.tools.impl import search_knowledge
+        from senpai.tools.outcomes import is_miss
         text = search_knowledge(query=str(inputs.get("query", "")), limit=3)
-        if "見つかりません" in text:
+        if is_miss(text):
             return Evidence.empty(provenance={"capability": "knowledge"})
         ctx.emit("社内ナレッジを取得")
         return _text_evidence("knowledge", text)
@@ -173,8 +174,9 @@ class SolutionsCapability:
         if not query:
             return Evidence.empty(provenance={"capability": "solutions"})
 
+        from senpai.tools.outcomes import is_miss
         text = search_solutions(query=query, limit=3)
-        if "見つかりません" in text:
+        if is_miss(text):
             return Evidence.empty(provenance={"capability": "solutions"})
         ctx.emit("ソリューション・製品情報を取得")
         return _text_evidence("solutions", text)

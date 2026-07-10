@@ -199,7 +199,12 @@ TOOLS = [
         "function": {
             "name": "route_to_expert",
             "description": "Find the right senior/expert rep to escalate a question to, matched on "
-                           "their specialty tags, and draft a short intro message.",
+                           "their specialty tags, and draft a short intro message. Use ONLY for "
+                           "internal sales/technical questions that need a colleague's judgement "
+                           "(deal strategy, network/server/security/product specifics). Do NOT use "
+                           "for general or public facts (company address, weather, news, general "
+                           "knowledge) — those go to web_search or your own knowledge. Escalating "
+                           "is not a substitute for answering a question you can look up.",
             "parameters": {
                 "type": "object",
                 "properties": {

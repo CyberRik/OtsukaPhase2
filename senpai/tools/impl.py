@@ -4,6 +4,11 @@ Every executor returns a SHORT string (what the model sees as the tool result)
 and `dispatch` never raises, so the chat loop can't crash. All data comes from
 the deterministic store / scoring engine, so these run GPU-free.
 
+A tool that finds nothing returns `outcomes.not_found(...)`, which tags the message with
+a `[not_found]` marker the loop detects mechanically (same convention as the existing
+`[error]` prefix). Never return an authoritative-looking string on a miss: the model
+cannot tell the difference, and will answer from it.
+
 `python -m senpai.tools.impl` runs a canned call per tool (smoke test).
 """
 from __future__ import annotations
@@ -18,6 +23,7 @@ from senpai.health.scoring import score_deal
 from senpai.retrieval.knowledge import search_knowledge as _search_knowledge
 from senpai.retrieval.playbook import find_similar_deals, retrieve_playbook
 from senpai.tools.focus import session_focus
+from senpai.tools.outcomes import is_miss, not_found
 from senpai.tools.web import web_search
 from senpai.tools.crawl import web_research
 
@@ -67,7 +73,7 @@ def query_spr(customer: str = "", rep_id: str = "", deal_id: str = "") -> str:
     if deal_id:
         d = store.get_deal(deal_id)
         if not d:
-            return f"案件 {deal_id} は見つかりません。"
+            return not_found(f"案件 {deal_id} は見つかりません。")
         acts = store.activities_for_deal(deal_id)
         head = _deal_line(d)
         act_lines = [f"  ・{a['activity_date']} [{a['activity_type']}] {a['daily_report']}"
@@ -77,7 +83,7 @@ def query_spr(customer: str = "", rep_id: str = "", deal_id: str = "") -> str:
     if customer:
         c = _resolve_customer(customer)
         if not c:
-            return f"顧客「{customer}」は見つかりません。"
+            return not_found(f"顧客「{customer}」は見つかりません。")
         deals = store.deals_for_customer(c["customer_id"])
         if not deals:
             return f"{c['name']} の案件はありません。"
@@ -114,7 +120,7 @@ def find_deals(product_category: str = "", industry: str = "", size: str = "",
                                       order_rank, product_code] if x) or "全条件"
     if not all_hits:
         f = deal_facets()
-        return ("条件に合う案件は見つかりませんでした。指定可能な値:\n"
+        return not_found("条件に合う案件は見つかりませんでした。指定可能な値:\n"
                 f"- 商品カテゴリ: {'、'.join(f['product_category'])}\n"
                 f"- 業種: {'、'.join(f['industry'])}\n"
                 f"- 規模: {'、'.join(f['size'])}\n"
@@ -141,7 +147,7 @@ def find_similar_deals_tool(customer: str = "", industry: str = "") -> str:
             cid = c["customer_id"]
     hits = find_similar_deals(customer_id=cid, industry=industry)
     if not hits:
-        return "類似案件は見つかりませんでした。"
+        return not_found("類似案件は見つかりませんでした。")
     lines = [_deal_line(d) for d in hits]
     return "類似案件:\n- " + "\n- ".join(lines)
 
@@ -151,7 +157,7 @@ def retrieve_playbook_tool(query: str = "", tags=None) -> str:
         tags = [tags]
     hits = retrieve_playbook(query=query, tags=tags or [])
     if not hits:
-        return "該当するプレイブックがありません。route_to_expert の利用を検討してください。"
+        return not_found("該当するプレイブックがありません。route_to_expert の利用を検討してください。")
     lines = []
     for e in hits:
         entry_id = e.get("entry_id", "Unknown")
@@ -162,10 +168,10 @@ def retrieve_playbook_tool(query: str = "", tags=None) -> str:
 def lookup_customer_environment(customer: str = "") -> str:
     c = _resolve_customer(customer)
     if not c:
-        return f"顧客「{customer}」は見つかりません。"
+        return not_found(f"顧客「{customer}」は見つかりません。")
     env = store.get_environment(c["customer_id"])
     if not env:
-        return f"{c['name']} の環境情報は未登録です。"
+        return not_found(f"{c['name']} の環境情報は未登録です。")
     return (f"{c['name']} の環境: PC={env['pc']} / OS={env['os']} / "
             f"ネットワーク={env['network']} / 備考: {env['notes']}")
 
@@ -177,7 +183,7 @@ def get_product_info(product: str = "") -> str:
                   if product and product in x["product_name"]), None)
     if not p:
         names = ", ".join(x["product_name"] for x in store.all_products())
-        return f"製品「{product}」は見つかりません。取扱: {names}"
+        return not_found(f"製品「{product}」は見つかりません。取扱: {names}")
     return (f"{p['product_name']} ({p['product_code']} / {p['manufacturer_model_number']}) "
             f"— ¥{p['standard_unit_price']:,}\n"
             f"分類: {p['major']} > {p['mid']} > {p['minor']}\n"
@@ -187,7 +193,7 @@ def get_product_info(product: str = "") -> str:
 def score_deal_health(deal_id: str = "") -> str:
     d = store.get_deal(deal_id)
     if not d:
-        return f"案件 {deal_id} は見つかりません。"
+        return not_found(f"案件 {deal_id} は見つかりません。")
     acts = store.activities_for_deal(deal_id)
     res = score_deal(d, acts)
     emoji = {"red": "🔴", "yellow": "🟡", "green": "🟢"}[res.band]
@@ -228,21 +234,32 @@ def review_sales_note(note: str = "", deal_id: str = "") -> str:
 
 
 def route_to_expert(question: str = "", tags=None) -> str:
+    """Match a question to a senior/expert rep by specialty tag. Returns a not-found
+    when NOTHING in the question or tags touches any expert's specialty.
+
+    The relevance score and the top-performer bonus are kept separate on purpose. They
+    used to be summed against a `best_score = -1` seed, so every expert scored at least
+    0 and the first one in list order always "won" — route_to_expert("") confidently
+    introduced 田中健太. A zero-relevance match must fail, not fall back to whoever is
+    first; the top-performer bonus only breaks ties among experts who actually match."""
     if isinstance(tags, str):
         tags = [tags]
     tags = tags or []
     experts = [r for r in store.all_reps() if r["role"] in ("senior", "expert")]
-    best, best_score = None, -1
+    best, best_key = None, (0, 0.0)   # (relevance, tiebreak) — relevance 0 never wins
     for r in experts:
-        score = sum(1 for t in tags
-                    if any(t in s or s in t for s in r["specialty_tags"]))
-        score += sum(1 for s in r["specialty_tags"] if question and s in question)
-        if r["is_top_performer"]:
-            score += 0.5
-        if score > best_score:
-            best, best_score = r, score
+        relevance = sum(1 for t in tags
+                        if any(t in s or s in t for s in r["specialty_tags"]))
+        relevance += sum(1 for s in r["specialty_tags"] if question and s in question)
+        if not relevance:
+            continue  # this expert's specialties have nothing to do with the question
+        key = (relevance, 0.5 if r["is_top_performer"] else 0.0)
+        if key > best_key:
+            best, best_key = r, key
     if not best:
-        return "適切な担当が見つかりませんでした。"
+        return not_found("適切な担当が見つかりませんでした。"
+                         "この質問は社内エキスパートの専門分野(ネットワーク/サーバー/セキュリティ等)に"
+                         "該当しません。")
     return (f"エキスパート紹介: {best['name']}({'/'.join(best['specialty_tags'])})\n"
             f"紹介メッセージ案: 「{best['name']}さん、{question} の件でご相談です。"
             "お手すきの際にご助言いただけますか。」")
@@ -457,7 +474,7 @@ def search_products(category: str = "", max_price: float = None,
                 continue
         hits.append(p)
     if not hits:
-        return "条件に合う製品は見つかりませんでした。"
+        return not_found("条件に合う製品は見つかりませんでした。")
     hits.sort(key=lambda p: p.get("standard_unit_price", 0))
     lines = [f"{p['product_code']} — {p['product_name']} — ¥{p['standard_unit_price']:,}"
              f"（{p.get('mid', p.get('major', ''))}）" for p in hits]
@@ -591,7 +608,7 @@ def search_knowledge(query: str = "", tags=None, limit: int = 4) -> str:
         items=[{"id": kind, "customer": None, "score": int(score), "text": text}
                for score, kind, text in hits])
     if not hits:
-        return ("該当する社内ナレッジが見つかりませんでした。"
+        return not_found("該当する社内ナレッジが見つかりませんでした。"
                 "route_to_expert の利用を検討してください。")
     lines = [f"[{kind}] {text}" for _score, kind, text in hits]
     return "社内ナレッジ:\n- " + "\n- ".join(lines)
@@ -616,7 +633,7 @@ def search_solutions(query: str = "", category: str = "", limit: int = 4) -> str
                 "score": h["solution"]["relevance"], "text": h["solution"]["summary"]}
                for h in hits])
     if not hits:
-        return "該当するソリューション・製品情報が見つかりませんでした。"
+        return not_found("該当するソリューション・製品情報が見つかりませんでした。")
     lines = [f"[{h['solution']['category']}] {h['solution']['name']}: "
              f"{h['solution']['summary']}（出典: {h['solution']['source']}）"
              for h in hits]
@@ -673,8 +690,8 @@ def search_notes(query: str = "", limit: int = 5, customer: str = "") -> str:
 
     if not hits:
         if cid:
-            return f"{cust.get('name', cid)} の日報で該当するものは見つかりませんでした。"
-        return "該当する日報は見つかりませんでした。"
+            return not_found(f"{cust.get('name', cid)} の日報で該当するものは見つかりませんでした。")
+        return not_found("該当する日報は見つかりませんでした。")
 
     scope = (f"（{cust.get('name')} に限定）" if cid
              else "（全社横断・特定顧客に絞れず）")
@@ -706,7 +723,7 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
         rows = gq.reps_who_win(category=category, industry=industry,
                                after_activity_type=after_activity_type)[:limit]
         if not rows:
-            return "条件に合う実績が見つかりませんでした。"
+            return not_found("条件に合う実績が見つかりませんでした。")
         cond = "／".join(x for x in [category, industry, after_activity_type] if x) or "全体"
         lines = [f"{r['rep_name']}（{r['rep_id']}）勝率{r['win_rate']*100:.0f}% "
                  f"（{r['won']}/{r['closed']}件）例: {', '.join(r['example_deal_ids'][:3])}"
@@ -716,7 +733,7 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
     if intent == "account":
         g = gq.account_graph(customer)
         if g.get("status") != "found":
-            return f"顧客「{customer}」は見つかりません。"
+            return not_found(f"顧客「{customer}」は見つかりません。")
         reps = "、".join(r["name"] for r in g["reps"]) or "—"
         prods = "、".join(p["name"] for p in g["products"]) or "—"
         deals = "\n  ".join(f"{d['deal_id']} {d['name']}（{d['rank']}/{d['outcome']}・"
@@ -727,14 +744,14 @@ def query_graph(intent: str = "reps_who_win", category: str = "", industry: str 
     if intent == "connections":
         r = gq.connections(entity_a, entity_b)
         if r.get("status") != "found":
-            return f"「{entity_a}」と「{entity_b}」を結ぶ経路は見つかりませんでした。"
+            return not_found(f"「{entity_a}」と「{entity_b}」を結ぶ経路は見つかりませんでした。")
         path = " → ".join(f"{n['label']}[{n['kind']}]" for n in r["path"])
         return f"{r['hops']}ホップの経路: {path}"
 
     if intent == "similar":
         rows = gq.similar_by_graph(deal_id, limit=limit)
         if not rows:
-            return f"{deal_id} に関連する案件は見つかりませんでした。"
+            return not_found(f"{deal_id} に関連する案件は見つかりませんでした。")
         lines = [f"{r['deal_id']} {r['name']}（{r['outcome']}・関連度{r['score']}）" for r in rows]
         return f"{deal_id} と関係の深い案件:\n- " + "\n- ".join(lines)
 
@@ -784,10 +801,10 @@ def generate_proposal(deal_id: str = "", lang: str = "ja", confirm: bool = False
         return "[error] deal_id を指定してください。"
     ctx = build_document_context(deal_id)
     if ctx is None:
-        return f"案件 {deal_id} は見つかりません。"
+        return not_found(f"案件 {deal_id} は見つかりません。")
     res = proposal.generate(deal_id, lang=lang)
     if res is None:
-        return f"案件 {deal_id} は見つかりません。"
+        return not_found(f"案件 {deal_id} は見つかりません。")
     files, _ctx, spec = res
     # Register the editable proposal PPTX (deal-scoped) plus its PDF and source HTML.
     registry.register("proposal", files["pptx"], deal_id=deal_id)
@@ -812,7 +829,7 @@ def generate_ringisho(deal_id: str = "", confirm: bool = True) -> str:
         return "[error] deal_id を指定してください。"
     ctx = build_document_context(deal_id)
     if ctx is None:
-        return f"案件 {deal_id} は見つかりません。"
+        return not_found(f"案件 {deal_id} は見つかりません。")
     if not confirm:
         pv = ctx.to_preview()
         pains = "、".join(pv["pain_points"]) or "（SPRに課題記録なし）"
@@ -825,7 +842,7 @@ def generate_ringisho(deal_id: str = "", confirm: bool = True) -> str:
                 "【システム指示】プレビューが生成されました。これ以上ツールを呼び出さず、このプレビュー内容をユーザーに提示し、作成を実行してよいか確認してください。ユーザーが同意した場合のみ、次のターンで confirm=true に設定して再度呼び出してください。")
     res = ringisho.generate(deal_id)
     if res is None:
-        return f"案件 {deal_id} は見つかりません。"
+        return not_found(f"案件 {deal_id} は見つかりません。")
     path, _ctx = res
     rec = registry.register("ringisho", path, deal_id=deal_id)
     return f"稟議書(DOCX)を生成しました: {rec['filename']}（{ctx.customer}様）。"
@@ -912,7 +929,7 @@ def _conversation_grounding(prompt: str) -> str:
         if role == "system" or not isinstance(content, str) or not content.strip():
             continue
         if role == "tool":
-            if content.startswith("[error]") or "見つかりません" in content:
+            if is_miss(content):
                 continue
             snippets.append((i, content.strip()))
         elif role == "assistant":
@@ -1163,7 +1180,7 @@ def segment_intelligence(query: str = "", category: str = "", industry: str = ""
                   items=[{"id": r["id"], "score": r.get("win_rate")} for r in reports],
                   query=" ".join(x for x in [query, category, industry] if x), n=len(reports))
     if not reports:
-        return "該当するセグメント（カテゴリ×業界）が見つかりませんでした。"
+        return not_found("該当するセグメント（カテゴリ×業界）が見つかりませんでした。")
     return "\n\n".join(communities.format_report(r) for r in reports)
 
 
@@ -1264,7 +1281,7 @@ def advise_solutions(customer: str = "", deal_id: str = "") -> str:
             
     recs = run_solution_advisor(cid, deal_id)
     if not recs:
-        return "提案できるソリューションが見つかりませんでした。"
+        return not_found("提案できるソリューションが見つかりませんでした。")
         
     lines = []
     for r in recs:

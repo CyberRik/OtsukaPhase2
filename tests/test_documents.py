@@ -10,6 +10,7 @@ from __future__ import annotations
 import pytest
 from docx import Document
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 from senpai import config
 from senpai.data import store
@@ -97,14 +98,25 @@ def test_context_unknown_deal_is_none():
 def test_proposal_arc_and_grounded():
     res = proposal.generate(DEAL)
     assert res is not None
-    path, ctx, spec = res
+    files, ctx, spec = res          # files: {"pptx": Path, "html": Path, "pdf": Path?}
+    path = files["pptx"]
     prs = Presentation(str(path))
     # Full proposal arc: 表紙 → 背景 → 課題 → ソリューション → 投資対効果 → 次のステップ.
     assert len(prs.slides) == 9
     assert len(spec["slides"]) == 9
     text = _pptx_text(path)
     assert ctx.customer in text                       # title slide names the customer
-    assert (f"{ctx.financials['investment']:,}" in text or str(float(ctx.financials['investment'])) in text)  # ROI slide carries the real ¥ (D001 has no quote)
+
+    # The ROI slide carries the real ¥ from SPR (D001 has no quote), but it is a
+    # `chart` layout: the figure is baked into an mpl-rendered image, so it never
+    # appears in extracted text. Assert grounding on the spec that drives the chart,
+    # and assert the chart actually rendered onto the slide.
+    investment = ctx.financials["investment"]
+    roi = next(s for s in spec["slides"] if s.get("icon") == "roi")
+    assert investment in roi["chart"]["series"][0]["values"]
+    assert f"¥{investment:,}" in roi["chart"]["value_labels"]
+    roi_slide = prs.slides[spec["slides"].index(roi)]
+    assert any(sh.shape_type == MSO_SHAPE_TYPE.PICTURE for sh in roi_slide.shapes)
 
 
 # --- ringisho (DOCX) -----------------------------------------------------------

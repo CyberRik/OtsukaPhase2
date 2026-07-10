@@ -593,18 +593,40 @@ def _wants_workspace_write(user_msg: str) -> bool:
 
 def _is_substantive(result: str) -> bool:
     """True when a tool result carries usable info (not an error / not-found). Drives
-    both the answer fallback and the unproductive-round spiral guard — so a tool that
-    keeps returning real data (multi-entity fan-out) is never mistaken for a spiral."""
-    return not (result.startswith("[error]") or "見つかりません" in result
-                or "ありません" in result[:20])
+    the answer fallback, the no-evidence guard, and the unproductive-round spiral guard
+    — so a tool that keeps returning real data (multi-entity fan-out) is never mistaken
+    for a spiral.
+
+    Detection lives in senpai.tools.outcomes: tools tag misses with `[not_found]` (or
+    `[error]`) rather than this function guessing from Japanese prose. It used to guess,
+    and 「…の環境情報は未登録です。」 — an explicit miss — read as evidence."""
+    from senpai.tools.outcomes import is_miss
+    return not is_miss(result)
 
 
-def _route_final_answer(convo, tools, tool_log, role, fallback_text: str = ""):
+# Interstitial shown to the synthesis round when EVERY tool this turn came back
+# empty. Without it the synthesis prompt looks like "helpful assistant + a question +
+# one 見つかりません" and the model fills the void from parametric memory (the D168
+# turn that answered GTA 6 specs off a failed SPR lookup). "user", not "system" — the
+# served model's chat template rejects a system message anywhere but index 0.
+_NO_EVIDENCE_GUARD = (
+    "（システム注記：このターンで実行したツールは、いずれも該当データを返しませんでした。"
+    "根拠となる情報が手元にありません。取得できなかった事実を記憶から補って答えないでください。"
+    "何が見つからなかったかを率直に述べ、次に取れる手段（IDの確認、別の検索条件など）を示すこと。"
+    "web_search が出典URL付きの結果を返した場合に限り、その内容は引用してよい。"
+    "推定スペック・推定価格・推定日付などの創作した具体値を提示してはいけません。)"
+)
+
+
+def _route_final_answer(convo, tools, tool_log, role, fallback_text: str = "",
+                        no_evidence: bool = False):
     """Decide FAST vs REASONING for the synthesis round via the ReasoningRouter,
     emit a `routing` event (observability), then stream the answer. Tool-selection
     stays fast regardless; only this round is dynamically routed. When the router
     is "off" we fall back to the static TOOLLOOP_NO_THINK behaviour. `fallback_text`
-    is surfaced if synthesis comes back empty, so a turn never shows a blank."""
+    is surfaced if synthesis comes back empty, so a turn never shows a blank.
+    `no_evidence` means tools ran and all returned nothing substantive — the answer
+    is then constrained to say so rather than invent (see _NO_EVIDENCE_GUARD)."""
     no_think = config.TOOLLOOP_NO_THINK
     if config.REASONING_ROUTER and config.REASONING_ROUTER != "off":
         try:
@@ -625,6 +647,10 @@ def _route_final_answer(convo, tools, tool_log, role, fallback_text: str = ""):
     _sc, _sm, _, _ = _synth_route(no_think)
     yield {"type": "synth", "model_id": _sm,
            "tier": "atlas", "no_think": no_think}
+    # Appended AFTER routing: the router reads the last user message to pick
+    # FAST vs REASONING, and must see the real question, not this note.
+    if no_evidence:
+        convo.append({"role": "user", "content": _NO_EVIDENCE_GUARD})
     yield from _stream_final_answer(convo, tools, no_think=no_think,
                                     fallback_text=fallback_text)
 
@@ -632,18 +658,28 @@ def _route_final_answer(convo, tools, tool_log, role, fallback_text: str = ""):
 # Sentinel tool for the "finish-tool" loop. With tool_choice="required" the model
 # must emit a tool call every round, so it can never burn time generating a
 # throwaway answer just to signal "no more tools" (the old double-generation). When
-# it has enough — or the question needs no internal tool — it calls `finish`, which
-# we intercept (never dispatched) and hand to the single routed synthesis round.
+# it has enough it calls `finish`, which we intercept (never dispatched) and hand to
+# the single routed synthesis round.
+#
+# The description deliberately does NOT say "call this when no internal tool is
+# needed": that phrasing made an external-facts question ("GTA 6 の推奨スペックは？")
+# read as a finish trigger, because web_search isn't an *internal* tool. The model
+# then finished on an empty query_spr and answered the specs from memory. finish now
+# means one thing only — the evidence is in hand.
 _FINISH_TOOL = {
     "type": "function",
     "function": {
         "name": "finish",
         "description": (
-            "回答に必要な情報が揃ったら、または社内ツールが不要な質問なら、これを呼ぶこと。"
+            "回答に必要な情報が揃ったときにだけ、これを呼ぶこと。"
+            "社外の事実・最新の製品仕様・価格・ニュースなど、外部の最新情報が必要な質問では、"
+            "先に web_search を呼び、その結果を得てから finish を呼ぶこと。"
+            "情報が無いまま finish を呼んではいけない。"
             "回答文は自分で書かず finish を呼ぶ。finish を呼ぶと最終回答の生成に進む。 "
-            "Call this as soon as you have enough to answer, or when no internal tool "
-            "is needed. Do NOT write the answer yourself — calling finish triggers the "
-            "final answer."
+            "Call this ONLY once you have the evidence you need to answer. If the "
+            "question needs external or current facts (specs, prices, news), call "
+            "web_search FIRST and finish only after its result. Do NOT write the "
+            "answer yourself — calling finish triggers the final answer."
         ),
         "parameters": {"type": "object", "properties": {}, "required": []},
     },
@@ -671,7 +707,8 @@ def _is_terminal_action(name: str, result: str) -> bool:
         return False
     if "プレビュー" in result or "confirm=true" in result.lower():
         return False  # a preview/draft awaiting the rep's confirmation
-    if result.startswith("[error]") or "見つかりません" in result:
+    from senpai.tools.outcomes import is_error, is_not_found
+    if is_error(result) or is_not_found(result) or "見つかりません" in result:
         return False  # a failed call — let the model recover
     return True
 
@@ -835,7 +872,8 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 # to the model as an interstitial instruction.
                 convo.append({"role": "user", "content": _WORKSPACE_WRITE_NUDGE})
                 continue
-            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
+            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive),
+                                           no_evidence=bool(tool_log) and not substantive)
             return
 
         convo.append({"role": "assistant", "content": None, "tool_calls": [
@@ -1017,7 +1055,8 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 # to the model as an interstitial instruction.
                 convo.append({"role": "user", "content": _WORKSPACE_WRITE_NUDGE})
                 continue
-            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
+            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive),
+                                           no_evidence=bool(tool_log) and not substantive)
             return
 
         if last_round:
@@ -1031,7 +1070,8 @@ def stream_chat_turn(convo: list[dict], tools: list[dict] | None = None,
                 if last_name in _ACTION_TOOLS or last_name.startswith("generate_"):
                     yield {"type": "answer", "text": last_result}
                     return
-            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive))
+            yield from _route_final_answer(convo, tools, tool_log, role, _fallback_answer(substantive),
+                                           no_evidence=bool(tool_log) and not substantive)
             return
 
 
@@ -1155,7 +1195,14 @@ _TOOL_ROUND_CAP = 2
 # where every call has a unique (name, args) key so neither the dedup check nor the
 # unproductive-round cap fires. Legitimate database query fan-out (like query_spr,
 # search_notes, find_deals) can run up to 30 times to handle large pipeline audit requests.
+#
+# web_search is capped low for a different reason: a search ALWAYS returns text, so it
+# always looks "productive" and the unproductive-round guard never fires. A turn that
+# can't find its answer just re-queries — six times, degenerating to `"Spicy Ya" Iidab`
+# — and each dry-but-nonempty result feeds the model more material to embellish from.
+# For search, "returned something" is a bad proxy for "made progress".
 _MAX_CALLS_BY_TOOL = {
     "search_products": 5,
+    "web_search": 4,
 }
 _DEFAULT_MAX_CALLS_PER_TOOL = 30

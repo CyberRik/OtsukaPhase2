@@ -41,7 +41,7 @@ cd web; npm install; cd ..
 # Terminal 1 — Backend bridge (FastAPI) → <http://localhost:8000>
 
 $env:SENPAI_USE_LLM = '1'
-$env:SENPAI_TODAY   = '2026-07-07'        # pin scoring's "today" to the seed anchor
+$env:SENPAI_TODAY   = '2026-07-09'        # pin scoring's "today" to the seed anchor
 .\.venv\Scripts\python.exe -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1 --reload
 
 # Terminal 2 — Frontend (Next.js) → <http://localhost:3000>   (defaults to the :8000 backend)
@@ -123,6 +123,24 @@ Sanity check it's up (needs the tunnel): `curl http://127.0.0.1:8765/v1/models`.
 Check it's alive on the box: `ssh team-a@100.101.186.29 'pgrep -af llama-server'`.
 > A `couldn't bind … 0.0.0.0:8765` line in the llama-server log just means a **second** launch
 > hit an already-running instance — the first one is fine.
+
+### 1.5 Remote Atlas Container (35B) & Model Config
+
+The fallback/primary synthesis model is hosted in the `atlas` Docker container on the same shared GB10 box (`100.101.186.29`).
+
+**To view the Atlas container logs locally:**
+```bash
+# Option 1: Direct SSH command
+ssh team-a@100.101.186.29 "docker logs -f atlas"
+
+# Option 2: Using Docker over SSH (requires local Docker CLI)
+# Windows (PowerShell): $env:DOCKER_HOST="ssh://team-a@100.101.186.29"
+# macOS/Linux: export DOCKER_HOST="ssh://team-a@100.101.186.29"
+docker logs -f atlas
+```
+
+**To view or modify the model configuration:**
+All model configuration, tuning knobs, and inference parameters (such as `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, and `SENPAI_SYNTH_ALL_8B`) are centralized in [`senpai/config.py`](senpai/config.py). You can adjust them there or via environment variables in the repo-root `.env` file.
 
 ### 2. Backend bridge (FastAPI) — `:8000`  ← **this is the switch**
 

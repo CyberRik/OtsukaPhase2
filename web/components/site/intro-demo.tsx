@@ -405,20 +405,20 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       mouse.active = false;
     };
 
-    const sampleText = (text: string, fontSize: number) => {
+    const sampleText = (text: string, fontSize: number, weight = 900) => {
       const off = document.createElement("canvas");
       off.width = W;
       off.height = H;
       const o = off.getContext("2d");
       if (!o) return [] as { x: number; y: number }[];
       o.fillStyle = "#fff";
-      o.font = `900 ${fontSize}px "Noto Sans JP", "Meiryo", "MS PGothic", "Hiragino Kaku Gothic ProN", sans-serif`;
+      o.font = `${weight} ${fontSize}px "Noto Sans JP", "Meiryo", "MS PGothic", "Hiragino Kaku Gothic ProN", sans-serif`;
       o.textAlign = "center";
       o.textBaseline = "middle";
       o.fillText(text, W / 2, H / 2);
       const data = o.getImageData(0, 0, W, H).data;
       const out: { x: number; y: number }[] = [];
-      const step = 2;
+      const step = 1;
       for (let y = 0; y < H; y += step)
         for (let x = 0; x < W; x += step) if (data[(y * W + x) * 4 + 3] > 128) out.push({ x, y });
       return out;
@@ -434,9 +434,11 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       canvas.style.height = `${H}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const count = W > 768 ? 4000 : 2200;
+      const count = W > 768 ? 5400 : 2900;
       const otsuka = sampleText("大塚商会", Math.min(W / 4.4, H * 0.42));
-      const senpai = sampleText("先輩", Math.min(W / 2.5, H * 0.45));
+      // Thinner weight for 先輩 — 輩's stroke count fuses into a blob at 900;
+      // a lighter face keeps gaps between strokes so the dots can trace them.
+      const senpai = sampleText("先輩", Math.min(W / 2.5, H * 0.45), 400);
       const cxm = W / 2;
       const cym = H / 2;
 
@@ -449,7 +451,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
         // order) so the whole glyph is covered even when points > particles.
         const a = otsuka.length ? otsuka[Math.floor((i * otsuka.length) / count) % otsuka.length] : { x: cxm, y: cym };
         const c = senpai.length ? senpai[Math.floor((i * senpai.length) / count) % senpai.length] : { x: cxm, y: cym };
-        const jit = () => (Math.random() - 0.5) * 3;
+        const jit = () => (Math.random() - 0.5) * 1.1;
         const oAng = Math.random() * Math.PI * 2;
         return {
           ox: cxm + Math.cos(oAng) * W * 0.75,
@@ -540,6 +542,13 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
         ctx.stroke();
       }
 
+      // Additive "lighter" blending floods overlapping strokes into blobs —
+      // fine for the loose constellation, but it's what makes dense glyphs
+      // like 輩 unreadable. Switch to opaque compositing while the field is
+      // actually spelling text so individual dots (and the gaps between
+      // strokes) stay visible.
+      ctx.globalCompositeOperation = wForm > 0.5 ? "source-over" : "lighter";
+
       for (const pt of pts) {
         // Where this particle wants to be right now: origin -> A -> B -> C.
         const fx = pt.ox + (pt.ax - pt.ox) * gather;
@@ -554,14 +563,15 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
         tx = cxm + (tx - cxm) * zf;
         ty = cym + (ty - cym) * zf;
 
-        // Ambient drift so formations feel alive — calmer while spelling text
-        // so glyph edges stay crisp.
-        const drift = 1.9 - wForm * 1.6;
+        // Ambient drift so formations feel alive — almost still while
+        // spelling text so glyph strokes stay sharp and readable.
+        const drift = 1.9 - wForm * 1.85;
         tx += Math.sin(now * 0.0007 + pt.tw) * drift * pt.z;
         ty += Math.cos(now * 0.0009 + pt.tw * 1.3) * drift * pt.z;
 
-        // Ease toward target (snappier while gathering and re-forming).
-        const ease = 0.055 + gather * 0.02 + m2 * 0.03;
+        // Ease toward target (snappier while gathering and re-forming, and
+        // tighter still once a glyph needs to read cleanly).
+        const ease = 0.055 + gather * 0.02 + m2 * 0.05 + wForm * 0.05;
         pt.x += (tx - pt.x) * ease;
         pt.y += (ty - pt.y) * ease;
 
@@ -609,6 +619,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       }
 
       if (warpPaths) {
+        ctx.globalCompositeOperation = "lighter";
         for (let b = 0; b < NB; b++) {
           const zb = 0.35 + ((b + 0.5) / NB) * 1.45; // bucket-representative depth
           ctx.strokeStyle = `hsla(${228 + zb * 8}, 90%, ${70 + warp * 20}%, ${Math.min(1, 0.35 + zb * 0.25 + warp * 0.4)})`;
@@ -620,6 +631,7 @@ function ParticleField({ p }: { p: MotionValue<number> }) {
       // Bloom flash as the warp opens into the light landing page.
       const flash = smooth(t, WARP_START + 0.04, 0.97);
       if (flash > 0.01) {
+        ctx.globalCompositeOperation = "source-over";
         ctx.fillStyle = `hsla(0, 0%, 100%, ${flash * 0.5})`;
         ctx.fillRect(0, 0, W, H);
       }
