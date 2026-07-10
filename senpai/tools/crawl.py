@@ -219,6 +219,7 @@ class _BrowserSession:
 
     def __init__(self) -> None:
         self.ok = False
+        self.last_error = ""   # reason from the most recent failed fetch()
         self._pw = None
         self._browser = None
         self._page = None
@@ -259,7 +260,9 @@ class _BrowserSession:
             return {"status": resp.status if resp else 200, "html": html,
                     "final_url": self._page.url,
                     "screenshot_b64": base64.b64encode(shot).decode("ascii") if shot else ""}
-        except Exception:
+        except Exception as e:  # noqa: BLE001 — caller falls back to _fetch_static
+            # Keep the reason: a bare "no_pages_fetched" hides cert/DNS/timeout faults.
+            self.last_error = str(e).splitlines()[0][:200]
             return None
 
     def _settle(self, ms: int) -> None:
@@ -321,6 +324,37 @@ class _BrowserSession:
 # ============================================================================
 # Crawl
 # ============================================================================
+def _resolve_seed_url(url: str) -> str:
+    """Pick a seed variant the site actually serves, following redirects.
+
+    A bare domain gets `https://` prepended, but plenty of hosts only present a
+    valid certificate on `www.` — otsuka-shokai.co.jp answers the apex with a cert
+    whose common name doesn't match, so Chromium aborts with
+    ERR_CERT_COMMON_NAME_INVALID and the whole crawl dies as `no_pages_fetched`.
+    Probe the apex, then `www.`, and adopt the final URL of the first that answers.
+    Falls back to the original so a probe failure never blocks the crawl."""
+    host = urlsplit(url).hostname or ""
+    candidates = [url]
+    if host and not host.startswith("www."):
+        candidates.append(url.replace("://" + host, "://www." + host, 1))
+    try:
+        import requests  # type: ignore
+    except Exception:  # noqa: BLE001 — no requests → let the browser try the original
+        return url
+    for cand in candidates:
+        if not is_safe_url(cand):
+            continue
+        try:
+            r = requests.get(cand, headers={"User-Agent": _UA}, timeout=_PAGE_TIMEOUT_S,
+                             stream=True, allow_redirects=True)
+            r.close()
+        except Exception:  # noqa: BLE001 — cert/DNS/timeout: try the next variant
+            continue
+        if r.status_code < 400 and is_safe_url(r.url):
+            return r.url
+    return url
+
+
 def crawl_site(url: str, *, max_pages: int = _DEFAULT_MAX_PAGES,
                max_depth: int = _DEFAULT_MAX_DEPTH, budget_s: float = _DEFAULT_BUDGET_S,
                use_browser: bool = True, emit: Emit | None = None) -> dict[str, Any]:
@@ -332,6 +366,7 @@ def crawl_site(url: str, *, max_pages: int = _DEFAULT_MAX_PAGES,
         return {"start_url": url, "ok": False, "reason": "unsafe_or_unreachable_url",
                 "pages": [], "products": [], "news": [], "pdfs": [], "backend": "none"}
 
+    url = _resolve_seed_url(url)   # apex → www when only www has a valid cert
     root_host = urlsplit(url).hostname or ""
     rp = _load_robots(url)
     started = time.monotonic()
@@ -397,10 +432,13 @@ def crawl_site(url: str, *, max_pages: int = _DEFAULT_MAX_PAGES,
                             "pdfs": len(pdfs)}})
             time.sleep(_POLITE_DELAY_S)
 
+    reason = ""
+    if not pages:
+        detail = getattr(sess, "last_error", "")
+        reason = f"no_pages_fetched: {detail}" if detail else "no_pages_fetched"
     return {"start_url": url, "ok": bool(pages), "backend": backend,
             "root_host": root_host, "pages": pages, "products": products,
-            "news": news, "pdfs": pdfs,
-            "reason": "" if pages else "no_pages_fetched"}
+            "news": news, "pdfs": pdfs, "reason": reason}
 
 
 class _nullctx:

@@ -28,6 +28,7 @@ export function IntelTurn({
   const [pages,        setPages]        = useCachedState<CrawlPage[]>(`${key}:pages`, []);
   const [brief,        setBrief]        = useCachedState<string>(`${key}:brief`, "");
   const [status,       setStatus]       = useCachedState<"running" | "done" | "error">(`${key}:status`, "running");
+  const [errReason,    setErrReason]    = useCachedState<string>(`${key}:errReason`, "");
   const [plan,         setPlan]         = useCachedState<{ query: string; sites: string[] } | null>(`${key}:plan`, null);
   const [showArtifact, setShowArtifact] = useCachedState<boolean>(`${key}:show`, false);
   const [collapsed,    setCollapsed]    = useCachedState<boolean>(`${key}:collapsed`, false);
@@ -48,6 +49,7 @@ export function IntelTurn({
     startedRef.current = true;
     setStarted(true);
     setStatus("running");
+    setErrReason("");
     setPages([]);
     setBrief("");
     setFrame("");
@@ -94,6 +96,7 @@ export function IntelTurn({
           break;
         case "error":
           setStatus("error");
+          setErrReason(e.reason ?? "");
           break;
       }
     }, { signal: ctrl.signal }).then(() => {
@@ -147,9 +150,20 @@ export function IntelTurn({
 
         <div className="flex w-full flex-col gap-3 py-0.5">
           {status === "error" && phases.length === 0 && (
-            <p className="text-[12.5px] text-conf-low">
-              {lang === "ja" ? "クロールに失敗しました" : "Crawl failed"}
-            </p>
+            <div className="space-y-1">
+              <p className="text-[12.5px] text-conf-low">
+                {lang === "ja" ? "クロールに失敗しました" : "Crawl failed"}
+              </p>
+              {errReason.startsWith("unsafe_or_unreachable_url") ? (
+                <p className="text-[11.5px] text-muted-foreground">
+                  {lang === "ja"
+                    ? "このドメインは名前解決できませんでした。綴りを確認してください（例: otsuka-shokai.co.jp）。"
+                    : "That domain did not resolve. Check the spelling (e.g. otsuka-shokai.co.jp)."}
+                </p>
+              ) : errReason ? (
+                <p className="font-mono text-[11px] text-muted-foreground">{errReason}</p>
+              ) : null}
+            </div>
           )}
 
           {phases.length > 0 && (
