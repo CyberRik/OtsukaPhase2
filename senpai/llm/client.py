@@ -330,15 +330,17 @@ def _downsample_frames(frames: list[dict], cap: int) -> list[dict]:
              "screenshot_b64": f.get("screenshot_b64", "")} for f in keep]
 
 
-_ENTITY_DEAL_RE = re.compile(r"\bD\d{3,}\b")
-_ENTITY_CUST_RE = re.compile(r"\bC\d{2,}\b")
+# Bound on ASCII alphanumerics, not \b: Python's \b is Unicode-aware and kana/kanji are
+# word characters, so \bD\d{3,}\b never matches an id followed by a particle ("D010を").
+_ENTITY_DEAL_RE = re.compile(r"(?<![A-Za-z0-9])D\d{3,}(?![A-Za-z0-9])")
+_ENTITY_CUST_RE = re.compile(r"(?<![A-Za-z0-9])C\d{2,}(?![A-Za-z0-9])")
 _AUDIT_RE = re.compile(
     r"\b(?:audit|quarterly|pipeline review|research steps|faceted searches?)\b|"
     r"(?:監査|四半期|パイプライン.*レビュー|調査手順|ファセット検索)",
     re.IGNORECASE,
 )
 _STEP_RE = re.compile(r"(?:^|\n)\s*(?:\d+[.)]|[-*・])\s+", re.MULTILINE)
-_REP_ID_RE = re.compile(r"\bR\d{2,}\b", re.IGNORECASE)
+_REP_ID_RE = re.compile(r"(?<![A-Za-z0-9])R\d{2,}(?![A-Za-z0-9])", re.IGNORECASE)
 _QUOTE_RE = re.compile(r"['\"]([^'\"]+)['\"]")
 
 
@@ -404,15 +406,29 @@ def _mentioned_customers(user_msg: str) -> list[str]:
 
 
 def _audit_customers(user_msg: str) -> list[str]:
+    """Customers an audit prompt asks about: verbatim store matches, plus quoted
+    names on customer/status lines.
+
+    A quoted string is only accepted if it resolves to a real customer. The same
+    line routinely quotes something that is *not* a customer — "search the notes
+    for 'budget slashed'" — and gathering on that is a guaranteed [not_found].
+    Resolving also canonicalizes an alias ('Murata Printing' → 有限会社村田印刷) so
+    downstream note/similar-deal gathers key off the store's own name.
+    """
+    from senpai.data import store  # lazy
     customers = _mentioned_customers(user_msg)
     seen = set(customers)
     for line in (user_msg or "").splitlines():
         if not re.search(r"customer|account|顧客|取引先|会社|status|deal status", line, re.IGNORECASE):
             continue
         for quoted in _QUOTE_RE.findall(line):
-            if quoted not in seen and not re.fullmatch(r"R\d{2,}|D\d{3,}|C\d{2,}", quoted, re.IGNORECASE):
-                seen.add(quoted)
-                customers.append(quoted)
+            if re.fullmatch(r"R\d{2,}|D\d{3,}|C\d{2,}", quoted, re.IGNORECASE):
+                continue  # entity ids are handled by their own sub-parsers
+            record = store.resolve_customer(quoted)
+            name = (record or {}).get("name")
+            if name and name not in seen:
+                seen.add(name)
+                customers.append(name)
     return customers
 
 

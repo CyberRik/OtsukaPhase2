@@ -41,7 +41,7 @@ cd web; npm install; cd ..
 # Terminal 1 — Backend bridge (FastAPI) → <http://localhost:8000>
 
 $env:SENPAI_USE_LLM = '1'
-$env:SENPAI_TODAY   = '2026-07-09'        # pin scoring's "today" to the seed anchor
+$env:SENPAI_TODAY   = '2026-07-10'        # pin scoring's "today" to the seed anchor
 .\.venv\Scripts\python.exe -m uvicorn senpai.api.server:app --port 8000 --host 127.0.0.1 --reload
 
 # Terminal 2 — Frontend (Next.js) → <http://localhost:3000>   (defaults to the :8000 backend)
@@ -129,6 +129,7 @@ Check it's alive on the box: `ssh team-a@100.101.186.29 'pgrep -af llama-server'
 The fallback/primary synthesis model is hosted in the `atlas` Docker container on the same shared GB10 box (`100.101.186.29`).
 
 **To view the Atlas container logs locally:**
+
 ```bash
 # Option 1: Direct SSH command
 ssh team-a@100.101.186.29 "docker logs -f atlas"

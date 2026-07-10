@@ -16,8 +16,11 @@ One-time setup (see demo/demo_script.md for the screenshots):
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
+
+_EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 # senpai/tools/gcal.py -> repo root is two parents up from the package dir.
@@ -61,16 +64,30 @@ def create_event(title: str, date: str, start_time: str, duration_hours: float =
 
         start_dt = datetime.strptime(f"{date} {start_time}", "%Y-%m-%d %H:%M")
         end_dt = start_dt + timedelta(hours=float(duration_hours or 1))
-        attendees = attendees or []
+
+        # The model names attendees the way a rep would — "藤本食品", "山田彩" — but the
+        # API rejects the whole insert with 400 "Invalid attendee email." on any
+        # non-address. Invite only real addresses; keep the named people in the
+        # description so booking succeeds without losing who the meeting is with.
+        invitees, named = [], []
+        for a in (attendees or []):
+            a = str(a).strip()
+            if not a:
+                continue
+            (invitees if _EMAIL_RE.fullmatch(a) else named).append(a)
+
+        notes = [n for n in (description or "").strip().split("\n") if n]
+        if named:
+            notes.append("参加者: " + "、".join(named))
 
         body = {
             "summary": title,
-            "description": description or "",
+            "description": "\n".join(notes),
             "start": {"dateTime": start_dt.isoformat(), "timeZone": tz},
             "end": {"dateTime": end_dt.isoformat(), "timeZone": tz},
         }
-        if attendees:
-            body["attendees"] = [{"email": a} for a in attendees]
+        if invitees:
+            body["attendees"] = [{"email": a} for a in invitees]
 
         service = build("calendar", "v3", credentials=_get_credentials(),
                         cache_discovery=False)

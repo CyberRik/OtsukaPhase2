@@ -256,7 +256,12 @@ function DualHeadline({
         >
           {main}
         </h2>
-        <p className="mt-3 text-[13px] font-medium tracking-wide text-white/40 md:text-[15px]">{sub}</p>
+        <div className="mt-5 flex flex-col items-center gap-3">
+          <span className="h-px w-10 bg-[hsl(235_84%_70%/0.55)] md:w-14" />
+          <p className="max-w-[44ch] text-balance font-plex text-[15px] font-medium leading-snug text-white/75 [text-shadow:0_0_24px_rgba(0,0,0,0.75)] md:text-[19px]">
+            {sub}
+          </p>
+        </div>
       </motion.div>
     </motion.div>
   );
@@ -300,7 +305,7 @@ function FeatureShard({
           {big}
         </div>
         <div className="mt-2.5 text-[15px] font-semibold text-white/85 md:text-[17px]">{label}</div>
-        <div className="mt-2 text-[12px] leading-relaxed text-white/40 md:text-[13px]">{sub}</div>
+        <div className="mt-2 font-plex text-[13px] leading-relaxed text-white/65 md:text-[14px]">{sub}</div>
       </motion.div>
     </motion.div>
   );
@@ -334,7 +339,12 @@ function EnterScene({
       <h2 className="max-w-3xl text-balance text-[30px] font-semibold leading-[1.25] tracking-tight text-white [text-shadow:0_0_24px_hsl(235_84%_65%/0.5)] md:text-[46px]">
         {main}
       </h2>
-      <p className="mt-3 text-[13px] font-medium tracking-wide text-white/45 md:text-[15px]">{sub}</p>
+      <div className="mt-5 flex flex-col items-center gap-3">
+        <span className="h-px w-10 bg-[hsl(235_84%_70%/0.55)] md:w-14" />
+        <p className="max-w-[44ch] text-balance font-plex text-[15px] font-medium leading-snug text-white/75 [text-shadow:0_0_24px_rgba(0,0,0,0.75)] md:text-[19px]">
+          {sub}
+        </p>
+      </div>
       <button
         onClick={onEnter}
         className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-[hsl(228,45%,10%)] shadow-[0_0_25px_hsl(235_84%_65%/0.4)] transition-transform hover:scale-[1.04]"

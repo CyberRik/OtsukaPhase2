@@ -6,12 +6,154 @@ A full walkthrough script for demoing Senpai: the AI sales co-pilot for reps ("j
 - Backend running (`senpai/api/server.py`, FastAPI) and frontend running (`web/`, Next.js).
 - Login page has one-click "fill demo creds" buttons: **junior / demo123** and **manager / demo123**.
 - Have two browser windows/tabs ready: one for junior, one for manager (or use two profiles so you can flip between personas without logging out/in on stage).
+- The LLM endpoint must be reachable before you start: `curl http://100.101.186.29:8888/v1/models` should return `atlas-35b`. It is served over Tailscale (direct, no SSH tunnel).
 - Good demo deal IDs (real seed data, deliberately at-risk so the coaching/health story is visible):
-  - **D001** — 有限会社村田印刷 ディスプレイ案件 (rank 3_A, rep R12)
-  - **D005** — 株式会社松田サービス セキュリティ案件 (rank 2_A+, rep R05)
-  - **D010** — 株式会社平和システム プレゼン機器案件 (rank 2_A+, rep R14)
+  - **D001** — 有限会社村田印刷 ディスプレイ案件 (rank 3_A, rep R12) — *risk 100, top of the at-risk list*
+  - **D005** — 株式会社松田サービス セキュリティ案件 (rank 2_A+, rep R05) — *category is `ソフトウェア`; not in the top-10 risk ranking*
+  - **D010** — 株式会社平和システム プレゼン機器案件 (rank 2_A+, rep R14) — *risk 95*
 - Have one real company URL ready for the `/intel` live-crawl beat (any public vendor/customer site works — the crawler just needs a reachable domain).
 - Have one small text/PDF file ready to attach in chat (e.g. a fake meeting note or a one-pager).
+
+> ⚠️ **`schedule_meeting` books a REAL Google Calendar event** (`confirm=true` is the default). Any prompt that says 「カレンダーに仮押さえして」 will write to the calendar backing `token.json`. Either accept that, or drop the scheduling clause from the prompt.
+
+**Pre-warm every page you plan to open.** In dev, Next.js compiles a route on first request — `/manager/warroom` took 2.6s cold and `/admin/visualization` 2.8s. Click through all of these once before the audience is watching:
+`/junior/training/ringi` · `/junior/workspace` · `/manager/warroom` · `/manager/coaching` · `/admin/visualization` · `/admin/visualization/versus`
+
+---
+
+## Latency: the one thing that will hurt you on stage
+
+Measured against the live `atlas-35b` endpoint. The rule:
+
+> **Wall clock ≈ (number of tool calls the *model* decides to make) × one forward pass each.**
+> Payload size barely matters. The served model emits **one tool call per response**, so every organic tool costs a full round.
+
+Deterministic round-0 fan-out (`_audit_gather_calls`, `_multi_entity_gather_calls`) is nearly free — all of its calls execute in a **single parallel batch**. Model-chosen calls are what cost time.
+
+| Prompt | Tool calls | Wall clock |
+|---|---|---|
+| `D001、D005、D010を比較して…` (deterministic fan-out, 6 calls, ~0 organic) | 6 | **~90s** |
+| Steered product story (5 organic) | 5 | **~70s** |
+| Quarterly-audit Variant A (13 deterministic + ~5 organic, 5.5k-token context, thinking synthesis) | 18+ | **~4–5 min** |
+| Open-ended 「最適な製品を提案して」 across 3 entities | **21–27** | **~3–6 min** |
+
+**Two traps, both verified:**
+
+1. **The `search_products` spiral.** An open-ended "recommend the best product" makes the model brute-force keyword combinations — one run fired `search_products` **23 times, 10 of them `[not_found]`**. Steer it to `advise_solutions` / `search_solutions` (grounded in the real 大塚商会 corpus) or name the product code outright.
+2. **The planner hijack.** `_DOC_GOAL_RE` matches 「提案」 within 40 characters of 「作成」, so 「…を提案して、見積も作成して」 is read as *"create a proposal"* and jumps out of the ReAct loop into one-shot document generation. Say 「見積も**出して**」, never 「見積も作成して」.
+
+**Consequence for a short demo: budget at most two chat beats.** Everything else on this list — War Room, Ringi Boardroom, Coaching, Admin/GraphRAG — is deterministic UI and renders instantly.
+
+---
+
+## The 15-minute run of show
+
+Two LLM chat beats (~2.5 min of the budget), everything else instant UI. Deterministic surfaces are the ones that look most impressive per second.
+
+| Time | Beat | Surface | Cost | Why it lands |
+|---|---|---|---|---|
+| 0:00–1:00 | Framing + login, JA/EN toggle | `/login` | instant | Bilingual, one product, no demo mode |
+| 1:00–2:15 | **Chat beat 1 — grounded tool calling** | Command Center | ~40s | Expand the tool card: real CRM, inspectable args |
+| 2:15–3:45 | **Chat beat 2 — the product story** (below) | Command Center | ~70s | Otsuka's *own* catalog + 3,285 scraped product pages → priced quote |
+| 3:45–5:00 | **Local agent** — attach a file / workspace | Command Center | ~30s | Reads a doc uploaded days ago; sandboxed edit |
+| 5:00–7:00 | **Ringi Boardroom** (run, intervene, re-run) | `/junior/training/ringi` | 21s per run, **no LLM** | Category-defining; nobody else models 稟議 |
+| 7:00–8:30 | **`/intel` live crawl** | Command Center | slow — *narrate over it* | Watch a real browser work |
+| 8:30–10:00 | Proposal → editable PPTX | Command Center | ~60s | Tangible artifact they can open |
+| 10:00–11:30 | **Pipeline War Room** | `/manager/warroom` | **143ms** | 6-month replay, scrub the timeline |
+| 11:30–13:00 | Coaching loop | `/manager/coaching` | instant | Same deterministic engine, team-scoped |
+| 13:00–15:00 | Admin → **Visualization / GraphRAG** | `/admin/visualization` | instant | 520 deals → 44 grounded communities |
+
+**Kick off `/intel` before you start talking over it.** It is the only beat where narration and execution overlap for free — start the crawl, then explain what a rep does manually for twenty minutes.
+
+**Cut order if you run long:** drop the proposal beat (8:30–10:00) first, then `/intel`. Never cut the **Ringi Boardroom** or the **War Room** — those two have no equivalent in any competing product, and both are effectively free (Ringi is pure deterministic simulation; the War Room returns a 552KB six-month replay in 143 milliseconds). A generated deck is impressive; a rehearsable 稟議 is unmatched.
+
+**The two "free wow" beats.** Say this out loud, because it is the strongest technical claim you have:
+
+- **Ringi Boardroom runs with the LLM switched off.** `senpai/simulation/ringi.py` imports only `coaching` and `store` — the 課長/部長/社長 objections are generated by the same deterministic 7-issue engine that drives `/review` and the coaching dashboard. That is why fixing the underlying data changes the next run. It is a simulation, not a script, and not a prompt.
+- **The War Room is an audit trail, not an animation.** Every weekly frame is the deterministic engine's output recomputed for that week — 143ms for the whole six months.
+
+---
+
+## "How is this different from a chatbot?" — the answer that survives follow-ups
+
+Every claim below was read out of the running config. **Two talking points that sound good are false — do not say them.**
+
+> ❌ **Do not say "dual-model routing" or "we drop to an 8B for easy turns."** `MODEL` and `FALLBACK_MODEL` are **both `atlas-35b`, on the same URL**. `FAST_SYNTH_FALLBACK` and `SYNTH_ALL_FALLBACK` are both `False`. There is no second model in the live system.
+>
+> ❌ **Do not say "a router turns reasoning on when the question needs it."** `REASONING_ROUTER = off`. The router exists (`senpai/llm/routing.py`) but is disabled, so `no_think` stays at the static `TOOLLOOP_NO_THINK = True`. **Thinking is off everywhere.**
+
+### What is actually true about latency
+
+One model, `atlas-35b`, self-hosted. Three real levers:
+
+1. **Thinking is off by default** across the whole tool loop (`TOOLLOOP_NO_THINK=True`). The reasoning phase is opt-in, not paid for on every turn.
+2. **Deterministic parallel fan-out.** The served model emits exactly **one tool call per response** — enforced by a `finish` sentinel tool with `tool_choice="required"`, which also stops it burning a round generating a throwaway "no more tools" answer. So when you name several deals, the app detects that *in code* and fires every lookup in **one parallel batch** before the model reasons at all.
+3. **Token-by-token streaming.** Words appear immediately even when full generation takes 20+ seconds.
+
+**Stage line:** *"Parallel tool dispatch cuts the real wait. Streaming cuts the felt wait. And we don't pay for reasoning on turns that don't need it. One model, run well."*
+
+### The three claims that actually separate this from a system prompt
+
+**1. Entity resolution happens in code, before the model sees anything.** The customer and deal are resolved deterministically from the message (or taken from the deal selector, which is authoritative) and pinned into the prompt. A selector-picked deal explicitly tells the model it's already identified, so it doesn't spend a round re-resolving. A generic chatbot lets the model guess which "丸三" you meant; this one detects the ambiguity and asks.
+
+**2. There is a hard anti-hallucination guard, in code, outside the prompt.** If **every** tool in a turn comes back empty, the app injects `_NO_EVIDENCE_GUARD` — an explicit instruction forbidding the model from filling the gap from memory. The code comment names the exact bug it closes: a turn that, after a failed CRM lookup, cheerfully answered with **GTA 6 specs from parametric memory**. Tell that story — it's specific and it's real.
+
+**3. The model is not allowed to narrate an action it didn't take.** Two independent guards:
+   - `_is_finish_leak` blocks the model from smuggling its final answer into a *tool argument* instead of finishing cleanly.
+   - `_pending_workspace_edit_confirm` catches "a write claimed in prose with no tool call behind it" (its own docstring) and re-commits the real call.
+
+**Stage line — the one that lands with a technical audience:** *"In a generic chatbot, the words and the actions are two separate things that usually happen to agree. Here they're not allowed to disagree — a claim of 'I saved that' is checked against whether a tool call actually saved it, before the answer ever reaches the user."*
+
+That is checkable. "We prompt-engineered it carefully" is not.
+
+---
+
+## The business case (if they ask "why does this matter?")
+
+**The one-line structure:** *"Onboarding is the relatable face; pipeline reliability — nobody knows if a deal is real — is the engine underneath."*
+
+Lead with the emotional problem (a junior rep needs a senior at 11pm before a big call), then reveal that the same engine solves the harder, more valuable one (a manager cannot tell which deals are genuinely healthy versus optimistically labelled). **One engine, two buyers, two reasons to pay.**
+
+| Audience | What they get |
+|---|---|
+| **Junior reps** | An on-demand senpai: account briefs, product recommendations grounded in Otsuka's **real 3,285-page catalog**, a rehearsable 稟議 simulator, generated proposals and quotes |
+| **Managers** | Not another dashboard to read — *automatic surfacing*: which deals are actually at risk, which rep needs coaching on what, and whether that coaching worked over time |
+| **Admin / ops** | Token spend by model, org structure, and — unusually — the retrieval mechanism itself exposed rather than hidden |
+
+**Why it is hard to copy** (three defensible moats, all demonstrable on screen):
+
+1. **Grounded in Otsuka's real data shape.** Recommendations cite 大塚商会's actual scraped catalog **by URL**; quotes price off real SKUs (MFP30 = ¥240,000). A competitor selling generic "AI sales coaching" cannot reproduce this without your data.
+2. **Deal health is deterministic, not model opinion.** Seven concrete signals — staleness, rank regression, missing decision-maker — produce the risk score. **No LLM ever invents a number.** For a buyer whose brand is trust, that is the whole argument.
+3. **The Ringi Boardroom has no competitive equivalent.** A US-built sales tool would not think to model 課長→部長→社長. And it runs on the same deterministic engine, not a script — fix the underlying deal data and the objections change.
+
+**Closing line (keep verbatim):** *"One backend, one set of tools, every surface grounded in the same real data."*
+
+---
+
+## Chat beat 2 — the product story (uses the real 大塚商会 catalog)
+
+This is the beat that proves Senpai sells *Otsuka's actual products*, not generic advice. The `otsuka_kb` index holds **9,826 pages scraped from otsuka-shokai.co.jp — 3,285 product pages and 257 customer case studies** — and `advise_solutions` / `search_solutions` cite them by URL.
+
+> **Prompt:** `富士商事の顧客環境を確認して、ネットが遅くPCも古いという相談に対して大塚商会のソリューションを提案して。MFP30を2台で見積も出して`
+> *("Check 富士商事's environment; they say the network is slow and their PCs are old. Propose an Otsuka solution, and give me a quote for 2× MFP30.")*
+
+**Measured: ~70s, 5 tool calls, 0 `[not_found]`** —
+`lookup_customer_environment` → `advise_solutions` → `get_product_info` → `create_quote` → `send_email` (draft).
+
+**Say:** "Watch what it pulled. The customer's actual environment — eight laptops, mixed Windows 10/11, wired LAN only — came out of the CRM. The recommendation is not the model's opinion: `advise_solutions` ranks candidates from real account-expansion signals and cites 大塚商会's own product pages by URL. Then it prices the quote off the real catalog — ¥240,000 per MFP30, subtotal, discount, tax, grand total — and drafts the customer email. Quote and email are both explicitly drafts. Nothing is sent, nothing is persisted, a human stays in the loop."
+
+**Do not** phrase it as 「最適な製品を提案して」 with no product named — that triggers the `search_products` spiral (23 calls). Naming `MFP30` keeps it to one clean `get_product_info`.
+
+### Product-tool cheat sheet (all verified against seed data)
+
+| Tool | Call that works | Returns |
+|---|---|---|
+| `lookup_customer_environment` | `customer='富士商事'` | PC=ノートPC8台 / OS=Windows 10/11混在 / 有線LANのみ |
+| `search_products` | `keyword='複合機'` or `category=`, `min_price=`, `max_price=` | MFP15 ¥96,000 / MFPC25 ¥180,000 / MFP30 ¥240,000 |
+| `get_product_info` | `product='MFP30'` | specs, 型番 OTS-MFP-3000, manual excerpt |
+| `search_solutions` | `query='ネットワークが遅い'` | 大塚商会 pages w/ source URLs |
+| `advise_solutions` | `customer='富士商事'` — **`deal_id=` returns `[not_found]`** | ranked solutions + confidence + URL |
+| `create_quote` | `items=[{'sku':'MFP30','qty':2}]` — key is **`sku`**, not `product_code` | line items, discount, tax, total |
 
 ---
 
@@ -49,7 +191,9 @@ Follow up with a risk-oriented prompt to show another tool:
 > **Prompt:** `今リスクの高い案件ってどれ？`
 > *("Which deals are high-risk right now?")*
 
-This should fire `list_at_risk_deals` — point out **D005** or **D010** appearing with a flagged reason.
+This fires `morning_briefing` (verified across repeated runs — the model picks it over `list_at_risk_deals` for this phrasing; both are risk-ranked, so don't promise a tool name out loud). Point out **D001** (risk 100, 94 days without contact) or **D010** (risk 95) appearing with a flagged reason.
+
+> **Do not point at D005 here** — it is deliberately at-risk for the coaching beats, but it does not appear in the top-10 risk ranking. D001 is the strongest example on this screen.
 
 ---
 
@@ -68,7 +212,7 @@ This exact prompt was traced line-by-line against `_audit_gather_calls` (`senpai
 > 四半期パイプライン監査をお願いします。以下を確認してください:
 > 1. 伊藤翔(R05)、松本千尋(R14)、山田彩(R12)の担当案件の最新ステータスとヘルススコア
 > 2. 株式会社松田サービス、株式会社平和システム、有限会社村田印刷の日報を確認し、予算削減の言及がないか検索
-> 3. 'セキュリティ'案件の一覧
+> 3. 'サーバー'案件の一覧
 > 4. 'OA機器'案件の一覧
 > 5. 'PC周辺機器'案件の一覧
 > 6. プレイブックとシナリオ: 'セキュリティ商談における反論対応'を検索
@@ -78,8 +222,10 @@ This exact prompt was traced line-by-line against `_audit_gather_calls` (`senpai
 **What's guaranteed to fire in round 0 (13 calls, verified against the regex logic):**
 - Line 1 → `_REP_ID_RE` matches R05/R14/R12 → **3× `query_spr`** (one per rep)
 - Line 2 → the three customer names are matched verbatim against seed data by `_mentioned_customers` → **3× `query_spr`** (one per customer); the line also contains "日報" + "予算削減", which trips the note-search branch → **3× `search_notes`** (one per customer)
-- Lines 3–5 → each is its own bulleted line with a quoted category and the keyword "案件", none of the exclusion words ("status"/"類似"/"product code") → **3× `find_deals`** (security / OA equipment / PC peripherals)
+- Lines 3–5 → each is its own bulleted line with a quoted category and the keyword "案件", none of the exclusion words ("status"/"類似"/"product code") → **3× `find_deals`** (servers / OA equipment / PC peripherals)
 - Line 6 → contains "プレイブック"/"シナリオ" plus a quoted query → **1× `retrieve_playbook`**
+
+> **Use real product categories only.** The seed has exactly seven: `OA機器 · PC周辺機器 · サーバー · ストレージ · ソフトウェア · ネットワーク機器 · 役務`. `セキュリティ` and `複合機` are **not** categories — a `find_deals` on either returns `[not_found]`. (D005 is *named* 「セキュリティ案件」, but its `product_category` is `ソフトウェア`.) With `'サーバー'` on line 3, all 13 round-0 calls return real data — verified by executing every one of them.
 
 That's already 13 tool calls in a single scheduler batch, before the model has generated a single token. **Line 7 is deliberately left for the model** — asking for a live web check and next-action recommendations that aren't part of the deterministic gather forces at least one round of organic reasoning on top, typically adding `web_search`/`web_research`, `score_deal_health` (health scores were asked for in line 1 but the deterministic path only pulls records, not health — the model has to close that gap itself), and `advise_solutions` or `route_to_expert` for the recommendation — pushing the realistic total to **16–20 tool calls** in one turn.
 
@@ -150,6 +296,8 @@ Type `/` alone in the composer to pop the **slash command picker** — narrate t
 
 > **Prompt:** `/crew D005`
 
+**Use the deal ID, not the customer name.** `/crew 松田サービス` resolves to **D006** (that customer has several deals), and a name with no seed match — e.g. "Fujimoto" — returns `status: ambiguous` and the crew never runs.
+
 Watch the **Execution Timeline** in `crew-turn.tsx` — Researcher → Coach → Strategist phases animate, then auto-collapse into a final brief.
 
 **Say:** "This is three agents working one deal in sequence — a Researcher agent pulling account/product context, a Coach agent applying our deal-health rules, and a Strategist synthesizing next steps. It's not just one long prompt; you can watch each phase execute and see what each agent contributed before the final brief renders."
@@ -190,7 +338,7 @@ Optionally also show:
 
 Navigate to `/junior/training/ringi`.
 
-1. Pick an at-risk deal from the dropdown (**D005**, **D001**, or **D010**).
+1. Pick an at-risk deal from the dropdown — prefer **D001** (risk 100) or **D010** (risk 95); both rank in the top-10 at-risk list, so the objections land harder.
 2. Click **稟議シミュレーション開始** ("Run simulation").
 3. Narrate as it streams: personas (課長/Kacho, 部長/Bucho, 社長/Shacho) speak in turn around the boardroom ring, the **approval gauge** ticks up/down live based on their objections, a live transcript feed shows each line, and the **Senpai HUD** surfaces coaching whispers tied back to the real flagged issue.
 4. After it resolves (likely low approval, given a real at-risk deal), click the **Playbook Intervention** card, apply the suggested fix, and **re-run** — watch the approval gauge recover green.
@@ -260,7 +408,7 @@ Keep these ready to paste if a judge asks "how many tools can it actually call."
    四半期パイプライン監査をお願いします。以下を確認してください:
    1. 伊藤翔(R05)、松本千尋(R14)、山田彩(R12)の担当案件の最新ステータスとヘルススコア
    2. 株式会社松田サービス、株式会社平和システム、有限会社村田印刷の日報を確認し、予算削減の言及がないか検索
-   3. 'セキュリティ'案件の一覧
+   3. 'サーバー'案件の一覧
    4. 'OA機器'案件の一覧
    5. 'PC周辺機器'案件の一覧
    6. プレイブックとシナリオ: 'セキュリティ商談における反論対応'を検索

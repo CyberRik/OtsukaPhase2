@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const initialRole = (jar.get("senpai.role")?.value as Role) || null;
 
   return (
-    <html lang={initialLang} className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+    <html lang={initialLang} translate="no" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <Providers initialLang={initialLang} initialRole={initialRole}>
           {children}

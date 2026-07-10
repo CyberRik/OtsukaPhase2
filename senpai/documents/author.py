@@ -52,7 +52,8 @@ def _extract_json(text: str) -> dict | None:
         return None
 
 
-_REP_ID_RE = re.compile(r"\bR\d{2,3}\b")
+# ASCII-bounded, not \b: kana are Unicode word chars, so \b would skip "R05の".
+_REP_ID_RE = re.compile(r"(?<![A-Za-z0-9])R\d{2,3}(?![A-Za-z0-9])")
 
 
 def _authoritative_names(prompt: str, grounding: str) -> str:

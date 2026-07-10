@@ -59,6 +59,10 @@ interface Move {
   delta?: number; // score change, for riskUp/riskDown
 }
 
+// Milliseconds per weekly snapshot while playing. Slow enough that the eye can
+// follow a single deal changing band; fast enough to replay six months on stage.
+const REPLAY_TICK_MS = 680;
+
 export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
   const { t, lang } = useT();
   const ja = lang === "ja";
@@ -80,7 +84,7 @@ export function WarRoom({ data, live }: { data: WarroomData; live: boolean }) {
         if (i >= last) { setPlaying(false); return i; }
         return i + 1;
       });
-    }, 850);
+    }, REPLAY_TICK_MS);
     return () => clearInterval(h);
   }, [playing, last]);
 

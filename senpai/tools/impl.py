@@ -545,6 +545,7 @@ def schedule_meeting(title: str = "", date: str = "", start_time: str = "",
                 f"／{dur:g}時間{who}{agenda}"
                 "\n確定する場合は confirm=true で再度依頼してください。")
 
+    reason = ""
     try:
         from senpai.tools import gcal  # lazy: a missing google lib must not break import
         ok, link = gcal.create_event(
@@ -555,10 +556,14 @@ def schedule_meeting(title: str = "", date: str = "", start_time: str = "",
             tail = f"\n{link}" if link else ""
             return (f"【予定を登録しました】「{title}」{date} {start_time} JST "
                     f"／{dur:g}時間{who}{agenda}{tail}")
-    except Exception:  # noqa: BLE001 — fall back to a simulated confirmation
-        pass
-    return (f"【予定を登録しました（シミュレーション）】「{title}」{date} {start_time} JST "
-            f"／{dur:g}時間{who}{agenda}")
+        reason = link  # (ok=False) → create_event returns the failure reason here
+    except Exception as e:  # noqa: BLE001 — a calendar fault must not break the turn
+        reason = str(e)
+    # Booking did NOT happen. Say so plainly: never narrate an action we did not take.
+    why = f"\n理由: {reason}" if reason else ""
+    return (f"【予定は登録されていません（カレンダー未接続）】"
+            f"「{title}」{date} {start_time} JST ／{dur:g}時間{who}{agenda}{why}"
+            "\nGoogleカレンダーに接続できないため、下書きとして扱ってください。")
 
 
 def send_email(to: str = "", subject: str = "", body: str = "") -> str:

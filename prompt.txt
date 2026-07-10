@@ -1,33 +1,59 @@
 1. お客様のC01について、最近ネットが遅くて業務に支障が出ていると相談を受けました。また、PCもWindows 8時代のもので古いです。予算にはシビアです。どのような提案をすべきですか？ (product)
 
-2. 
+   [C01 = 富士商事 — verified present in seed data.]
 
-I am conducting a massive quarterly pipeline audit and need you to gather an immense amount of data across various sectors, accounts, and historical strategies. Do not answer until you have executed all of the following research steps:
+---
+
+NOTE ON PROMPTS 2 AND 3 (read before pasting):
+
+Every entity below was checked against the seed store, and every deterministic
+round-0 tool call was executed to confirm it returns real data.
+
+  a) Use only entities that exist. アクメ商事 / グローバルテック / 未来工業 are NOT in
+     the seed. Neither is the 金融 industry (0 deals). ネットワーク機器 open deals
+     top out at ¥870,000, so "over 10,000,000 JPY" can never match. セキュリティ and
+     複合機 are not product categories; the seven real ones are OA機器 / PC周辺機器 /
+     サーバー / ストレージ / ソフトウェア / ネットワーク機器 / 役務.
+
+  b) `_audit_customers` used to treat EVERY quoted string on a "customer" line as
+     a customer name, so "budget slashed" fired query_spr(customer="budget
+     slashed"). Fixed: a quoted candidate must now resolve against the store.
+     Quoting the note-search phrases is harmless again, but leaving them unquoted
+     (as below) keeps the intent obvious.
+
+As written below: 19 deterministic round-0 tool calls, 0 [not_found].
+
+---
+
+2. I am conducting a massive quarterly pipeline audit and need you to gather an immense amount of data across various sectors, accounts, and historical strategies. Do not answer until you have executed all of the following research steps:
 1. Look up the SPR pipelines for three specific reps: 'R01', 'R05', and 'R12'.
-2. Query the exact current deal status for the following three customers individually: 'アクメ商事', 'グローバルテック', and '未来工業'.
-3. Perform a semantic note search for EACH of those three customers looking for the phrase "budget slashed" or "予算削減". 
-4. Find similar comparable deals for 'アクメ商事' (in the '製造' industry) and for 'グローバルテック' (in the 'IT' industry) to see how we've handled them in the past.
+2. Query the exact current deal status for the following three customers individually: '富士商事', '豊田工業', and '有限会社村田印刷'.
+3. Perform a semantic note search for EACH of those three customers looking for the phrase 予算削減 or budget slashed.
+4. Find similar comparable deals for '富士商事' (in the '製造' industry) and for '豊田工業' (in the 'IT' industry) to see how we've handled them in the past.
 5. Run four separate faceted searches for past deals:
    - 'サーバー' deals in '製造' that were 'won'.
-   - 'ソフトウェア' deals in '医療' that were 'lost'.
-   - 'ネットワーク機器' deals in '金融' that were 'open' with an amount over 10,000,000 JPY.
+   - 'ソフトウェア' deals in '飲食' that were 'lost'.
+   - 'ネットワーク機器' deals in '小売' that were 'open'.
    - Any deals containing the product code 'MON27'.
 6. Check our playbook for four different tactical scenarios individually:
    - Scenario 1: '決定先延ばし' (decision postponed)
    - Scenario 2: '値引き' (discounting)
    - Scenario 3: '競合優位' (competitor advantage)
    - Scenario 4: '担当者変更' (change in point of contact)
-Only once you have successfully pulled all of this data from the tools, synthesize it into a massive, heavily detailed quarterly review report. (20 tools)
+Only once you have successfully pulled all of this data from the tools, synthesize it into a massive, heavily detailed quarterly review report.
+
+   [19 round-0 calls: 6x query_spr, 3x search_notes, 4x find_deals,
+    4x retrieve_playbook, 2x find_similar_deals. All return real data.]
 
 3. I am conducting a massive quarterly pipeline audit and need you to gather an immense amount of data across various sectors, accounts, and historical strategies. Do not answer until you have executed all of the following research steps:
 1. Look up the SPR pipelines for three specific reps: 'R01', 'R05', and 'R12'.
-2. Query the exact current deal status for the following three customers individually: 'アクメ商事', 'グローバルテック', and '未来工業'.
-3. Perform a semantic note search for EACH of those three customers looking for the phrase "budget slashed" or "予算削減".
-4. Find similar comparable deals for 'アクメ商事' (in the '製造' industry) and for 'グローバルテック' (in the 'IT' industry) to see how we've handled them in the past.
+2. Query the exact current deal status for the following three customers individually: '富士商事', '豊田工業', and '有限会社村田印刷'.
+3. Perform a semantic note search for EACH of those three customers looking for the phrase 予算削減 or budget slashed.
+4. Find similar comparable deals for '富士商事' (in the '製造' industry) and for '豊田工業' (in the 'IT' industry) to see how we've handled them in the past.
 5. Run four separate faceted searches for past deals:
    - 'サーバー' deals in '製造' that were 'won'.
-   - 'ソフトウェア' deals in '医療' that were 'lost'.
-   - 'ネットワーク機器' deals in '金融' that were 'open' with an amount over 10,000,000 JPY.
+   - 'ソフトウェア' deals in '飲食' that were 'lost'.
+   - 'ネットワーク機器' deals in '小売' that were 'open'.
    - Any deals containing the product code 'MON27'.
 6. Check our playbook for four different tactical scenarios individually:
    - Scenario 1: '決定先延ばし' (decision postponed)
@@ -35,4 +61,9 @@ Only once you have successfully pulled all of this data from the tools, synthesi
    - Scenario 3: '競合優位' (competitor advantage)
    - Scenario 4: '担当者変更' (change in point of contact)
 7. Also web search for the latest enterprise IT budget trend benchmarks for Japanese manufacturing SMEs in 2026, and web search separately for current cyber insurance pricing trends for mid-market firms.
-Only once you have successfully pulled all of this data from the tools, synthesize it into a massive, heavily detailed quarterly review report, and generate it as a docx document. (21 tools + docx — regression test for the hybrid router: a trailing "generate it as a docx" must NOT hijack this into the one-shot planner; it must stay in the ReAct loop, run every distinct lookup, and only then generate the docx.)
+Only once you have successfully pulled all of this data from the tools, synthesize it into a massive, heavily detailed quarterly review report, and generate it as a docx document.
+
+   [19 round-0 calls + ~2 organic web_search + docx generation.
+    Regression test for the hybrid router: a trailing "generate it as a docx"
+    must NOT hijack this into the one-shot planner; it must stay in the ReAct
+    loop, run every distinct lookup, and only then generate the docx.]
