@@ -22,7 +22,7 @@ import { CrawlReplay } from "@/components/assistant/crawl-replay";
 import { downloadMessageAsDocx, downloadMessageAsXlsx } from "@/lib/artifact-export";
 
 
-export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
+export type ToolCall = { name: string; args: string; result: string; document?: GeneratedDocument; documents?: GeneratedDocument[]; crawl?: CrawlPage[]; crawlFrames?: CrawlFrame[]; batchId?: string | null; intent?: string; outline?: { title: string }[]; internal?: boolean };
 export type SourceState = {
   key: string; label: string;
   status: "found" | "not_found" | "ambiguous" | "skipped" | "error";
@@ -313,7 +313,14 @@ export function MessageBubble({ m, t, lang, onPick }: {
       {/* 1b. Generated document downloads — surfaced at the RESPONSE level (not
            buried inside the collapsed tool card) so the deliverable is one click. */}
       {(() => {
-        const all = m.tools.map((tl) => tl.document).filter(Boolean) as GeneratedDocument[];
+        const all = (m.tools.flatMap((tl) =>
+          tl.documents && tl.documents.length > 0
+            ? tl.documents
+            : (tl.document ? [tl.document] : [])
+        ) as GeneratedDocument[])
+          // The source HTML is an implementation detail of the export pipeline —
+          // surface only the deliverables (editable PPTX/DOCX + PDF).
+          .filter((doc) => doc.kind !== "html");
         // Dedupe: several tool calls in one turn can reference the same document.
         const seen = new Set<string>();
         const docs = all.filter((doc) => {
