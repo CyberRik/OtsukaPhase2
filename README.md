@@ -143,7 +143,7 @@ docker logs -f atlas
 **To view or modify the model configuration:**
 All model configuration, tuning knobs, and inference parameters (such as `LLM_TIMEOUT`, `LLM_MAX_TOKENS`, and `SENPAI_SYNTH_ALL_8B`) are centralized in [`senpai/config.py`](senpai/config.py). You can adjust them there or via environment variables in the repo-root `.env` file.
 
-### 2. Backend bridge (FastAPI) — `:8000`  ← **this is the switch**
+### 2. Backend bridge (FastAPI) — `:8000`  
 
 ```bash
 # PowerShell (Windows)
